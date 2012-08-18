@@ -3,7 +3,6 @@ from django import template
 from django.conf import settings
 
 from payments.forms import CardTokenForm, ChangePlanForm, SubscribeForm
-from payments.models import Customer
 
 
 register = template.Library()
@@ -32,17 +31,5 @@ def subscribe_form(context):
     context.update({
         "form": SubscribeForm(),
         "plans": settings.PAYMENTS_PLANS,
-    })
-    return context
-
-
-@register.inclusion_tag("payments/_history.html", takes_context=True)
-def history(context):
-    try:
-        charges = context["request"].user.customer.charges.all()
-    except Customer.DoesNotExist:
-        charges = []
-    context.update({
-        "charges": charges
     })
     return context

@@ -1,9 +1,13 @@
 <div class="cancel-subscription">
     <h2>Cancel Subscription</h2>
-    <form action="{% url payments_cancel %}" method="POST">
+    {% if request.user.customer.current_subscription.status == 'canceled' %}
+        <div class="alert alert-danger">You account has been canceled. It will remain active until <strong>{{ request.user.customer.current_subscription.period_end }}.</strong>
+    {% else %}
+    <form class="form ajax" data-replace-closest=".cancel-subscription" action="{% url payments_ajax_cancel %}" method="POST">
         {% csrf_token %}
         <div class="actions">
-            <button type="submit" class="btn btn-mini">Cancel</button>
+            <button type="submit" class="btn btn-mini btn-danger">Cancel</button>
         </div>
     </form>
+    {% endif %}
 </div>

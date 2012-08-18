@@ -1,6 +1,6 @@
 from django.conf import settings
 
-from payments.models import PLAN_CHOICES
+from payments.settings import PLAN_CHOICES
 
 
 def payments_settings(request):

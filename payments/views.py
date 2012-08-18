@@ -2,6 +2,7 @@ import json
 
 from django.conf import settings
 from django.http import HttpResponse
+from django.shortcuts import redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
@@ -11,35 +12,31 @@ from django.contrib.auth.decorators import login_required
 
 import stripe
 
-from payments.forms import CardTokenForm, SubscribeForm, ChangePlanForm
+from payments.forms import SubscribeForm, ChangePlanForm
 from payments.models import Event
 
 
 def _ajax_response(request, template, **kwargs):
-    response = {
-        "html": render_to_string(
-            template,
-            RequestContext(request, kwargs)
-        )
-    }
-    return HttpResponse(json.dumps(response), mimetype="application/json")
+    if request.is_ajax:
+        response = {
+            "html": render_to_string(
+                template,
+                RequestContext(request, kwargs)
+            )
+        }
+        return HttpResponse(json.dumps(response), mimetype="application/json")
 
 
 @require_POST
 @login_required
 def change_card(request):
-    form = CardTokenForm(request.POST)
-    if form.is_valid():
+    if request.POST.get("stripe_token"):
         try:
-            form.save(user=request.user)
-            data = {
-                "form": CardTokenForm(),
-                "last4": request.user.customer.card_last_4,
-                "kind": request.user.customer.card_kind
-            }
+            request.user.customer.update_card(request.POST.get("stripe_token"))
+            return redirect("payments_change_card")
         except stripe.CardError, e:
-            data = {"error": e, "form": form}
-    return _ajax_response("payments/_change_card_form.html", **data)
+            data = {"error": e}
+    return _ajax_response(request, "payments/_change_card_form.html", **data)
 
 
 @require_POST
@@ -59,7 +56,7 @@ def change_plan(request):
         data = {
             "form": form
         }
-    return _ajax_response("payments/_change_plan_form.html", **data)
+    return _ajax_response(request, "payments/_change_plan_form.html", **data)
 
 
 @require_POST
@@ -74,15 +71,14 @@ def subscribe(request):
         except stripe.CardError, e:
             data["form"] = form
             data["error"] = e
-    return _ajax_response("payments/_subscribe_form.html", **data)
+    return _ajax_response(request, "payments/_subscribe_form.html", **data)
 
 
 @require_POST
 @login_required
-def cancel_subscription(request):
+def cancel(request):
     request.user.customer.cancel()
-    data = {}
-    return _ajax_response("payments/_cancel-form.html", **data)
+    return _ajax_response(request, "payments/_cancel_form.html", **{})
 
 
 @csrf_exempt

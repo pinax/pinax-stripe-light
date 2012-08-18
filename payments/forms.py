@@ -1,12 +1,6 @@
 from django import forms
 
-from payments.models import PLAN_CHOICES
-
-
-class CardTokenForm(forms.Form):
-    
-    def save(self, user):
-        user.customer.update_card(self.cleaned_data["token"])
+from payments.settings import PLAN_CHOICES
 
 
 class ChangePlanForm(forms.Form):
@@ -17,8 +11,8 @@ class ChangePlanForm(forms.Form):
         user.customer.purchase(self.cleaned_data["plan"])
 
 
-class SubscribeForm(CardTokenForm, ChangePlanForm):
+class SubscribeForm(ChangePlanForm):
     
     def save(self, user):
-        user.customer.update_card(self.cleaned_data["token"])
+        user.customer.update_card(self.cleaned_data["stripe_token"])
         user.customer.purchase(self.cleaned_data["plan"])

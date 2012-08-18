@@ -15,26 +15,10 @@ import stripe
 
 from jsonfield.fields import JSONField
 
+from payments.settings import PAYMENTS_PLANS, INVOICE_FROM_EMAIL
+from payments.settings import plan_from_stripe_id
 from payments.signals import WEBHOOK_SIGNALS
 from payments.signals import purchase_made, webhook_processing_error
-
-
-INVOICE_FROM_EMAIL = getattr(
-    settings,
-    "PAYMENTS_INVOICE_FROM_EMAIL",
-    "billing@example.com"
-)
-PAYMENTS_PLANS = getattr(settings, "PAYMENTS_PLANS", {})
-PLAN_CHOICES = [
-    (key, settings.PAYMENTS_PLANS[key].get("name", key))
-    for key in settings.PAYMENTS_PLANS
-]
-
-
-def plan_from_stripe_id(stripe_id):
-    for key in PAYMENTS_PLANS.keys():
-        if PAYMENTS_PLANS[key].get("stripe_plan_id") == stripe_id:
-            return key
 
 
 class StripeObject(models.Model):
@@ -58,7 +42,7 @@ class EventProcessingException(models.Model):
     def log(cls, data, exception, event):
         cls.objects.create(
             event=event,
-            data=data,
+            data=data or "",
             message=str(exception),
             traceback=traceback.format_exc()
         )
@@ -165,13 +149,13 @@ class Event(StripeObject):
                 self.save()
             except stripe.StripeError, e:
                 EventProcessingException.log(
-                    data=e.html_body,
+                    data=e.http_body,
                     exception=e,
                     event=self
                 )
                 webhook_processing_error.send(
                     sender=Event,
-                    data=e.html_body,
+                    data=e.http_body,
                     exception=e
                 )
     
@@ -190,6 +174,9 @@ class Customer(StripeObject):
     card_fingerprint = models.CharField(max_length=200, null=True)
     card_last_4 = models.CharField(max_length=4, null=True)
     card_kind = models.CharField(max_length=50, blank=True)
+    
+    def display_plan(self):
+        return PAYMENTS_PLANS[self.plan]["name"]
     
     def has_active_subscription(self):
         if not self.current_subscription:
@@ -233,7 +220,7 @@ class Customer(StripeObject):
         cu = stripe.Customer.retrieve(self.stripe_id)
         cu.card = token
         cu.save()
-        
+        print cu
         self.card_fingerprint = cu.active_card.fingerprint
         self.card_last_4 = cu.active_card.last4
         self.card_kind = cu.active_card.type
@@ -323,7 +310,7 @@ class Subscription(models.Model):
     
     class Meta:
         ordering = ["-period_end"]
-        get_latest_by = "period_end"
+        get_latest_by = "created_at"
 
 
 class Invoice(StripeObject):
@@ -381,7 +368,7 @@ class Invoice(StripeObject):
                 subtotal=stripe_invoice["subtotal"] / 100.0,
                 total=stripe_invoice["total"] / 100.0,
                 date=date,
-                charge=stripe_invoice["charge"],
+                charge=stripe_invoice["charge"] or "",
                 stripe_id=stripe_invoice["id"]
             )
             for item in stripe_invoice["lines"].get("invoiceitems", []):
@@ -406,13 +393,14 @@ class Invoice(StripeObject):
                     amount=(sub["amount"] / 100.0)
                 )[0])
             
-            charge = stripe.Charge.retrieve(stripe_invoice["charge"])
-            desc = stripe_invoice["lines"]["subscriptions"][0]["plan"]["name"]
-            obj = c.record_charge(charge)
-            obj.invoice = invoice
-            obj.description = desc
-            obj.save()
-            obj.send_receipt()
+            if stripe_invoice["charge"]:
+                charge = stripe.Charge.retrieve(stripe_invoice["charge"])
+                desc = stripe_invoice["lines"]["subscriptions"][0]["plan"]["name"]
+                obj = c.record_charge(charge)
+                obj.invoice = invoice
+                obj.description = desc
+                obj.save()
+                obj.send_receipt()
             return invoice
     
     @classmethod

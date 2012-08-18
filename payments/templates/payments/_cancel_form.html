@@ -1,0 +1,9 @@
+<div class="cancel-subscription">
+    <h2>Cancel Subscription</h2>
+    <form action="{% url payments_cancel %}" method="POST">
+        {% csrf_token %}
+        <div class="actions">
+            <button type="submit" class="btn btn-mini">Cancel</button>
+        </div>
+    </form>
+</div>

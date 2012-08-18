@@ -1,0 +1,33 @@
+{% load bootstrap_tags %}
+<div class="change-card">
+    <h2>Current Card</h2>
+    <p>
+        Current card on file is a <strong>{{ request.user.customer.card_kind }}</strong>
+        ending in the digits <strong>{{ request.user.customer.card_last_4 }}</strong>.
+        <a href="" class="update-card-button btn btn-mini">Update</a>
+        <div class="alert alert-block alert-error hide" id="stripe-message-error"></div>
+        <div class="alert alert-block alert-info hide" id="stripe-message-info"></div>
+    </p>
+    
+    <div class="update-card modal hide">
+        <div class="modal-header">
+            <a class="close" data-dismiss="modal">×</a>
+            <h3></h3>
+        </div>
+        <form action="{% url payments_change_card %}" class="form-horizontal" method="POST">
+            <div class="alert alert-error hide">
+              <h4 class="alert-heading">Card Error!</h4>
+              <span id="card_error"></span>
+            </div>
+
+            <div class="modal-body">
+                {% csrf_token %}
+                {{ form|as_bootstrap }}
+            </div>
+            <div class="modal-footer form-actions">
+                <button type="submit" class="btn btn-primary">Update</button>
+                <a href="#" data-dismiss="modal" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

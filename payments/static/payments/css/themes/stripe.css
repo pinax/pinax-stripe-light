@@ -1,0 +1,152 @@
+payment, .payment {
+  position: relative;
+  display: block;
+
+  border-radius: 5px;
+  padding: 15px 20px;
+  max-width: 300px;
+  overflow: hidden;
+
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -ms-sizing: border-box;
+
+  font-size: 12px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  font-family: 'Helvetica Neue', Helvetica, Arial Geneva, sans-serif;
+
+  background: #FFF;
+  background-image: -o-linear-gradient(#FFF, #F9FAFA);
+  background-image: -ms-linear-gradient(#FFF, #F9FAFA);
+  background-image: -moz-linear-gradient(#FFF, #F9FAFA);
+  background-image: -webkit-linear-gradient(#FEFEFE, #F9FAFA);
+  background-image: linear-gradient(#FFF, #F9FAFA);
+
+  -moz-box-shadow: 0 0 2px rgba(80,84,92,0.3), 0 1px 1px rgba(80,84,92,0.5);
+  -webkit-box-shadow: 0 0 2px rgba(80, 84, 92, 0.3), 0 1px 1px rgba(80, 84, 92, 0.5);
+  -ms-box-shadow: 0 0 2px rgba(80, 84, 92, 0.3), 0 1px 1px rgba(80, 84, 92, 0.5);
+  box-shadow: 0 0 2px rgba(80, 84, 92, 0.3), 0 1px 1px rgba(80, 84, 92, 0.5);
+}
+
+payment ::-webkit-input-placeholder,
+.payment ::-webkit-input-placeholder {
+  text-transform: uppercase;
+}
+
+payment label, .payment label {
+  display: block;
+  color: #999;
+  font-size: 13px;
+  padding: 5px 0;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 #FFF;
+
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+payment input, .payment input {
+  font-size: 13px;
+  padding: 5px 5px;
+  border: 1px solid #BBB;
+  border-top-color: #999;
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+
+  -webkit-transition: -webkit-box-shadow 0.1s ease-in-out;
+  -moz-transition: -moz-box-shadow 0.1s ease-in-out;
+  transition: -moz-box-shadow 0.1s ease-in-out;
+
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -ms-sizing: border-box;
+
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  font-family: 'Helvetica Neue', Helvetica, Arial Geneva, sans-serif;
+  font-size: 14px;
+}
+
+payment input:focus, .payment input:focus {
+  border: 1px solid #5695DB;
+  outline: none;
+  -webkit-box-shadow: inset 0 1px 2px #DDD, 0px 0 5px #5695DB;
+  -moz-box-shadow: 0 0 5px #5695db;
+  box-shadow: inset 0 1px 2px #DDD, 0px 0 5px #5695DB;
+}
+
+payment .invalid input, .payment .invalid input {
+  outline: none;
+  border-color: rgba(255, 0, 0, 0.5);
+  -moz-box-shadow: inset 0 1px 2px rgba(0,0,0,0.20), 0 1px 5px 0 rgba(255, 0, 0, 0.4);
+  -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.20), 0 1px 5px 0 rgba(255, 0, 0, 0.4);
+  -ms-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.20), 0 1px 5px 0 rgba(255, 0, 0, 0.4);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.20), 0 1px 5px 0 rgba(255, 0, 0, 0.4);
+}
+
+payment input:disabled, .payment input:disabled {
+  opacity: 0.5;
+}
+
+payment .number,
+.payment .number {
+  margin-bottom: 8px;
+}
+
+payment .number input, .payment .number input {
+  padding: 7px 40px 7px 7px;
+  background: #FFF url(generic.png) 98.5% 20% no-repeat;
+  width: 100%;
+}
+
+payment .number input.visa, .payment .number input.visa {
+  background-image: url(visa.png);
+}
+
+payment .number input.mastercard, .payment .number input.mastercard {
+  background-image: url(mastercard.png);
+}
+
+payment .number input.discover, .payment .number input.discover {
+  background-image: url(discover.png);
+}
+
+payment .number input.amex, .payment .number input.amex {
+  background-image: url(amex.png);
+}
+
+payment .expiry input, payment .cvc input {
+  width: 45px;
+}
+
+payment .expiry em {
+  font-size: 10px;
+  font-style: normal;
+  display: none;
+}
+
+payment .cvc,
+.payment .cvc {
+  float: right;
+  text-align: right;
+}
+
+payment .expiry,
+.payment .expiry {
+  float: left;
+}
+
+payment .message,
+.payment .message {
+  display: block;
+}
+
+payment.pending,
+.payment.pending,
+payment.success,
+.payment.success {
+  background: #FFF url(spinner.gif) center center no-repeat;
+  min-height: 130px;
+}

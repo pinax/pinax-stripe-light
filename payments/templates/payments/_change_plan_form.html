@@ -1,0 +1,9 @@
+{% load bootstrap_tags %}
+<div class="change-subscription">
+    <h2>Change Subscription</h2>
+    <form action="{% url payments_change_plan %}" method="POST" class="form-inline">
+        {% csrf_token %}
+        {{ form|as_bootstrap }}
+        <button type="submit" class="btn btn-primary">Change</button>
+    </form>
+</div>

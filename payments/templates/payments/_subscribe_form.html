@@ -1,0 +1,8 @@
+{% load bootstrap_tags %}
+<div class="subscribe-form">
+    <form action="{% url payments_subscribe %}" class="form-horizontal" method="POST">
+        {% csrf_token %}
+        {{ form|as_bootstrap }}
+        <button type="submit" class="btn btn-primary">Subscribe</button>
+    </form>
+</div>

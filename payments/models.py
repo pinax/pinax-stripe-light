@@ -21,6 +21,14 @@ from payments.signals import WEBHOOK_SIGNALS
 from payments.signals import purchase_made, webhook_processing_error
 
 
+def convert_tstamp(response, field_name):
+    if response[field_name]:
+        return datetime.datetime.utcfromtimestamp(
+            response[field_name]
+        )
+    return None
+
+
 class StripeObject(models.Model):
     
     stripe_id = models.CharField(max_length=50, unique=True)
@@ -226,25 +234,27 @@ class Customer(StripeObject):
         self.card_kind = cu.active_card.type
         self.save()
     
-    def purchase(self, plan):
+    def purchase(self, plan, trial_period=None):
         stripe.api_key = settings.STRIPE_SECRET_KEY
         cu = stripe.Customer.retrieve(self.stripe_id)
         if settings.PAYMENTS_PLANS[plan].get("stripe_plan_id"):
-            resp = cu.update_subscription(
-                plan=PAYMENTS_PLANS[plan]["stripe_plan_id"]
-            )
-            period_start = datetime.datetime.utcfromtimestamp(
-                resp["current_period_start"]
-            )
-            period_end = datetime.datetime.utcfromtimestamp(
-                resp["current_period_end"]
-            )
+            if trial_period:
+                resp = cu.update_subscription(
+                    plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
+                    trial_end=timezone.now() + datetime.timedelta(days=trial_period)
+                )
+            else:
+                resp = cu.update_subscription(
+                    plan=PAYMENTS_PLANS[plan]["stripe_plan_id"]
+                )
             sub_obj, _ = self.subscriptions.get_or_create(
                 plan=plan_from_stripe_id(resp["plan"]["id"]),
                 customer=self,
-                period_start=period_start,
-                period_end=period_end,
-                amount=(resp["plan"]["amount"] / 100.0)
+                period_start=convert_tstamp(resp, "current_period_start"),
+                period_end=convert_tstamp(resp, "current_period_end"),
+                amount=(resp["plan"]["amount"] / 100.0),
+                trial_period_start=convert_tstamp(resp, "trial_start"),
+                trial_period_end=convert_tstamp(resp, "trial_end")
             )
             sub_obj.status = resp["status"]
             sub_obj.save()

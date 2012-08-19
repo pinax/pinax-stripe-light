@@ -235,14 +235,14 @@ class Customer(StripeObject):
         self.card_kind = cu.active_card.type
         self.save()
     
-    def purchase(self, plan, trial_period=None):
+    def purchase(self, plan, trial_days=None):
         stripe.api_key = settings.STRIPE_SECRET_KEY
         cu = stripe.Customer.retrieve(self.stripe_id)
         if settings.PAYMENTS_PLANS[plan].get("stripe_plan_id"):
-            if trial_period:
+            if trial_days:
                 resp = cu.update_subscription(
                     plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
-                    trial_end=timezone.now() + datetime.timedelta(days=trial_period)
+                    trial_end=timezone.now() + datetime.timedelta(days=trial_days)
                 )
             else:
                 resp = cu.update_subscription(

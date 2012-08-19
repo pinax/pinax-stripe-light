@@ -134,7 +134,8 @@ setup(
     ],
     install_requires=[
         "django-jsonfield>=0.8",
-        "stripe==1.7.3"
+        "stripe==1.7.3",
+        "django>=1.4"
     ],
     zip_safe=False,
 )

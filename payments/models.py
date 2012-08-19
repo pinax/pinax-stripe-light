@@ -23,8 +23,9 @@ from payments.signals import purchase_made, webhook_processing_error
 
 def convert_tstamp(response, field_name):
     if response[field_name]:
-        return datetime.datetime.utcfromtimestamp(
-            response[field_name]
+        return datetime.datetime.fromtimestamp(
+            response[field_name],
+            timezone.utc
         )
     return None
 
@@ -206,7 +207,7 @@ class Customer(StripeObject):
         stripe.api_key = settings.STRIPE_SECRET_KEY
         cu = stripe.Customer.retrieve(self.stripe_id)
         sub = cu.cancel_subscription()
-        period_end = datetime.datetime.utcfromtimestamp(sub.current_period_end)
+        period_end = convert_tstamp(sub, "current_period_end")
         self.current_subscription.status = sub.status
         self.current_subscription.period_end = period_end
         self.current_subscription.save()
@@ -360,15 +361,11 @@ class Invoice(StripeObject):
     def create_from_stripe_data(cls, stripe_invoice):
         if not cls.objects.filter(stripe_id=stripe_invoice["id"]).exists():
             c = Customer.objects.get(stripe_id=stripe_invoice["customer"])
-            period_end = datetime.datetime.utcfromtimestamp(
-                stripe_invoice["period_end"]
-            )
-            period_start = datetime.datetime.utcfromtimestamp(
-                stripe_invoice["period_start"]
-            )
-            date = datetime.datetime.utcfromtimestamp(
-                stripe_invoice["date"]
-            )
+            
+            period_end = convert_tstamp(stripe_invoice, "period_end")
+            period_start = convert_tstamp(stripe_invoice, "period_start")
+            date = convert_tstamp(stripe_invoice, "date")
+            
             invoice = c.invoices.create(
                 attempted=stripe_invoice["attempted"],
                 closed=stripe_invoice["closed"],
@@ -385,16 +382,12 @@ class Invoice(StripeObject):
                 invoice.items.get_or_create(
                     stripe_id=item["id"],
                     amount=(item["amount"] / 100.0),
-                    date=datetime.datetime.utcfromtimestamp(item["date"]),
+                    date=convert_tstamp(item, "date"),
                     description=item["description"]
                 )
             for sub in stripe_invoice["lines"].get("subscriptions", []):
-                period_end = datetime.datetime.utcfromtimestamp(
-                    sub["period"]["end"]
-                )
-                period_start = datetime.datetime.utcfromtimestamp(
-                    sub["period"]["start"]
-                )
+                period_end = convert_tstamp(sub["period"], "end")
+                period_start = convert_tstamp(sub["period"], "start")
                 invoice.subscriptions.add(Subscription.objects.get_or_create(
                     plan=plan_from_stripe_id(sub["plan"]["id"]),
                     customer=c,

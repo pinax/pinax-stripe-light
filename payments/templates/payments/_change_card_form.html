@@ -1,11 +1,9 @@
 {% load bootstrap_tags %}
 <div class="change-card">
     <h2>Current Card</h2>
-    <p>
+    <p class="lead">
         Current card on file is a <strong>{{ request.user.customer.card_kind }}</strong>
         ending in the digits <strong>{{ request.user.customer.card_last_4 }}</strong>.
-        <div class="alert alert-block alert-error hide" id="stripe-message-error"></div>
-        <div class="alert alert-block alert-info hide" id="stripe-message-info"></div>
     </p>
     
     {% if error %}

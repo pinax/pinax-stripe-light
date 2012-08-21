@@ -12,3 +12,10 @@
         <button type="submit" class="btn btn-primary">Subscribe</button>
     </form>
 </div>
+{% if request.is_ajax %}
+<script type="text/javascript">
+    $(function() {
+        PaymentTag.replaceTags();
+    });
+</script>
+{% endif %}

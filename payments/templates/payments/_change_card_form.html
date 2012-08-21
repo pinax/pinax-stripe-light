@@ -18,3 +18,11 @@
         </div>
     </form>
 </div>
+
+{% if request.is_ajax %}
+<script type="text/javascript">
+    $(function() {
+        PaymentTag.replaceTags();
+    });
+</script>
+{% endif %}

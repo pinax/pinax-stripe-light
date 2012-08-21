@@ -2,7 +2,11 @@
 <div class="change-subscription">
     <h2>Change Subscription</h2>
     <p class="lead">
-        Your currently have the <strong>{{ request.user.customer.display_plan }}</strong> plan.
+        {% if request.user.customer.plan %}
+            Your currently have the <strong>{{ request.user.customer.display_plan }}</strong> plan.
+        {% else %}
+            You currently do not have a plan.
+        {% endif %}
     </p>
     <form action="{% url payments_ajax_change_plan %}" method="POST" class="form-inline ajax" data-replace-closest=".change-subscription">
         {% csrf_token %}

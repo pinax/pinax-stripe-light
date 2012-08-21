@@ -8,6 +8,7 @@
     <form action="{% url payments_subscribe %}" class="form-horizontal" method="POST">
         {% csrf_token %}
         {{ form|as_bootstrap }}
+        <payment key="{{ STRIPE_PUBLIC_KEY }}"></payment>
         <button type="submit" class="btn btn-primary">Subscribe</button>
     </form>
 </div>

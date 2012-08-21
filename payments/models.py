@@ -186,7 +186,9 @@ class Customer(StripeObject):
     card_kind = models.CharField(max_length=50, blank=True)
     
     def display_plan(self):
-        return PAYMENTS_PLANS[self.plan]["name"]
+        if self.plan:
+            return PAYMENTS_PLANS[self.plan]["name"]
+        return ""
     
     def has_active_subscription(self):
         if not self.current_subscription:

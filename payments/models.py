@@ -22,11 +22,14 @@ from payments.signals import purchase_made, webhook_processing_error
 
 
 def convert_tstamp(response, field_name):
-    if response[field_name]:
-        return datetime.datetime.fromtimestamp(
-            response[field_name],
-            timezone.utc
-        )
+    try:
+        if response[field_name]:
+            return datetime.datetime.fromtimestamp(
+                response[field_name],
+                timezone.utc
+            )
+    except KeyError:
+        pass
     return None
 
 

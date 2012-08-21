@@ -148,7 +148,8 @@ class Event(StripeObject):
         """
         if self.valid and not self.processed:
             try:
-                self.link_customer()
+                if not self.kind.startswith("plan."):
+                    self.link_customer()
                 if self.kind.startswith("invoice."):
                     Invoice.handle_event(self)
                 elif self.kind.startswith("charge."):

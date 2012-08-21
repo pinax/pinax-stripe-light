@@ -35,7 +35,7 @@ def change_card(request):
             request.user.customer.update_card(request.POST.get("stripe_token"))
             return redirect("payments_change_card")
         except stripe.CardError, e:
-            data = {"error": e}
+            data = {"error": e.message}
     return _ajax_response(request, "payments/_change_card_form.html", **data)
 
 
@@ -44,14 +44,28 @@ def change_card(request):
 def change_plan(request):
     form = ChangePlanForm(request.POST)
     if form.is_valid():
-        form.save(user=request.user)
-        data = {
-            "form": ChangePlanForm(initial={
-                "plan": request.user.customer.plan
-            }),
-            "plan": request.user.customer.plan,
-            "name": settings.PAYMENTS_PLANS[request.user.customer.plan]["name"]
-        }
+        try:
+            form.save(user=request.user)
+            data = {
+                "form": ChangePlanForm(initial={
+                    "plan": request.user.customer.plan
+                }),
+                "plan": request.user.customer.plan,
+                "name": settings.PAYMENTS_PLANS[request.user.customer.plan]["name"]
+            }
+        except stripe.StripeError, e:
+            if request.user.customer.plan:
+                name = settings.PAYMENTS_PLANS[request.user.customer.plan]["name"]
+            else:
+                name = ""
+            data = {
+                "form": ChangePlanForm(initial={
+                    "plan": request.user.customer.plan
+                }),
+                "plan": request.user.customer.plan,
+                "name": name,
+                "error": e.message
+            }
     else:
         data = {
             "form": form
@@ -68,17 +82,21 @@ def subscribe(request):
         try:
             form.save(user=request.user)
             data["form"] = SubscribeForm()
-        except stripe.CardError, e:
+        except stripe.StripeError, e:
             data["form"] = form
-            data["error"] = e
+            data["error"] = e.message
     return _ajax_response(request, "payments/_subscribe_form.html", **data)
 
 
 @require_POST
 @login_required
 def cancel(request):
-    request.user.customer.cancel()
-    return _ajax_response(request, "payments/_cancel_form.html", **{})
+    try:
+        request.user.customer.cancel()
+        data = {}
+    except stripe.StripeError, e:
+        data = {"error": e.message}
+    return _ajax_response(request, "payments/_cancel_form.html", **data)
 
 
 @csrf_exempt

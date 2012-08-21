@@ -1,5 +1,10 @@
 {% load bootstrap_tags %}
 <div class="subscribe-form">
+    <h2>Purchase a Subscription</h2>
+    <p class="lead">Purchase a subscription</p>
+    {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
     <form action="{% url payments_subscribe %}" class="form-horizontal" method="POST">
         {% csrf_token %}
         {{ form|as_bootstrap }}

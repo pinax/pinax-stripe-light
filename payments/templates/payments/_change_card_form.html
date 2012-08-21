@@ -8,6 +8,10 @@
         <div class="alert alert-block alert-info hide" id="stripe-message-info"></div>
     </p>
     
+    {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+    
     <form action="{% url payments_ajax_change_card %}" class="form-horizontal" method="POST">
         {% csrf_token %}
         <payment key="{{ STRIPE_PUBLIC_KEY }}"></payment>

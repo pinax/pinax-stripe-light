@@ -2,7 +2,7 @@ from django.conf.urls.defaults import patterns, url
 
 from django.views.generic.simple import direct_to_template
 
-from payments.forms import ChangePlanForm
+from payments.forms import PlanForm
 
 
 urlpatterns = patterns(
@@ -17,7 +17,10 @@ urlpatterns = patterns(
     url(
         r"^subscribe/$",
         direct_to_template,
-        {"template": "payments/subscribe.html"},
+        {
+            "template": "payments/subscribe.html",
+            "extra_context": {"form": PlanForm}
+        },
         name="payments_subscribe"
     ),
     url(
@@ -31,7 +34,7 @@ urlpatterns = patterns(
         direct_to_template,
         {
             "template": "payments/change_plan.html",
-            "extra_context": {"form": ChangePlanForm}
+            "extra_context": {"form": PlanForm}
         },
         name="payments_change_plan"
     ),

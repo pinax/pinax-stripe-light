@@ -12,7 +12,7 @@ from django.contrib.auth.decorators import login_required
 
 import stripe
 
-from payments.forms import SubscribeForm, ChangePlanForm
+from payments.forms import PlanForm
 from payments.models import Event
 
 
@@ -42,12 +42,12 @@ def change_card(request):
 @require_POST
 @login_required
 def change_plan(request):
-    form = ChangePlanForm(request.POST)
+    form = PlanForm(request.POST)
     if form.is_valid():
         try:
-            form.save(user=request.user)
+            request.user.customer.purchase(form.cleaned_data["plan"])
             data = {
-                "form": ChangePlanForm(initial={
+                "form": PlanForm(initial={
                     "plan": request.user.customer.plan
                 }),
                 "plan": request.user.customer.plan,
@@ -59,7 +59,7 @@ def change_plan(request):
             else:
                 name = ""
             data = {
-                "form": ChangePlanForm(initial={
+                "form": PlanForm(initial={
                     "plan": request.user.customer.plan
                 }),
                 "plan": request.user.customer.plan,
@@ -77,14 +77,19 @@ def change_plan(request):
 @login_required
 def subscribe(request):
     data = {"plans": settings.PAYMENTS_PLANS}
-    form = SubscribeForm(request.POST)
+    form = PlanForm(request.POST)
     if form.is_valid():
         try:
-            form.save(user=request.user)
-            data["form"] = SubscribeForm()
+            customer = request.user.customer
+            customer.update_card(request.POST.get("stripe_token"))
+            customer.purchase(form.cleaned_data["plan"])
+            data["form"] = PlanForm()
         except stripe.StripeError, e:
             data["form"] = form
             data["error"] = e.message
+    else:
+        data["error"] = form.errors
+        data["form"] = form
     return _ajax_response(request, "payments/_subscribe_form.html", **data)
 
 

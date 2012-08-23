@@ -322,6 +322,12 @@ class Subscription(models.Model):
     
     created_at = models.DateTimeField(default=timezone.now)
     
+    def plan_display(self):
+        return PAYMENTS_PLANS[self.plan]["name"]
+    
+    def status_display(self):
+        return self.status.replace("_", " ").title()
+    
     def is_period_current(self):
         return self.period_end > timezone.now()
     

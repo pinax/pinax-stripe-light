@@ -360,15 +360,6 @@ class Invoice(StripeObject):
             return "Paid"
         return "Open"
     
-    def subscription_period(self):
-        start, end = None, None
-        try:
-            latest = self.subscriptions.latest()
-            start, end = latest.period_start, latest.period_end
-        except Subscription.DoesNotExist:
-            pass
-        return start, end
-    
     @classmethod
     def create_from_stripe_data(cls, stripe_invoice):
         if not cls.objects.filter(stripe_id=stripe_invoice["id"]).exists():

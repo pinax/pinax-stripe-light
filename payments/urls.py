@@ -2,6 +2,8 @@ from django.conf.urls.defaults import patterns, url
 
 from django.views.generic.simple import direct_to_template
 
+from django.contrib.auth.decorators import login_required
+
 from payments.forms import PlanForm
 
 
@@ -16,7 +18,7 @@ urlpatterns = patterns(
     
     url(
         r"^subscribe/$",
-        direct_to_template,
+        login_required(direct_to_template),
         {
             "template": "payments/subscribe.html",
             "extra_context": {"form": PlanForm}
@@ -25,13 +27,13 @@ urlpatterns = patterns(
     ),
     url(
         r"^change/card/$",
-        direct_to_template,
+        login_required(direct_to_template),
         {"template": "payments/change_card.html"},
         name="payments_change_card"
     ),
     url(
         r"^change/plan/$",
-        direct_to_template,
+        login_required(direct_to_template),
         {
             "template": "payments/change_plan.html",
             "extra_context": {"form": PlanForm}
@@ -40,13 +42,13 @@ urlpatterns = patterns(
     ),
     url(
         r"^cancel/$",
-        direct_to_template,
+        login_required(direct_to_template),
         {"template": "payments/cancel.html"},
         name="payments_cancel"
     ),
     url(
         r"^history/$",
-        direct_to_template,
+        login_required(direct_to_template),
         {"template": "payments/history.html"},
         name="payments_history"
     ),

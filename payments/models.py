@@ -355,6 +355,9 @@ class Invoice(StripeObject):
         null=True
     )
     
+    class Meta:
+        ordering = ["-date"]
+    
     def status(self):
         if self.paid:
             return "Paid"

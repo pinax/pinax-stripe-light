@@ -254,17 +254,23 @@ class Customer(StripeObject):
                 resp = cu.update_subscription(
                     plan=PAYMENTS_PLANS[plan]["stripe_plan_id"]
                 )
-            sub_obj, _ = self.subscriptions.get_or_create(
+            sub_obj, created = self.subscriptions.get_or_create(
                 plan=plan_from_stripe_id(resp["plan"]["id"]),
-                customer=self,
                 period_start=convert_tstamp(resp, "current_period_start"),
                 period_end=convert_tstamp(resp, "current_period_end"),
-                amount=(resp["plan"]["amount"] / 100.0),
-                trial_period_start=convert_tstamp(resp, "trial_start"),
-                trial_period_end=convert_tstamp(resp, "trial_end")
+                defaults={
+                    "amount": (resp["plan"]["amount"] / 100.0),
+                    "status": resp["status"]
+                }
             )
-            sub_obj.status = resp["status"]
-            sub_obj.save()
+            if resp.get("trial_start") and resp.get("trial_end"):
+                sub_obj.trial_period_start = convert_tstamp(resp, "trial_start")
+                sub_obj.trial_period_end = convert_tstamp(resp, "trial_end")
+                sub_obj.save()
+            if not created:
+                sub_obj.amount = (resp["plan"]["amount"] / 100.0)
+                sub_obj.status = resp["status"]
+                sub_obj.save()
         else:
             # It's just a single transaction
             resp = stripe.Charge.create(
@@ -394,13 +400,20 @@ class Invoice(StripeObject):
             for sub in stripe_invoice["lines"].get("subscriptions", []):
                 period_end = convert_tstamp(sub["period"], "end")
                 period_start = convert_tstamp(sub["period"], "start")
-                invoice.subscriptions.add(Subscription.objects.get_or_create(
+                subscription, created = Subscription.objects.get_or_create(
                     plan=plan_from_stripe_id(sub["plan"]["id"]),
                     customer=c,
                     period_start=period_start,
                     period_end=period_end,
-                    amount=(sub["amount"] / 100.0)
-                )[0])
+                    defaults={
+                        "amount": (sub["amount"] / 100.0)
+                    }
+                )
+                if not created:
+                    subscription.amount = (sub["amount"] / 100.0)
+                    subscription.save()
+                # @@@ what happens if the same sub.pk gets added twice?
+                invoice.subscriptions.add(subscription)
             
             if stripe_invoice["charge"]:
                 charge = stripe.Charge.retrieve(stripe_invoice["charge"])

@@ -2,7 +2,6 @@ import json
 
 from django.conf import settings
 from django.http import HttpResponse
-from django.shortcuts import redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
@@ -33,7 +32,7 @@ def change_card(request):
     if request.POST.get("stripe_token"):
         try:
             request.user.customer.update_card(request.POST.get("stripe_token"))
-            return redirect("payments_change_card")
+            data = {}
         except stripe.CardError, e:
             data = {"error": e.message}
     return _ajax_response(request, "payments/_change_card_form.html", **data)

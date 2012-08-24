@@ -15,7 +15,7 @@ class Command(BaseCommand):
                 stripe.Plan.create(
                     amount=100 * settings.PAYMENTS_PLANS[plan]["price"],
                     interval=settings.PAYMENTS_PLANS[plan]["interval"],
-                    name=settings.PAYMENTS_PLANS[plan]["description"],
+                    name=settings.PAYMENTS_PLANS[plan]["name"],
                     currency="usd",
                     id=settings.PAYMENTS_PLANS[plan].get("stripe_plan_id")
                 )

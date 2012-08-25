@@ -2,8 +2,12 @@
 <div class="change-card">
     <h2>Current Card</h2>
     <p class="lead">
-        Current card on file is a <strong>{{ request.user.customer.card_kind }}</strong>
-        ending in the digits <strong>{{ request.user.customer.card_last_4 }}</strong>.
+        {% if request.user.customer.card_kind and request.user.customer.card_last_4 %}
+            Current card on file is a <strong>{{ request.user.customer.card_kind }}</strong>
+            ending in the digits <strong>{{ request.user.customer.card_last_4 }}</strong>.
+        {% else %}
+            You do not currently have a card on file.
+        {% endif %}
     </p>
     
     {% if error %}

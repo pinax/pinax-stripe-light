@@ -12,7 +12,7 @@ from django.contrib.auth.decorators import login_required
 import stripe
 
 from payments.forms import PlanForm
-from payments.models import Event
+from payments.models import Event, EventProcessingException
 
 
 def _ajax_response(request, template, **kwargs):
@@ -107,12 +107,19 @@ def cancel(request):
 @require_POST
 def webhook(request):
     data = json.loads(request.raw_post_data)
-    event = Event.objects.create(
-        stripe_id=data["id"],
-        kind=data["type"],
-        livemode=data["livemode"],
-        webhook_message=data
-    )
-    event.validate()
-    event.process()
+    if Event.objects.filter(stripe_id=data["id"]).exists():
+        EventProcessingException.objects.create(
+            data=data,
+            message="Duplicate event record",
+            traceback=""
+        )
+    else:
+        event = Event.objects.create(
+            stripe_id=data["id"],
+            kind=data["type"],
+            livemode=data["livemode"],
+            webhook_message=data
+        )
+        event.validate()
+        event.process()
     return HttpResponse()

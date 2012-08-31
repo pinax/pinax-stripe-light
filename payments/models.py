@@ -387,7 +387,7 @@ class Invoice(StripeObject):
                 subtotal=stripe_invoice["subtotal"] / 100.0,
                 total=stripe_invoice["total"] / 100.0,
                 date=date,
-                charge=stripe_invoice["charge"] or "",
+                charge=stripe_invoice.get("charge", ""),
                 stripe_id=stripe_invoice["id"]
             )
             for item in stripe_invoice["lines"].get("invoiceitems", []):
@@ -415,7 +415,7 @@ class Invoice(StripeObject):
                 # @@@ what happens if the same sub.pk gets added twice?
                 invoice.subscriptions.add(subscription)
             
-            if stripe_invoice["charge"]:
+            if stripe_invoice.get("charge", ""):
                 charge = stripe.Charge.retrieve(stripe_invoice["charge"])
                 desc = stripe_invoice["lines"]["subscriptions"][0]["plan"]["name"]
                 obj = c.record_charge(charge)

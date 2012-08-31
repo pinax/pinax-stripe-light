@@ -180,13 +180,30 @@ class Event(StripeObject):
 
 class Customer(StripeObject):
     
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, null=True)
     
     plan = models.CharField(max_length=100, blank=True)
     
-    card_fingerprint = models.CharField(max_length=200, null=True)
-    card_last_4 = models.CharField(max_length=4, null=True)
+    card_fingerprint = models.CharField(max_length=200, blank=True)
+    card_last_4 = models.CharField(max_length=4, blank=True)
     card_kind = models.CharField(max_length=50, blank=True)
+    
+    date_purged = models.DateTimeField(null=True, editable=False)
+    
+    def purge(self):
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        cu = stripe.Customer.retrieve(self.stripe_id)
+        cu.delete()
+        self.user = None
+        self.card_fingerprint = ""
+        self.card_last_4 = ""
+        self.card_kind = ""
+        self.date_purged = timezone.now()
+        self.save()
+    
+    def delete(self, using=None):
+        # Only way to delete a customer is to use SQL
+        self.purge()
     
     def display_plan(self):
         if self.plan:

@@ -17,6 +17,6 @@ class Command(BaseCommand):
             if TRIAL_PERIOD_FOR_USER_CALLBACK:
                 trial_days = TRIAL_PERIOD_FOR_USER_CALLBACK(user)
             cus = Customer.create(user=user)
-            if DEFAULT_PLAN:
+            if DEFAULT_PLAN and trial_days:
                 cus.purchase(plan=DEFAULT_PLAN, trial_days=trial_days)
             print "Created customer for %s" % user.email

@@ -248,11 +248,9 @@ class Customer(StripeObject):
     
     def update_card(self, token):
         stripe.api_key = settings.STRIPE_SECRET_KEY
-        
         cu = stripe.Customer.retrieve(self.stripe_id)
         cu.card = token
         cu.save()
-        print cu
         self.card_fingerprint = cu.active_card.fingerprint
         self.card_last_4 = cu.active_card.last4
         self.card_kind = cu.active_card.type

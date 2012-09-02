@@ -18,7 +18,8 @@ from jsonfield.fields import JSONField
 from payments.settings import PAYMENTS_PLANS, INVOICE_FROM_EMAIL
 from payments.settings import plan_from_stripe_id
 from payments.signals import WEBHOOK_SIGNALS
-from payments.signals import purchase_made, webhook_processing_error
+from payments.signals import purchase_made, cancelled, card_changed
+from payments.signals import webhook_processing_error
 
 
 def convert_tstamp(response, field_name):
@@ -234,6 +235,7 @@ class Customer(StripeObject):
         self.current_subscription.status = sub.status
         self.current_subscription.period_end = period_end
         self.current_subscription.save()
+        cancelled.send(sender=self, stripe_response=sub)
     
     @classmethod
     def create(cls, user):
@@ -255,6 +257,7 @@ class Customer(StripeObject):
         self.card_last_4 = cu.active_card.last4
         self.card_kind = cu.active_card.type
         self.save()
+        card_changed.send(sender=self, stripe_response=cu)
     
     def purchase(self, plan, trial_days=None):
         stripe.api_key = settings.STRIPE_SECRET_KEY

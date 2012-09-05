@@ -1,15 +1,24 @@
 {% load bootstrap_tags %}
 <div class="subscribe-form">
     <h2>Purchase a Subscription</h2>
-    <p class="lead">Purchase a subscription</p>
+    <p class="lead">Provide your payment details to start your subscription today.</p>
     {% if error %}
         <div class="alert alert-error">{{ error }}</div>
     {% endif %}
-    <form action="{% url payments_subscribe %}" class="form-horizontal" method="POST">
+    <form action="{% url payments_ajax_subscribe %}" class="form-horizontal ajax" data-replace-closest=".subscribe-form" method="POST">
         {% csrf_token %}
         {{ form|as_bootstrap }}
-        <payment key="{{ STRIPE_PUBLIC_KEY }}"></payment>
-        <button type="submit" class="btn btn-primary">Subscribe</button>
+        <div class="control-group">
+            <label class="control-label required-field">
+                Payment Method
+            </label>
+            <div class="controls">
+                <payment key="{{ STRIPE_PUBLIC_KEY }}"></payment>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Subscribe</button>
+        </div>
     </form>
 </div>
 {% if request.is_ajax %}

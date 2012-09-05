@@ -1,6 +1,7 @@
 import json
 
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.template import RequestContext
 from django.template.loader import render_to_string
@@ -23,6 +24,8 @@ def _ajax_response(request, template, **kwargs):
                 RequestContext(request, kwargs)
             )
         }
+        if "location" in kwargs:
+            response.update({"location": kwargs["location"]})
         return HttpResponse(json.dumps(response), mimetype="application/json")
 
 
@@ -83,6 +86,7 @@ def subscribe(request):
             customer.update_card(request.POST.get("stripe_token"))
             customer.purchase(form.cleaned_data["plan"])
             data["form"] = PlanForm()
+            data["location"] = reverse("payments_history")
         except stripe.StripeError, e:
             data["form"] = form
             data["error"] = e.message

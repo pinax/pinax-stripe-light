@@ -211,6 +211,10 @@ class Customer(StripeObject):
             return PAYMENTS_PLANS[self.plan]["name"]
         return ""
     
+    def can_charge(self):
+        return self.card_fingerprint and \
+               self.current_subscription.status not in ("canceled", "unpaid")
+    
     def has_active_subscription(self):
         if not self.current_subscription:
             return False

@@ -220,9 +220,7 @@ class Customer(StripeObject):
     def current_subscription(self):
         if not hasattr(self, "_current_subscription"):
             try:
-                self._current_subscription = self.subscriptions.exclude(
-                    status__in=["past_due", "unpaid"]
-                ).latest()
+                self._current_subscription = self.subscriptions.latest()
             except Subscription.DoesNotExist:
                 return None
         return self._current_subscription

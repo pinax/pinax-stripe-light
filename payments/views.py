@@ -77,15 +77,15 @@ def change_plan(request):
 
 @require_POST
 @login_required
-def subscribe(request):
+def subscribe(request, form_class=PlanForm):
     data = {"plans": settings.PAYMENTS_PLANS}
-    form = PlanForm(request.POST)
+    form = form_class(request.POST)
     if form.is_valid():
         try:
             customer = request.user.customer
             customer.update_card(request.POST.get("stripe_token"))
             customer.purchase(form.cleaned_data["plan"])
-            data["form"] = PlanForm()
+            data["form"] = form_class()
             data["location"] = reverse("payments_history")
         except stripe.StripeError, e:
             data["form"] = form

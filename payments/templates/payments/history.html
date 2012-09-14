@@ -1,6 +1,7 @@
 {% extends "payments/base.html" %}
 
 {% block body %}
+    {% include "payments/_subscription_status.html" %}
     <h2>Payment History</h2>
     <p class="lead">Your transaction history</p>
     {% if request.user.customer.charges.all %}

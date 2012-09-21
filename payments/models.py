@@ -191,10 +191,13 @@ class Customer(StripeObject):
     
     date_purged = models.DateTimeField(null=True, editable=False)
     
-    def purge(self):
+    @property
+    def stripe_customer(self):
         stripe.api_key = settings.STRIPE_SECRET_KEY
-        cu = stripe.Customer.retrieve(self.stripe_id)
-        cu.delete()
+        return stripe.Customer.retrieve(self.stripe_id)
+    
+    def purge(self):
+        self.stripe_customer.delete()
         self.user = None
         self.card_fingerprint = ""
         self.card_last_4 = ""
@@ -230,9 +233,7 @@ class Customer(StripeObject):
         return self._current_subscription
     
     def cancel(self):
-        stripe.api_key = settings.STRIPE_SECRET_KEY
-        cu = stripe.Customer.retrieve(self.stripe_id)
-        sub = cu.cancel_subscription()
+        sub = self.stripe_customer.cancel_subscription()
         period_end = convert_tstamp(sub, "current_period_end")
         self.current_subscription.status = sub.status
         self.current_subscription.period_end = period_end
@@ -251,8 +252,7 @@ class Customer(StripeObject):
         )
     
     def update_card(self, token):
-        stripe.api_key = settings.STRIPE_SECRET_KEY
-        cu = stripe.Customer.retrieve(self.stripe_id)
+        cu = self.stripe_customer
         cu.card = token
         cu.save()
         self.card_fingerprint = cu.active_card.fingerprint
@@ -262,8 +262,7 @@ class Customer(StripeObject):
         card_changed.send(sender=self, stripe_response=cu)
     
     def purchase(self, plan, trial_days=None):
-        stripe.api_key = settings.STRIPE_SECRET_KEY
-        cu = stripe.Customer.retrieve(self.stripe_id)
+        cu = self.stripe_customer
         if settings.PAYMENTS_PLANS[plan].get("stripe_plan_id"):
             if trial_days:
                 resp = cu.update_subscription(

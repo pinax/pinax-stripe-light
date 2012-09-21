@@ -428,9 +428,10 @@ class Invoice(StripeObject):
                         "amount": (sub["amount"] / 100.0)
                     }
                 )
-                if not created:
-                    subscription.amount = (sub["amount"] / 100.0)
-                    subscription.save()
+                subscription.status = c.stripe_customer.subscription.status
+                subscription.amount = (sub["amount"] / 100.0)
+                subscription.save()
+                
                 # @@@ what happens if the same sub.pk gets added twice?
                 invoice.subscriptions.add(subscription)
             

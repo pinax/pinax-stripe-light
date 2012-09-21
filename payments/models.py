@@ -158,6 +158,8 @@ class Event(StripeObject):
                     Invoice.handle_event(self)
                 elif self.kind.startswith("charge."):
                     self.customer.record_charge(self.message["data"]["object"])
+                elif self.kind.startswith("transfer."):
+                    Transfer.process_transfer(self, self.message["data"]["object"])
                 self.send_signal()
                 self.processed = True
                 self.save()
@@ -177,6 +179,81 @@ class Event(StripeObject):
         signal = WEBHOOK_SIGNALS.get(self.kind)
         if signal:
             return signal.send(sender=Event, event=self)
+
+
+class Transfer(StripeObject):
+    event = models.ForeignKey(Event, related_name="transfers")
+    amount = models.DecimalField(decimal_places=2, max_digits=7)
+    status = models.CharField(max_length=25)
+    date = models.DateTimeField()
+    description = models.TextField(null=True, blank=True)
+    adjustment_count = models.IntegerField()
+    adjustment_fees = models.DecimalField(decimal_places=2, max_digits=7)
+    adjustment_gross = models.DecimalField(decimal_places=2, max_digits=7)
+    charge_count = models.IntegerField()
+    charge_fees = models.DecimalField(decimal_places=2, max_digits=7)
+    charge_gross = models.DecimalField(decimal_places=2, max_digits=7)
+    collected_fee_count = models.IntegerField()
+    collected_fee_gross = models.DecimalField(decimal_places=2, max_digits=7)
+    net = models.DecimalField(decimal_places=2, max_digits=7)
+    refund_count = models.IntegerField()
+    refund_fees = models.DecimalField(decimal_places=2, max_digits=7)
+    refund_gross = models.DecimalField(decimal_places=2, max_digits=7)
+    validation_count = models.IntegerField()
+    validation_fees = models.DecimalField(decimal_places=2, max_digits=7)
+    
+    def update_status(self):
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        self.status = stripe.Transfer.retrieve(self.stripe_id).status
+        self.save()
+    
+    @classmethod
+    def process_transfer(cls, event, transfer_obj):
+        print "processing...", transfer_obj["id"]
+        obj, created = Transfer.objects.get_or_create(
+            stripe_id=transfer_obj["id"],
+            event=event,
+            defaults={
+                "amount": transfer_obj["amount"] / 100.0,
+                "status": transfer_obj["status"],
+                "date": convert_tstamp(transfer_obj, "date"),
+                "description": transfer_obj.get("description", ""),
+                "adjustment_count": transfer_obj["summary"]["adjustment_count"],
+                "adjustment_fees": transfer_obj["summary"]["adjustment_fees"] / 100.0,
+                "adjustment_gross": transfer_obj["summary"]["adjustment_gross"] / 100.0,
+                "charge_count": transfer_obj["summary"]["charge_count"],
+                "charge_fees": transfer_obj["summary"]["charge_fees"] / 100.0,
+                "charge_gross": transfer_obj["summary"]["charge_gross"] / 100.0,
+                "collected_fee_count": transfer_obj["summary"]["collected_fee_count"] / 100.0,
+                "collected_fee_gross": transfer_obj["summary"]["collected_fee_gross"] / 100.0,
+                "net": transfer_obj["summary"]["net"] / 100.0,
+                "refund_count": transfer_obj["summary"]["refund_count"],
+                "refund_fees": transfer_obj["summary"]["refund_fees"] / 100.0,
+                "refund_gross": transfer_obj["summary"]["refund_gross"] / 100.0,
+                "validation_count": transfer_obj["summary"]["validation_count"],
+                "validation_fees": transfer_obj["summary"]["validation_fees"] / 100.0,
+            }
+        )
+        if created:
+            for fee in transfer_obj["summary"]["charge_fee_details"]:
+                obj.charge_fee_details.create(
+                    amount=fee["amount"] / 100.0,
+                    application=fee.get("application", ""),
+                    description=fee.get("description", ""),
+                    kind=fee["type"]
+                )
+        else:
+            obj.status = transfer_obj["status"]
+            obj.save()
+
+
+class TransferChargeFee(models.Model):
+    transfer = models.ForeignKey(Transfer, related_name="charge_fee_details")
+    amount = models.DecimalField(decimal_places=2, max_digits=7)
+    application = models.TextField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    kind = models.CharField(max_length=150)
+    created_at = models.DateTimeField(default=timezone.now)
 
 
 class Customer(StripeObject):

@@ -24,6 +24,7 @@ def load_path_attr(path):
     return attr
 
 
+STRIPE_PUBLIC_KEY = settings.STRIPE_PUBLIC_KEY
 INVOICE_FROM_EMAIL = getattr(
     settings,
     "PAYMENTS_INVOICE_FROM_EMAIL",

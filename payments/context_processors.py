@@ -1,11 +1,9 @@
-from django.conf import settings
-
-from payments.settings import PLAN_CHOICES
+from payments import settings
 
 
 def payments_settings(request):
     return {
         "STRIPE_PUBLIC_KEY": settings.STRIPE_PUBLIC_KEY,
-        "PLAN_CHOICES": PLAN_CHOICES,
+        "PLAN_CHOICES": settings.PLAN_CHOICES,
         "PAYMENT_PLANS": settings.PAYMENTS_PLANS
     }

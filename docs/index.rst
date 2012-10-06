@@ -20,4 +20,3 @@ Contents
  templatetags
  signals
  usage
- 

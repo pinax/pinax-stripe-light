@@ -23,7 +23,7 @@ change_card_form
 
 
 subscribe_form
-----------------
+--------------
 
 :template: payments/_subscribe_form.html
 :context: `form`, which is an instance of the `payments.forms.SubscribeForm`; `plans`, which is the `settings.PAYMENTS_PLANS` dictionary

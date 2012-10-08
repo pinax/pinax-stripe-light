@@ -428,10 +428,10 @@ class Subscription(models.Model):
         return self.period_end > timezone.now()
     
     def is_status_current(self):
-        return self.status in ["trialing", "active"]
+        return self.status in ["trialing", "active", "canceled"]
     
     def is_valid(self):
-        return self.is_period_current()
+        return self.is_period_current() and self.is_status_current()
     
     class Meta:
         ordering = ["-period_end"]

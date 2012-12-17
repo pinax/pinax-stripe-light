@@ -157,7 +157,7 @@ class Event(StripeObject):
                 if self.kind.startswith("invoice."):
                     Invoice.handle_event(self)
                 elif self.kind.startswith("charge."):
-                    self.customer.record_charge(self.message["data"]["object"])
+                    self.customer.record_charge(self.message["data"]["object"]["id"])
                 elif self.kind.startswith("transfer."):
                     Transfer.process_transfer(self, self.message["data"]["object"])
                 self.send_signal()
@@ -375,7 +375,7 @@ class Customer(StripeObject):
                 customer=self.stripe_id,
                 description=PAYMENTS_PLANS[plan]["name"]
             )
-            obj = self.record_charge(resp)
+            obj = self.record_charge(resp["id"])
             obj.description = resp["description"]
             obj.save()
             obj.send_receipt()
@@ -383,10 +383,13 @@ class Customer(StripeObject):
         self.save()
         purchase_made.send(sender=self, plan=plan, stripe_response=resp)
     
-    def record_charge(self, data):
+    def record_charge(self, charge_id):
+        data = stripe.Charge.retrieve(charge_id)
         obj, created = self.charges.get_or_create(
             stripe_id=data["id"]
         )
+        if data.get("invoice"):
+            obj.invoice = self.invoices.get(stripe_id=data.get("invoice"))
         obj.card_last_4 = data["card"]["last4"]
         obj.card_kind = data["card"]["type"]
         obj.amount = (data["amount"] / 100.0)
@@ -513,9 +516,8 @@ class Invoice(StripeObject):
                 invoice.subscriptions.add(subscription)
             
             if stripe_invoice.get("charge"):
-                charge = stripe.Charge.retrieve(stripe_invoice["charge"])
                 desc = stripe_invoice["lines"]["subscriptions"][0]["plan"]["name"]
-                obj = c.record_charge(charge)
+                obj = c.record_charge(stripe_invoice["charge"])
                 obj.invoice = invoice
                 obj.description = desc
                 obj.save()

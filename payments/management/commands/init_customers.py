@@ -1,4 +1,4 @@
-from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
 from payments.models import Customer
@@ -11,7 +11,7 @@ class Command(BaseCommand):
     help = "Create customer objects for existing users that don't have one"
     
     def handle(self, *args, **options):
-        for user in settings.AUTH_USER_MODEL.objects.filter(customer__isnull=True):
+        for user in get_user_model().objects.filter(customer__isnull=True):
             trial_days = None
             if TRIAL_PERIOD_FOR_USER_CALLBACK:
                 trial_days = TRIAL_PERIOD_FOR_USER_CALLBACK(user)

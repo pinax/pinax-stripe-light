@@ -258,7 +258,7 @@ class TransferChargeFee(models.Model):
 
 class Customer(StripeObject):
     
-    user = models.OneToOneField(User, null=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True)
     
     plan = models.CharField(max_length=100, blank=True)
     

@@ -1,5 +1,21 @@
 .. _installation:
 
+Requirements
+============
+
+If you want to use the templates, specially the templates involving forms,
+that ship with this app, then you will need to add ``django-forms-bootstrap``
+to your project::
+
+    pip install django-forms-bootstrap
+
+You will also want to add ``django_forms_bootstrap`` to your `INSTALLED_APPS``::
+
+    INSTALLED_APPS = [
+        "django_forms_bootstrap",
+    ]
+
+
 Installation
 ============
 
@@ -10,10 +26,9 @@ Installation
 
 * Add ``'payments'`` to your ``INSTALLED_APPS`` setting::
 
-    INSTALLED_APPS = (
-        # other apps
+    INSTALLED_APPS = [
         "payments",
-    )
+    ]
 
 * Setup your publishable and secret keys. The recommended method is to have
   and environment variable override defaults and set the defaults as your test
@@ -48,3 +63,23 @@ Installation
         "payments.context_processors.payments_settings",
         ...
     ]
+
+
+Static Media
+============
+
+This app ships with Stripe's ``tag.js`` plugin and the templates that ship
+with this app depend on it. In your the base templates somewhere you'll want
+to make sure the CSS and JS are added appropriately::
+
+    {% load staticfiles %}
+    ...
+    <link href="{% static "payments/css/tag.css" %}" rel="stylesheet">
+    <script src="{% static "payments/js/tag.js" %}"></script>
+
+**NOTE**: This plugin is no longer supported and ``django-stripe-payments`` will
+be receiving updated templates and static media to replace this with Checkout_.
+
+.. _Checkout: https://stripe.com/docs/checkout
+
+    

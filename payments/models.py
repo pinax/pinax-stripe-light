@@ -274,7 +274,16 @@ class Customer(StripeObject):
         return stripe.Customer.retrieve(self.stripe_id)
     
     def purge(self):
-        self.stripe_customer.delete()
+        try:
+            self.stripe_customer.delete()
+        except stripe.InvalidRequestError as e:
+            if e.message.startswith("No such customer:"):
+                # The exception was thrown because the customer was already
+                # deleted on the stripe side, ignore the exception
+                pass
+            else:
+                # The exception was raised for another reason, re-raise it
+                raise
         self.user = None
         self.card_fingerprint = ""
         self.card_last_4 = ""

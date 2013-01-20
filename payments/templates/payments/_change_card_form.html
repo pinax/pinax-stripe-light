@@ -1,4 +1,6 @@
+{% load url from future %}
 {% load bootstrap_tags %}
+
 <div class="change-card">
     <h2>Current Card</h2>
     <p class="lead">
@@ -14,7 +16,7 @@
         <div class="alert alert-error">{{ error }}</div>
     {% endif %}
     
-    <form action="{% url payments_ajax_change_card %}" class="form-horizontal ajax" data-replace-closest=".change-card" method="POST">
+    <form action="{% url 'payments_ajax_change_card' %}" class="form-horizontal ajax" data-replace-closest=".change-card" method="POST">
         {% csrf_token %}
         <payment key="{{ STRIPE_PUBLIC_KEY }}"></payment>
         <div class="form-actions">

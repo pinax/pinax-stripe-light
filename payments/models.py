@@ -268,6 +268,9 @@ class Customer(StripeObject):
     
     date_purged = models.DateTimeField(null=True, editable=False)
     
+    def __unicode__(self):
+        return unicode(self.user)
+    
     @property
     def stripe_customer(self):
         stripe.api_key = settings.STRIPE_SECRET_KEY

@@ -1,6 +1,11 @@
 from django.core.management.base import BaseCommand
 
-from django.contrib.auth.models import User
+try:
+    from django.contrib.auth import get_user_model
+except ImportError:  # django < 1.5
+    from django.contrib.auth.models import User
+else:
+    User = get_user_model()
 
 from payments.models import Customer
 from payments.settings import TRIAL_PERIOD_FOR_USER_CALLBACK

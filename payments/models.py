@@ -7,9 +7,14 @@ from django.core.mail import EmailMessage
 from django.db import models
 from django.utils import timezone
 from django.template.loader import render_to_string
-
-from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
+
+try:
+    from django.contrib.auth import get_user_model
+except ImportError:  # django < 1.5
+    from django.contrib.auth.models import User
+else:
+    User = get_user_model()
 
 import stripe
 

@@ -16,7 +16,7 @@ class Command(BaseCommand):
                     amount=100 * settings.PAYMENTS_PLANS[plan]["price"],
                     interval=settings.PAYMENTS_PLANS[plan]["interval"],
                     name=settings.PAYMENTS_PLANS[plan]["name"],
-                    currency="usd",
+                    currency=settings.PAYMENTS_PLANS[plan]["currency"],
                     id=settings.PAYMENTS_PLANS[plan].get("stripe_plan_id")
                 )
                 print "Plan created for %s" % plan

@@ -45,6 +45,7 @@ Installation
             "name": "Web App Pro ($25/month)",
             "description": "The monthly subscription plan to WebApp",
             "price": 25,
+            "currency": "usd",
             "interval": "month"
         },
         "yearly": {
@@ -52,6 +53,7 @@ Installation
             "name": "Web App Pro ($199/year)",
             "description": "The annual subscription plan to WebApp",
             "price": 199,
+            "currency": "usd",
             "interval": "year"
         }
     }

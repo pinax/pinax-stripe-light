@@ -383,7 +383,7 @@ class Customer(StripeObject):
             # It's just a single transaction
             resp = stripe.Charge.create(
                 amount=PAYMENTS_PLANS[plan]["price"] * 100,
-                currency=settings.PAYMENTS_PLANS[plan]["currency"],
+                currency=settings.PAYMENTS_PLANS[plan].get("currency", "usd"),
                 customer=self.stripe_id,
                 description=PAYMENTS_PLANS[plan]["name"]
             )

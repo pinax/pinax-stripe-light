@@ -14,14 +14,6 @@ change_plan_form
 :context: `form`, which is an instance of the `payments.forms.ChangePlanForm`
 
 
-change_card_form
-----------------
-
-:template: payments/_change_plan_form.html
-:context: `form`, which is an instance of the `payments.forms.CardTokenForm`
-
-
-
 subscribe_form
 --------------
 

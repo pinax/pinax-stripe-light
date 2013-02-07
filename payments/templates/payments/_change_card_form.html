@@ -1,4 +1,3 @@
-{% load bootstrap_tags %}
 <div class="change-card">
     <h2>Current Card</h2>
     <p class="lead">
@@ -14,19 +13,9 @@
         <div class="alert alert-error">{{ error }}</div>
     {% endif %}
     
-    <form action="{% url payments_ajax_change_card %}" class="form-horizontal ajax" data-replace-closest=".change-card" method="POST">
+    <form action="{% url payments_ajax_change_card %}" data-stripe-key="{{ STRIPE_PUBLIC_KEY }}" class="form ajax" data-replace-closest=".change-card" method="POST">
         {% csrf_token %}
-        <payment key="{{ STRIPE_PUBLIC_KEY }}"></payment>
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Update</button>
-        </div>
+        <input name="stripe_token" type="hidden" />
+        <a href="" class="btn btn-primary change-card">{% if request.user.customer.card_kind %}Change{% else %}Add{% endif %} Card</a>
     </form>
 </div>
-
-{% if request.is_ajax %}
-<script type="text/javascript">
-    $(function() {
-        PaymentTag.replaceTags();
-    });
-</script>
-{% endif %}

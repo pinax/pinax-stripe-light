@@ -3,6 +3,11 @@
 ChangeLog
 =========
 
+1.2.2
+-----
+
+* handle deprected 'diputed' property on charges
+
 1.2.1
 -----
 

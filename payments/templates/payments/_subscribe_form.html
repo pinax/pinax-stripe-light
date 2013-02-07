@@ -1,3 +1,4 @@
+{% load url from future %}
 {% load bootstrap_tags %}
 <div class="subscribe-form">
     <h2>Purchase a Subscription</h2>
@@ -5,7 +6,7 @@
     {% if error %}
         <div class="alert alert-error">{{ error }}</div>
     {% endif %}
-    <form action="{% url payments_ajax_subscribe %}" class="form-horizontal ajax" data-replace-closest=".subscribe-form" method="POST">
+    <form action="{% url 'payments_ajax_subscribe' %}" class="form-horizontal ajax" data-replace-closest=".subscribe-form" method="POST">
         {% csrf_token %}
         {{ form|as_bootstrap }}
         <div class="control-group">

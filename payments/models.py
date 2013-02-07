@@ -408,7 +408,7 @@ class Customer(StripeObject):
         obj.paid = data["paid"]
         obj.refunded = data["refunded"]
         obj.fee = (data["fee"] / 100.0)
-        obj.disputed = data["disputed"]
+        obj.disputed = data["dispute"] != None
         if data.get("description"):
             obj.description = data["description"]
         if data.get("amount_refunded"):

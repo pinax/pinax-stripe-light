@@ -3,6 +3,13 @@
 ChangeLog
 =========
 
+1.3
+---
+
+* removed tag.js
+* fixed bugs in template tags due to missing forms
+* updated included templates to be ready for checkout.js integration
+
 1.2.2
 -----
 

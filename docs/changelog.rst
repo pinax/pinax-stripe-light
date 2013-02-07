@@ -3,6 +3,11 @@
 ChangeLog
 =========
 
+1.2.1
+-----
+
+* upgraded stripe library requirement to 1.7.9
+
 1.2
 ---
 

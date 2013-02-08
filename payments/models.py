@@ -250,6 +250,8 @@ class Transfer(StripeObject):
         else:
             obj.status = transfer_obj["status"]
             obj.save()
+        if event.kind == "transfer.updated":
+            obj.update_status()
 
 
 class TransferChargeFee(models.Model):

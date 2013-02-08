@@ -3,6 +3,15 @@
 ChangeLog
 =========
 
+2.0
+---
+
+* refactored models to be in line with api changes
+* added a new setting to enable setting the API version
+* added new event types to webhook signals
+* handle the transfer.update webhook
+
+
 1.3
 ---
 

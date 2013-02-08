@@ -266,13 +266,9 @@ class TransferChargeFee(models.Model):
 class Customer(StripeObject):
     
     user = models.OneToOneField(User, null=True)
-    
-    plan = models.CharField(max_length=100, blank=True)
-    
     card_fingerprint = models.CharField(max_length=200, blank=True)
     card_last_4 = models.CharField(max_length=4, blank=True)
     card_kind = models.CharField(max_length=50, blank=True)
-    
     date_purged = models.DateTimeField(null=True, editable=False)
     
     def __unicode__(self):
@@ -304,35 +300,28 @@ class Customer(StripeObject):
         # Only way to delete a customer is to use SQL
         self.purge()
     
-    def display_plan(self):
-        if self.plan:
-            return PAYMENTS_PLANS[self.plan]["name"]
-        return ""
-    
     def can_charge(self):
-        return self.card_fingerprint and \
-               self.current_subscription.status not in ("canceled", "unpaid")
+        try:
+            return self.card_fingerprint and \
+                   self.current_subscription.status not in ("canceled", "unpaid")
+        except CurrentSubscription.DoesNotExist:
+            return False
     
     def has_active_subscription(self):
-        if not self.current_subscription:
+        try:
+            return self.current_subscription.is_valid()
+        except CurrentSubscription.DoesNotExist:
             return False
-        return self.current_subscription.is_valid()
-    
-    @property
-    def current_subscription(self):
-        if not hasattr(self, "_current_subscription"):
-            try:
-                self._current_subscription = self.subscriptions.latest()
-            except Subscription.DoesNotExist:
-                return None
-        return self._current_subscription
     
     def cancel(self):
+        try:
+            current = self.current_subscription
+        except CurrentSubscription.DoesNotExist:
+            return
         sub = self.stripe_customer.cancel_subscription()
-        period_end = convert_tstamp(sub, "current_period_end")
-        self.current_subscription.status = sub.status
-        self.current_subscription.period_end = period_end
-        self.current_subscription.save()
+        current.status = sub.status
+        current.period_end = convert_tstamp(sub, "current_period_end")
+        current.save()
         cancelled.send(sender=self, stripe_response=sub)
     
     @classmethod
@@ -367,23 +356,39 @@ class Customer(StripeObject):
                 resp = cu.update_subscription(
                     plan=PAYMENTS_PLANS[plan]["stripe_plan_id"]
                 )
-            sub_obj, created = self.subscriptions.get_or_create(
-                plan=plan_from_stripe_id(resp["plan"]["id"]),
-                period_start=convert_tstamp(resp, "current_period_start"),
-                period_end=convert_tstamp(resp, "current_period_end"),
-                defaults={
-                    "amount": (resp["plan"]["amount"] / 100.0),
-                    "status": resp["status"]
-                }
-            )
-            if resp.get("trial_start") and resp.get("trial_end"):
-                sub_obj.trial_period_start = convert_tstamp(resp, "trial_start")
-                sub_obj.trial_period_end = convert_tstamp(resp, "trial_end")
-                sub_obj.save()
-            if not created:
+            try:
+                sub_obj = self.current_subscription
+                sub_obj.plan = plan_from_stripe_id(resp["plan"]["id"])
+                sub_obj.current_period_start = convert_tstamp(resp, "current_period_start")
+                sub_obj.current_period_end = convert_tstamp(resp, "current_period_end")
                 sub_obj.amount = (resp["plan"]["amount"] / 100.0)
                 sub_obj.status = resp["status"]
+                sub_obj.start = convert_tstamp(resp, "start")
+                sub_obj.quantity = resp["quantity"]
                 sub_obj.save()
+            except CurrentSubscription.DoesNotExist:
+                sub_obj = CurrentSubscription.objects.create(
+                    customer=self,
+                    plan=plan_from_stripe_id(resp["plan"]["id"]),
+                    current_period_start=convert_tstamp(resp, "current_period_start"),
+                    current_period_end=convert_tstamp(resp, "current_period_end"),
+                    amount=(resp["plan"]["amount"] / 100.0),
+                    status=resp["status"],
+                    start=convert_tstamp(resp, "start"),
+                    quantity=resp["quantity"]
+                )
+            
+            if resp.get("trial_start") and resp.get("trial_end"):
+                sub_obj.trial_start = convert_tstamp(resp, "trial_start")
+                sub_obj.trial_end = convert_tstamp(resp, "trial_end")
+                sub_obj.save()
+            try:
+                # Changing subscriptions could have generated prorations.
+                # Attempt to charge them immedately.
+                invoice = stripe.Invoice.create(customer=self.stripe_id)
+                invoice.pay()
+            except stripe.InvalidRequestError:
+                pass  # There was nothign to invoice
         else:
             # It's just a single transaction
             resp = stripe.Charge.create(
@@ -405,7 +410,7 @@ class Customer(StripeObject):
         obj, created = self.charges.get_or_create(
             stripe_id=data["id"]
         )
-        if data.get("invoice"):
+        if data.get("invoice") and self.invoices.filter(stripe_id=data.get("invoice")).exists():
             obj.invoice = self.invoices.get(stripe_id=data.get("invoice"))
         obj.card_last_4 = data["card"]["last4"]
         obj.card_kind = data["card"]["type"]
@@ -424,17 +429,20 @@ class Customer(StripeObject):
         return obj
 
 
-class Subscription(models.Model):
+class CurrentSubscription(models.Model):
     
+    customer = models.OneToOneField(Customer, related_name="current_subscription", null=True)
     plan = models.CharField(max_length=100)
-    customer = models.ForeignKey(Customer, related_name="subscriptions")
-    period_end = models.DateTimeField()
-    period_start = models.DateTimeField()
-    trial_period_end = models.DateTimeField(null=True)
-    trial_period_start = models.DateTimeField(null=True)
+    quantity = models.IntegerField()
+    start = models.DateTimeField()
+    status = models.CharField(max_length=25)  # trialing, active, past_due, canceled, or unpaid
+    canceled_at = models.DateTimeField(null=True)
+    current_period_end = models.DateTimeField(null=True)
+    current_period_start = models.DateTimeField(null=True)
+    ended_at = models.DateTimeField(null=True)
+    trial_end = models.DateTimeField(null=True)
+    trial_start = models.DateTimeField(null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=7)
-    # trialing, active, past_due, canceled, or unpaid
-    status = models.CharField(max_length=25)
     
     created_at = models.DateTimeField(default=timezone.now)
     
@@ -445,17 +453,13 @@ class Subscription(models.Model):
         return self.status.replace("_", " ").title()
     
     def is_period_current(self):
-        return self.period_end > timezone.now()
+        return self.current_period_end > timezone.now()
     
     def is_status_current(self):
         return self.status in ["trialing", "active", "canceled"]
     
     def is_valid(self):
         return self.is_period_current() and self.is_status_current()
-    
-    class Meta:
-        ordering = ["-period_end"]
-        get_latest_by = "created_at"
 
 
 class Invoice(StripeObject):
@@ -471,11 +475,6 @@ class Invoice(StripeObject):
     total = models.DecimalField(decimal_places=2, max_digits=7)
     date = models.DateTimeField()
     charge = models.CharField(max_length=50, blank=True)
-    subscriptions = models.ManyToManyField(
-        Subscription,
-        related_name="invoices",
-        null=True
-    )
     
     class Meta:
         ordering = ["-date"]
@@ -506,37 +505,28 @@ class Invoice(StripeObject):
                 charge=stripe_invoice.get("charge") or "",
                 stripe_id=stripe_invoice["id"]
             )
-            for item in stripe_invoice["lines"].get("invoiceitems", []):
+            for item in stripe_invoice["lines"].get("data", []):
+                period_end = convert_tstamp(item["period"], "end")
+                period_start = convert_tstamp(item["period"], "start")
+                if item.get("plan"):
+                    plan = plan_from_stripe_id(item["plan"]["id"])
+                else:
+                    plan = ""
                 invoice.items.get_or_create(
                     stripe_id=item["id"],
                     amount=(item["amount"] / 100.0),
-                    date=convert_tstamp(item, "date"),
-                    description=item["description"]
-                )
-            for sub in stripe_invoice["lines"].get("subscriptions", []):
-                period_end = convert_tstamp(sub["period"], "end")
-                period_start = convert_tstamp(sub["period"], "start")
-                subscription, created = Subscription.objects.get_or_create(
-                    plan=plan_from_stripe_id(sub["plan"]["id"]),
-                    customer=c,
+                    currency=item["currency"],
+                    proration=item["proration"],
+                    description=item.get("description") or "",
+                    line_type=item["type"],
+                    plan=plan,
                     period_start=period_start,
                     period_end=period_end,
-                    defaults={
-                        "amount": (sub["amount"] / 100.0)
-                    }
+                    quantity=item.get("quantity")
                 )
-                subscription.status = c.stripe_customer.subscription.status
-                subscription.amount = (sub["amount"] / 100.0)
-                subscription.save()
-                
-                # @@@ what happens if the same sub.pk gets added twice?
-                invoice.subscriptions.add(subscription)
-            
             if stripe_invoice.get("charge"):
-                desc = stripe_invoice["lines"]["subscriptions"][0]["plan"]["name"]
                 obj = c.record_charge(stripe_invoice["charge"])
                 obj.invoice = invoice
-                obj.description = desc
                 obj.save()
                 obj.send_receipt()
             return invoice
@@ -553,10 +543,16 @@ class Invoice(StripeObject):
 class InvoiceItem(StripeObject):
     
     invoice = models.ForeignKey(Invoice, related_name="items")
-    description = models.CharField(max_length=200, blank=True)
-    date = models.DateTimeField()
     amount = models.DecimalField(decimal_places=2, max_digits=7)
-
+    currency = models.CharField(max_length=10)
+    period_start = models.DateTimeField()
+    period_end = models.DateTimeField()
+    proration = models.BooleanField()
+    line_type = models.CharField(max_length=50)
+    description = models.CharField(max_length=200, blank=True)
+    plan = models.CharField(max_length=100, blank=True)
+    quantity = models.IntegerField(null=True)
+    
 
 class Charge(StripeObject):
     

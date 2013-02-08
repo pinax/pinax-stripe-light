@@ -13,7 +13,7 @@ from django.contrib.auth.decorators import login_required
 import stripe
 
 from payments.forms import PlanForm
-from payments.models import Event, EventProcessingException
+from payments.models import Event, EventProcessingException, CurrentSubscription
 
 
 def _ajax_response(request, template, **kwargs):
@@ -45,26 +45,30 @@ def change_card(request):
 @login_required
 def change_plan(request):
     form = PlanForm(request.POST)
+    try:
+        current_plan = request.user.customer.current_subscription.plan
+    except CurrentSubscription.DoesNotExist:
+        current_plan = None
     if form.is_valid():
         try:
             request.user.customer.purchase(form.cleaned_data["plan"])
             data = {
                 "form": PlanForm(initial={
-                    "plan": request.user.customer.plan
+                    "plan": current_plan
                 }),
-                "plan": request.user.customer.plan,
-                "name": settings.PAYMENTS_PLANS[request.user.customer.plan]["name"]
+                "plan": current_plan,
+                "name": settings.PAYMENTS_PLANS[current_plan]["name"]
             }
         except stripe.StripeError, e:
-            if request.user.customer.plan:
-                name = settings.PAYMENTS_PLANS[request.user.customer.plan]["name"]
+            if current_plan:
+                name = settings.PAYMENTS_PLANS[current_plan]["name"]
             else:
                 name = ""
             data = {
                 "form": PlanForm(initial={
-                    "plan": request.user.customer.plan
+                    "plan": current_plan
                 }),
-                "plan": request.user.customer.plan,
+                "plan": current_plan,
                 "name": name,
                 "error": e.message
             }

@@ -4,30 +4,31 @@
     {% include "payments/_subscription_status.html" %}
     <h2>Payment History</h2>
     <p class="lead">Your transaction history</p>
-    {% if request.user.customer.charges.all %}
+    {% if request.user.customer.invoices.all %}
         <table class="table table-striped">
             <thead>
                 <tr>
                     <th>Transaction ID</th>
                     <th>Date</th>
-                    <th>Description</th>
+                    <th>Period</th>
                     <th>Amount</th>
                 </tr>
             </thead>
-            {% for charge in request.user.customer.charges.all %}
+            {% for invoice in request.user.customer.invoices.all %}
                 <tr>
-                    <td class="fixed">{{ charge.stripe_id }}</td>
-                    <td>{{ charge.created_at }}</td>
-                    <td>{{ charge.customer.plan }}</td>
+                    <td class="fixed">#{{ invoice.id }}</td>
+                    <td>{{ invoice.created_at }}</td>
+                    <td>{{ invoice.customer.plan }}</td>
                     <td>
-                        {% if charge.paid %}
+                        {% if invoice.paid and invoice.total > 0 %}
                             <p>
-                                <span class="label label-success">Paid</span> ${{ charge.amount|floatformat:"2" }}
+                                <span class="label label-success">Paid</span> ${{ invoice.total|floatformat:"2" }}
                             </p>
                         {% endif %}
-                        {% if charge.amount_refunded %}
+                        
+                        {% if invoice.paid and invoice.total < 0 %}
                             <p>
-                                <span class="label">Refunded</span> ${{ charge.amount_refunded|floatformat:"2" }}
+                                <span class="label label-success">Credit</span> ${{ invoice.total|floatformat:"2" }}
                             </p>
                         {% endif %}
                     </td>

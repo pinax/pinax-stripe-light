@@ -2,8 +2,8 @@
 <div class="change-subscription">
     <h2>Change Subscription</h2>
     <p class="lead">
-        {% if request.user.customer.plan %}
-            Your currently have the <strong>{{ request.user.customer.display_plan }}</strong> plan.
+        {% if request.user.customer.current_subscription.plan %}
+            Your currently have the <strong>{{ request.user.customer.current_subscription.plan_display }}</strong> plan.
         {% else %}
             You currently do not have a plan.
         {% endif %}

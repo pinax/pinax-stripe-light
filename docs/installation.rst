@@ -70,17 +70,7 @@ Installation
 Static Media
 ============
 
-This app ships with Stripe's ``tag.js`` plugin and the templates that ship
-with this app depend on it. In your the base templates somewhere you'll want
-to make sure the CSS and JS are added appropriately::
-
-    {% load staticfiles %}
-    ...
-    <link href="{% static "payments/css/tag.css" %}" rel="stylesheet">
-    <script src="{% static "payments/js/tag.js" %}"></script>
-
-**NOTE**: This plugin is no longer supported and ``django-stripe-payments`` will
-be receiving updated templates and static media to replace this with Checkout_.
+The included templates have been tested to work with Checkout_.
 
 .. _Checkout: https://stripe.com/docs/checkout
 

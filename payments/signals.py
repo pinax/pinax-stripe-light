@@ -9,11 +9,14 @@ webhook_processing_error = Signal(providing_args=["data", "exception"])
 WEBHOOK_SIGNALS = {
     hook: Signal(providing_args=["event"])
     for hook in [
+        "account.updated",
+        "account.application.deauthorized",
         "charge.succeeded",
         "charge.failed",
         "charge.refunded",
-        "charge.updated",
-        "charge.disputed",
+        "charge.dispute.created",
+        "charge.dispute.updated",
+        "chagne.dispute.closed",
         "customer.created",
         "customer.updated",
         "customer.deleted",
@@ -38,6 +41,7 @@ WEBHOOK_SIGNALS = {
         "coupon.updated",
         "coupon.deleted",
         "transfer.created",
+        "transfer.updated",
         "transfer.failed",
         "ping"
     ]

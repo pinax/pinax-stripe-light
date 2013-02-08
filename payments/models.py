@@ -121,11 +121,14 @@ class Event(StripeObject):
     
     def process(self):
         """
+            "account.updated",
+            "account.application.deauthorized",
             "charge.succeeded",
             "charge.failed",
             "charge.refunded",
-            "charge.updated",
-            "charge.disputed",
+            "charge.dispute.created",
+            "charge.dispute.updated",
+            "chagne.dispute.closed",
             "customer.created",
             "customer.updated",
             "customer.deleted",
@@ -150,6 +153,7 @@ class Event(StripeObject):
             "coupon.updated",
             "coupon.deleted",
             "transfer.created",
+            "transfer.updated",
             "transfer.failed",
             "ping"
         """

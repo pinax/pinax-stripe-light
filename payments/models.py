@@ -22,6 +22,7 @@ from payments.signals import purchase_made, cancelled, card_changed
 from payments.signals import webhook_processing_error
 
 
+stripe.api_key = settings.STRIPE_SECRET_KEY
 def convert_tstamp(response, field_name):
     try:
         if response[field_name]:
@@ -101,7 +102,6 @@ class Event(StripeObject):
                 pass
     
     def validate(self):
-        stripe.api_key = settings.STRIPE_SECRET_KEY
         evt = stripe.Event.retrieve(self.stripe_id)
         self.validated_message = json.loads(
             json.dumps(
@@ -203,13 +203,11 @@ class Transfer(StripeObject):
     validation_fees = models.DecimalField(decimal_places=2, max_digits=7)
     
     def update_status(self):
-        stripe.api_key = settings.STRIPE_SECRET_KEY
         self.status = stripe.Transfer.retrieve(self.stripe_id).status
         self.save()
     
     @classmethod
     def process_transfer(cls, event, transfer_obj):
-        print "processing...", transfer_obj["id"]
         obj, created = Transfer.objects.get_or_create(
             stripe_id=transfer_obj["id"],
             event=event,
@@ -273,7 +271,6 @@ class Customer(StripeObject):
     
     @property
     def stripe_customer(self):
-        stripe.api_key = settings.STRIPE_SECRET_KEY
         return stripe.Customer.retrieve(self.stripe_id)
     
     def purge(self):
@@ -331,7 +328,6 @@ class Customer(StripeObject):
     
     @classmethod
     def create(cls, user):
-        stripe.api_key = settings.STRIPE_SECRET_KEY
         customer = stripe.Customer.create(
             email=user.email
         )

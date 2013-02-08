@@ -23,6 +23,9 @@ from payments.signals import webhook_processing_error
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
+stripe.api_version = getattr(settings, "STRIPE_API_VERSION", "2012-11-07")
+
+
 def convert_tstamp(response, field_name):
     try:
         if response[field_name]:

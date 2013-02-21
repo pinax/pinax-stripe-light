@@ -26,11 +26,16 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 stripe.api_version = getattr(settings, "STRIPE_API_VERSION", "2012-11-07")
 
 
-def convert_tstamp(response, field_name):
+def convert_tstamp(response, field_name=None):
     try:
-        if response[field_name]:
+        if field_name and response[field_name]:
             return datetime.datetime.fromtimestamp(
                 response[field_name],
+                timezone.utc
+            )
+        if not field_name:
+            return datetime.datetime.fromtimestamp(
+                response,
                 timezone.utc
             )
     except KeyError:
@@ -344,51 +349,74 @@ class Customer(StripeObject):
         self.save()
         card_changed.send(sender=self, stripe_response=cu)
     
-    def purchase(self, plan, trial_days=None):
+    def send_invoice(self):
+        try:
+            invoice = stripe.Invoice.create(customer=self.stripe_id)
+            invoice.pay()
+            return True
+        except stripe.InvalidRequestError:
+            return False  # There was nothing to invoice
+    
+    def sync_current_subscription(self):
+        cu = self.stripe_customer
+        sub = cu.subscription
+        
+        try:
+            print sub.current_period_start
+            sub_obj = self.current_subscription
+            sub_obj.plan = plan_from_stripe_id(sub.plan.id)
+            sub_obj.current_period_start = convert_tstamp(sub.current_period_start)
+            sub_obj.current_period_end = convert_tstamp(sub.current_period_end)
+            sub_obj.amount = (sub.plan.amount / 100.0)
+            sub_obj.status = sub.status
+            sub_obj.start = convert_tstamp(sub.start)
+            sub_obj.quantity = sub.quantity
+            sub_obj.save()
+        except CurrentSubscription.DoesNotExist:
+            sub_obj = CurrentSubscription.objects.create(
+                customer=self,
+                plan=plan_from_stripe_id(sub.plan.id),
+                current_period_start=convert_tstamp(sub.current_period_start),
+                current_period_end=convert_tstamp(sub.current_period_end),
+                amount=(sub.plan.amount / 100.0),
+                status=sub.status,
+                start=convert_tstamp(sub.start),
+                quantity=sub.quantity
+            )
+        
+        if sub.trial_start and sub.trial_end:
+            sub_obj.trial_start = convert_tstamp(sub.trial_start)
+            sub_obj.trial_end = convert_tstamp(sub.trial_end)
+            sub_obj.save()
+        
+        return sub_obj
+    
+    def update_plan_quantity(self, quantity, charge_immediately=False):
+        self.purchase(
+            plan=plan_from_stripe_id(self.stripe_customer.subscription.plan.id),
+            quantity=quantity,
+            charge_immediately=charge_immediately
+        )
+    
+    def purchase(self, plan, quantity=1, trial_days=None, charge_immediately=True):
         cu = self.stripe_customer
         if settings.PAYMENTS_PLANS[plan].get("stripe_plan_id"):
             if trial_days:
                 resp = cu.update_subscription(
                     plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
-                    trial_end=timezone.now() + datetime.timedelta(days=trial_days)
+                    trial_end=timezone.now() + datetime.timedelta(days=trial_days),
+                    quantity=quantity
                 )
             else:
                 resp = cu.update_subscription(
-                    plan=PAYMENTS_PLANS[plan]["stripe_plan_id"]
-                )
-            try:
-                sub_obj = self.current_subscription
-                sub_obj.plan = plan_from_stripe_id(resp["plan"]["id"])
-                sub_obj.current_period_start = convert_tstamp(resp, "current_period_start")
-                sub_obj.current_period_end = convert_tstamp(resp, "current_period_end")
-                sub_obj.amount = (resp["plan"]["amount"] / 100.0)
-                sub_obj.status = resp["status"]
-                sub_obj.start = convert_tstamp(resp, "start")
-                sub_obj.quantity = resp["quantity"]
-                sub_obj.save()
-            except CurrentSubscription.DoesNotExist:
-                sub_obj = CurrentSubscription.objects.create(
-                    customer=self,
-                    plan=plan_from_stripe_id(resp["plan"]["id"]),
-                    current_period_start=convert_tstamp(resp, "current_period_start"),
-                    current_period_end=convert_tstamp(resp, "current_period_end"),
-                    amount=(resp["plan"]["amount"] / 100.0),
-                    status=resp["status"],
-                    start=convert_tstamp(resp, "start"),
-                    quantity=resp["quantity"]
+                    plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
+                    quantity=quantity
                 )
             
-            if resp.get("trial_start") and resp.get("trial_end"):
-                sub_obj.trial_start = convert_tstamp(resp, "trial_start")
-                sub_obj.trial_end = convert_tstamp(resp, "trial_end")
-                sub_obj.save()
-            try:
-                # Changing subscriptions could have generated prorations.
-                # Attempt to charge them immedately.
-                invoice = stripe.Invoice.create(customer=self.stripe_id)
-                invoice.pay()
-            except stripe.InvalidRequestError:
-                pass  # There was nothign to invoice
+            self.sync_current_subscription()
+            
+            if charge_immediately:
+                self.send_invoice()
         else:
             # It's just a single transaction
             resp = stripe.Charge.create(
@@ -401,8 +429,6 @@ class Customer(StripeObject):
             obj.description = resp["description"]
             obj.save()
             obj.send_receipt()
-        self.plan = plan
-        self.save()
         purchase_made.send(sender=self, plan=plan, stripe_response=resp)
     
     def record_charge(self, charge_id):

@@ -357,39 +357,56 @@ class Customer(StripeObject):
         except stripe.InvalidRequestError:
             return False  # There was nothing to invoice
     
-    def sync_current_subscription(self):
-        cu = self.stripe_customer
+    def sync(self, cu=None):
+        cu = cu or self.stripe_customer
+        if cu.active_card:
+            self.card_fingerprint = cu.active_card.fingerprint
+            self.card_last_4 = cu.active_card.last4
+            self.card_kind = cu.active_card.type
+            self.save()
+    
+    def sync_invoices(self, cu=None):
+        cu = cu or self.stripe_customer
+        for invoice in cu.invoices().data:
+            Invoice.create_from_stripe_data(invoice, send_receipt=False)
+    
+    def sync_charges(self, cu=None):
+        cu = cu or self.stripe_customer
+        for charge in cu.charges().data:
+            self.record_charge(charge.id)
+    
+    def sync_current_subscription(self, cu=None):
+        cu = cu or self.stripe_customer
         sub = cu.subscription
-        
-        try:
-            print sub.current_period_start
-            sub_obj = self.current_subscription
-            sub_obj.plan = plan_from_stripe_id(sub.plan.id)
-            sub_obj.current_period_start = convert_tstamp(sub.current_period_start)
-            sub_obj.current_period_end = convert_tstamp(sub.current_period_end)
-            sub_obj.amount = (sub.plan.amount / 100.0)
-            sub_obj.status = sub.status
-            sub_obj.start = convert_tstamp(sub.start)
-            sub_obj.quantity = sub.quantity
-            sub_obj.save()
-        except CurrentSubscription.DoesNotExist:
-            sub_obj = CurrentSubscription.objects.create(
-                customer=self,
-                plan=plan_from_stripe_id(sub.plan.id),
-                current_period_start=convert_tstamp(sub.current_period_start),
-                current_period_end=convert_tstamp(sub.current_period_end),
-                amount=(sub.plan.amount / 100.0),
-                status=sub.status,
-                start=convert_tstamp(sub.start),
-                quantity=sub.quantity
-            )
-        
-        if sub.trial_start and sub.trial_end:
-            sub_obj.trial_start = convert_tstamp(sub.trial_start)
-            sub_obj.trial_end = convert_tstamp(sub.trial_end)
-            sub_obj.save()
-        
-        return sub_obj
+        if sub:
+            try:
+                sub_obj = self.current_subscription
+                sub_obj.plan = plan_from_stripe_id(sub.plan.id)
+                sub_obj.current_period_start = convert_tstamp(sub.current_period_start)
+                sub_obj.current_period_end = convert_tstamp(sub.current_period_end)
+                sub_obj.amount = (sub.plan.amount / 100.0)
+                sub_obj.status = sub.status
+                sub_obj.start = convert_tstamp(sub.start)
+                sub_obj.quantity = sub.quantity
+                sub_obj.save()
+            except CurrentSubscription.DoesNotExist:
+                sub_obj = CurrentSubscription.objects.create(
+                    customer=self,
+                    plan=plan_from_stripe_id(sub.plan.id),
+                    current_period_start=convert_tstamp(sub.current_period_start),
+                    current_period_end=convert_tstamp(sub.current_period_end),
+                    amount=(sub.plan.amount / 100.0),
+                    status=sub.status,
+                    start=convert_tstamp(sub.start),
+                    quantity=sub.quantity
+                )
+            
+            if sub.trial_start and sub.trial_end:
+                sub_obj.trial_start = convert_tstamp(sub.trial_start)
+                sub_obj.trial_end = convert_tstamp(sub.trial_end)
+                sub_obj.save()
+            
+            return sub_obj
     
     def update_plan_quantity(self, quantity, charge_immediately=False):
         self.purchase(
@@ -488,8 +505,9 @@ class CurrentSubscription(models.Model):
         return self.is_period_current() and self.is_status_current()
 
 
-class Invoice(StripeObject):
+class Invoice(models.Model):
     
+    stripe_id = models.CharField(max_length=50)
     customer = models.ForeignKey(Customer, related_name="invoices")
     attempted = models.NullBooleanField()
     attempts = models.PositiveIntegerField(null=True)
@@ -501,6 +519,7 @@ class Invoice(StripeObject):
     total = models.DecimalField(decimal_places=2, max_digits=7)
     date = models.DateTimeField()
     charge = models.CharField(max_length=50, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
     
     class Meta:
         ordering = ["-date"]
@@ -511,7 +530,7 @@ class Invoice(StripeObject):
         return "Open"
     
     @classmethod
-    def create_from_stripe_data(cls, stripe_invoice):
+    def create_from_stripe_data(cls, stripe_invoice, send_receipt=True):
         if not cls.objects.filter(stripe_id=stripe_invoice["id"]).exists():
             c = Customer.objects.get(stripe_id=stripe_invoice["customer"])
             
@@ -538,7 +557,7 @@ class Invoice(StripeObject):
                     plan = plan_from_stripe_id(item["plan"]["id"])
                 else:
                     plan = ""
-                invoice.items.get_or_create(
+                invoice.items.create(
                     stripe_id=item["id"],
                     amount=(item["amount"] / 100.0),
                     currency=item["currency"],
@@ -554,7 +573,8 @@ class Invoice(StripeObject):
                 obj = c.record_charge(stripe_invoice["charge"])
                 obj.invoice = invoice
                 obj.save()
-                obj.send_receipt()
+                if send_receipt:
+                    obj.send_receipt()
             return invoice
     
     @classmethod
@@ -579,6 +599,9 @@ class InvoiceItem(StripeObject):
     plan = models.CharField(max_length=100, blank=True)
     quantity = models.IntegerField(null=True)
     
+    def plan_display(self):
+        return PAYMENTS_PLANS[self.plan]["name"]
+
 
 class Charge(StripeObject):
     

@@ -10,15 +10,14 @@
                 <tr>
                     <th>Transaction ID</th>
                     <th>Date</th>
-                    <th>Period</th>
                     <th>Amount</th>
                 </tr>
             </thead>
             {% for invoice in request.user.customer.invoices.all %}
                 <tr>
                     <td class="fixed">#{{ invoice.id }}</td>
-                    <td>{{ invoice.created_at }}</td>
-                    <td>{{ invoice.customer.plan }}</td>
+                    <td>{{ invoice.date|"M d" }}</td>
+                    </td>
                     <td>
                         {% if invoice.paid and invoice.total > 0 %}
                             <p>

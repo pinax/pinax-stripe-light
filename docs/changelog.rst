@@ -10,6 +10,7 @@ ChangeLog
 * added a new setting to enable setting the API version
 * added new event types to webhook signals
 * handle the transfer.update webhook
+* added ability to sync customer data
 
 
 1.3

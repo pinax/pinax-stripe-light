@@ -3,6 +3,7 @@ import json
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
+from django.http.response import HttpResponseBadRequest
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
@@ -38,6 +39,8 @@ def change_card(request):
             data = {}
         except stripe.CardError, e:
             data = {"error": e.message}
+    else:
+        return HttpResponseBadRequest("Invalid!!")
     return _ajax_response(request, "payments/_change_card_form.html", **data)
 
 
@@ -114,7 +117,7 @@ def cancel(request):
 @csrf_exempt
 @require_POST
 def webhook(request):
-    data = json.loads(request.raw_post_data)
+    data = json.loads(request.body)
     if Event.objects.filter(stripe_id=data["id"]).exists():
         EventProcessingException.objects.create(
             data=data,

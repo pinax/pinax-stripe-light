@@ -18,7 +18,7 @@ from jsonfield.fields import JSONField
 from payments.settings import PAYMENTS_PLANS, INVOICE_FROM_EMAIL
 from payments.settings import plan_from_stripe_id
 from payments.signals import WEBHOOK_SIGNALS
-from payments.signals import purchase_made, cancelled, card_changed
+from payments.signals import subscription_made, cancelled, card_changed
 from payments.signals import webhook_processing_error
 
 
@@ -409,44 +409,39 @@ class Customer(StripeObject):
             return sub_obj
     
     def update_plan_quantity(self, quantity, charge_immediately=False):
-        self.purchase(
+        self.subscribe(
             plan=plan_from_stripe_id(self.stripe_customer.subscription.plan.id),
             quantity=quantity,
             charge_immediately=charge_immediately
         )
     
-    def purchase(self, plan, quantity=1, trial_days=None, charge_immediately=True):
+    def subscribe(self, plan, quantity=1, trial_days=None, charge_immediately=True):
         cu = self.stripe_customer
-        if settings.PAYMENTS_PLANS[plan].get("stripe_plan_id"):
-            if trial_days:
-                resp = cu.update_subscription(
-                    plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
-                    trial_end=timezone.now() + datetime.timedelta(days=trial_days),
-                    quantity=quantity
-                )
-            else:
-                resp = cu.update_subscription(
-                    plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
-                    quantity=quantity
-                )
-            
-            self.sync_current_subscription()
-            
-            if charge_immediately:
-                self.send_invoice()
-        else:
-            # It's just a single transaction
-            resp = stripe.Charge.create(
-                amount=PAYMENTS_PLANS[plan]["price"] * 100,
-                currency=settings.PAYMENTS_PLANS[plan].get("currency", "usd"),
-                customer=self.stripe_id,
-                description=PAYMENTS_PLANS[plan]["name"]
+        if trial_days:
+            resp = cu.update_subscription(
+                plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
+                trial_end=timezone.now() + datetime.timedelta(days=trial_days),
+                quantity=quantity
             )
-            obj = self.record_charge(resp["id"])
-            obj.description = resp["description"]
-            obj.save()
-            obj.send_receipt()
-        purchase_made.send(sender=self, plan=plan, stripe_response=resp)
+        else:
+            resp = cu.update_subscription(
+                plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
+                quantity=quantity
+            )
+        self.sync_current_subscription()
+        if charge_immediately:
+            self.send_invoice()
+        subscription_made.send(sender=self, plan=plan, stripe_response=resp)
+    
+    def charge(self, amount, currency="usd", description=None):
+        resp = stripe.Charge.create(
+            amount=amount,
+            currency=currency,
+            customer=self.stripe_id,
+            description=description,
+        )
+        obj = self.record_charge(resp["id"])
+        obj.send_receipt()
     
     def record_charge(self, charge_id):
         data = stripe.Charge.retrieve(charge_id)

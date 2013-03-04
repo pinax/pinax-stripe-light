@@ -51,7 +51,7 @@ def change_plan(request):
         current_plan = None
     if form.is_valid():
         try:
-            request.user.customer.purchase(form.cleaned_data["plan"])
+            request.user.customer.subscribe(form.cleaned_data["plan"])
             data = {
                 "form": PlanForm(initial={
                     "plan": current_plan
@@ -88,7 +88,7 @@ def subscribe(request, form_class=PlanForm):
         try:
             customer = request.user.customer
             customer.update_card(request.POST.get("stripe_token"))
-            customer.purchase(form.cleaned_data["plan"])
+            customer.subscribe(form.cleaned_data["plan"])
             data["form"] = form_class()
             data["location"] = reverse("payments_history")
         except stripe.StripeError, e:

@@ -3,7 +3,7 @@ from django.dispatch import Signal
 
 cancelled = Signal(providing_args=["stripe_response"])
 card_changed = Signal(providing_args=["stripe_response"])
-purchase_made = Signal(providing_args=["plan", "stripe_response"])
+subscription_made = Signal(providing_args=["plan", "stripe_response"])
 webhook_processing_error = Signal(providing_args=["data", "exception"])
 
 WEBHOOK_SIGNALS = {

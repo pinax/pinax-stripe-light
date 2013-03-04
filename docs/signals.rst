@@ -19,8 +19,8 @@ card_changed
 :providing_args: `stripe_response`
 
 
-purchase_made
--------------
+subscription_made
+-----------------
 
 :providing_args: `plan`, `stripe_response`
 

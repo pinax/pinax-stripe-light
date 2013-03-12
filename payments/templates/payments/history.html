@@ -16,7 +16,7 @@
             {% for invoice in request.user.customer.invoices.all %}
                 <tr>
                     <td class="fixed">#{{ invoice.id }}</td>
-                    <td>{{ invoice.date|"M d" }}</td>
+                    <td>{{ invoice.date|date:"M d" }}</td>
                     </td>
                     <td>
                         {% if invoice.paid and invoice.total > 0 %}

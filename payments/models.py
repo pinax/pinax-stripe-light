@@ -169,6 +169,8 @@ class Event(StripeObject):
                 if self.kind.startswith("invoice."):
                     Invoice.handle_event(self)
                 elif self.kind.startswith("charge."):
+                    if not self.customer:
+                        self.link_customer()
                     self.customer.record_charge(self.message["data"]["object"]["id"])
                 elif self.kind.startswith("transfer."):
                     Transfer.process_transfer(self, self.message["data"]["object"])

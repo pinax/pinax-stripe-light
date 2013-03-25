@@ -493,7 +493,7 @@ class CurrentSubscription(models.Model):
         return self.status.replace("_", " ").title()
     
     def is_period_current(self):
-        return self.current_period_end > timezone.now()
+        return self.current_period_end > datetime.datetime.utcnow()
     
     def is_status_current(self):
         return self.status in ["trialing", "active", "canceled"]

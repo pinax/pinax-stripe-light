@@ -534,6 +534,7 @@ class Invoice(models.Model):
             period_end = convert_tstamp(stripe_invoice, "period_end")
             period_start = convert_tstamp(stripe_invoice, "period_start")
             date = convert_tstamp(stripe_invoice, "date")
+            sync_subscription = False
             
             invoice = c.invoices.create(
                 attempted=stripe_invoice["attempted"],
@@ -550,6 +551,7 @@ class Invoice(models.Model):
             for item in stripe_invoice["lines"].get("data", []):
                 period_end = convert_tstamp(item["period"], "end")
                 period_start = convert_tstamp(item["period"], "start")
+                
                 if item.get("plan"):
                     plan = plan_from_stripe_id(item["plan"]["id"])
                 else:
@@ -566,6 +568,13 @@ class Invoice(models.Model):
                     period_end=period_end,
                     quantity=item.get("quantity")
                 )
+                
+                if stripe_invoice["paid"] and item["type"] == "subscription":
+                    sync_subscription = True
+            
+            if sync_subscription:
+                c.sync_current_subscription()
+            
             if stripe_invoice.get("charge"):
                 obj = c.record_charge(stripe_invoice["charge"])
                 obj.invoice = invoice

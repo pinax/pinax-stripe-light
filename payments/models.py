@@ -100,7 +100,7 @@ class Event(StripeObject):
         if self.kind in customer_crud_events:
             cus_id = self.message["data"]["object"]["id"]
         else:
-            cus_id = self.message["data"]["object"]["customer"]
+            cus_id = self.message["data"]["object"].get("customer", None)
         
         if cus_id is not None:
             try:

@@ -177,7 +177,8 @@ class Event(StripeObject):
                 elif self.kind.startswith("customer.subscription."):
                     if not self.customer:
                         self.link_customer()
-                    self.customer.sync_current_subscription()
+                    if self.customer:
+                        self.customer.sync_current_subscription()
                 self.send_signal()
                 self.processed = True
                 self.save()
@@ -345,7 +346,7 @@ class Customer(StripeObject):
             stripe_id=customer.id
         )
     
-    def update_card(self, token):
+    def update_card(self, token, send_invoice=False):
         cu = self.stripe_customer
         cu.card = token
         cu.save()
@@ -354,6 +355,8 @@ class Customer(StripeObject):
         self.card_kind = cu.active_card.type
         self.save()
         card_changed.send(sender=self, stripe_response=cu)
+        if send_invoice:
+            self.send_invoice()
     
     def send_invoice(self):
         try:

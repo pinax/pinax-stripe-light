@@ -34,7 +34,10 @@ def _ajax_response(request, template, **kwargs):
 def change_card(request):
     if request.POST.get("stripe_token"):
         try:
-            request.user.customer.update_card(request.POST.get("stripe_token"))
+            request.user.customer.update_card(
+                request.POST.get("stripe_token"),
+                send_invoice=(request.user.customer.card_fingerprint == "")
+            )
             data = {}
         except stripe.CardError, e:
             data = {"error": e.message}

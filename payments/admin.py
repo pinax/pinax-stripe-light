@@ -3,6 +3,45 @@ from django.contrib import admin
 from payments.models import Event, EventProcessingException, Transfer, Charge, Invoice, InvoiceItem, CurrentSubscription, Customer
 
 
+class CustomerHasCardListFilter(admin.SimpleListFilter):
+    title = 'card presence'
+    parameter_name = "has_card"
+    
+    def lookups(self, request, model_admin):
+        return [
+            ["yes", "Has Card"],
+            ['no', "Does Not Have a Card"]
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.exclude(card_fingerprint="")
+        if self.value() == "no":
+            return queryset.filter(card_fingerprint="")
+
+
+class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
+    title = 'subscription status'
+    parameter_name = "sub_status"
+    
+    def lookups(self, request, model_admin):
+        statuses = [
+            [x, x.replace("_", " ").title()]
+            for x in CurrentSubscription.objects.all().values_list(
+                "status",
+                flat=True
+            ).distinct()
+        ]
+        statuses.append(["none", "No Subscription"])
+        return statuses
+
+    def queryset(self, request, queryset):
+        if self.value() == "none":
+            return queryset.filter(current_subscription__isnull=True)
+        else:
+            return queryset.filter(current_subscription__status=self.value())
+
+
 admin.site.register(
     Charge,
     list_display=["stripe_id", "customer", "amount", "description", "paid", "disputed", "refunded", "fee", "receipt_sent", "created_at"],
@@ -30,10 +69,16 @@ class CurrentSubscriptionInline(admin.TabularInline):
     model = CurrentSubscription
 
 
+def subscription_status(obj):
+    return obj.current_subscription.status
+subscription_status.short_description = "Subscription Status"
+
+
 admin.site.register(
     Customer,
     raw_id_fields=["user"],
-    list_display=["stripe_id", "user", "card_kind", "card_last_4"],
+    list_display=["stripe_id", "user", "card_kind", "card_last_4", subscription_status],
+    list_filter=["card_kind", CustomerHasCardListFilter, CustomerSubscriptionStatusListFilter],
     search_fields=["stripe_id", "user__username", "user__email"],
     inlines=[CurrentSubscriptionInline]
 )

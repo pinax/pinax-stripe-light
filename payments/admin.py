@@ -20,6 +20,23 @@ class CustomerHasCardListFilter(admin.SimpleListFilter):
             return queryset.filter(card_fingerprint="")
 
 
+class InvoiceCustomerHasCardListFilter(admin.SimpleListFilter):
+    title = 'card presence'
+    parameter_name = "has_card"
+    
+    def lookups(self, request, model_admin):
+        return [
+            ["yes", "Has Card"],
+            ['no', "Does Not Have a Card"]
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.exclude(customer__card_fingerprint="")
+        if self.value() == "no":
+            return queryset.filter(customer__card_fingerprint="")
+
+
 class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
     title = 'subscription status'
     parameter_name = "sub_status"
@@ -88,11 +105,22 @@ class InvoiceItemInline(admin.TabularInline):
     model = InvoiceItem
 
 
+def customer_has_card(obj):
+    return obj.customer.card_fingerprint != ""
+customer_has_card.short_description = "Customer Has Card"
+
+
+def customer_user(obj):
+    return "{} <{}>".format(obj.customer.user.username, obj.customer.user.email)
+customer_has_card.short_description = "Customer"
+
+
 admin.site.register(
     Invoice,
     raw_id_fields=["customer"],
-    list_display=["stripe_id", "paid", "period_start", "period_end", "subtotal", "total"],
+    list_display=["stripe_id", "paid", "closed", customer_user, customer_has_card, "period_start", "period_end", "subtotal", "total"],
     search_fields=["stripe_id", "customer__stripe_id", "customer__user__username", "customer__user__email"],
+    list_filter=[InvoiceCustomerHasCardListFilter, "paid", "closed", "attempted", "attempts", "created_at", "date", "period_end", "total"],
     inlines=[InvoiceItemInline]
 )
 

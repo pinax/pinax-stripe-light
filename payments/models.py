@@ -377,7 +377,7 @@ class Customer(StripeObject):
     def sync_invoices(self, cu=None):
         cu = cu or self.stripe_customer
         for invoice in cu.invoices().data:
-            Invoice.create_from_stripe_data(invoice, send_receipt=False)
+            Invoice.sync_from_stripe_data(invoice, send_receipt=False)
     
     def sync_charges(self, cu=None):
         cu = cu or self.stripe_customer
@@ -534,15 +534,16 @@ class Invoice(models.Model):
         return "Open"
     
     @classmethod
-    def create_from_stripe_data(cls, stripe_invoice, send_receipt=True):
-        if not cls.objects.filter(stripe_id=stripe_invoice["id"]).exists():
-            c = Customer.objects.get(stripe_id=stripe_invoice["customer"])
-            
-            period_end = convert_tstamp(stripe_invoice, "period_end")
-            period_start = convert_tstamp(stripe_invoice, "period_start")
-            date = convert_tstamp(stripe_invoice, "date")
-            
-            invoice = c.invoices.create(
+    def sync_from_stripe_data(cls, stripe_invoice, send_receipt=True):
+        c = Customer.objects.get(stripe_id=stripe_invoice["customer"])
+        period_end = convert_tstamp(stripe_invoice, "period_end")
+        period_start = convert_tstamp(stripe_invoice, "period_start")
+        date = convert_tstamp(stripe_invoice, "date")
+        
+        invoice, created = cls.objects.get_or_create(
+            stripe_id=stripe_invoice["id"],
+            defaults=dict(
+                customer=c,
                 attempted=stripe_invoice["attempted"],
                 closed=stripe_invoice["closed"],
                 paid=stripe_invoice["paid"],
@@ -551,19 +552,33 @@ class Invoice(models.Model):
                 subtotal=stripe_invoice["subtotal"] / 100.0,
                 total=stripe_invoice["total"] / 100.0,
                 date=date,
-                charge=stripe_invoice.get("charge") or "",
-                stripe_id=stripe_invoice["id"]
+                charge=stripe_invoice.get("charge") or ""
             )
-            for item in stripe_invoice["lines"].get("data", []):
-                period_end = convert_tstamp(item["period"], "end")
-                period_start = convert_tstamp(item["period"], "start")
-                
-                if item.get("plan"):
-                    plan = plan_from_stripe_id(item["plan"]["id"])
-                else:
-                    plan = ""
-                invoice.items.create(
-                    stripe_id=item["id"],
+        )
+        if not created:
+            invoice.attempted = stripe_invoice["attempted"]
+            invoice.closed = stripe_invoice["closed"]
+            invoice.paid = stripe_invoice["paid"]
+            invoice.period_end = period_end
+            invoice.period_start = period_start
+            invoice.subtotal = stripe_invoice["subtotal"] / 100.0
+            invoice.total = stripe_invoice["total"] / 100.0
+            invoice.date = date
+            invoice.charge = stripe_invoice.get("charge") or ""
+            invoice.save()
+
+        for item in stripe_invoice["lines"].get("data", []):
+            period_end = convert_tstamp(item["period"], "end")
+            period_start = convert_tstamp(item["period"], "start")
+            
+            if item.get("plan"):
+                plan = plan_from_stripe_id(item["plan"]["id"])
+            else:
+                plan = ""
+            
+            inv_item, inv_item_created = invoice.items.get_or_create(
+                stripe_id=item["id"],
+                defaults=dict(
                     amount=(item["amount"] / 100.0),
                     currency=item["currency"],
                     proration=item["proration"],
@@ -574,14 +589,26 @@ class Invoice(models.Model):
                     period_end=period_end,
                     quantity=item.get("quantity")
                 )
-            
-            if stripe_invoice.get("charge"):
-                obj = c.record_charge(stripe_invoice["charge"])
-                obj.invoice = invoice
-                obj.save()
-                if send_receipt:
-                    obj.send_receipt()
-            return invoice
+            )
+            if not inv_item_created:
+                inv_item.amount = (item["amount"] / 100.0)
+                inv_item.currency = item["currency"]
+                inv_item.proration = item["proration"]
+                inv_item.description = item.get("description") or ""
+                inv_item.line_type = item["type"]
+                inv_item.plan = plan
+                inv_item.period_start = period_start
+                inv_item.period_end = period_end
+                inv_item.quantity = item.get("quantity")
+                inv_item.save()
+        
+        if stripe_invoice.get("charge"):
+            obj = c.record_charge(stripe_invoice["charge"])
+            obj.invoice = invoice
+            obj.save()
+            if send_receipt:
+                obj.send_receipt()
+        return invoice
     
     @classmethod
     def handle_event(cls, event):
@@ -589,7 +616,7 @@ class Invoice(models.Model):
         if event.kind in valid_events:
             invoice_data = event.message["data"]["object"]
             stripe_invoice = stripe.Invoice.retrieve(invoice_data["id"])
-            cls.create_from_stripe_data(stripe_invoice)
+            cls.sync_from_stripe_data(stripe_invoice)
 
 
 class InvoiceItem(StripeObject):

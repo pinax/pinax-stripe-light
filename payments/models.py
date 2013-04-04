@@ -315,7 +315,7 @@ class Customer(StripeObject):
     def can_charge(self):
         try:
             return self.card_fingerprint and \
-                   self.current_subscription.status not in ("canceled", "unpaid")
+                self.current_subscription.status not in ("canceled", "unpaid")
         except CurrentSubscription.DoesNotExist:
             return False
     

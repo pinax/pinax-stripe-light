@@ -356,7 +356,9 @@ class Customer(StripeObject):
         self.save()
         card_changed.send(sender=self, stripe_response=cu)
         if send_invoice:
-            self.send_invoice()
+            self.send_invoice()  # Creates invoice for unpaid items and charges immediately
+        for inv in self.invoices.filter(paid=False, closed=False):
+            inv.retry()  # Always retry unpaid invoices
     
     def send_invoice(self):
         try:
@@ -527,6 +529,13 @@ class Invoice(models.Model):
     
     class Meta:
         ordering = ["-date"]
+    
+    def retry(self):
+        if not self.paid and not self.closed:
+            inv = stripe.Invoice.retrieve(self.stripe_id)
+            inv.pay()
+            return True
+        return False
     
     def status(self):
         if self.paid:

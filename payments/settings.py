@@ -20,7 +20,9 @@ def load_path_attr(path):
     try:
         attr = getattr(mod, attr)
     except AttributeError:
-        raise ImproperlyConfigured("Module '%s' does not define a '%s'" % (module, attr))
+        raise ImproperlyConfigured("Module '%s' does not define a '%s'" % (
+            module, attr)
+        )
     return attr
 
 

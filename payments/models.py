@@ -164,16 +164,22 @@ class Event(StripeObject):
         """
         if self.valid and not self.processed:
             try:
-                if not self.kind.startswith("plan.") and not self.kind.startswith("transfer."):
+                if not self.kind.startswith("plan.") and \
+                        not self.kind.startswith("transfer."):
                     self.link_customer()
                 if self.kind.startswith("invoice."):
                     Invoice.handle_event(self)
                 elif self.kind.startswith("charge."):
                     if not self.customer:
                         self.link_customer()
-                    self.customer.record_charge(self.message["data"]["object"]["id"])
+                    self.customer.record_charge(
+                        self.message["data"]["object"]["id"]
+                    )
                 elif self.kind.startswith("transfer."):
-                    Transfer.process_transfer(self, self.message["data"]["object"])
+                    Transfer.process_transfer(
+                        self,
+                        self.message["data"]["object"]
+                    )
                 elif self.kind.startswith("customer.subscription."):
                     if not self.customer:
                         self.link_customer()
@@ -226,33 +232,37 @@ class Transfer(StripeObject):
         self.save()
     
     @classmethod
-    def process_transfer(cls, event, transfer_obj):
+    def process_transfer(cls, event, transfer):
+        defaults = {
+            "amount": transfer["amount"] / 100.0,
+            "status": transfer["status"],
+            "date": convert_tstamp(transfer, "date"),
+            "description": transfer.get("description", ""),
+            "adjustment_count": transfer["summary"]["adjustment_count"],
+            "adjustment_fees": transfer["summary"]["adjustment_fees"],
+            "adjustment_gross": transfer["summary"]["adjustment_gross"],
+            "charge_count": transfer["summary"]["charge_count"],
+            "charge_fees": transfer["summary"]["charge_fees"],
+            "charge_gross": transfer["summary"]["charge_gross"],
+            "collected_fee_count": transfer["summary"]["collected_fee_count"],
+            "collected_fee_gross": transfer["summary"]["collected_fee_gross"],
+            "net": transfer["summary"]["net"] / 100.0,
+            "refund_count": transfer["summary"]["refund_count"],
+            "refund_fees": transfer["summary"]["refund_fees"],
+            "refund_gross": transfer["summary"]["refund_gross"],
+            "validation_count": transfer["summary"]["validation_count"],
+            "validation_fees": transfer["summary"]["validation_fees"],
+        }
+        for field in defaults:
+            if field.endswith("fees") or field.endswith("gross"):
+                defaults[field] = defaults[field] / 100.0
         obj, created = Transfer.objects.get_or_create(
-            stripe_id=transfer_obj["id"],
+            stripe_id=transfer["id"],
             event=event,
-            defaults={
-                "amount": transfer_obj["amount"] / 100.0,
-                "status": transfer_obj["status"],
-                "date": convert_tstamp(transfer_obj, "date"),
-                "description": transfer_obj.get("description", ""),
-                "adjustment_count": transfer_obj["summary"]["adjustment_count"],
-                "adjustment_fees": transfer_obj["summary"]["adjustment_fees"] / 100.0,
-                "adjustment_gross": transfer_obj["summary"]["adjustment_gross"] / 100.0,
-                "charge_count": transfer_obj["summary"]["charge_count"],
-                "charge_fees": transfer_obj["summary"]["charge_fees"] / 100.0,
-                "charge_gross": transfer_obj["summary"]["charge_gross"] / 100.0,
-                "collected_fee_count": transfer_obj["summary"]["collected_fee_count"] / 100.0,
-                "collected_fee_gross": transfer_obj["summary"]["collected_fee_gross"] / 100.0,
-                "net": transfer_obj["summary"]["net"] / 100.0,
-                "refund_count": transfer_obj["summary"]["refund_count"],
-                "refund_fees": transfer_obj["summary"]["refund_fees"] / 100.0,
-                "refund_gross": transfer_obj["summary"]["refund_gross"] / 100.0,
-                "validation_count": transfer_obj["summary"]["validation_count"],
-                "validation_fees": transfer_obj["summary"]["validation_fees"] / 100.0,
-            }
+            defaults=defaults
         )
         if created:
-            for fee in transfer_obj["summary"]["charge_fee_details"]:
+            for fee in transfer["summary"]["charge_fee_details"]:
                 obj.charge_fee_details.create(
                     amount=fee["amount"] / 100.0,
                     application=fee.get("application", ""),
@@ -260,7 +270,7 @@ class Transfer(StripeObject):
                     kind=fee["type"]
                 )
         else:
-            obj.status = transfer_obj["status"]
+            obj.status = transfer["status"]
             obj.save()
         if event.kind == "transfer.updated":
             obj.update_status()
@@ -356,7 +366,7 @@ class Customer(StripeObject):
         self.save()
         card_changed.send(sender=self, stripe_response=cu)
         if send_invoice:
-            self.send_invoice()  # Creates invoice for unpaid items and charges immediately
+            self.send_invoice()  # Creates invoice and charges immediately
         for inv in self.invoices.filter(paid=False, closed=False):
             inv.retry()  # Always retry unpaid invoices
     
@@ -393,8 +403,12 @@ class Customer(StripeObject):
             try:
                 sub_obj = self.current_subscription
                 sub_obj.plan = plan_from_stripe_id(sub.plan.id)
-                sub_obj.current_period_start = convert_tstamp(sub.current_period_start)
-                sub_obj.current_period_end = convert_tstamp(sub.current_period_end)
+                sub_obj.current_period_start = convert_tstamp(
+                    sub.current_period_start
+                )
+                sub_obj.current_period_end = convert_tstamp(
+                    sub.current_period_end
+                )
                 sub_obj.amount = (sub.plan.amount / 100.0)
                 sub_obj.status = sub.status
                 sub_obj.start = convert_tstamp(sub.start)
@@ -404,8 +418,12 @@ class Customer(StripeObject):
                 sub_obj = CurrentSubscription.objects.create(
                     customer=self,
                     plan=plan_from_stripe_id(sub.plan.id),
-                    current_period_start=convert_tstamp(sub.current_period_start),
-                    current_period_end=convert_tstamp(sub.current_period_end),
+                    current_period_start=convert_tstamp(
+                        sub.current_period_start
+                    ),
+                    current_period_end=convert_tstamp(
+                        sub.current_period_end
+                    ),
                     amount=(sub.plan.amount / 100.0),
                     status=sub.status,
                     start=convert_tstamp(sub.start),
@@ -421,12 +439,15 @@ class Customer(StripeObject):
     
     def update_plan_quantity(self, quantity, charge_immediately=False):
         self.subscribe(
-            plan=plan_from_stripe_id(self.stripe_customer.subscription.plan.id),
+            plan=plan_from_stripe_id(
+                self.stripe_customer.subscription.plan.id
+            ),
             quantity=quantity,
             charge_immediately=charge_immediately
         )
     
-    def subscribe(self, plan, quantity=1, trial_days=None, charge_immediately=True):
+    def subscribe(self, plan, quantity=1, trial_days=None,
+                  charge_immediately=True):
         cu = self.stripe_customer
         if trial_days:
             resp = cu.update_subscription(
@@ -459,7 +480,9 @@ class Customer(StripeObject):
         obj, created = self.charges.get_or_create(
             stripe_id=data["id"]
         )
-        if data.get("invoice") and self.invoices.filter(stripe_id=data.get("invoice")).exists():
+        if data.get("invoice") and self.invoices.filter(
+                stripe_id=data.get("invoice")
+        ).exists():
             obj.invoice = self.invoices.get(stripe_id=data.get("invoice"))
         obj.card_last_4 = data["card"]["last4"]
         obj.card_kind = data["card"]["type"]
@@ -480,11 +503,16 @@ class Customer(StripeObject):
 
 class CurrentSubscription(models.Model):
     
-    customer = models.OneToOneField(Customer, related_name="current_subscription", null=True)
+    customer = models.OneToOneField(
+        Customer,
+        related_name="current_subscription",
+        null=True
+    )
     plan = models.CharField(max_length=100)
     quantity = models.IntegerField()
     start = models.DateTimeField()
-    status = models.CharField(max_length=25)  # trialing, active, past_due, canceled, or unpaid
+    # trialing, active, past_due, canceled, or unpaid
+    status = models.CharField(max_length=25)
     canceled_at = models.DateTimeField(null=True)
     current_period_end = models.DateTimeField(null=True)
     current_period_start = models.DateTimeField(null=True)

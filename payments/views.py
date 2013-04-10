@@ -14,7 +14,8 @@ from django.contrib.auth.decorators import login_required
 import stripe
 
 from payments.forms import PlanForm
-from payments.models import Event, EventProcessingException, CurrentSubscription
+from payments.models import EventProcessingException
+from payments.models import Event, CurrentSubscription
 
 
 def _ajax_response(request, template, **kwargs):

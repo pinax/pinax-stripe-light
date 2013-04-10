@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from payments.models import Event, EventProcessingException, Transfer, Charge, Invoice, InvoiceItem, CurrentSubscription, Customer
+from payments.models import Event, EventProcessingException, Transfer, Charge
+from payments.models import Invoice, InvoiceItem, CurrentSubscription, Customer
 
 
 class CustomerHasCardListFilter(admin.SimpleListFilter):
@@ -61,24 +62,77 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
 
 admin.site.register(
     Charge,
-    list_display=["stripe_id", "customer", "amount", "description", "paid", "disputed", "refunded", "fee", "receipt_sent", "created_at"],
-    search_fields=["stripe_id", "customer__stripe_id", "customer__user__email", "card_last_4", "customer__user__username", "invoice__stripe_id"],
-    list_filter=["paid", "disputed", "refunded", "card_kind", "created_at"],
-    raw_id_fields=["customer", "invoice"],
+    list_display=[
+        "stripe_id",
+        "customer",
+        "amount",
+        "description",
+        "paid",
+        "disputed",
+        "refunded",
+        "fee",
+        "receipt_sent",
+        "created_at"
+    ],
+    search_fields=[
+        "stripe_id",
+        "customer__stripe_id",
+        "customer__user__email",
+        "card_last_4",
+        "customer__user__username",
+        "invoice__stripe_id"
+    ],
+    list_filter=[
+        "paid",
+        "disputed",
+        "refunded",
+        "card_kind",
+        "created_at"
+    ],
+    raw_id_fields=[
+        "customer",
+        "invoice"
+    ],
 )
 
 admin.site.register(
     EventProcessingException,
-    list_display=["message", "event", "created_at"],
-    search_fields=["message", "traceback", "data"],
+    list_display=[
+        "message",
+        "event",
+        "created_at"
+    ],
+    search_fields=[
+        "message",
+        "traceback",
+        "data"
+    ],
 )
 
 admin.site.register(
     Event,
     raw_id_fields=["customer"],
-    list_display=["stripe_id", "kind", "livemode", "valid", "processed", "created_at"],
-    list_filter=["kind", "created_at", "valid", "processed"],
-    search_fields=["stripe_id", "customer__stripe_id", "customer__user__username", "customer__user__email", "validated_message"],
+    list_display=[
+        "stripe_id",
+        "kind",
+        "livemode",
+        "valid",
+        "processed",
+        "created_at"
+    ],
+    list_filter=[
+        "kind",
+        "created_at",
+        "valid",
+        "processed"
+    ],
+    search_fields=[
+        "stripe_id",
+        "customer__stripe_id",
+        "customer__user__username",
+        "customer__user__email",
+        "validated_message"
+    ],
 )
 
 
@@ -94,9 +148,23 @@ subscription_status.short_description = "Subscription Status"
 admin.site.register(
     Customer,
     raw_id_fields=["user"],
-    list_display=["stripe_id", "user", "card_kind", "card_last_4", subscription_status],
-    list_filter=["card_kind", CustomerHasCardListFilter, CustomerSubscriptionStatusListFilter],
-    search_fields=["stripe_id", "user__username", "user__email"],
+    list_display=[
+        "stripe_id",
+        "user",
+        "card_kind",
+        "card_last_4",
+        subscription_status
+    ],
+    list_filter=[
+        "card_kind",
+        CustomerHasCardListFilter,
+        CustomerSubscriptionStatusListFilter
+    ],
+    search_fields=[
+        "stripe_id",
+        "user__username",
+        "user__email"
+    ],
     inlines=[CurrentSubscriptionInline]
 )
 
@@ -111,16 +179,44 @@ customer_has_card.short_description = "Customer Has Card"
 
 
 def customer_user(obj):
-    return "{} <{}>".format(obj.customer.user.username, obj.customer.user.email)
+    return "{} <{}>".format(
+        obj.customer.user.username,
+        obj.customer.user.email
+    )
 customer_has_card.short_description = "Customer"
 
 
 admin.site.register(
     Invoice,
     raw_id_fields=["customer"],
-    list_display=["stripe_id", "paid", "closed", customer_user, customer_has_card, "period_start", "period_end", "subtotal", "total"],
-    search_fields=["stripe_id", "customer__stripe_id", "customer__user__username", "customer__user__email"],
-    list_filter=[InvoiceCustomerHasCardListFilter, "paid", "closed", "attempted", "attempts", "created_at", "date", "period_end", "total"],
+    list_display=[
+        "stripe_id",
+        "paid",
+        "closed",
+        customer_user,
+        customer_has_card,
+        "period_start",
+        "period_end",
+        "subtotal",
+        "total"
+    ],
+    search_fields=[
+        "stripe_id",
+        "customer__stripe_id",
+        "customer__user__username",
+        "customer__user__email"
+    ],
+    list_filter=[
+        InvoiceCustomerHasCardListFilter,
+        "paid",
+        "closed",
+        "attempted",
+        "attempts",
+        "created_at",
+        "date",
+        "period_end",
+        "total"
+    ],
     inlines=[InvoiceItemInline]
 )
 
@@ -128,6 +224,15 @@ admin.site.register(
 admin.site.register(
     Transfer,
     raw_id_fields=["event"],
-    list_display=["stripe_id", "amount", "status", "date", "description"],
-    search_fields=["stripe_id", "event__stripe_id"]
+    list_display=[
+        "stripe_id",
+        "amount",
+        "status",
+        "date",
+        "description"
+    ],
+    search_fields=[
+        "stripe_id",
+        "event__stripe_id"
+    ]
 )

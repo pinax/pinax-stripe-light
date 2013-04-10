@@ -258,11 +258,18 @@ class Transfer(StripeObject):
         for field in defaults:
             if field.endswith("fees") or field.endswith("gross"):
                 defaults[field] = defaults[field] / 100.0
-        obj, created = Transfer.objects.get_or_create(
-            stripe_id=transfer["id"],
-            event=event,
-            defaults=defaults
-        )
+        if event.kind == "transfer.paid":
+            defaults.update({"event": event})
+            obj, created = Transfer.objects.get_or_create(
+                stripe_id=transfer["id"],
+                defaults=defaults
+            )
+        else:
+            obj, created = Transfer.objects.get_or_create(
+                stripe_id=transfer["id"],
+                event=event,
+                defaults=defaults
+            )
         if created:
             for fee in transfer["summary"]["charge_fee_details"]:
                 obj.charge_fee_details.create(

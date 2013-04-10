@@ -30,12 +30,18 @@ Installation
         "payments",
     ]
 
-* Setup your publishable and secret keys. The recommended method is to have
-  and environment variable override defaults and set the defaults as your test
-  keys and then in production set your production keys in your environment::
+Configuration (Modifications to Settings.py)
+=======================
+* Add entries to for your publishable and secret keys. The recommended method is 
+  to setup your production keys using environment variables.  This helps to keep them 
+  more secure.  Your test keys can be displayed in your code directly.
 
-    STRIPE_PUBLIC_KEY = os.environ.get("STRIPE_PUBLIC_KEY", "<the publishable test key>")
-    STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "<the secret test key>")
+  The following entries look for your STRIPE_PUBLIC_KEY and
+  STRIPE_SECRET_KEY in your environment and, if it can't find them, 
+  uses your test keys values instead::
+
+    STRIPE_PUBLIC_KEY = os.environ.get("STRIPE_PUBLIC_KEY", "<your publishable test key>")
+    STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "<your secret test key>")
 
 * Setup your payment plans by defining the setting ``PAYMENTS_PLANS``::
 
@@ -58,7 +64,7 @@ Installation
         }
     }
 
-* Add the context processor to your ``settings.py``::
+* Add the following context processor to your ``TEMPLATE_CONTEXT_PROCESSORS``::
 
     TEMPLATE_CONTEXT_PROCESSORS = [
         ...

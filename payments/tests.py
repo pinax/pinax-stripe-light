@@ -4,7 +4,6 @@ import sys
 
 from django.conf import settings
 
-print settings.configured
 
 if not settings.configured:
     settings.configure(

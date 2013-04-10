@@ -134,7 +134,7 @@ def cancel(request):
 @csrf_exempt
 @require_POST
 def webhook(request):
-    data = json.loads(request.raw_post_data)
+    data = json.loads(request.body)
     if Event.objects.filter(stripe_id=data["id"]).exists():
         EventProcessingException.objects.create(
             data=data,

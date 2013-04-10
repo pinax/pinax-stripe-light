@@ -15,8 +15,8 @@ Development
 
 To run test suite:
 
-$ pip install Django stripe django-jsonfield nosetests
-$ nosetests
+$ pip install Django stripe django-jsonfield
+$ python runtests.py
 
 
 Commercial Support

@@ -1,7 +1,12 @@
 import datetime
+import json
 
+from django.core.urlresolvers import reverse
 from django.test import TestCase
+from django.test.client import Client
 from django.utils import timezone
+
+from mock import patch
 
 from .models import convert_tstamp, Event, Customer
 
@@ -28,6 +33,66 @@ class TestTimestampConversion(TestCase):
             stamp,
             None
         )
+
+
+class TestWebhook(TestCase):
+    
+    @patch("stripe.Event.retrieve")
+    def test_webhook_with_transfer_event(self, StripeEventMock):
+        data = {
+            "created": 1348360173,
+            "data": {
+                "object": {
+                    "amount": 455,
+                    "currency": "usd",
+                    "date": 1348876800,
+                    "description": None,
+                    "id": "ach_XXXXXXXXXXXX",
+                    "object": "transfer",
+                    "other_transfers": [],
+                    "status": "pending",
+                    "summary": {
+                        "adjustment_count": 0,
+                        "adjustment_fee_details": [],
+                        "adjustment_fees": 0,
+                        "adjustment_gross": 0,
+                        "charge_count": 1,
+                        "charge_fee_details": [{
+                            "amount": 45,
+                            "application": None,
+                            "currency": "usd",
+                            "description": None,
+                            "type": "stripe_fee"
+                        }],
+                        "charge_fees": 45,
+                        "charge_gross": 500,
+                        "collected_fee_count": 0,
+                        "collected_fee_gross": 0,
+                        "currency": "usd",
+                        "net": 455,
+                        "refund_count": 0,
+                        "refund_fees": 0,
+                        "refund_gross": 0,
+                        "validation_count": 0,
+                        "validation_fees": 0
+                    }
+                }
+            },
+            "id": "evt_XXXXXXXXXXXXx",
+            "livemode": True,
+            "object": "event",
+            "pending_webhooks": 1,
+            "type": "transfer.created"
+        }
+        StripeEventMock.return_value.to_dict.return_value = data
+        msg = json.dumps(data)
+        resp = Client().post(
+            reverse("payments_webhook"),
+            msg,
+            content_type="application/json"
+        )
+        self.assertEquals(resp.status_code, 200)
+        self.assertTrue(Event.objects.filter(kind="transfer.created").exists())
 
 
 class TestEventMethods(TestCase):

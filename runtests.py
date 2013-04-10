@@ -5,12 +5,13 @@ from django.conf import settings
 
 settings.configure(
     DEBUG=True,
+    USE_TZ=True,
     DATABASES={
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
         }
     },
-    # ROOT_URLCONF="payments.urls",
+    ROOT_URLCONF="payments.urls",
     INSTALLED_APPS=[
         "django.contrib.auth",
         "django.contrib.contenttypes",

@@ -4,7 +4,7 @@ django-stripe-payments
 
 a payments Django app for Stripe
 
-.. image:: https://travis-ci.org/eldarion/django-stripe-payments
+.. image:: https://travis-ci.org/eldarion/django-stripe-payments?branch=master
     :target: https://travis-ci.org/eldarion/django-stripe-payments
 
 This app allows you to process one off charges as well as signup users for
@@ -16,7 +16,7 @@ Documentation can be found at http://django-stripe-payments.readthedocs.org
 Development
 -----------
 
-To run test suite:
+To run test suite::
 
     $ pip install Django stripe django-jsonfield
     $ python runtests.py

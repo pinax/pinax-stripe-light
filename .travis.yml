@@ -1,0 +1,19 @@
+language: python
+python:
+  - "2.6"
+  - "2.7"
+  - "3.2"
+  - "3.3"
+env:
+  - DJANGO=1.4
+  - DJANGO=1.5
+install:
+  - pip install -q Django=$DJANGO --use-mirrors
+  - pip install pep8 --use-mirrors
+  - pip install https://github.com/dcramer/pyflakes/tarball/master
+  - pip install -q -e . --use-mirrors
+before_script:
+  - "pep8 --ignore=W293 payments"
+  - pyflakes payments
+script:
+  - python runtests.py

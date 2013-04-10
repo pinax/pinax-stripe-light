@@ -4,6 +4,9 @@ django-stripe-payments
 
 a payments Django app for Stripe
 
+.. image:: https://travis-ci.org/eldarion/django-stripe-payments
+    :target: https://travis-ci.org/eldarion/django-stripe-payments
+
 This app allows you to process one off charges as well as signup users for
 recurring subscriptions managed by Stripe.
 

@@ -10,6 +10,15 @@ recurring subscriptions managed by Stripe.
 Documentation can be found at http://django-stripe-payments.readthedocs.org
 
 
+Development
+-----------
+
+To run test suite:
+
+$ pip install Django stripe django-jsonfield nosetests
+$ nosetests
+
+
 Commercial Support
 ------------------
 

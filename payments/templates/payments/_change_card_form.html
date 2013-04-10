@@ -1,3 +1,5 @@
+{% load url from future %}
+
 <div class="change-card">
     <h2>Current Card</h2>
     <p class="lead">
@@ -13,7 +15,7 @@
         <div class="alert alert-error">{{ error }}</div>
     {% endif %}
     
-    <form action="{% url payments_ajax_change_card %}" data-stripe-key="{{ STRIPE_PUBLIC_KEY }}" class="form ajax" data-replace-closest=".change-card" method="POST">
+    <form action="{% url 'payments_ajax_change_card' %}" data-stripe-key="{{ STRIPE_PUBLIC_KEY }}" class="form ajax" data-replace-closest=".change-card" method="POST">
         {% csrf_token %}
         <input name="stripe_token" type="hidden" />
         <a href="" class="btn btn-primary change-card">{% if request.user.customer.card_kind %}Change{% else %}Add{% endif %} Card</a>

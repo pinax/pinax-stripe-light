@@ -5,6 +5,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.template import RequestContext
 from django.template.loader import render_to_string
+from django.views.generic import TemplateView
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -27,6 +28,21 @@ def _ajax_response(request, template, **kwargs):
         if "location" in kwargs:
             response.update({"location": kwargs["location"]})
         return HttpResponse(json.dumps(response), mimetype="application/json")
+
+
+class SubscribeView(TemplateView):
+    template_name = "payments/subscribe.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super(SubscribeView, self).get_context_data(**kwargs)
+        context.update({
+            "form": PlanForm
+        })
+        return context
+
+
+class ChangePlanView(SubscribeView):
+    template_name = "payments/change_plan.html"
 
 
 @require_POST

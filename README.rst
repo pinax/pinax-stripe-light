@@ -4,7 +4,7 @@ django-stripe-payments
 
 a payments Django app for Stripe
 
-.. image:: https://travis-ci.org/eldarion/django-stripe-payments.png?branch=master
+.. image:: https://travis-ci.org/eldarion/django-stripe-payments.png
     :target: https://travis-ci.org/eldarion/django-stripe-payments
 
 This app allows you to process one off charges as well as signup users for

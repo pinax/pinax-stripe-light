@@ -4,7 +4,7 @@ from payments.models import Event, EventProcessingException, Transfer, Charge, I
 
 
 class CustomerHasCardListFilter(admin.SimpleListFilter):
-    title = 'card presence'
+    title = "card presence"
     parameter_name = "has_card"
     
     def lookups(self, request, model_admin):

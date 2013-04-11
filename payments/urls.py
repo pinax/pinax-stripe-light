@@ -1,9 +1,7 @@
 from django.conf.urls import patterns, url
-from django.views.generic import TemplateView
-
 from django.contrib.auth.decorators import login_required
 
-from payments.views import SubscribeView, ChangePlanView
+from payments.views import SubscribeView, ChangeCardView, ChangePlanView, CancelView, HistoryView
 
 
 urlpatterns = patterns(
@@ -22,9 +20,7 @@ urlpatterns = patterns(
     ),
     url(
         r"^change/card/$",
-        login_required(TemplateView.as_view(
-            template_name="payments/change_card.html"
-        )),
+        login_required(ChangeCardView.as_view()),
         name="payments_change_card"
     ),
     url(
@@ -34,16 +30,12 @@ urlpatterns = patterns(
     ),
     url(
         r"^cancel/$",
-        login_required(TemplateView.as_view(
-            template_name="payments/cancel.html"
-        )),
+        login_required(CancelView.as_view()),
         name="payments_cancel"
     ),
     url(
         r"^history/$",
-        login_required(TemplateView.as_view(
-            template_name="payments/history.html"
-        )),
+        login_required(HistoryView.as_view()),
         name="payments_history"
     ),
 )

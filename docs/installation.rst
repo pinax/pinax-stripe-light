@@ -30,7 +30,7 @@ Installation
         "payments",
     ]
 
-Configuration (Modifications to Settings.py)
+Configuration (Modifications to `settings.py`)
 =======================
 * Add entries to for your publishable and secret keys. The recommended method is 
   to setup your production keys using environment variables.  This helps to keep them 

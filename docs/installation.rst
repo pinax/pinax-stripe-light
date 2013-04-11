@@ -78,6 +78,30 @@ Static Media
 
 The included templates have been tested to work with Checkout_.
 
-.. _Checkout: https://stripe.com/docs/checkout
+An example of integrating Checkout_ is to pus this in your base template::
 
-    
+    <script src="//checkout.stripe.com/v2/checkout.js"></script>
+    <script>
+        $(function() {
+            $('body').on("click", '.change-card, .subscribe-form button[type=submit]', function(e) {
+              e.preventDefault();
+              var $form = $(this).closest("form"),
+                  token = function(res) {
+                    $form.find("input[name=stripe_token]").val(res.id);
+                    $form.trigger("submit");
+                  };
+     
+              StripeCheckout.open({
+                key:         $form.data("stripe-key"),
+                name:        'Payment Method',
+                panelLabel:  'Add Payment Method',
+                token:       token
+              });
+     
+              return false;
+            });
+        });
+    </script>
+
+
+.. _Checkout: https://stripe.com/docs/checkout

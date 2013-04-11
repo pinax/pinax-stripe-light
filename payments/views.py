@@ -16,6 +16,19 @@ import stripe
 from payments.forms import PlanForm
 from payments.models import EventProcessingException
 from payments.models import Event, CurrentSubscription
+from payments import settings as app_settings
+
+
+class PaymentsContextMixin(object):
+
+    def get_context_data(self, **kwargs):
+        context = super(PaymentsContextMixin, self).get_context_data(**kwargs)
+        context.update({
+            "STRIPE_PUBLIC_KEY": app_settings.STRIPE_PUBLIC_KEY,
+            "PLAN_CHOICES": app_settings.PLAN_CHOICES,
+            "PAYMENT_PLANS": app_settings.PAYMENTS_PLANS
+        })
+        return context
 
 
 def _ajax_response(request, template, **kwargs):
@@ -31,7 +44,7 @@ def _ajax_response(request, template, **kwargs):
         return HttpResponse(json.dumps(response), mimetype="application/json")
 
 
-class SubscribeView(TemplateView):
+class SubscribeView(PaymentsContextMixin, TemplateView):
     template_name = "payments/subscribe.html"
     
     def get_context_data(self, **kwargs):
@@ -42,8 +55,20 @@ class SubscribeView(TemplateView):
         return context
 
 
+class ChangeCardView(PaymentsContextMixin, TemplateView):
+    template_name = "payments/change_card.html"
+
+
+class CancelView(PaymentsContextMixin, TemplateView):
+    template_name = "payments/cancel.html"
+
+
 class ChangePlanView(SubscribeView):
     template_name = "payments/change_plan.html"
+
+
+class HistoryView(PaymentsContextMixin, TemplateView):
+    template_name = "payments/history.html"
 
 
 @require_POST

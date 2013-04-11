@@ -64,14 +64,6 @@ Configuration (Modifications to `settings.py`)
         }
     }
 
-* Add the following context processor to your ``TEMPLATE_CONTEXT_PROCESSORS``::
-
-    TEMPLATE_CONTEXT_PROCESSORS = [
-        ...
-        "payments.context_processors.payments_settings",
-        ...
-    ]
-
 
 Static Media
 ============

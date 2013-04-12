@@ -20,6 +20,8 @@ from payments.settings import plan_from_stripe_id
 from payments.signals import WEBHOOK_SIGNALS
 from payments.signals import subscription_made, cancelled, card_changed
 from payments.signals import webhook_processing_error
+from payments.settings import TRIAL_PERIOD_FOR_USER_CALLBACK
+from payments.settings import DEFAULT_PLAN
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -348,14 +350,24 @@ class Customer(StripeObject):
     
     @classmethod
     def create(cls, user):
-        customer = stripe.Customer.create(
+
+        trial_days = None
+        if TRIAL_PERIOD_FOR_USER_CALLBACK:
+            trial_days = TRIAL_PERIOD_FOR_USER_CALLBACK(user)
+
+        stripe_customer = stripe.Customer.create(
             email=user.email
         )
-        return Customer.objects.create(
+        cus = Customer.objects.create(
             user=user,
-            stripe_id=customer.id
+            stripe_id=stripe_customer.id
         )
-    
+
+        if DEFAULT_PLAN and trial_days:
+            cus.subscribe(plan=DEFAULT_PLAN, trial_days=trial_days)
+
+        return cus
+
     def update_card(self, token, send_invoice=False):
         cu = self.stripe_customer
         cu.card = token

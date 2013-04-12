@@ -54,7 +54,7 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
         return statuses
 
     def queryset(self, request, queryset):
-        if self.value() == None:
+        if self.value() is None:
             return queryset.all()
         else:
             return queryset.filter(current_subscription__status=self.value())

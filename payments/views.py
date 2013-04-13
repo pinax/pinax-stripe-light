@@ -2,19 +2,19 @@ import json
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.views.generic import TemplateView
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-
 from django.contrib.auth.decorators import login_required
 
 import stripe
 
 from payments.forms import PlanForm
-from payments.models import EventProcessingException
+from payments.models import EventProcessingException, Customer
 from payments.models import Event, CurrentSubscription
 from payments import settings as app_settings
 
@@ -131,7 +131,10 @@ def subscribe(request, form_class=PlanForm):
     form = form_class(request.POST)
     if form.is_valid():
         try:
-            customer = request.user.customer
+            try:
+                customer = request.user.customer
+            except ObjectDoesNotExist:
+                customer = Customer.create(request.user)
             customer.update_card(request.POST.get("stripe_token"))
             customer.subscribe(form.cleaned_data["plan"])
             data["form"] = form_class()

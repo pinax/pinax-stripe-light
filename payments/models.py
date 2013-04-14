@@ -357,11 +357,11 @@ class Customer(StripeObject):
     
     @classmethod
     def create(cls, user):
-
+        
         trial_days = None
         if TRIAL_PERIOD_FOR_USER_CALLBACK:
             trial_days = TRIAL_PERIOD_FOR_USER_CALLBACK(user)
-
+        
         stripe_customer = stripe.Customer.create(
             email=user.email
         )
@@ -369,12 +369,12 @@ class Customer(StripeObject):
             user=user,
             stripe_id=stripe_customer.id
         )
-
+        
         if DEFAULT_PLAN and trial_days:
             cus.subscribe(plan=DEFAULT_PLAN, trial_days=trial_days)
-
+        
         return cus
-
+    
     def update_card(self, token, send_invoice=False):
         cu = self.stripe_customer
         cu.card = token
@@ -496,7 +496,7 @@ class Customer(StripeObject):
     
     def record_charge(self, charge_id):
         data = stripe.Charge.retrieve(charge_id)
-        obj, created = self.charges.get_or_create(
+        obj, _ = self.charges.get_or_create(
             stripe_id=data["id"]
         )
         if data.get("invoice") and self.invoices.filter(
@@ -622,7 +622,7 @@ class Invoice(models.Model):
             invoice.date = date
             invoice.charge = stripe_invoice.get("charge") or ""
             invoice.save()
-
+        
         for item in stripe_invoice["lines"].get("data", []):
             period_end = convert_tstamp(item["period"], "end")
             period_start = convert_tstamp(item["period"], "start")

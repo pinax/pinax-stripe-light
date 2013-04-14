@@ -20,7 +20,7 @@ from payments import settings as app_settings
 
 
 class PaymentsContextMixin(object):
-
+    
     def get_context_data(self, **kwargs):
         context = super(PaymentsContextMixin, self).get_context_data(**kwargs)
         context.update({

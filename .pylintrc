@@ -1,0 +1,62 @@
+[MASTER]
+load-plugins=pinax.checkers.style
+
+[MESSAGES CONTROL]
+# Brain-dead errors regarding standard language features
+#   W0142 = *args and **kwargs support
+#   W0403 = Relative imports
+
+# Pointless whinging
+#   R0201 = Method could be a function
+#   W0212 = Accessing protected attribute of client class
+#   W0613 = Unused argument
+#   W0232 = Class has no __init__ method
+#   R0901 = Too Many Ancestors
+#   R0903 = Too few public methods
+#   R0904 = Too Many Public Methods
+#   C0111 = Missing docstring
+#   I0011 = Locally Disabling
+#   W0201 = Attribute X defined outside of __init__
+#   R0801 = Similarities, Might be good to have but need to find a way to disable for deploy.*
+
+# Already an error when wildcard imports are used
+#   W0614 = Unused import from wildcard
+
+# Seems to be broken?
+#   E1102 = Not Callable
+
+# Broken with Django
+#   E1101 = Instance X has not member Y. (This breaks with Django)
+disable=W0511,I0011,C0111,R0913,R0903,R0904,R0911,R0912,R0914,R0201,W0142,E0603,E1101,W0403,W0613,W0232,E1120,C0103
+
+[REPORTS]
+include-ids=yes
+reports=no
+
+[BASIC]
+good-names=n,i,j,k,x,e,Run,_,urlpatterns,setUp,qs,pk,register,logger
+
+# Regular expression which should only match correct function names
+function-rgx=[a-z_][a-z0-9_]{2,60}$
+
+# Regular expression which should only match correct method names
+method-rgx=[a-z_][a-z0-9_]{2,60}$
+
+# Regular expression which should only match correct instance attribute names
+attr-rgx=[a-z_][a-z0-9_]{2,60}$
+
+[DESIGN]
+max-locals=20
+
+[FORMAT]
+max-line-length=80
+
+[VARIABLES]
+
+dummy-variables-rgx=^.*_$
+
+[TYPECHECK]
+generated-members=DoesNotExist,MultipleObjectsReturned,objects,status_code,context,is_valid,cleaned_data,errors
+
+[MISCELLANEOUS]
+notes=FIXME,XXX,TODO,@@@

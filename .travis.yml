@@ -7,11 +7,10 @@ env:
 install:
   - pip install -q Django==$DJANGO --use-mirrors
   - pip install -q mock --use-mirrors
-  - pip install -q pep8 --use-mirrors
-  - pip install -q https://github.com/dcramer/pyflakes/tarball/master
+  - pip install -q pylint --use-mirrors
+  - pip install -q pinax.checkers --use-mirrors
   - pip install -e . --use-mirrors
 before_script:
-  - "pep8 --ignore=W293 payments"
-  - pyflakes payments
+  - "pylint --rcfile=.pylintrc payments"
 script:
   - python runtests.py

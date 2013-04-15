@@ -332,11 +332,10 @@ class Customer(StripeObject):
         self.purge()
     
     def can_charge(self):
-        try:
-            return self.card_fingerprint and \
-                self.current_subscription.status not in ("canceled", "unpaid")
-        except CurrentSubscription.DoesNotExist:
-            return False
+        return self.card_fingerprint and \
+            self.card_last_4 and \
+            self.card_kind and \
+            self.date_purged is None
     
     def has_active_subscription(self):
         try:

@@ -293,6 +293,14 @@ class TestCustomer(TestCase):
         self.assertTrue(customer.card_last_4 == "")
         self.assertTrue(customer.card_kind == "")
         self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
+    
+    def test_change_charge(self):
+        self.assertTrue(self.customer.can_charge())
+    
+    @patch("stripe.Customer.retrieve")
+    def test_cannot_charge(self, CustomerRetrieveMock):
+        self.customer.delete()
+        self.assertFalse(self.customer.can_charge())
 
 
 class TestEventMethods(TestCase):

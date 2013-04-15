@@ -283,6 +283,16 @@ class TestCustomer(TestCase):
         self.assertTrue(customer.card_last_4 == "")
         self.assertTrue(customer.card_kind == "")
         self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
+    
+    @patch("stripe.Customer.retrieve")
+    def test_customer_delete_same_as_purge(self, CustomerRetrieveMock):
+        self.customer.delete()
+        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+        self.assertTrue(customer.user is None)
+        self.assertTrue(customer.card_fingerprint == "")
+        self.assertTrue(customer.card_last_4 == "")
+        self.assertTrue(customer.card_kind == "")
+        self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
 
 
 class TestEventMethods(TestCase):

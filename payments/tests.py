@@ -7,6 +7,8 @@ from django.test import TestCase
 from django.test.client import Client
 from django.utils import timezone
 
+from django.contrib.auth.models import User
+
 from mock import patch
 
 from .models import convert_tstamp, Event, Customer, Transfer
@@ -258,6 +260,29 @@ class TestTransferWebhooks(TestCase):
         paid_event.process()
         transfer = Transfer.objects.get(stripe_id="tr_XXXXXXXXXXXX")
         self.assertEquals(transfer.status, "paid")
+
+
+class TestCustomer(TestCase):
+    
+    def setUp(self):
+        self.user = User.objects.create_user(username="patrick")
+        self.customer = Customer.objects.create(
+            user=self.user,
+            stripe_id="cus_xxxxxxxxxxxxxxx",
+            card_fingerprint="YYYYYYYY",
+            card_last_4="2342",
+            card_kind="Visa"
+        )
+    
+    @patch("stripe.Customer.retrieve")
+    def test_customer_purge_leaves_customer_record(self, CustomerRetrieveMock):
+        self.customer.purge()
+        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+        self.assertTrue(customer.user is None)
+        self.assertTrue(customer.card_fingerprint == "")
+        self.assertTrue(customer.card_last_4 == "")
+        self.assertTrue(customer.card_kind == "")
+        self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
 
 
 class TestEventMethods(TestCase):

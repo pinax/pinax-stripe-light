@@ -375,7 +375,7 @@ class Customer(StripeObject):
         
         return cus
     
-    def update_card(self, token, send_invoice=False):
+    def update_card(self, token):
         cu = self.stripe_customer
         cu.card = token
         cu.save()
@@ -384,10 +384,15 @@ class Customer(StripeObject):
         self.card_kind = cu.active_card.type
         self.save()
         card_changed.send(sender=self, stripe_response=cu)
-        if send_invoice:
-            self.send_invoice()  # Creates invoice and charges immediately
+    
+    def retry_unpaid_invoices(self):
+        self.sync_invoices()
         for inv in self.invoices.filter(paid=False, closed=False):
-            inv.retry()  # Always retry unpaid invoices
+            try:
+                inv.retry()  # Always retry unpaid invoices
+            except stripe.InvalidRequestError, error:
+                if error.message != "Invoice is already paid":
+                    raise error
     
     def send_invoice(self):
         try:

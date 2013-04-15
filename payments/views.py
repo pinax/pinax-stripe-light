@@ -76,10 +76,14 @@ class HistoryView(PaymentsContextMixin, TemplateView):
 def change_card(request):
     if request.POST.get("stripe_token"):
         try:
-            request.user.customer.update_card(
-                request.POST.get("stripe_token"),
-                send_invoice=(request.user.customer.card_fingerprint == "")
+            customer = request.user.customer
+            send_invoice = customer.card_fingerprint == ""
+            customer.update_card(
+                request.POST.get("stripe_token")
             )
+            if send_invoice:
+                customer.send_invoice()
+            customer.retry_unpaid_invoices()
             data = {}
         except stripe.CardError, e:
             data = {"error": e.message}

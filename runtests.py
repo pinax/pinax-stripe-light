@@ -1,4 +1,3 @@
-import os
 import sys
 
 from django.conf import settings
@@ -24,9 +23,9 @@ settings.configure(
     PAYMENTS_PLANS={}
 )
 
-from django.test.simple import DjangoTestSuiteRunner
+from django_nose import NoseTestSuiteRunner
 
-test_runner = DjangoTestSuiteRunner(verbosity=1)
+test_runner = NoseTestSuiteRunner(verbosity=1)
 failures = test_runner.run_tests(["payments"])
 
 if failures:

@@ -34,8 +34,8 @@ INVOICE_FROM_EMAIL = getattr(
 )
 PAYMENTS_PLANS = getattr(settings, "PAYMENTS_PLANS", {})
 PLAN_CHOICES = [
-    (plan, settings.PAYMENTS_PLANS[plan].get("name", plan))
-    for plan in settings.PAYMENTS_PLANS
+    (plan, PAYMENTS_PLANS[plan].get("name", plan))
+    for plan in PAYMENTS_PLANS
 ]
 DEFAULT_PLAN = getattr(
     settings,

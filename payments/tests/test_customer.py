@@ -1,10 +1,12 @@
 from django.test import TestCase
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 
 from mock import patch
 
 from ..models import Customer
+
+User = get_user_model()
 
 
 class TestCustomer(TestCase):

@@ -8,7 +8,7 @@ from django.db import models
 from django.utils import timezone
 from django.template.loader import render_to_string
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 
 import stripe
@@ -26,6 +26,8 @@ from payments.settings import DEFAULT_PLAN
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 stripe.api_version = getattr(settings, "STRIPE_API_VERSION", "2012-11-07")
+
+User = get_user_model()
 
 
 def convert_tstamp(response, field_name=None):
@@ -296,7 +298,7 @@ class TransferChargeFee(models.Model):
 
 class Customer(StripeObject):
     
-    user = models.OneToOneField(User, null=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True)
     card_fingerprint = models.CharField(max_length=200, blank=True)
     card_last_4 = models.CharField(max_length=4, blank=True)
     card_kind = models.CharField(max_length=50, blank=True)

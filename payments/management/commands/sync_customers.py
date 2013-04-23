@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 
 try:
+    #pylint: disable-msg=E0611,R0801
     from django.contrib.auth import get_user_model
     User = get_user_model()
 except ImportError:

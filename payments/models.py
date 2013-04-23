@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.template.loader import render_to_string
 
 try:
+    #pylint: disable-msg=E0611,R0801
     from django.contrib.auth import get_user_model
     User = get_user_model()
 except ImportError:
@@ -301,7 +302,7 @@ class TransferChargeFee(models.Model):
 
 class Customer(StripeObject):
     
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True)
+    user = models.OneToOneField(User, null=True)
     card_fingerprint = models.CharField(max_length=200, blank=True)
     card_last_4 = models.CharField(max_length=4, blank=True)
     card_kind = models.CharField(max_length=50, blank=True)

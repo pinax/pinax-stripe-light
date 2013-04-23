@@ -518,6 +518,7 @@ class Customer(StripeObject):
         if data.get("description"):
             obj.description = data["description"]
         if data.get("amount_refunded"):
+            # pylint: disable=C0301
             obj.amount_refunded = (data["amount_refunded"] / decimal.Decimal("100.0"))
         if data["refunded"]:
             obj.amount_refunded = (data["amount"] / decimal.Decimal("100.0"))
@@ -617,6 +618,7 @@ class Invoice(models.Model):
             )
         )
         if not created:
+            # pylint: disable=C0301
             invoice.attempted = stripe_invoice["attempted"]
             invoice.closed = stripe_invoice["closed"]
             invoice.paid = stripe_invoice["paid"]

@@ -8,7 +8,12 @@ from django.db import models
 from django.utils import timezone
 from django.template.loader import render_to_string
 
-from django.contrib.auth import get_user_model
+try:
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+except ImportError:
+    from django.contrib.auth.models import User
+
 from django.contrib.sites.models import Site
 
 import stripe
@@ -26,8 +31,6 @@ from payments.settings import DEFAULT_PLAN
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 stripe.api_version = getattr(settings, "STRIPE_API_VERSION", "2012-11-07")
-
-User = get_user_model()
 
 
 def convert_tstamp(response, field_name=None):

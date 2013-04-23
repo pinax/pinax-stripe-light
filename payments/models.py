@@ -9,7 +9,13 @@ from django.db import models
 from django.utils import timezone
 from django.template.loader import render_to_string
 
-from django.contrib.auth.models import User
+try:
+    #pylint: disable-msg=E0611,R0801
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+except ImportError:
+    from django.contrib.auth.models import User
+
 from django.contrib.sites.models import Site
 
 import stripe

@@ -1,4 +1,5 @@
 import datetime
+import decimal
 import json
 import traceback
 
@@ -236,7 +237,7 @@ class Transfer(StripeObject):
     @classmethod
     def process_transfer(cls, event, transfer):
         defaults = {
-            "amount": transfer["amount"] / 100.0,
+            "amount": transfer["amount"] / decimal.Decimal("100.0"),
             "status": transfer["status"],
             "date": convert_tstamp(transfer, "date"),
             "description": transfer.get("description", ""),
@@ -248,7 +249,7 @@ class Transfer(StripeObject):
             "charge_gross": transfer["summary"]["charge_gross"],
             "collected_fee_count": transfer["summary"]["collected_fee_count"],
             "collected_fee_gross": transfer["summary"]["collected_fee_gross"],
-            "net": transfer["summary"]["net"] / 100.0,
+            "net": transfer["summary"]["net"] / decimal.Decimal("100.0"),
             "refund_count": transfer["summary"]["refund_count"],
             "refund_fees": transfer["summary"]["refund_fees"],
             "refund_gross": transfer["summary"]["refund_gross"],
@@ -257,7 +258,7 @@ class Transfer(StripeObject):
         }
         for field in defaults:
             if field.endswith("fees") or field.endswith("gross"):
-                defaults[field] = defaults[field] / 100.0
+                defaults[field] = defaults[field] / decimal.Decimal("100.0")
         if event.kind == "transfer.paid":
             defaults.update({"event": event})
             obj, created = Transfer.objects.get_or_create(
@@ -273,7 +274,7 @@ class Transfer(StripeObject):
         if created:
             for fee in transfer["summary"]["charge_fee_details"]:
                 obj.charge_fee_details.create(
-                    amount=fee["amount"] / 100.0,
+                    amount=fee["amount"] / decimal.Decimal("100.0"),
                     application=fee.get("application", ""),
                     description=fee.get("description", ""),
                     kind=fee["type"]
@@ -432,7 +433,7 @@ class Customer(StripeObject):
                 sub_obj.current_period_end = convert_tstamp(
                     sub.current_period_end
                 )
-                sub_obj.amount = (sub.plan.amount / 100.0)
+                sub_obj.amount = (sub.plan.amount / decimal.Decimal("100.0"))
                 sub_obj.status = sub.status
                 sub_obj.start = convert_tstamp(sub.start)
                 sub_obj.quantity = sub.quantity
@@ -447,7 +448,7 @@ class Customer(StripeObject):
                     current_period_end=convert_tstamp(
                         sub.current_period_end
                     ),
-                    amount=(sub.plan.amount / 100.0),
+                    amount=(sub.plan.amount / decimal.Decimal("100.0")),
                     status=sub.status,
                     start=convert_tstamp(sub.start),
                     quantity=sub.quantity
@@ -509,17 +510,17 @@ class Customer(StripeObject):
             obj.invoice = self.invoices.get(stripe_id=data.get("invoice"))
         obj.card_last_4 = data["card"]["last4"]
         obj.card_kind = data["card"]["type"]
-        obj.amount = (data["amount"] / 100.0)
+        obj.amount = (data["amount"] / decimal.Decimal("100.0"))
         obj.paid = data["paid"]
         obj.refunded = data["refunded"]
-        obj.fee = (data["fee"] / 100.0)
+        obj.fee = (data["fee"] / decimal.Decimal("100.0"))
         obj.disputed = data["dispute"] is not None
         if data.get("description"):
             obj.description = data["description"]
         if data.get("amount_refunded"):
-            obj.amount_refunded = (data["amount_refunded"] / 100.0)
+            obj.amount_refunded = (data["amount_refunded"] / decimal.Decimal("100.0"))
         if data["refunded"]:
-            obj.amount_refunded = (data["amount"] / 100.0)
+            obj.amount_refunded = (data["amount"] / decimal.Decimal("100.0"))
         obj.save()
         return obj
 
@@ -609,8 +610,8 @@ class Invoice(models.Model):
                 paid=stripe_invoice["paid"],
                 period_end=period_end,
                 period_start=period_start,
-                subtotal=stripe_invoice["subtotal"] / 100.0,
-                total=stripe_invoice["total"] / 100.0,
+                subtotal=stripe_invoice["subtotal"] / decimal.Decimal("100.0"),
+                total=stripe_invoice["total"] / decimal.Decimal("100.0"),
                 date=date,
                 charge=stripe_invoice.get("charge") or ""
             )
@@ -621,8 +622,8 @@ class Invoice(models.Model):
             invoice.paid = stripe_invoice["paid"]
             invoice.period_end = period_end
             invoice.period_start = period_start
-            invoice.subtotal = stripe_invoice["subtotal"] / 100.0
-            invoice.total = stripe_invoice["total"] / 100.0
+            invoice.subtotal = stripe_invoice["subtotal"] / decimal.Decimal("100.0")
+            invoice.total = stripe_invoice["total"] / decimal.Decimal("100.0")
             invoice.date = date
             invoice.charge = stripe_invoice.get("charge") or ""
             invoice.save()
@@ -639,7 +640,7 @@ class Invoice(models.Model):
             inv_item, inv_item_created = invoice.items.get_or_create(
                 stripe_id=item["id"],
                 defaults=dict(
-                    amount=(item["amount"] / 100.0),
+                    amount=(item["amount"] / decimal.Decimal("100.0")),
                     currency=item["currency"],
                     proration=item["proration"],
                     description=item.get("description") or "",
@@ -651,7 +652,7 @@ class Invoice(models.Model):
                 )
             )
             if not inv_item_created:
-                inv_item.amount = (item["amount"] / 100.0)
+                inv_item.amount = (item["amount"] / decimal.Decimal("100.0"))
                 inv_item.currency = item["currency"]
                 inv_item.proration = item["proration"]
                 inv_item.description = item.get("description") or ""

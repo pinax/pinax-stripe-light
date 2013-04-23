@@ -6,8 +6,8 @@ card_changed = Signal(providing_args=["stripe_response"])
 subscription_made = Signal(providing_args=["plan", "stripe_response"])
 webhook_processing_error = Signal(providing_args=["data", "exception"])
 
-WEBHOOK_SIGNALS = {
-    hook: Signal(providing_args=["event"])
+WEBHOOK_SIGNALS = dict([
+    (hook, Signal(providing_args=["event"]))
     for hook in [
         "account.updated",
         "account.application.deauthorized",
@@ -45,4 +45,4 @@ WEBHOOK_SIGNALS = {
         "transfer.failed",
         "ping"
     ]
-}
+])

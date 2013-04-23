@@ -1,7 +1,6 @@
-import importlib
-
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.utils import importlib
 
 
 def plan_from_stripe_id(stripe_id):

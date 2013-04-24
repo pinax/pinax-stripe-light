@@ -1,13 +1,20 @@
 from django.test import TestCase
 
+from django.contrib.auth.models import User
+
+from mock import patch
+
 from ..models import Customer, Event
 
 
 class TestEventMethods(TestCase):
     
     def setUp(self):
+        self.user = User.objects.create_user(username="testuser")
+        self.user.save()
         self.customer = Customer.objects.create(
-            stripe_id="cus_xxxxxxxxxxxxxxx"
+            stripe_id="cus_xxxxxxxxxxxxxxx",
+            user=self.user
         )
     
     def test_link_customer_customer_created(self):
@@ -132,3 +139,40 @@ class TestEventMethods(TestCase):
         )
         event.link_customer()
         self.assertEquals(event.customer, self.customer)
+    
+    @patch("stripe.Customer.retrieve")
+    def test_process_customer_deleted(self, CustomerMock):
+        msg = {
+            "created": 1348286560,
+            "data": {
+                "object": {
+                    "account_balance": 0,
+                    "active_card": None,
+                    "created": 1348286302,
+                    "delinquent": False,
+                    "description": None,
+                    "discount": None,
+                    "email": "paltman+test@gmail.com",
+                    "id": "cus_xxxxxxxxxxxxxxx",
+                    "livemode": True,
+                    "object": "customer",
+                    "subscription": None
+                }
+            },
+            "id": "evt_xxxxxxxxxxxxx",
+            "livemode": True,
+            "object": "event",
+            "pending_webhooks": 1,
+            "type": "customer.deleted"
+        }
+        event = Event.objects.create(
+            stripe_id=msg["id"],
+            kind="customer.deleted",
+            livemode=True,
+            webhook_message=msg,
+            validated_message=msg,
+            valid=True
+        )
+        event.process()
+        self.assertEquals(event.customer, self.customer)
+        self.assertEquals(event.customer.user, None)

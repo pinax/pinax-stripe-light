@@ -15,6 +15,11 @@ You will also want to add ``django_forms_bootstrap`` to your `INSTALLED_APPS``::
         "django_forms_bootstrap",
     ]
 
+You will also want to add ``bootstrap-ajax.js`` to your base template. bootstrap-ajax_
+is a library used by the included templates to interact wiht the ajax views. You
+can certainly write your own javascript, but it is likely easier for you to just
+include the library.
+
 
 Installation
 ============
@@ -96,4 +101,6 @@ An example of integrating Checkout_ is to pus this in your base template::
     </script>
 
 
+.. _bootstrap-ajax: https://github.com/eldarion/bootstrap-ajax
 .. _Checkout: https://stripe.com/docs/checkout
+

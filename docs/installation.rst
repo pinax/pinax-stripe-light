@@ -75,7 +75,7 @@ Static Media
 
 The included templates have been tested to work with Checkout_.
 
-An example of integrating Checkout_ is to pus this in your base template::
+An example of integrating Checkout_ is to put this in your base template::
 
     <script src="//checkout.stripe.com/v2/checkout.js"></script>
     <script>

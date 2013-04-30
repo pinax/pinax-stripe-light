@@ -9,7 +9,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         verbosity = int(options.get('verbosity', 1))
-        stripe.api_key = settings.STRIPE_SECRET_KEY
+        stripe.api_key = settings.STRIPE_SECRET_TEST_KEY  #add this key to settings to make sure that actual live customers don't get wiped out
         customer_chunk=[0]
         if verbosity > 0:
             print "Clearing stripe test customers:"

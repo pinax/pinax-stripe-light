@@ -7,6 +7,7 @@ env:
   - DJANGO=1.5
 install:
   - pip install -q Django==$DJANGO --use-mirrors
+  - pip install -q django-jsonfield==0.8.12
   - pip install -q mock --use-mirrors
   - pip install -q django-nose --use-mirrors
   - pip install -q pylint --use-mirrors

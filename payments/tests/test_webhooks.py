@@ -7,6 +7,7 @@ from django.test.client import Client
 
 from mock import patch
 
+from . import TRANSFER_CREATED_TEST_DATA
 from ..models import Event, Transfer
 
 
@@ -72,74 +73,27 @@ class TestWebhook(TestCase):
 
 class TestTransferWebhooks(TestCase):
     
-    def setUp(self):
-        self.transfer_created_data = {
-            "created": 1348360173,
-            "data": {
-                "object": {
-                    "amount": 455,
-                    "currency": "usd",
-                    "date": 1348876800,
-                    "description": None,
-                    "id": "tr_XXXXXXXXXXXX",
-                    "object": "transfer",
-                    "other_transfers": [],
-                    "status": "pending",
-                    "summary": {
-                        "adjustment_count": 0,
-                        "adjustment_fee_details": [],
-                        "adjustment_fees": 0,
-                        "adjustment_gross": 0,
-                        "charge_count": 1,
-                        "charge_fee_details": [{
-                            "amount": 45,
-                            "application": None,
-                            "currency": "usd",
-                            "description": None,
-                            "type": "stripe_fee"
-                        }],
-                        "charge_fees": 45,
-                        "charge_gross": 500,
-                        "collected_fee_count": 0,
-                        "collected_fee_gross": 0,
-                        "currency": "usd",
-                        "net": 455,
-                        "refund_count": 0,
-                        "refund_fees": 0,
-                        "refund_gross": 0,
-                        "validation_count": 0,
-                        "validation_fees": 0
-                    }
-                }
-            },
-            "id": "evt_XXXXXXXXXXXX",
-            "livemode": True,
-            "object": "event",
-            "pending_webhooks": 1,
-            "type": "transfer.created"
-        }
-    
     def test_transfer_created(self):
         event = Event.objects.create(
-            stripe_id=self.transfer_created_data["id"],
+            stripe_id=TRANSFER_CREATED_TEST_DATA["id"],
             kind="transfer.created",
             livemode=True,
-            webhook_message=self.transfer_created_data,
-            validated_message=self.transfer_created_data,
+            webhook_message=TRANSFER_CREATED_TEST_DATA,
+            validated_message=TRANSFER_CREATED_TEST_DATA,
             valid=True
         )
         event.process()
         transfer = Transfer.objects.get(stripe_id="tr_XXXXXXXXXXXX")
         self.assertEquals(transfer.amount, decimal.Decimal("4.55"))
-        self.assertEquals(transfer.status, "pending")
+        self.assertEquals(transfer.status, "paid")
     
     def test_transfer_paid_updates_existing_record(self):
         event = Event.objects.create(
-            stripe_id=self.transfer_created_data["id"],
+            stripe_id=TRANSFER_CREATED_TEST_DATA["id"],
             kind="transfer.created",
             livemode=True,
-            webhook_message=self.transfer_created_data,
-            validated_message=self.transfer_created_data,
+            webhook_message=TRANSFER_CREATED_TEST_DATA,
+            validated_message=TRANSFER_CREATED_TEST_DATA,
             valid=True
         )
         event.process()

@@ -16,6 +16,7 @@ import stripe
 
 from jsonfield.fields import JSONField
 
+from payments.managers import CustomerManager, ChargeManager, TransferManager
 from payments.settings import PAYMENTS_PLANS, INVOICE_FROM_EMAIL
 from payments.settings import plan_from_stripe_id
 from payments.signals import WEBHOOK_SIGNALS
@@ -234,6 +235,8 @@ class Transfer(StripeObject):
     validation_count = models.IntegerField()
     validation_fees = models.DecimalField(decimal_places=2, max_digits=7)
     
+    objects = TransferManager()
+    
     def update_status(self):
         self.status = stripe.Transfer.retrieve(self.stripe_id).status
         self.save()
@@ -306,6 +309,8 @@ class Customer(StripeObject):
     card_last_4 = models.CharField(max_length=4, blank=True)
     card_kind = models.CharField(max_length=50, blank=True)
     date_purged = models.DateTimeField(null=True, editable=False)
+    
+    objects = CustomerManager()
     
     def __unicode__(self):
         return unicode(self.user)
@@ -519,6 +524,7 @@ class Customer(StripeObject):
         obj.refunded = data["refunded"]
         obj.fee = (data["fee"] / decimal.Decimal("100.0"))
         obj.disputed = data["dispute"] is not None
+        obj.charge_created = convert_tstamp(data, "created")
         if data.get("description"):
             obj.description = data["description"]
         if data.get("amount_refunded"):
@@ -721,6 +727,9 @@ class Charge(StripeObject):
     refunded = models.NullBooleanField(null=True)
     fee = models.DecimalField(decimal_places=2, max_digits=7, null=True)
     receipt_sent = models.BooleanField(default=False)
+    charge_created = models.DateTimeField(null=True, blank=True)
+    
+    objects = ChargeManager()
     
     def send_receipt(self):
         if not self.receipt_sent:

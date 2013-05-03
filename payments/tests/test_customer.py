@@ -1,3 +1,5 @@
+import decimal
+
 from django.test import TestCase
 
 from django.contrib.auth.models import User
@@ -46,3 +48,30 @@ class TestCustomer(TestCase):
     def test_cannot_charge(self, CustomerRetrieveMock):
         self.customer.delete()
         self.assertFalse(self.customer.can_charge())
+    
+    def test_charge_accepts_only_decimals(self):
+        with self.assertRaises(ValueError):
+            self.customer.charge(10)
+    
+    @patch("stripe.Charge.retrieve")
+    @patch("stripe.Charge.create")
+    def test_charge_converts_dollars_into_cents(self, ChargeMock, RetrieveMock):
+        ChargeMock.return_value.id = "ch_XXXXX"
+        RetrieveMock.return_value = {
+            "id": "ch_XXXXXX",
+            "card": {
+                "last4": "4323",
+                "type": "Visa"
+            },
+            "amount": 1000,
+            "paid": True,
+            "refunded": False,
+            "fee": 499,
+            "dispute": None,
+            "created": 1363911708
+        }
+        self.customer.charge(
+            amount=decimal.Decimal("10.00")
+        )
+        args, kwargs = ChargeMock.call_args
+        self.assertEquals(kwargs["amount"], 1000)

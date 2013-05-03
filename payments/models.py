@@ -499,8 +499,17 @@ class Customer(StripeObject):
         subscription_made.send(sender=self, plan=plan, stripe_response=resp)
     
     def charge(self, amount, currency="usd", description=None):
+        """
+        This method expects `amount` to be a Decimal type representing a
+        dollar amount. It will be converted to cents so any decimals beyond
+        two will be ignored.
+        """
+        if not isinstance(amount, decimal.Decimal):
+            raise ValueError(
+                "You must supply a decimal value representing dollars."
+            )
         resp = stripe.Charge.create(
-            amount=amount,
+            amount=int(amount * 100),  # Convert dollars into cents
             currency=currency,
             customer=self.stripe_id,
             description=description,

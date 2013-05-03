@@ -18,6 +18,7 @@ settings.configure(
         "jsonfield",
         "payments",
     ],
+    SITE_ID=1,
     STRIPE_PUBLIC_KEY="",
     STRIPE_SECRET_KEY="",
     PAYMENTS_PLANS={}

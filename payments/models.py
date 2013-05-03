@@ -513,9 +513,7 @@ class Customer(StripeObject):
         obj, _ = self.charges.get_or_create(
             stripe_id=data["id"]
         )
-        if data.get("invoice") and self.invoices.filter(
-                stripe_id=data.get("invoice")
-        ).exists():
+        if self.invoices.filter(stripe_id=data.get("invoice", None)).exists():
             obj.invoice = self.invoices.get(stripe_id=data.get("invoice"))
         obj.card_last_4 = data["card"]["last4"]
         obj.card_kind = data["card"]["type"]

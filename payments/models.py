@@ -507,6 +507,7 @@ class Customer(StripeObject):
         )
         obj = self.record_charge(resp["id"])
         obj.send_receipt()
+        return obj
     
     def record_charge(self, charge_id):
         data = stripe.Charge.retrieve(charge_id)

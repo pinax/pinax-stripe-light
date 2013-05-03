@@ -19,4 +19,4 @@ class Command(BaseCommand):
                     currency=settings.PAYMENTS_PLANS[plan]["currency"],
                     id=settings.PAYMENTS_PLANS[plan].get("stripe_plan_id")
                 )
-                print "Plan created for %s" % plan
+                print "Plan created for {0}".format(plan)

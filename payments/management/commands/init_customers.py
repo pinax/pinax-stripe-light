@@ -12,4 +12,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         for user in User.objects.filter(customer__isnull=True):
             Customer.create(user=user)
-            print "Created customer for %s" % user.email
+            print "Created customer for {0}".format(user.email)

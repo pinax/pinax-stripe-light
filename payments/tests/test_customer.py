@@ -73,5 +73,5 @@ class TestCustomer(TestCase):
         self.customer.charge(
             amount=decimal.Decimal("10.00")
         )
-        args, kwargs = ChargeMock.call_args
+        _, kwargs = ChargeMock.call_args
         self.assertEquals(kwargs["amount"], 1000)

@@ -4,7 +4,7 @@
 Template Tags
 =============
 
-There are three inclusion tags to make it easy to put various forms
+There are two inclusion tags to make it easy to put various forms
 within your templates.
 
 change_plan_form

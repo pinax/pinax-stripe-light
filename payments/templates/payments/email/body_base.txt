@@ -24,4 +24,4 @@ Please contact us with any questions regarding this invoice.
 
 ---
 Your {{ site.name }} Team
-https://{{ site.domain }}
+{{ protocol }}://{{ site.domain }}

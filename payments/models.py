@@ -742,14 +742,15 @@ class Charge(StripeObject):
     def send_receipt(self):
         if not self.receipt_sent:
             site = Site.objects.get_current()
-            subject = render_to_string(
-                "payments/email/subject.txt",
-                {"charge": self, "site": site}
-            ).strip()
-            message = render_to_string(
-                "payments/email/body.txt",
-                {"charge": self, "site": site}
-            )
+            protocol = getattr(settings, "DEFAULT_HTTP_PROTOCOL", "http")
+            ctx = {
+                "charge": self,
+                "site": site,
+                "protocol": protocol,
+            }
+            subject = render_to_string("payments/email/subject.txt", ctx)
+            subject = subject.strip()
+            message = render_to_string("payments/email/body.txt", ctx)
             num_sent = EmailMessage(
                 subject,
                 message,

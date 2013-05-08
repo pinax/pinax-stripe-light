@@ -727,9 +727,12 @@ class Charge(StripeObject):
         return amount_to_refund
     
     def refund(self, amount=None):
-        to_refund = self.calculate_refund_amount(amount=amount)
-        stripe_charge = stripe.Charge.retrieve(self.stripe_id)
-        charge_obj = stripe_charge.refund(to_refund)
+        # pylint: disable=E1121
+        charge_obj = stripe.Charge.retrieve(
+            self.stripe_id
+        ).refund(
+            self.calculate_refund_amount(amount=amount)
+        )
         Charge.sync_from_stripe_data(charge_obj)
     
     @classmethod
@@ -738,8 +741,9 @@ class Charge(StripeObject):
         obj, _ = customer.charges.get_or_create(
             stripe_id=data["id"]
         )
-        if obj.customer.invoices.filter(stripe_id=data.get("invoice", None)).exists():
-            obj.invoice = obj.customer.invoices.get(stripe_id=data.get("invoice"))
+        invoice_id = data.get("invoice", None)
+        if obj.customer.invoices.filter(stripe_id=invoice_id).exists():
+            obj.invoice = obj.customer.invoices.get(stripe_id=invoice_id)
         obj.card_last_4 = data["card"]["last4"]
         obj.card_kind = data["card"]["type"]
         obj.amount = (data["amount"] / decimal.Decimal("100.0"))

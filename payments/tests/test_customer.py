@@ -1,4 +1,3 @@
-import datetime
 import decimal
 
 from django.test import TestCase
@@ -111,18 +110,33 @@ class TestCustomer(TestCase):
         self.assertEquals(charge2.amount_refunded, decimal.Decimal("10.00"))
     
     def test_calculate_refund_amount_full_refund(self):
-        charge = Charge(stripe_id="ch_111111", customer=self.customer, amount=decimal.Decimal("500.00"))
-        self.assertEquals(charge.calculate_refund_amount(), decimal.Decimal("500.00"))
+        charge = Charge(
+            stripe_id="ch_111111",
+            customer=self.customer,
+            amount=decimal.Decimal("500.00")
+        )
+        self.assertEquals(
+            charge.calculate_refund_amount(),
+            decimal.Decimal("500.00")
+        )
     
     def test_calculate_refund_amount_partial_refund(self):
-        charge = Charge(stripe_id="ch_111111", customer=self.customer, amount=decimal.Decimal("500.00"))
+        charge = Charge(
+            stripe_id="ch_111111",
+            customer=self.customer,
+            amount=decimal.Decimal("500.00")
+        )
         self.assertEquals(
             charge.calculate_refund_amount(amount=decimal.Decimal("300.00")),
             decimal.Decimal("300.00")
         )
     
     def test_calculate_refund_above_max_refund(self):
-        charge = Charge(stripe_id="ch_111111", customer=self.customer, amount=decimal.Decimal("500.00"))
+        charge = Charge(
+            stripe_id="ch_111111",
+            customer=self.customer,
+            amount=decimal.Decimal("500.00")
+        )
         self.assertEquals(
             charge.calculate_refund_amount(amount=decimal.Decimal("600.00")),
             decimal.Decimal("500.00")

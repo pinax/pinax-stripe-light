@@ -117,7 +117,7 @@ class TestCustomer(TestCase):
         )
         self.assertEquals(
             charge.calculate_refund_amount(),
-            decimal.Decimal("500.00")
+            50000
         )
     
     def test_calculate_refund_amount_partial_refund(self):
@@ -128,7 +128,7 @@ class TestCustomer(TestCase):
         )
         self.assertEquals(
             charge.calculate_refund_amount(amount=decimal.Decimal("300.00")),
-            decimal.Decimal("300.00")
+            30000
         )
     
     def test_calculate_refund_above_max_refund(self):
@@ -139,7 +139,7 @@ class TestCustomer(TestCase):
         )
         self.assertEquals(
             charge.calculate_refund_amount(amount=decimal.Decimal("600.00")),
-            decimal.Decimal("500.00")
+            50000
         )
     
     @patch("stripe.Charge.retrieve")

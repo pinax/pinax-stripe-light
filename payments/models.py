@@ -731,7 +731,7 @@ class Charge(StripeObject):
         charge_obj = stripe.Charge.retrieve(
             self.stripe_id
         ).refund(
-            self.calculate_refund_amount(amount=amount)
+            amount=self.calculate_refund_amount(amount=amount)
         )
         Charge.sync_from_stripe_data(charge_obj)
     

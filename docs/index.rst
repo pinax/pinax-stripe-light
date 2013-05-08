@@ -16,7 +16,8 @@ Contents
  :maxdepth: 1
 
  changelog
+ api
  installation
- templatetags
  signals
+ templatetags
  usage

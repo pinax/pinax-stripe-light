@@ -520,28 +520,7 @@ class Customer(StripeObject):
     
     def record_charge(self, charge_id):
         data = stripe.Charge.retrieve(charge_id)
-        obj, _ = self.charges.get_or_create(
-            stripe_id=data["id"]
-        )
-        if self.invoices.filter(stripe_id=data.get("invoice", None)).exists():
-            obj.invoice = self.invoices.get(stripe_id=data.get("invoice"))
-        obj.card_last_4 = data["card"]["last4"]
-        obj.card_kind = data["card"]["type"]
-        obj.amount = (data["amount"] / decimal.Decimal("100.0"))
-        obj.paid = data["paid"]
-        obj.refunded = data["refunded"]
-        obj.fee = (data["fee"] / decimal.Decimal("100.0"))
-        obj.disputed = data["dispute"] is not None
-        obj.charge_created = convert_tstamp(data, "created")
-        if data.get("description"):
-            obj.description = data["description"]
-        if data.get("amount_refunded"):
-            # pylint: disable=C0301
-            obj.amount_refunded = (data["amount_refunded"] / decimal.Decimal("100.0"))
-        if data["refunded"]:
-            obj.amount_refunded = (data["amount"] / decimal.Decimal("100.0"))
-        obj.save()
-        return obj
+        return Charge.sync_from_stripe_data(data)
 
 
 class CurrentSubscription(models.Model):
@@ -738,6 +717,46 @@ class Charge(StripeObject):
     charge_created = models.DateTimeField(null=True, blank=True)
     
     objects = ChargeManager()
+    
+    def calculate_refund_amount(self, amount=None):
+        eligible_to_refund = self.amount - (self.amount_refunded or 0)
+        if amount:
+            amount_to_refund = min(eligible_to_refund, amount)
+        else:
+            amount_to_refund = eligible_to_refund
+        return amount_to_refund
+    
+    def refund(self, amount=None):
+        to_refund = self.calculate_refund_amount(amount=amount)
+        stripe_charge = stripe.Charge.retrieve(self.stripe_id)
+        charge_obj = stripe_charge.refund(to_refund)
+        Charge.sync_from_stripe_data(charge_obj)
+    
+    @classmethod
+    def sync_from_stripe_data(cls, data):
+        customer = Customer.objects.get(stripe_id=data["customer"])
+        obj, _ = customer.charges.get_or_create(
+            stripe_id=data["id"]
+        )
+        if obj.customer.invoices.filter(stripe_id=data.get("invoice", None)).exists():
+            obj.invoice = obj.customer.invoices.get(stripe_id=data.get("invoice"))
+        obj.card_last_4 = data["card"]["last4"]
+        obj.card_kind = data["card"]["type"]
+        obj.amount = (data["amount"] / decimal.Decimal("100.0"))
+        obj.paid = data["paid"]
+        obj.refunded = data["refunded"]
+        obj.fee = (data["fee"] / decimal.Decimal("100.0"))
+        obj.disputed = data["dispute"] is not None
+        obj.charge_created = convert_tstamp(data, "created")
+        if data.get("description"):
+            obj.description = data["description"]
+        if data.get("amount_refunded"):
+            # pylint: disable=C0301
+            obj.amount_refunded = (data["amount_refunded"] / decimal.Decimal("100.0"))
+        if data["refunded"]:
+            obj.amount_refunded = (data["amount"] / decimal.Decimal("100.0"))
+        obj.save()
+        return obj
     
     def send_receipt(self):
         if not self.receipt_sent:

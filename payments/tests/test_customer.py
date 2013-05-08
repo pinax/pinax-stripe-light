@@ -1,3 +1,4 @@
+import datetime
 import decimal
 
 from django.test import TestCase
@@ -6,7 +7,7 @@ from django.contrib.auth.models import User
 
 from mock import patch
 
-from ..models import Customer
+from ..models import Customer, Charge
 
 
 class TestCustomer(TestCase):
@@ -54,6 +55,80 @@ class TestCustomer(TestCase):
             self.customer.charge(10)
     
     @patch("stripe.Charge.retrieve")
+    def test_record_charge(self, RetrieveMock):
+        RetrieveMock.return_value = {
+            "id": "ch_XXXXXX",
+            "card": {
+                "last4": "4323",
+                "type": "Visa"
+            },
+            "amount": 1000,
+            "paid": True,
+            "refunded": False,
+            "fee": 499,
+            "dispute": None,
+            "created": 1363911708,
+            "customer": "cus_xxxxxxxxxxxxxxx"
+        }
+        obj = self.customer.record_charge("ch_XXXXXX")
+        self.assertEquals(Charge.objects.get(stripe_id="ch_XXXXXX").pk, obj.pk)
+        self.assertEquals(obj.paid, True)
+        self.assertEquals(obj.disputed, False)
+        self.assertEquals(obj.refunded, False)
+        self.assertEquals(obj.amount_refunded, None)
+    
+    @patch("stripe.Charge.retrieve")
+    def test_refund_charge(self, RetrieveMock):
+        charge = Charge.objects.create(
+            stripe_id="ch_XXXXXX",
+            customer=self.customer,
+            card_last_4="4323",
+            card_kind="Visa",
+            amount=decimal.Decimal("10.00"),
+            paid=True,
+            refunded=False,
+            fee=decimal.Decimal("4.99"),
+            disputed=False
+        )
+        RetrieveMock.return_value.refund.return_value = {
+            "id": "ch_XXXXXX",
+            "card": {
+                "last4": "4323",
+                "type": "Visa"
+            },
+            "amount": 1000,
+            "paid": True,
+            "refunded": True,
+            "amount_refunded": 1000,
+            "fee": 499,
+            "dispute": None,
+            "created": 1363911708,
+            "customer": "cus_xxxxxxxxxxxxxxx"
+        }
+        charge.refund()
+        charge2 = Charge.objects.get(stripe_id="ch_XXXXXX")
+        self.assertEquals(charge2.refunded, True)
+        self.assertEquals(charge2.amount_refunded, decimal.Decimal("10.00"))
+    
+    def test_calculate_refund_amount_full_refund(self):
+        charge = Charge(stripe_id="ch_111111", customer=self.customer, amount=decimal.Decimal("500.00"))
+        self.assertEquals(charge.calculate_refund_amount(), decimal.Decimal("500.00"))
+    
+    def test_calculate_refund_amount_partial_refund(self):
+        charge = Charge(stripe_id="ch_111111", customer=self.customer, amount=decimal.Decimal("500.00"))
+        self.assertEquals(
+            charge.calculate_refund_amount(amount=decimal.Decimal("300.00")),
+            decimal.Decimal("300.00")
+        )
+    
+    def test_calculate_refund_above_max_refund(self):
+        charge = Charge(stripe_id="ch_111111", customer=self.customer, amount=decimal.Decimal("500.00"))
+        self.assertEquals(
+            charge.calculate_refund_amount(amount=decimal.Decimal("600.00")),
+            decimal.Decimal("500.00")
+        )
+    
+    @patch("stripe.Charge.retrieve")
     @patch("stripe.Charge.create")
     def test_charge_converts_dollars_into_cents(self, ChargeMock, RetrieveMock):
         ChargeMock.return_value.id = "ch_XXXXX"
@@ -68,7 +143,8 @@ class TestCustomer(TestCase):
             "refunded": False,
             "fee": 499,
             "dispute": None,
-            "created": 1363911708
+            "created": 1363911708,
+            "customer": "cus_xxxxxxxxxxxxxxx"
         }
         self.customer.charge(
             amount=decimal.Decimal("10.00")

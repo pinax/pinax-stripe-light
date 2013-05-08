@@ -724,7 +724,7 @@ class Charge(StripeObject):
             amount_to_refund = min(eligible_to_refund, amount)
         else:
             amount_to_refund = eligible_to_refund
-        return amount_to_refund
+        return int(amount_to_refund * 100)
     
     def refund(self, amount=None):
         # pylint: disable=E1121

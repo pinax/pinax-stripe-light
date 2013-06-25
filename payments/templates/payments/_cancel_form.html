@@ -5,7 +5,7 @@
     <p class="lead">Are you sure that you want to cancel?</p>
     
     {% if request.user.customer.current_subscription.status == 'canceled' %}
-        <div class="alert alert-danger">You account has been canceled. It will remain active until <strong>{{ request.user.customer.current_subscription.current_period_end }}.</strong>
+        <div class="alert alert-danger">Your account has been canceled. It will remain active until <strong>{{ request.user.customer.current_subscription.current_period_end }}.</strong>
     {% else %}
     {% if error %}
         <div class="alert alert-error">{{ error }}</div>

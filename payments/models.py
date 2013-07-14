@@ -413,7 +413,7 @@ class Customer(StripeObject):
     
     def sync(self, cu=None):
         cu = cu or self.stripe_customer
-        if cu.active_card:
+        if hasattr(cu, "active_card"):
             self.card_fingerprint = cu.active_card.fingerprint
             self.card_last_4 = cu.active_card.last4
             self.card_kind = cu.active_card.type
@@ -431,7 +431,7 @@ class Customer(StripeObject):
     
     def sync_current_subscription(self, cu=None):
         cu = cu or self.stripe_customer
-        sub = cu.subscription
+        sub = getattr(cu, "subscription", None)
         if sub:
             try:
                 sub_obj = self.current_subscription

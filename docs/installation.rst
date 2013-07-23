@@ -3,9 +3,10 @@
 Requirements
 ============
 
-If you want to use the templates, specially the templates involving forms,
-that ship with this app, then you will need to add ``django-forms-bootstrap``
-to your project::
+The models and management commands should work without any additional requirements, but if you want to use the templates, specially the templates involving forms,
+that ship with this app, then you will need ``django-forms-bootstrap`` and ``eldarion-ajax``.
+
+Add ``django-forms-bootstrap`` to your project::
 
     pip install django-forms-bootstrap
 
@@ -17,16 +18,18 @@ You will also want to add ``django_forms_bootstrap`` to your `INSTALLED_APPS``::
 
 You will need to add the request context processor to TEMPLATE_CONTEXT_PROCESSORS
 if you wish to use the included templates by adding something like this in our
-settings.py:
+settings.py::
 
     TEMPLATE_CONTEXT_PROCESSORS += (
         'django.core.context_processors.request',
     )
 
-You will also want to add ``bootstrap-ajax.js`` to your base template. bootstrap-ajax_
-is a library used by the included templates to interact wiht the ajax views. You
+Add ``eldarion-ajax.js`` to your base template. eldarion-ajax_
+is a library used by the included templates to interact with the ajax views. You
 can certainly write your own javascript, but it is likely easier for you to just
 include the library.
+
+Get it here: eldarion-ajax_
 
 
 Installation
@@ -42,6 +45,14 @@ Installation
     INSTALLED_APPS = [
         "payments",
     ]
+    
+* Add ``'payments'`` to your ``urls.py`` ::
+
+    urlpatterns = patterns("",
+        ...
+        url(r"^payments/", include("payments.urls")),
+        ...
+    )
 
 Configuration (Modifications to `settings.py`)
 =======================
@@ -109,6 +120,6 @@ An example of integrating Checkout_ is to put this in your base template::
     </script>
 
 
-.. _bootstrap-ajax: https://github.com/eldarion/bootstrap-ajax
+.. _eldarion-ajax: https://github.com/eldarion/bootstrap-ajax
 .. _Checkout: https://stripe.com/docs/checkout
 

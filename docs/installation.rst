@@ -120,6 +120,6 @@ An example of integrating Checkout_ is to put this in your base template::
     </script>
 
 
-.. _eldarion-ajax: https://github.com/eldarion/bootstrap-ajax
+.. _eldarion-ajax: https://github.com/eldarion/eldarion-ajax
 .. _Checkout: https://stripe.com/docs/checkout
 

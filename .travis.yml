@@ -18,3 +18,7 @@ before_script:
   - "pylint --rcfile=.pylintrc payments"
 script:
   - python runtests.py
+matrix:
+  exclude:
+    - env: DJANGO=1.4
+    - python: "3.3"

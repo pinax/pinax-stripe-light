@@ -20,5 +20,5 @@ script:
   - python runtests.py
 matrix:
   exclude:
-    - env: DJANGO=1.4
     - python: 3.3
+      env: DJANGO=1.4

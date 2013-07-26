@@ -37,7 +37,7 @@ class CustomerManager(models.Manager):
         )
     
     def canceled_during(self, year, month):
-        # Need to implement datetime range because 'start' field is DateTimeField
+        # Need to implement datetime range because 'canceled_at' field is DateTimeField
         return self.canceled().filter(
             current_subscription__canceled_at__range=get_year_month_range(year, month),
         )

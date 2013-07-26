@@ -14,6 +14,7 @@ from ..settings import User
 class CustomerManagerTest(TestCase):
     
     def setUp(self):
+
         # create customers and current subscription records
         period_start = datetime.datetime(2013, 4, 1, tzinfo=timezone.utc)
         period_end = datetime.datetime(2013, 4, 30, tzinfo=timezone.utc)
@@ -71,6 +72,28 @@ class CustomerManagerTest(TestCase):
             start=start,
             quantity=1
         )
+
+        # create a December customer and current subscription records
+        period_start = datetime.datetime(2013, 12, 1, tzinfo=timezone.utc)
+        period_end = datetime.datetime(2013, 12, 31, tzinfo=timezone.utc)
+        start = datetime.datetime(2013, 12, 1, tzinfo=timezone.utc)
+        customer = Customer.objects.create(
+            user=User.objects.create_user(username="patrick{0}".format(13)),
+            stripe_id="cus_xxxxxxxxxxxxxx{0}".format(13),
+            card_fingerprint="YYYYYYYY",
+            card_last_4="2342",
+            card_kind="Visa"
+        )
+        CurrentSubscription.objects.create(
+            customer=customer,
+            plan="test",
+            current_period_start=period_start,
+            current_period_end=period_end,
+            amount=(500 / decimal.Decimal("100.0")),
+            status="active",
+            start=start,
+            quantity=1
+        )
     
     def test_started_during_no_records(self):
         self.assertEqual(
@@ -82,6 +105,12 @@ class CustomerManagerTest(TestCase):
         self.assertEqual(
             Customer.objects.started_during(2013, 1).count(),
             12
+        )
+
+    def test_started_during_december_has_records(self):
+        self.assertEqual(
+            Customer.objects.started_during(2013, 12).count(),
+            1
         )
     
     def test_canceled_during(self):
@@ -99,7 +128,7 @@ class CustomerManagerTest(TestCase):
     def test_active_all(self):
         self.assertEqual(
             Customer.objects.active().count(),
-            11
+            12
         )
     
     def test_started_plan_summary(self):
@@ -112,7 +141,7 @@ class CustomerManagerTest(TestCase):
     def test_active_plan_summary(self):
         for plan in Customer.objects.active_plan_summary():
             if plan["current_subscription__plan"] == "test":
-                self.assertEqual(plan["count"], 10)
+                self.assertEqual(plan["count"], 11)
             if plan["current_subscription__plan"] == "test-2":
                 self.assertEqual(plan["count"], 1)
     
@@ -126,7 +155,7 @@ class CustomerManagerTest(TestCase):
     def test_churn(self):
         self.assertEqual(
             Customer.objects.churn(),
-            decimal.Decimal("1") / decimal.Decimal("11")
+            decimal.Decimal("1") / decimal.Decimal("12")
         )
 
 
@@ -186,6 +215,6 @@ class FunctionTest(TestCase):
         start_date = timezone.datetime(2013, 12, 1, tzinfo=timezone.utc)
         end_date = timezone.datetime(2014, 1, 1, tzinfo=timezone.utc)
         self.assertEqual(
-            get_year_month_range(2013, 12),
-            (start_date, end_date)
+            get_year_month_range(2013, 12),  # function tested
+            (start_date, end_date)  # test value
         )

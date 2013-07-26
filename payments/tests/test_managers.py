@@ -6,6 +6,7 @@ from django.utils import timezone
 
 
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_CREATED_TEST_DATA2
+from ..managers import get_year_month_range
 from ..models import Event, Transfer, Customer, CurrentSubscription
 from ..settings import User
 
@@ -169,4 +170,22 @@ class TransferManagerTest(TestCase):
         )
         self.assertEqual(
             totals["total_validation_fees"], decimal.Decimal("0")
+        )
+
+
+class FunctionTest(TestCase):
+    def test_march(self):
+        start_date = timezone.datetime(2013, 3, 1, tzinfo=timezone.utc)
+        end_date = timezone.datetime(2013, 4, 1, tzinfo=timezone.utc)
+        self.assertEqual(
+            get_year_month_range(2013, 3),
+            (start_date, end_date)
+        )
+
+    def test_december(self):
+        start_date = timezone.datetime(2013, 12, 1, tzinfo=timezone.utc)
+        end_date = timezone.datetime(2014, 1, 1, tzinfo=timezone.utc)
+        self.assertEqual(
+            get_year_month_range(2013, 12),
+            (start_date, end_date)
         )

@@ -4,7 +4,7 @@ import json
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponse
+from django.http import HttpResponse, QueryDict
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.views.generic import TemplateView
@@ -170,7 +170,13 @@ def cancel(request):
 @csrf_exempt
 @require_POST
 def webhook(request):
-    data = json.loads(request.body)
+    if app_settings.PY3:
+        # Handles Python 3 conversion of bytes to str
+        body = request.body.decode(encoding='UTF-8')
+    else:
+        # Handles Python 2
+        body = request.body
+    data = json.loads(body)
     if Event.objects.filter(stripe_id=data["id"]).exists():
         EventProcessingException.objects.create(
             data=data,

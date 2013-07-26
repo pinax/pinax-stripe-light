@@ -1,11 +1,8 @@
 from __future__ import unicode_literals
 
 from django.core.management.base import BaseCommand
-try:
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
-except ImportError:
-    from django.contrib.auth.models import User
+
+from payments.settings import User
 
 
 class Command(BaseCommand):

@@ -4,7 +4,7 @@ import json
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponse, QueryDict
+from django.http import HttpResponse
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.views.generic import TemplateView

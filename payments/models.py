@@ -347,20 +347,12 @@ class Customer(StripeObject):
             self.card_last_4 and \
             self.card_kind and \
             self.date_purged is None
-    
+
     def has_active_subscription(self):
         try:
-            pass
+            return self.current_subscription.is_valid()
         except CurrentSubscription.DoesNotExist:
             return False
-        except Exception as e:
-            raise
-        else:
-            pass
-        finally:
-            pass
-            return self.current_subscription.is_valid()
-
     
     def cancel(self):
         try:

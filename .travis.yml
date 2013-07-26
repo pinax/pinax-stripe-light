@@ -21,4 +21,4 @@ script:
 matrix:
   exclude:
     - env: DJANGO=1.4
-    - python: "3.3"
+    - python: 3.3

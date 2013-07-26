@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import datetime
 import decimal
 import json
@@ -9,7 +11,6 @@ from django.db import models
 from django.utils import timezone
 from django.template.loader import render_to_string
 
-from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 
 import stripe
@@ -18,7 +19,7 @@ from jsonfield.fields import JSONField
 
 from payments.managers import CustomerManager, ChargeManager, TransferManager
 from payments.settings import PAYMENTS_PLANS, INVOICE_FROM_EMAIL
-from payments.settings import plan_from_stripe_id
+from payments.settings import plan_from_stripe_id, User
 from payments.signals import WEBHOOK_SIGNALS
 from payments.signals import subscription_made, cancelled, card_changed
 from payments.signals import webhook_processing_error
@@ -196,7 +197,7 @@ class Event(StripeObject):
                 self.send_signal()
                 self.processed = True
                 self.save()
-            except stripe.StripeError, e:
+            except stripe.StripeError as e:
                 EventProcessingException.log(
                     data=e.http_body,
                     exception=e,
@@ -349,9 +350,17 @@ class Customer(StripeObject):
     
     def has_active_subscription(self):
         try:
-            return self.current_subscription.is_valid()
+            pass
         except CurrentSubscription.DoesNotExist:
             return False
+        except Exception as e:
+            raise
+        else:
+            pass
+        finally:
+            pass
+            return self.current_subscription.is_valid()
+
     
     def cancel(self):
         try:
@@ -399,7 +408,7 @@ class Customer(StripeObject):
         for inv in self.invoices.filter(paid=False, closed=False):
             try:
                 inv.retry()  # Always retry unpaid invoices
-            except stripe.InvalidRequestError, error:
+            except stripe.InvalidRequestError as error:
                 if error.message != "Invoice is already paid":
                     raise error
     

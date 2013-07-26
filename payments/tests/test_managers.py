@@ -4,7 +4,11 @@ import decimal
 from django.test import TestCase
 from django.utils import timezone
 
-from django.contrib.auth.models import User
+try:
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+except ImportError:
+    from django.contrib.auth.models import User
 
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_CREATED_TEST_DATA2
 from ..models import Event, Transfer, Customer, CurrentSubscription
@@ -72,31 +76,31 @@ class CustomerManagerTest(TestCase):
         )
     
     def test_started_during_no_records(self):
-        self.assertEquals(
+        self.assertEqual(
             Customer.objects.started_during(2013, 4).count(),
             0
         )
     
     def test_started_during_has_records(self):
-        self.assertEquals(
+        self.assertEqual(
             Customer.objects.started_during(2013, 1).count(),
             12
         )
     
     def test_canceled_during(self):
-        self.assertEquals(
+        self.assertEqual(
             Customer.objects.canceled_during(2013, 4).count(),
             1
         )
     
     def test_canceled_all(self):
-        self.assertEquals(
+        self.assertEqual(
             Customer.objects.canceled().count(),
             1
         )
     
     def test_active_all(self):
-        self.assertEquals(
+        self.assertEqual(
             Customer.objects.active().count(),
             11
         )
@@ -104,26 +108,26 @@ class CustomerManagerTest(TestCase):
     def test_started_plan_summary(self):
         for plan in Customer.objects.started_plan_summary_for(2013, 1):
             if plan["current_subscription__plan"] == "test":
-                self.assertEquals(plan["count"], 11)
+                self.assertEqual(plan["count"], 11)
             if plan["current_subscription__plan"] == "test-2":
-                self.assertEquals(plan["count"], 1)
+                self.assertEqual(plan["count"], 1)
     
     def test_active_plan_summary(self):
         for plan in Customer.objects.active_plan_summary():
             if plan["current_subscription__plan"] == "test":
-                self.assertEquals(plan["count"], 10)
+                self.assertEqual(plan["count"], 10)
             if plan["current_subscription__plan"] == "test-2":
-                self.assertEquals(plan["count"], 1)
+                self.assertEqual(plan["count"], 1)
     
     def test_canceled_plan_summary(self):
         for plan in Customer.objects.canceled_plan_summary_for(2013, 1):
             if plan["current_subscription__plan"] == "test":
-                self.assertEquals(plan["count"], 1)
+                self.assertEqual(plan["count"], 1)
             if plan["current_subscription__plan"] == "test-2":
-                self.assertEquals(plan["count"], 0)
+                self.assertEqual(plan["count"], 0)
     
     def test_churn(self):
-        self.assertEquals(
+        self.assertEqual(
             Customer.objects.churn(),
             decimal.Decimal("1") / decimal.Decimal("11")
         )
@@ -150,23 +154,23 @@ class TransferManagerTest(TestCase):
             valid=True
         )
         event.process()
-        self.assertEquals(Transfer.objects.during(2012, 9).count(), 2)
+        self.assertEqual(Transfer.objects.during(2012, 9).count(), 2)
         totals = Transfer.objects.paid_totals_for(2012, 9)
-        self.assertEquals(
+        self.assertEqual(
             totals["total_amount"], decimal.Decimal("19.10")
         )
-        self.assertEquals(
+        self.assertEqual(
             totals["total_net"], decimal.Decimal("19.10")
         )
-        self.assertEquals(
+        self.assertEqual(
             totals["total_charge_fees"], decimal.Decimal("0.90")
         )
-        self.assertEquals(
+        self.assertEqual(
             totals["total_adjustment_fees"], decimal.Decimal("0")
         )
-        self.assertEquals(
+        self.assertEqual(
             totals["total_refund_fees"], decimal.Decimal("0")
         )
-        self.assertEquals(
+        self.assertEqual(
             totals["total_validation_fees"], decimal.Decimal("0")
         )

@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import json
 
 from django.conf import settings
@@ -85,7 +86,7 @@ def change_card(request):
                 customer.send_invoice()
             customer.retry_unpaid_invoices()
             data = {}
-        except stripe.CardError, e:
+        except stripe.CardError as e:
             data = {"error": e.message}
     return _ajax_response(request, "payments/_change_card_form.html", **data)
 
@@ -108,7 +109,7 @@ def change_plan(request):
                 "plan": current_plan,
                 "name": settings.PAYMENTS_PLANS[current_plan]["name"]
             }
-        except stripe.StripeError, e:
+        except stripe.StripeError as e:
             if current_plan:
                 name = settings.PAYMENTS_PLANS[current_plan]["name"]
             else:
@@ -161,7 +162,7 @@ def cancel(request):
     try:
         request.user.customer.cancel()
         data = {}
-    except stripe.StripeError, e:
+    except stripe.StripeError as e:
         data = {"error": e.message}
     return _ajax_response(request, "payments/_cancel_form.html", **data)
 

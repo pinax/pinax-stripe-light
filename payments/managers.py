@@ -2,16 +2,19 @@ from __future__ import unicode_literals
 import decimal
 
 from django.db import models
+from django.utils import timezone
 
 
 class CustomerManager(models.Manager):
     
     def started_during(self, year, month):
+        # Need to implement datetime range because 'start' field is DateTimeField
+        start_date = timezone.datetime(year, month, 1, tzinfo=timezone.utc)
+        end_date = timezone.datetime(year, month + 1, 1, tzinfo=timezone.utc)
         return self.exclude(
             current_subscription__status="trialing"
         ).filter(
-            current_subscription__start__year=year,
-            current_subscription__start__month=month
+            current_subscription__start__range=(start_date, end_date),
         )
     
     def active(self):
@@ -25,9 +28,11 @@ class CustomerManager(models.Manager):
         )
     
     def canceled_during(self, year, month):
+        # Need to implement datetime range because 'start' field is DateTimeField
+        start_date = timezone.datetime(year, month, 1, tzinfo=timezone.utc)
+        end_date = timezone.datetime(year, month + 1, 1, tzinfo=timezone.utc)
         return self.canceled().filter(
-            current_subscription__canceled_at__year=year,
-            current_subscription__canceled_at__month=month,
+            current_subscription__canceled_at__range=(start_date, end_date),
         )
     
     def started_plan_summary_for(self, year, month):

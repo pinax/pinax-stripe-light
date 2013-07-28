@@ -106,7 +106,7 @@ class CustomerManagerTest(TestCase):
             Customer.objects.started_during(2013, 1).count(),
             12
         )
-
+    
     def test_started_during_december_has_records(self):
         self.assertEqual(
             Customer.objects.started_during(2013, 12).count(),
@@ -210,7 +210,7 @@ class FunctionTest(TestCase):
             get_range(2013, 3),
             (start_date, end_date)
         )
-    
+
     def test_december(self):
         start_date = timezone.datetime(2013, 12, 1, tzinfo=timezone.utc)
         end_date = timezone.datetime(2014, 1, 1, tzinfo=timezone.utc)

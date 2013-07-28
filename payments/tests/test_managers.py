@@ -6,7 +6,7 @@ from django.utils import timezone
 
 
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_CREATED_TEST_DATA2
-from ..managers import get_year_month_range
+from ..managers import get_range
 from ..models import Event, Transfer, Customer, CurrentSubscription
 from ..settings import User
 
@@ -106,7 +106,7 @@ class CustomerManagerTest(TestCase):
             Customer.objects.started_during(2013, 1).count(),
             12
         )
-
+    
     def test_started_during_december_has_records(self):
         self.assertEqual(
             Customer.objects.started_during(2013, 12).count(),
@@ -207,14 +207,14 @@ class FunctionTest(TestCase):
         start_date = timezone.datetime(2013, 3, 1, tzinfo=timezone.utc)
         end_date = timezone.datetime(2013, 4, 1, tzinfo=timezone.utc)
         self.assertEqual(
-            get_year_month_range(2013, 3),
+            get_range(2013, 3),
             (start_date, end_date)
         )
-    
+
     def test_december(self):
         start_date = timezone.datetime(2013, 12, 1, tzinfo=timezone.utc)
         end_date = timezone.datetime(2014, 1, 1, tzinfo=timezone.utc)
         self.assertEqual(
-            get_year_month_range(2013, 12),  # function tested
+            get_range(2013, 12),  # function tested
             (start_date, end_date)  # test value
         )

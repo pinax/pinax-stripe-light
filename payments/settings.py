@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 import sys
-PY3 = sys.version > '3'
+PY3 = sys.version > "3"
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured

@@ -77,6 +77,9 @@ class EventProcessingException(models.Model):
     def __unicode__(self):
         return u"<%s, pk=%s, Event=%s>" % (self.message, self.pk, self.event)
 
+    def __str__(self):
+        return self.__unicode__()
+
 
 class Event(StripeObject):
     
@@ -94,7 +97,10 @@ class Event(StripeObject):
     
     def __unicode__(self):
         return "%s - %s" % (self.kind, self.stripe_id)
-    
+
+    def __str__(self):
+        return self.__unicode__()
+
     def link_customer(self):
         cus_id = None
         customer_crud_events = [
@@ -315,6 +321,9 @@ class Customer(StripeObject):
     
     def __unicode__(self):
         return unicode(self.user)
+
+    def __str__(self):
+        return str(self.user)
     
     @property
     def stripe_customer(self):

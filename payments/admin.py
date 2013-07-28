@@ -9,7 +9,7 @@ from payments.models import Invoice, InvoiceItem, CurrentSubscription, Customer
 class CustomerHasCardListFilter(admin.SimpleListFilter):
     title = "card presence"
     parameter_name = "has_card"
-
+    
     def lookups(self, request, model_admin):
         return [
             ["yes", "Has Card"],

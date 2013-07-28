@@ -172,7 +172,7 @@ def cancel(request):
 def webhook(request):
     if app_settings.PY3:
         # Handles Python 3 conversion of bytes to str
-        body = request.body.decode(encoding='UTF-8')
+        body = request.body.decode(encoding="UTF-8")
     else:
         # Handles Python 2
         body = request.body

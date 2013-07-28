@@ -97,10 +97,10 @@ class Event(StripeObject):
     
     def __unicode__(self):
         return "%s - %s" % (self.kind, self.stripe_id)
-
+    
     def __str__(self):
         return self.__unicode__()
-
+    
     def link_customer(self):
         cus_id = None
         customer_crud_events = [
@@ -321,7 +321,7 @@ class Customer(StripeObject):
     
     def __unicode__(self):
         return unicode(self.user)
-
+    
     def __str__(self):
         return str(self.user)
     
@@ -356,7 +356,7 @@ class Customer(StripeObject):
             self.card_last_4 and \
             self.card_kind and \
             self.date_purged is None
-
+    
     def has_active_subscription(self):
         try:
             return self.current_subscription.is_valid()

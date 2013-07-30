@@ -8,6 +8,10 @@ from setuptools import setup, find_packages
 
 
 def read(fname):
+    if sys.version > '3':
+        # Python 3 doesn't need a codec to be certain it can open any kind of file
+        return open(fname).read()
+    # Python 2.7 handling of unicode
     return codecs.open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 

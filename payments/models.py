@@ -75,7 +75,7 @@ class EventProcessingException(models.Model):
         )
     
     def __unicode__(self):
-        return u"<%s, pk=%s, Event=%s>" % (self.message, self.pk, self.event)
+        return "<%s, pk=%s, Event=%s>" % (self.message, self.pk, self.event)
     
     def __str__(self):
         return self.__unicode__()

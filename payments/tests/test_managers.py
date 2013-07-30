@@ -14,7 +14,6 @@ from ..settings import User
 class CustomerManagerTest(TestCase):
     
     def setUp(self):
-
         # create customers and current subscription records
         period_start = datetime.datetime(2013, 4, 1, tzinfo=timezone.utc)
         period_end = datetime.datetime(2013, 4, 30, tzinfo=timezone.utc)
@@ -72,7 +71,6 @@ class CustomerManagerTest(TestCase):
             start=start,
             quantity=1
         )
-
         # create a December customer and current subscription records
         period_start = datetime.datetime(2013, 12, 1, tzinfo=timezone.utc)
         period_end = datetime.datetime(2013, 12, 31, tzinfo=timezone.utc)
@@ -210,7 +208,7 @@ class FunctionTest(TestCase):
             get_range(2013, 3),
             (start_date, end_date)
         )
-
+    # pylint: disable-msg=E0611
     def test_december(self):
         start_date = timezone.datetime(2013, 12, 1, tzinfo=timezone.utc)
         end_date = timezone.datetime(2014, 1, 1, tzinfo=timezone.utc)

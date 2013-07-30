@@ -8,10 +8,10 @@ from django.core.exceptions import ImproperlyConfigured
 from django.utils import importlib
 
 try:
-    from django.contrib.auth import get_user_model
+    from django.contrib.auth import get_user_model  # pylint: disable-msg=E0611
     User = get_user_model()
 except ImportError:
-    from django.contrib.auth.models import User  # pylint: disable-msg=E0611
+    from django.contrib.auth.models import User
 
 
 def plan_from_stripe_id(stripe_id):

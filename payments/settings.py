@@ -11,7 +11,7 @@ try:
     from django.contrib.auth import get_user_model
     User = get_user_model()
 except ImportError:
-    from django.contrib.auth.models import User
+    from django.contrib.auth.models import User  # pylint: disable-msg=E0611
 
 
 def plan_from_stripe_id(stripe_id):

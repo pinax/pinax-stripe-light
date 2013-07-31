@@ -75,10 +75,10 @@ class EventProcessingException(models.Model):
         )
     
     def __unicode__(self):
-        return "<%s, pk=%s, Event=%s>" % (self.message, self.pk, self.event)
+        return u"<%s, pk=%s, Event=%s>" % (self.message, self.pk, self.event)
     
     def __str__(self):
-        return self.__unicode__()
+        return "<%s, pk=%s, Event=%s>" % (self.message, self.pk, self.event)
 
 
 class Event(StripeObject):
@@ -96,10 +96,10 @@ class Event(StripeObject):
         return self.validated_message
     
     def __unicode__(self):
-        return "%s - %s" % (self.kind, self.stripe_id)
+        return u"%s - %s" % (self.kind, self.stripe_id)
     
     def __str__(self):
-        return self.__unicode__()
+        return "%s - %s" % (self.kind, self.stripe_id)
     
     def link_customer(self):
         cus_id = None

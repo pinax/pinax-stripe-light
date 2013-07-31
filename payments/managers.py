@@ -1,16 +1,30 @@
+from __future__ import unicode_literals
 import decimal
 
 from django.db import models
+from django.utils import timezone
+
+
+def get_range(year, month):
+    start_date = timezone.datetime(year, month, 1, tzinfo=timezone.utc)
+    if month == 12:
+        year += 1
+        month = 1
+    else:
+        month += 1
+    end_date = timezone.datetime(year, month, 1, tzinfo=timezone.utc)
+    return start_date, end_date
 
 
 class CustomerManager(models.Manager):
     
     def started_during(self, year, month):
+        # Need to implement datetime range because 'start' field is
+        #   DateTimeField
         return self.exclude(
             current_subscription__status="trialing"
         ).filter(
-            current_subscription__start__year=year,
-            current_subscription__start__month=month
+            current_subscription__start__range=get_range(year, month),
         )
     
     def active(self):
@@ -24,9 +38,10 @@ class CustomerManager(models.Manager):
         )
     
     def canceled_during(self, year, month):
+        # Need to implement datetime range because 'canceled_at' field is
+        #   DateTimeField
         return self.canceled().filter(
-            current_subscription__canceled_at__year=year,
-            current_subscription__canceled_at__month=month,
+            current_subscription__canceled_at__range=get_range(year, month),
         )
     
     def started_plan_summary_for(self, year, month):
@@ -60,8 +75,7 @@ class TransferManager(models.Manager):
     
     def during(self, year, month):
         return self.filter(
-            date__year=year,
-            date__month=month
+            date__range=get_range(year, month)
         )
     
     def paid_totals_for(self, year, month):
@@ -83,8 +97,7 @@ class ChargeManager(models.Manager):
     
     def during(self, year, month):
         return self.filter(
-            charge_created__year=year,
-            charge_created__month=month
+            charge_created__range=get_range(year, month)
         )
     
     def paid_totals_for(self, year, month):

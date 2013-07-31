@@ -1,6 +1,8 @@
+from __future__ import unicode_literals
+
 from django.core.management.base import BaseCommand
 
-from django.contrib.auth.models import User
+from payments.settings import User
 
 
 class Command(BaseCommand):

@@ -8,6 +8,10 @@ from setuptools import setup, find_packages
 
 
 def read(fname):
+    if sys.version > '3':
+        # Python 3 doesn't need a codec to be certain it can open any kind of file
+        return open(fname).read()
+    # Python 2.7 handling of unicode
     return codecs.open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
@@ -70,9 +74,11 @@ def find_package_data(
                         or fn.lower() == pattern.lower()):
                         bad_name = True
                         if show_ignored:
-                            print >> sys.stderr, (
+                            print(
                                 "Directory %s ignored by pattern %s"
-                                % (fn, pattern))
+                                % (fn, pattern),
+                                sys.stderr
+                            )
                         break
                 if bad_name:
                     continue
@@ -93,9 +99,10 @@ def find_package_data(
                         or fn.lower() == pattern.lower()):
                         bad_name = True
                         if show_ignored:
-                            print >> sys.stderr, (
-                                "File %s ignored by pattern %s"
-                                % (fn, pattern))
+                            print(
+                                "File %s ignored by pattern %s" % (fn, pattern),
+                                sys.stderr
+                            )
                         break
                 if bad_name:
                     continue

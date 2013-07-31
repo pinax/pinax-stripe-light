@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import datetime
 import decimal
 import json
@@ -9,7 +11,6 @@ from django.db import models
 from django.utils import timezone
 from django.template.loader import render_to_string
 
-from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 
 import stripe
@@ -18,7 +19,7 @@ from jsonfield.fields import JSONField
 
 from payments.managers import CustomerManager, ChargeManager, TransferManager
 from payments.settings import PAYMENTS_PLANS, INVOICE_FROM_EMAIL
-from payments.settings import plan_from_stripe_id
+from payments.settings import plan_from_stripe_id, User
 from payments.signals import WEBHOOK_SIGNALS
 from payments.signals import subscription_made, cancelled, card_changed
 from payments.signals import webhook_processing_error
@@ -75,6 +76,9 @@ class EventProcessingException(models.Model):
     
     def __unicode__(self):
         return u"<%s, pk=%s, Event=%s>" % (self.message, self.pk, self.event)
+    
+    def __str__(self):
+        return "<%s, pk=%s, Event=%s>" % (self.message, self.pk, self.event)
 
 
 class Event(StripeObject):
@@ -92,6 +96,9 @@ class Event(StripeObject):
         return self.validated_message
     
     def __unicode__(self):
+        return u"%s - %s" % (self.kind, self.stripe_id)
+    
+    def __str__(self):
         return "%s - %s" % (self.kind, self.stripe_id)
     
     def link_customer(self):
@@ -196,7 +203,7 @@ class Event(StripeObject):
                 self.send_signal()
                 self.processed = True
                 self.save()
-            except stripe.StripeError, e:
+            except stripe.StripeError as e:
                 EventProcessingException.log(
                     data=e.http_body,
                     exception=e,
@@ -315,6 +322,9 @@ class Customer(StripeObject):
     def __unicode__(self):
         return unicode(self.user)
     
+    def __str__(self):
+        return str(self.user)
+    
     @property
     def stripe_customer(self):
         return stripe.Customer.retrieve(self.stripe_id)
@@ -399,7 +409,7 @@ class Customer(StripeObject):
         for inv in self.invoices.filter(paid=False, closed=False):
             try:
                 inv.retry()  # Always retry unpaid invoices
-            except stripe.InvalidRequestError, error:
+            except stripe.InvalidRequestError as error:
                 if error.message != "Invoice is already paid":
                     raise error
     

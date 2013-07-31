@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import json
 
 from django.conf import settings
@@ -85,7 +86,7 @@ def change_card(request):
                 customer.send_invoice()
             customer.retry_unpaid_invoices()
             data = {}
-        except stripe.CardError, e:
+        except stripe.CardError as e:
             data = {"error": e.message}
     return _ajax_response(request, "payments/_change_card_form.html", **data)
 
@@ -108,7 +109,7 @@ def change_plan(request):
                 "plan": current_plan,
                 "name": settings.PAYMENTS_PLANS[current_plan]["name"]
             }
-        except stripe.StripeError, e:
+        except stripe.StripeError as e:
             if current_plan:
                 name = settings.PAYMENTS_PLANS[current_plan]["name"]
             else:
@@ -161,7 +162,7 @@ def cancel(request):
     try:
         request.user.customer.cancel()
         data = {}
-    except stripe.StripeError, e:
+    except stripe.StripeError as e:
         data = {"error": e.message}
     return _ajax_response(request, "payments/_cancel_form.html", **data)
 
@@ -169,7 +170,13 @@ def cancel(request):
 @csrf_exempt
 @require_POST
 def webhook(request):
-    data = json.loads(request.body)
+    if app_settings.PY3:
+        # Handles Python 3 conversion of bytes to str
+        body = request.body.decode(encoding="UTF-8")
+    else:
+        # Handles Python 2
+        body = request.body
+    data = json.loads(body)
     if Event.objects.filter(stripe_id=data["id"]).exists():
         EventProcessingException.objects.create(
             data=data,

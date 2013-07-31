@@ -1,7 +1,8 @@
 language: python
 python:
-  - "2.6"
-  - "2.7"
+  - 2.6
+  - 2.7
+  - 3.3
 env:
   - DJANGO=1.4
   - DJANGO=1.5
@@ -17,3 +18,7 @@ before_script:
   - "pylint --rcfile=.pylintrc payments"
 script:
   - python runtests.py
+matrix:
+  exclude:
+    - python: 3.3
+      env: DJANGO=1.4

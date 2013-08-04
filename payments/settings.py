@@ -2,6 +2,12 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import importlib
 
+try:
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+except ImportError:
+    from django.contrib.auth.models import User
+
 
 def plan_from_stripe_id(stripe_id):
     for key in PAYMENTS_PLANS.keys():

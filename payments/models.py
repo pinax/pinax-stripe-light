@@ -9,7 +9,6 @@ from django.db import models
 from django.utils import timezone
 from django.template.loader import render_to_string
 
-from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 
 import stripe
@@ -19,6 +18,7 @@ from jsonfield.fields import JSONField
 from payments.managers import CustomerManager, ChargeManager, TransferManager
 from payments.settings import PAYMENTS_PLANS, INVOICE_FROM_EMAIL
 from payments.settings import plan_from_stripe_id
+from payments.settings import User
 from payments.signals import WEBHOOK_SIGNALS
 from payments.signals import subscription_made, cancelled, card_changed
 from payments.signals import webhook_processing_error

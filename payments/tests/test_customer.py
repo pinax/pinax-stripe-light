@@ -2,11 +2,10 @@ import decimal
 
 from django.test import TestCase
 
-from django.contrib.auth.models import User
-
 from mock import patch
 
 from ..models import Customer, Charge
+from ..settings import User
 
 
 class TestCustomer(TestCase):

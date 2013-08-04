@@ -1,10 +1,9 @@
 from django.test import TestCase
 
-from django.contrib.auth.models import User
-
 from mock import patch
 
 from ..models import Customer, Event
+from ..settings import User
 
 
 class TestEventMethods(TestCase):

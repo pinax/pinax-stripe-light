@@ -353,13 +353,14 @@ class Customer(StripeObject):
         except CurrentSubscription.DoesNotExist:
             return False
     
-    def cancel(self):
+    def cancel(self, at_period_end=True):
         try:
             current = self.current_subscription
         except CurrentSubscription.DoesNotExist:
             return
-        sub = self.stripe_customer.cancel_subscription()
+        sub = self.stripe_customer.cancel_subscription(at_period_end=at_period_end)
         current.status = sub.status
+        current.cancel_at_period_end = sub.cancel_at_period_end
         current.period_end = convert_tstamp(sub, "current_period_end")
         current.save()
         cancelled.send(sender=self, stripe_response=sub)
@@ -444,6 +445,7 @@ class Customer(StripeObject):
                 )
                 sub_obj.amount = (sub.plan.amount / decimal.Decimal("100"))
                 sub_obj.status = sub.status
+                sub_obj.cancel_at_period_end = sub.cancel_at_period_end
                 sub_obj.start = convert_tstamp(sub.start)
                 sub_obj.quantity = sub.quantity
                 sub_obj.save()
@@ -459,6 +461,7 @@ class Customer(StripeObject):
                     ),
                     amount=(sub.plan.amount / decimal.Decimal("100")),
                     status=sub.status,
+                    cancel_at_period_end=sub.cancel_at_period_end,
                     start=convert_tstamp(sub.start),
                     quantity=sub.quantity
                 )
@@ -535,6 +538,7 @@ class CurrentSubscription(models.Model):
     start = models.DateTimeField()
     # trialing, active, past_due, canceled, or unpaid
     status = models.CharField(max_length=25)
+    cancel_at_period_end = models.BooleanField()
     canceled_at = models.DateTimeField(null=True)
     current_period_end = models.DateTimeField(null=True)
     current_period_start = models.DateTimeField(null=True)
@@ -555,10 +559,16 @@ class CurrentSubscription(models.Model):
         return self.current_period_end > timezone.now()
     
     def is_status_current(self):
-        return self.status in ["trialing", "active", "canceled"]
+        return self.status in ["trialing", "active"]
     
     def is_valid(self):
-        return self.is_period_current() and self.is_status_current()
+        if not self.is_status_current():
+            return False
+
+        if self.cancel_at_period_end and not self.is_period_current():
+            return False
+
+        return True
 
 
 class Invoice(models.Model):

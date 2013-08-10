@@ -24,11 +24,11 @@ if USERNAME_FIELD is not None:
     ]
     
     try:
-        user_search_fields + ["customer__user__email"]
         # get_field_by_name throws FieldDoesNotExist if the field is not
         # present on the model
         # pylint: disable-msg=W0212,E1103
         User._meta.get_field_by_name("email")
+        user_search_fields += ["customer__user__email"]
     except FieldDoesNotExist:
         pass
 else:

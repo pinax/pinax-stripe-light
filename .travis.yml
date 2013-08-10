@@ -10,7 +10,7 @@ install:
   - pip install -q django-jsonfield==0.8.12
   - pip install -q mock --use-mirrors
   - pip install -q django-nose --use-mirrors
-  - pip install -q pylint --use-mirrors
+  - pip install -q pylint==0.27.0 --use-mirrors
   - pip install -q pinax.checkers --use-mirrors
   - pip install -e . --use-mirrors
 before_script:

@@ -20,7 +20,7 @@ from payments import settings as app_settings
 
 
 class PaymentsContextMixin(object):
-
+    
     def get_context_data(self, **kwargs):
         context = super(PaymentsContextMixin, self).get_context_data(**kwargs)
         context.update({
@@ -46,7 +46,7 @@ def _ajax_response(request, template, **kwargs):
 
 class SubscribeView(PaymentsContextMixin, TemplateView):
     template_name = "payments/subscribe.html"
-
+    
     def get_context_data(self, **kwargs):
         context = super(SubscribeView, self).get_context_data(**kwargs)
         context.update({

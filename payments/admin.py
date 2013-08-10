@@ -1,21 +1,34 @@
 from django.contrib import admin
 from django.db.models.fields import FieldDoesNotExist
 
-from payments.models import Event, EventProcessingException, Transfer, Charge
-from payments.models import Invoice, InvoiceItem, CurrentSubscription, Customer
+from payments.models import (
+    Charge,
+    CurrentSubscription,
+    Customer,
+    Event,
+    EventProcessingException,
+    Invoice,
+    InvoiceItem,
+    Transfer
+)
 from payments.settings import User
 
 
-if hasattr(User, 'USERNAME_FIELD'):
+USERNAME_FIELD = getattr(User, "USERNAME_FIELD", None)
+
+
+if USERNAME_FIELD is not None:
     # Using a Django 1.5+ User model
     user_search_fields = [
-        "user__{}".format(User.USERNAME_FIELD)
+        "user__{0}".format(USERNAME_FIELD)
     ]
 
     try:
-        # get_field_by_name throws FieldDoesNotExist if the field is not present on the model
-        User._meta.get_field_by_name('email')
-        user_search_fields + ["user__email"]
+        # get_field_by_name throws FieldDoesNotExist if the field is not
+        # present on the model
+        # pylint: disable-msg=W0212,E1103
+        User._meta.get_field_by_name("email")
+        user_search_fields += ["user__email"]
     except FieldDoesNotExist:
         pass
 else:
@@ -25,7 +38,7 @@ else:
         "user__email"
     ]
 
-customer_search_fields = ["customer__{}".format(field) for field in user_search_fields]
+customer_search_fields = ["customer__{0}".format(field) for field in user_search_fields]
 
 
 class CustomerHasCardListFilter(admin.SimpleListFilter):
@@ -197,7 +210,7 @@ customer_has_card.short_description = "Customer Has Card"
 
 
 def customer_user(obj):
-    if hasattr(User, 'USERNAME_FIELD'):
+    if hasattr(User, "USERNAME_FIELD"):
         # Using a Django 1.5+ User model
         username = getattr(obj, obj.USERNAME_FIELD)
     else:
@@ -205,8 +218,8 @@ def customer_user(obj):
         username = obj.customer.user.username
 
     # In Django 1.5+ a User is not guaranteed to have an email field
-    email = getattr(obj, 'email', '')
-    return "{} <{}>".format(
+    email = getattr(obj, "email", "")
+    return "{0} <{1}>".format(
         username,
         email
     )

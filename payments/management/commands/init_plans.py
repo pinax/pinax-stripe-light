@@ -5,9 +5,9 @@ import stripe
 
 
 class Command(BaseCommand):
-
+    
     help = "Make sure your Stripe account has the plans"
-
+    
     def handle(self, *args, **options):
         stripe.api_key = settings.STRIPE_SECRET_KEY
         for plan in settings.PAYMENTS_PLANS:

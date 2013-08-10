@@ -9,21 +9,23 @@ from payments.settings import User
 if hasattr(User, 'USERNAME_FIELD'):
     # Using a Django 1.5+ User model
     user_search_fields = [
-        "customer__user__{}".format(User.USERNAME_FIELD)
+        "user__{}".format(User.USERNAME_FIELD)
     ]
 
     try:
         # get_field_by_name throws FieldDoesNotExist if the field is not present on the model
         User._meta.get_field_by_name('email')
-        user_search_fields + ["customer__user__email"]
+        user_search_fields + ["user__email"]
     except FieldDoesNotExist:
         pass
 else:
     # Using a pre-Django 1.5 User model
     user_search_fields = [
-        "customer__user__username",
-        "customer__user__email"
+        "user__username",
+        "user__email"
     ]
+
+customer_search_fields = ["customer__{}".format(field) for field in user_search_fields]
 
 
 class CustomerHasCardListFilter(admin.SimpleListFilter):
@@ -101,7 +103,7 @@ admin.site.register(
         "customer__stripe_id",
         "card_last_4",
         "invoice__stripe_id"
-    ] + user_search_fields,
+    ] + customer_search_fields,
     list_filter=[
         "paid",
         "disputed",
@@ -150,7 +152,7 @@ admin.site.register(
         "stripe_id",
         "customer__stripe_id",
         "validated_message"
-    ] + user_search_fields,
+    ] + customer_search_fields,
 )
 
 
@@ -228,7 +230,7 @@ admin.site.register(
     search_fields=[
         "stripe_id",
         "customer__stripe_id",
-    ] + user_search_fields,
+    ] + customer_search_fields,
     list_filter=[
         InvoiceCustomerHasCardListFilter,
         "paid",

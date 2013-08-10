@@ -10,7 +10,7 @@ from ..settings import User
 
 
 class EmailReceiptTest(TestCase):
-
+    
     def setUp(self):
         self.user = User.objects.create_user(username="patrick")
         self.customer = Customer.objects.create(
@@ -20,7 +20,7 @@ class EmailReceiptTest(TestCase):
             card_last_4="2342",
             card_kind="Visa"
         )
-
+    
     @patch("stripe.Charge.retrieve")
     @patch("stripe.Charge.create")
     def test_email_reciept_renders_amount_properly(self, ChargeMock, RetrieveMock):  # pylint: disable=C0301

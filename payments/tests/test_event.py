@@ -7,7 +7,7 @@ from ..settings import User
 
 
 class TestEventMethods(TestCase):
-
+    
     def setUp(self):
         self.user = User.objects.create_user(username="testuser")
         self.user.save()
@@ -15,7 +15,7 @@ class TestEventMethods(TestCase):
             stripe_id="cus_xxxxxxxxxxxxxxx",
             user=self.user
         )
-
+    
     def test_link_customer_customer_created(self):
         msg = {
             "created": 1363911708,
@@ -49,7 +49,7 @@ class TestEventMethods(TestCase):
         )
         event.link_customer()
         self.assertEquals(event.customer, self.customer)
-
+    
     def test_link_customer_customer_updated(self):
         msg = {
             "created": 1346855599,
@@ -104,7 +104,7 @@ class TestEventMethods(TestCase):
         )
         event.link_customer()
         self.assertEquals(event.customer, self.customer)
-
+    
     def test_link_customer_customer_deleted(self):
         msg = {
             "created": 1348286560,
@@ -138,7 +138,7 @@ class TestEventMethods(TestCase):
         )
         event.link_customer()
         self.assertEquals(event.customer, self.customer)
-
+    
     @patch("stripe.Customer.retrieve")
     def test_process_customer_deleted(self, CustomerMock):
         msg = {

@@ -5,9 +5,9 @@ from payments.settings import User
 
 
 class Command(BaseCommand):
-
+    
     help = "Sync customer data"
-
+    
     def handle(self, *args, **options):
         qs = User.objects.exclude(customer__isnull=True)
         count = 0

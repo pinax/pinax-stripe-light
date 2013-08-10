@@ -12,7 +12,7 @@ from ..models import Event, Transfer
 
 
 class TestWebhook(TestCase):
-    
+
     @patch("stripe.Event.retrieve")
     def test_webhook_with_transfer_event(self, StripeEventMock):
         data = {
@@ -72,7 +72,7 @@ class TestWebhook(TestCase):
 
 
 class TestTransferWebhooks(TestCase):
-    
+
     def test_transfer_created(self):
         event = Event.objects.create(
             stripe_id=TRANSFER_CREATED_TEST_DATA["id"],
@@ -86,7 +86,7 @@ class TestTransferWebhooks(TestCase):
         transfer = Transfer.objects.get(stripe_id="tr_XXXXXXXXXXXX")
         self.assertEquals(transfer.amount, decimal.Decimal("4.55"))
         self.assertEquals(transfer.status, "paid")
-    
+
     def test_transfer_paid_updates_existing_record(self):
         event = Event.objects.create(
             stripe_id=TRANSFER_CREATED_TEST_DATA["id"],

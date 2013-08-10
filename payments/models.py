@@ -432,7 +432,12 @@ class Customer(StripeObject):
     def sync_current_subscription(self, cu=None):
         cu = cu or self.stripe_customer
         sub = getattr(cu, "subscription", None)
-        if sub:
+        if sub is None:
+            try:
+                self.current_subscription.delete()
+            except CurrentSubscription.DoesNotExist:
+                pass
+        else:
             try:
                 sub_obj = self.current_subscription
                 sub_obj.plan = plan_from_stripe_id(sub.plan.id)

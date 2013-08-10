@@ -9,7 +9,7 @@ from ..settings import User
 
 
 class TestCustomer(TestCase):
-    
+
     def setUp(self):
         self.user = User.objects.create_user(username="patrick")
         self.customer = Customer.objects.create(
@@ -19,7 +19,7 @@ class TestCustomer(TestCase):
             card_last_4="2342",
             card_kind="Visa"
         )
-    
+
     @patch("stripe.Customer.retrieve")
     def test_customer_purge_leaves_customer_record(self, CustomerRetrieveMock):
         self.customer.purge()
@@ -29,7 +29,7 @@ class TestCustomer(TestCase):
         self.assertTrue(customer.card_last_4 == "")
         self.assertTrue(customer.card_kind == "")
         self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
-    
+
     @patch("stripe.Customer.retrieve")
     def test_customer_delete_same_as_purge(self, CustomerRetrieveMock):
         self.customer.delete()
@@ -39,19 +39,19 @@ class TestCustomer(TestCase):
         self.assertTrue(customer.card_last_4 == "")
         self.assertTrue(customer.card_kind == "")
         self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
-    
+
     def test_change_charge(self):
         self.assertTrue(self.customer.can_charge())
-    
+
     @patch("stripe.Customer.retrieve")
     def test_cannot_charge(self, CustomerRetrieveMock):
         self.customer.delete()
         self.assertFalse(self.customer.can_charge())
-    
+
     def test_charge_accepts_only_decimals(self):
         with self.assertRaises(ValueError):
             self.customer.charge(10)
-    
+
     @patch("stripe.Charge.retrieve")
     def test_record_charge(self, RetrieveMock):
         RetrieveMock.return_value = {
@@ -74,7 +74,7 @@ class TestCustomer(TestCase):
         self.assertEquals(obj.disputed, False)
         self.assertEquals(obj.refunded, False)
         self.assertEquals(obj.amount_refunded, None)
-    
+
     @patch("stripe.Charge.retrieve")
     def test_refund_charge(self, RetrieveMock):
         charge = Charge.objects.create(
@@ -107,7 +107,7 @@ class TestCustomer(TestCase):
         charge2 = Charge.objects.get(stripe_id="ch_XXXXXX")
         self.assertEquals(charge2.refunded, True)
         self.assertEquals(charge2.amount_refunded, decimal.Decimal("10.00"))
-    
+
     def test_calculate_refund_amount_full_refund(self):
         charge = Charge(
             stripe_id="ch_111111",
@@ -118,7 +118,7 @@ class TestCustomer(TestCase):
             charge.calculate_refund_amount(),
             50000
         )
-    
+
     def test_calculate_refund_amount_partial_refund(self):
         charge = Charge(
             stripe_id="ch_111111",
@@ -129,7 +129,7 @@ class TestCustomer(TestCase):
             charge.calculate_refund_amount(amount=decimal.Decimal("300.00")),
             30000
         )
-    
+
     def test_calculate_refund_above_max_refund(self):
         charge = Charge(
             stripe_id="ch_111111",
@@ -140,7 +140,7 @@ class TestCustomer(TestCase):
             charge.calculate_refund_amount(amount=decimal.Decimal("600.00")),
             50000
         )
-    
+
     @patch("stripe.Charge.retrieve")
     @patch("stripe.Charge.create")
     def test_charge_converts_dollars_into_cents(self, ChargeMock, RetrieveMock):

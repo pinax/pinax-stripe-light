@@ -29,13 +29,13 @@ else:
 class CustomerHasCardListFilter(admin.SimpleListFilter):
     title = "card presence"
     parameter_name = "has_card"
-    
+
     def lookups(self, request, model_admin):
         return [
             ["yes", "Has Card"],
             ["no", "Does Not Have a Card"]
         ]
-    
+
     def queryset(self, request, queryset):
         if self.value() == "yes":
             return queryset.exclude(card_fingerprint="")
@@ -46,13 +46,13 @@ class CustomerHasCardListFilter(admin.SimpleListFilter):
 class InvoiceCustomerHasCardListFilter(admin.SimpleListFilter):
     title = "card presence"
     parameter_name = "has_card"
-    
+
     def lookups(self, request, model_admin):
         return [
             ["yes", "Has Card"],
             ["no", "Does Not Have a Card"]
         ]
-    
+
     def queryset(self, request, queryset):
         if self.value() == "yes":
             return queryset.exclude(customer__card_fingerprint="")
@@ -63,7 +63,7 @@ class InvoiceCustomerHasCardListFilter(admin.SimpleListFilter):
 class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
     title = "subscription status"
     parameter_name = "sub_status"
-    
+
     def lookups(self, request, model_admin):
         statuses = [
             [x, x.replace("_", " ").title()]
@@ -74,7 +74,7 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
         ]
         statuses.append(["none", "No Subscription"])
         return statuses
-    
+
     def queryset(self, request, queryset):
         if self.value() is None:
             return queryset.all()

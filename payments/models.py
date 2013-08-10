@@ -16,7 +16,7 @@ import stripe
 from jsonfield.fields import JSONField
 
 from payments.managers import CustomerManager, ChargeManager, TransferManager
-from payments.settings import PAYMENTS_PLANS, INVOICE_FROM_EMAIL
+from payments.settings import PAYMENTS_PLANS, INVOICE_FROM_EMAIL, SEND_EMAIL_RECEIPTS
 from payments.settings import plan_from_stripe_id
 from payments.settings import User
 from payments.signals import WEBHOOK_SIGNALS
@@ -676,12 +676,12 @@ class Invoice(models.Model):
         return invoice
 
     @classmethod
-    def handle_event(cls, event):
+    def handle_event(cls, event, send_receipt=SEND_EMAIL_RECEIPTS):
         valid_events = ["invoice.payment_failed", "invoice.payment_succeeded"]
         if event.kind in valid_events:
             invoice_data = event.message["data"]["object"]
             stripe_invoice = stripe.Invoice.retrieve(invoice_data["id"])
-            cls.sync_from_stripe_data(stripe_invoice)
+            cls.sync_from_stripe_data(stripe_invoice, send_receipt=send_receipt)
 
 
 class InvoiceItem(models.Model):

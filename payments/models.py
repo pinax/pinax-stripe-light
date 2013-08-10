@@ -48,22 +48,22 @@ def convert_tstamp(response, field_name=None):
 
 
 class StripeObject(models.Model):
-    
+
     stripe_id = models.CharField(max_length=50, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
-    
+
     class Meta:
         abstract = True
 
 
 class EventProcessingException(models.Model):
-    
+
     event = models.ForeignKey("Event", null=True)
     data = models.TextField()
     message = models.CharField(max_length=500)
     traceback = models.TextField()
     created_at = models.DateTimeField(default=timezone.now)
-    
+
     @classmethod
     def log(cls, data, exception, event):
         cls.objects.create(
@@ -72,13 +72,13 @@ class EventProcessingException(models.Model):
             message=str(exception),
             traceback=traceback.format_exc()
         )
-    
+
     def __unicode__(self):
         return u"<%s, pk=%s, Event=%s>" % (self.message, self.pk, self.event)
 
 
 class Event(StripeObject):
-    
+
     kind = models.CharField(max_length=250)
     livemode = models.BooleanField()
     customer = models.ForeignKey("Customer", null=True)
@@ -86,14 +86,14 @@ class Event(StripeObject):
     validated_message = JSONField(null=True)
     valid = models.NullBooleanField(null=True)
     processed = models.BooleanField(default=False)
-    
+
     @property
     def message(self):
         return self.validated_message
-    
+
     def __unicode__(self):
         return "%s - %s" % (self.kind, self.stripe_id)
-    
+
     def link_customer(self):
         cus_id = None
         customer_crud_events = [
@@ -105,14 +105,14 @@ class Event(StripeObject):
             cus_id = self.message["data"]["object"]["id"]
         else:
             cus_id = self.message["data"]["object"].get("customer", None)
-        
+
         if cus_id is not None:
             try:
                 self.customer = Customer.objects.get(stripe_id=cus_id)
                 self.save()
             except Customer.DoesNotExist:
                 pass
-    
+
     def validate(self):
         evt = stripe.Event.retrieve(self.stripe_id)
         self.validated_message = json.loads(
@@ -127,7 +127,7 @@ class Event(StripeObject):
         else:
             self.valid = False
         self.save()
-    
+
     def process(self):
         """
             "account.updated",
@@ -207,7 +207,7 @@ class Event(StripeObject):
                     data=e.http_body,
                     exception=e
                 )
-    
+
     def send_signal(self):
         signal = WEBHOOK_SIGNALS.get(self.kind)
         if signal:
@@ -234,13 +234,13 @@ class Transfer(StripeObject):
     refund_gross = models.DecimalField(decimal_places=2, max_digits=7)
     validation_count = models.IntegerField()
     validation_fees = models.DecimalField(decimal_places=2, max_digits=7)
-    
+
     objects = TransferManager()
-    
+
     def update_status(self):
         self.status = stripe.Transfer.retrieve(self.stripe_id).status
         self.save()
-    
+
     @classmethod
     def process_transfer(cls, event, transfer):
         defaults = {
@@ -303,22 +303,22 @@ class TransferChargeFee(models.Model):
 
 
 class Customer(StripeObject):
-    
+
     user = models.OneToOneField(User, null=True)
     card_fingerprint = models.CharField(max_length=200, blank=True)
     card_last_4 = models.CharField(max_length=4, blank=True)
     card_kind = models.CharField(max_length=50, blank=True)
     date_purged = models.DateTimeField(null=True, editable=False)
-    
+
     objects = CustomerManager()
-    
+
     def __unicode__(self):
         return unicode(self.user)
-    
+
     @property
     def stripe_customer(self):
         return stripe.Customer.retrieve(self.stripe_id)
-    
+
     def purge(self):
         try:
             self.stripe_customer.delete()
@@ -336,23 +336,23 @@ class Customer(StripeObject):
         self.card_kind = ""
         self.date_purged = timezone.now()
         self.save()
-    
+
     def delete(self, using=None):
         # Only way to delete a customer is to use SQL
         self.purge()
-    
+
     def can_charge(self):
         return self.card_fingerprint and \
             self.card_last_4 and \
             self.card_kind and \
             self.date_purged is None
-    
+
     def has_active_subscription(self):
         try:
             return self.current_subscription.is_valid()
         except CurrentSubscription.DoesNotExist:
             return False
-    
+
     def cancel(self):
         try:
             current = self.current_subscription
@@ -363,14 +363,14 @@ class Customer(StripeObject):
         current.period_end = convert_tstamp(sub, "current_period_end")
         current.save()
         cancelled.send(sender=self, stripe_response=sub)
-    
+
     @classmethod
     def create(cls, user):
-        
+
         trial_days = None
         if TRIAL_PERIOD_FOR_USER_CALLBACK:
             trial_days = TRIAL_PERIOD_FOR_USER_CALLBACK(user)
-        
+
         stripe_customer = stripe.Customer.create(
             email=user.email
         )
@@ -378,12 +378,12 @@ class Customer(StripeObject):
             user=user,
             stripe_id=stripe_customer.id
         )
-        
+
         if DEFAULT_PLAN and trial_days:
             cus.subscribe(plan=DEFAULT_PLAN, trial_days=trial_days)
-        
+
         return cus
-    
+
     def update_card(self, token):
         cu = self.stripe_customer
         cu.card = token
@@ -393,7 +393,7 @@ class Customer(StripeObject):
         self.card_kind = cu.active_card.type
         self.save()
         card_changed.send(sender=self, stripe_response=cu)
-    
+
     def retry_unpaid_invoices(self):
         self.sync_invoices()
         for inv in self.invoices.filter(paid=False, closed=False):
@@ -402,7 +402,7 @@ class Customer(StripeObject):
             except stripe.InvalidRequestError, error:
                 if error.message != "Invoice is already paid":
                     raise error
-    
+
     def send_invoice(self):
         try:
             invoice = stripe.Invoice.create(customer=self.stripe_id)
@@ -410,7 +410,7 @@ class Customer(StripeObject):
             return True
         except stripe.InvalidRequestError:
             return False  # There was nothing to invoice
-    
+
     def sync(self, cu=None):
         cu = cu or self.stripe_customer
         if cu.active_card:
@@ -418,17 +418,17 @@ class Customer(StripeObject):
             self.card_last_4 = cu.active_card.last4
             self.card_kind = cu.active_card.type
             self.save()
-    
+
     def sync_invoices(self, cu=None):
         cu = cu or self.stripe_customer
         for invoice in cu.invoices().data:
             Invoice.sync_from_stripe_data(invoice, send_receipt=False)
-    
+
     def sync_charges(self, cu=None):
         cu = cu or self.stripe_customer
         for charge in cu.charges().data:
             self.record_charge(charge.id)
-    
+
     def sync_current_subscription(self, cu=None):
         cu = cu or self.stripe_customer
         sub = cu.subscription
@@ -462,14 +462,14 @@ class Customer(StripeObject):
                     start=convert_tstamp(sub.start),
                     quantity=sub.quantity
                 )
-            
+
             if sub.trial_start and sub.trial_end:
                 sub_obj.trial_start = convert_tstamp(sub.trial_start)
                 sub_obj.trial_end = convert_tstamp(sub.trial_end)
                 sub_obj.save()
-            
+
             return sub_obj
-    
+
     def update_plan_quantity(self, quantity, charge_immediately=False):
         self.subscribe(
             plan=plan_from_stripe_id(
@@ -478,7 +478,7 @@ class Customer(StripeObject):
             quantity=quantity,
             charge_immediately=charge_immediately
         )
-    
+
     def subscribe(self, plan, quantity=1, trial_days=None,
                   charge_immediately=True):
         cu = self.stripe_customer
@@ -497,7 +497,7 @@ class Customer(StripeObject):
         if charge_immediately:
             self.send_invoice()
         subscription_made.send(sender=self, plan=plan, stripe_response=resp)
-    
+
     def charge(self, amount, currency="usd", description=None):
         """
         This method expects `amount` to be a Decimal type representing a
@@ -517,14 +517,14 @@ class Customer(StripeObject):
         obj = self.record_charge(resp["id"])
         obj.send_receipt()
         return obj
-    
+
     def record_charge(self, charge_id):
         data = stripe.Charge.retrieve(charge_id)
         return Charge.sync_from_stripe_data(data)
 
 
 class CurrentSubscription(models.Model):
-    
+
     customer = models.OneToOneField(
         Customer,
         related_name="current_subscription",
@@ -542,27 +542,27 @@ class CurrentSubscription(models.Model):
     trial_end = models.DateTimeField(null=True)
     trial_start = models.DateTimeField(null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=7)
-    
+
     created_at = models.DateTimeField(default=timezone.now)
-    
+
     def plan_display(self):
         return PAYMENTS_PLANS[self.plan]["name"]
-    
+
     def status_display(self):
         return self.status.replace("_", " ").title()
-    
+
     def is_period_current(self):
         return self.current_period_end > timezone.now()
-    
+
     def is_status_current(self):
         return self.status in ["trialing", "active", "canceled"]
-    
+
     def is_valid(self):
         return self.is_period_current() and self.is_status_current()
 
 
 class Invoice(models.Model):
-    
+
     stripe_id = models.CharField(max_length=50)
     customer = models.ForeignKey(Customer, related_name="invoices")
     attempted = models.NullBooleanField()
@@ -576,29 +576,29 @@ class Invoice(models.Model):
     date = models.DateTimeField()
     charge = models.CharField(max_length=50, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
-    
+
     class Meta:
         ordering = ["-date"]
-    
+
     def retry(self):
         if not self.paid and not self.closed:
             inv = stripe.Invoice.retrieve(self.stripe_id)
             inv.pay()
             return True
         return False
-    
+
     def status(self):
         if self.paid:
             return "Paid"
         return "Open"
-    
+
     @classmethod
     def sync_from_stripe_data(cls, stripe_invoice, send_receipt=True):
         c = Customer.objects.get(stripe_id=stripe_invoice["customer"])
         period_end = convert_tstamp(stripe_invoice, "period_end")
         period_start = convert_tstamp(stripe_invoice, "period_start")
         date = convert_tstamp(stripe_invoice, "date")
-        
+
         invoice, created = cls.objects.get_or_create(
             stripe_id=stripe_invoice["id"],
             defaults=dict(
@@ -626,16 +626,16 @@ class Invoice(models.Model):
             invoice.date = date
             invoice.charge = stripe_invoice.get("charge") or ""
             invoice.save()
-        
+
         for item in stripe_invoice["lines"].get("data", []):
             period_end = convert_tstamp(item["period"], "end")
             period_start = convert_tstamp(item["period"], "start")
-            
+
             if item.get("plan"):
                 plan = plan_from_stripe_id(item["plan"]["id"])
             else:
                 plan = ""
-            
+
             inv_item, inv_item_created = invoice.items.get_or_create(
                 stripe_id=item["id"],
                 defaults=dict(
@@ -661,7 +661,7 @@ class Invoice(models.Model):
                 inv_item.period_end = period_end
                 inv_item.quantity = item.get("quantity")
                 inv_item.save()
-        
+
         if stripe_invoice.get("charge"):
             obj = c.record_charge(stripe_invoice["charge"])
             obj.invoice = invoice
@@ -669,7 +669,7 @@ class Invoice(models.Model):
             if send_receipt:
                 obj.send_receipt()
         return invoice
-    
+
     @classmethod
     def handle_event(cls, event):
         valid_events = ["invoice.payment_failed", "invoice.payment_succeeded"]
@@ -679,8 +679,10 @@ class Invoice(models.Model):
             cls.sync_from_stripe_data(stripe_invoice)
 
 
-class InvoiceItem(StripeObject):
-    
+class InvoiceItem(models.Model):
+
+    stripe_id = models.CharField(max_length=50)
+    created_at = models.DateTimeField(default=timezone.now)
     invoice = models.ForeignKey(Invoice, related_name="items")
     amount = models.DecimalField(decimal_places=2, max_digits=7)
     currency = models.CharField(max_length=10)
@@ -691,13 +693,13 @@ class InvoiceItem(StripeObject):
     description = models.CharField(max_length=200, blank=True)
     plan = models.CharField(max_length=100, blank=True)
     quantity = models.IntegerField(null=True)
-    
+
     def plan_display(self):
         return PAYMENTS_PLANS[self.plan]["name"]
 
 
 class Charge(StripeObject):
-    
+
     customer = models.ForeignKey(Customer, related_name="charges")
     invoice = models.ForeignKey(Invoice, null=True, related_name="charges")
     card_last_4 = models.CharField(max_length=4, blank=True)
@@ -715,9 +717,9 @@ class Charge(StripeObject):
     fee = models.DecimalField(decimal_places=2, max_digits=7, null=True)
     receipt_sent = models.BooleanField(default=False)
     charge_created = models.DateTimeField(null=True, blank=True)
-    
+
     objects = ChargeManager()
-    
+
     def calculate_refund_amount(self, amount=None):
         eligible_to_refund = self.amount - (self.amount_refunded or 0)
         if amount:
@@ -725,7 +727,7 @@ class Charge(StripeObject):
         else:
             amount_to_refund = eligible_to_refund
         return int(amount_to_refund * 100)
-    
+
     def refund(self, amount=None):
         # pylint: disable=E1121
         charge_obj = stripe.Charge.retrieve(
@@ -734,7 +736,7 @@ class Charge(StripeObject):
             amount=self.calculate_refund_amount(amount=amount)
         )
         Charge.sync_from_stripe_data(charge_obj)
-    
+
     @classmethod
     def sync_from_stripe_data(cls, data):
         customer = Customer.objects.get(stripe_id=data["customer"])
@@ -761,7 +763,7 @@ class Charge(StripeObject):
             obj.amount_refunded = (data["amount"] / decimal.Decimal("100"))
         obj.save()
         return obj
-    
+
     def send_receipt(self):
         if not self.receipt_sent:
             site = Site.objects.get_current()

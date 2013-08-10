@@ -4,7 +4,7 @@ from django.db import models
 
 
 class CustomerManager(models.Manager):
-    
+
     def started_during(self, year, month):
         return self.exclude(
             current_subscription__status="trialing"
@@ -12,44 +12,44 @@ class CustomerManager(models.Manager):
             current_subscription__start__year=year,
             current_subscription__start__month=month
         )
-    
+
     def active(self):
         return self.filter(
             current_subscription__status="active"
         )
-    
+
     def canceled(self):
         return self.filter(
             current_subscription__status="canceled"
         )
-    
+
     def canceled_during(self, year, month):
         return self.canceled().filter(
             current_subscription__canceled_at__year=year,
             current_subscription__canceled_at__month=month,
         )
-    
+
     def started_plan_summary_for(self, year, month):
         return self.started_during(year, month).values(
             "current_subscription__plan"
         ).order_by().annotate(
             count=models.Count("current_subscription__plan")
         )
-    
+
     def active_plan_summary(self):
         return self.active().values(
             "current_subscription__plan"
         ).order_by().annotate(
             count=models.Count("current_subscription__plan")
         )
-    
+
     def canceled_plan_summary_for(self, year, month):
         return self.canceled_during(year, month).values(
             "current_subscription__plan"
         ).order_by().annotate(
             count=models.Count("current_subscription__plan")
         )
-    
+
     def churn(self):
         canceled = self.canceled().count()
         active = self.active().count()
@@ -57,13 +57,13 @@ class CustomerManager(models.Manager):
 
 
 class TransferManager(models.Manager):
-    
+
     def during(self, year, month):
         return self.filter(
             date__year=year,
             date__month=month
         )
-    
+
     def paid_totals_for(self, year, month):
         return self.during(year, month).filter(
             status="paid"
@@ -80,13 +80,13 @@ class TransferManager(models.Manager):
 
 
 class ChargeManager(models.Manager):
-    
+
     def during(self, year, month):
         return self.filter(
             charge_created__year=year,
             charge_created__month=month
         )
-    
+
     def paid_totals_for(self, year, month):
         return self.during(year, month).filter(
             paid=True

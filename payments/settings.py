@@ -56,3 +56,4 @@ if isinstance(TRIAL_PERIOD_FOR_USER_CALLBACK, basestring):
     TRIAL_PERIOD_FOR_USER_CALLBACK = load_path_attr(
         TRIAL_PERIOD_FOR_USER_CALLBACK
     )
+SEND_EMAIL_RECEIPTS = getattr(settings, "SEND_EMAIL_RECEIPTS", True)

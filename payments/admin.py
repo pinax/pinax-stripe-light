@@ -22,7 +22,7 @@ if USERNAME_FIELD is not None:
     user_search_fields = [
         "user__{0}".format(USERNAME_FIELD)
     ]
-
+    
     try:
         # get_field_by_name throws FieldDoesNotExist if the field is not
         # present on the model
@@ -38,19 +38,22 @@ else:
         "user__email"
     ]
 
-customer_search_fields = ["customer__{0}".format(field) for field in user_search_fields]
+customer_search_fields = [
+    "customer__{0}".format(field)
+    for field in user_search_fields
+]
 
 
 class CustomerHasCardListFilter(admin.SimpleListFilter):
     title = "card presence"
     parameter_name = "has_card"
-
+    
     def lookups(self, request, model_admin):
         return [
             ["yes", "Has Card"],
             ["no", "Does Not Have a Card"]
         ]
-
+    
     def queryset(self, request, queryset):
         if self.value() == "yes":
             return queryset.exclude(card_fingerprint="")
@@ -61,13 +64,13 @@ class CustomerHasCardListFilter(admin.SimpleListFilter):
 class InvoiceCustomerHasCardListFilter(admin.SimpleListFilter):
     title = "card presence"
     parameter_name = "has_card"
-
+    
     def lookups(self, request, model_admin):
         return [
             ["yes", "Has Card"],
             ["no", "Does Not Have a Card"]
         ]
-
+    
     def queryset(self, request, queryset):
         if self.value() == "yes":
             return queryset.exclude(customer__card_fingerprint="")
@@ -78,7 +81,7 @@ class InvoiceCustomerHasCardListFilter(admin.SimpleListFilter):
 class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
     title = "subscription status"
     parameter_name = "sub_status"
-
+    
     def lookups(self, request, model_admin):
         statuses = [
             [x, x.replace("_", " ").title()]
@@ -89,7 +92,7 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
         ]
         statuses.append(["none", "No Subscription"])
         return statuses
-
+    
     def queryset(self, request, queryset):
         if self.value() is None:
             return queryset.all()
@@ -216,7 +219,7 @@ def customer_user(obj):
     else:
         # Using a pre-Django 1.5 User model
         username = obj.customer.user.username
-
+    
     # In Django 1.5+ a User is not guaranteed to have an email field
     email = getattr(obj, "email", "")
     return "{0} <{1}>".format(

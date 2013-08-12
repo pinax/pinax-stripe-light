@@ -53,7 +53,7 @@ def convert_tstamp(response, field_name=None):
 
 class StripeObject(models.Model):
     
-    stripe_id = models.CharField(max_length=50, unique=True)
+    stripe_id = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
     
     class Meta:
@@ -584,7 +584,7 @@ class CurrentSubscription(models.Model):
 
 class Invoice(models.Model):
     
-    stripe_id = models.CharField(max_length=50)
+    stripe_id = models.CharField(max_length=255)
     customer = models.ForeignKey(Customer, related_name="invoices")
     attempted = models.NullBooleanField()
     attempts = models.PositiveIntegerField(null=True)
@@ -702,7 +702,7 @@ class Invoice(models.Model):
 
 class InvoiceItem(models.Model):
     
-    stripe_id = models.CharField(max_length=50)
+    stripe_id = models.CharField(max_length=255)
     created_at = models.DateTimeField(default=timezone.now)
     invoice = models.ForeignKey(Invoice, related_name="items")
     amount = models.DecimalField(decimal_places=2, max_digits=7)

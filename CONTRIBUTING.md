@@ -62,7 +62,7 @@ For the impatient, just run:
 And if there is any output warning you of different style violations, fix them up
 before committing.
 
-When writing code to be included in django-user-accounts keep our style in mind:
+When writing code to be included in django-stripe-payments keep our style in mind:
 
 * Follow [PEP8](http://www.python.org/dev/peps/pep-0008/) there are some
   cases where we do not follow PEP8. It is an excellent starting point.

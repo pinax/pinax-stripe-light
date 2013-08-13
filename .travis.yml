@@ -16,6 +16,6 @@ install:
   - pip install -q pinax.checkers --use-mirrors
   - pip install -e . --use-mirrors
 before_script:
-  - lint.sh
+  - "./lint.sh"
 script:
   - python runtests.py

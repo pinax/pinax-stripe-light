@@ -11,9 +11,11 @@ install:
   - pip install -q mock --use-mirrors
   - pip install -q django-nose --use-mirrors
   - pip install -q pylint==0.27.0 --use-mirrors
+  - pip install -q pep8 --use-mirrors
+  - pip install -q coverage --use-mirrors
   - pip install -q pinax.checkers --use-mirrors
   - pip install -e . --use-mirrors
 before_script:
-  - "pylint --rcfile=.pylintrc payments"
+  - lint.sh
 script:
   - python runtests.py

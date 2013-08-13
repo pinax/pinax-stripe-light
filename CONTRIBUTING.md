@@ -55,6 +55,13 @@ if appropriate.
 
 ## Coding style
 
+For the impatient, just run:
+
+    $ ./lint.sh
+
+And if there is any output warning you of different style violations, fix them up
+before committing.
+
 When writing code to be included in django-user-accounts keep our style in mind:
 
 * Follow [PEP8](http://www.python.org/dev/peps/pep-0008/) there are some

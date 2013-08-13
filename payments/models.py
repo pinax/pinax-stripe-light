@@ -20,8 +20,7 @@ from payments.settings import (
     INVOICE_FROM_EMAIL,
     PAYMENTS_PLANS,
     plan_from_stripe_id,
-    SEND_EMAIL_RECEIPTS,
-    User
+    SEND_EMAIL_RECEIPTS
 )
 from payments.signals import WEBHOOK_SIGNALS
 from payments.signals import subscription_made, cancelled, card_changed
@@ -309,7 +308,10 @@ class TransferChargeFee(models.Model):
 
 class Customer(StripeObject):
 
-    user = models.OneToOneField(User, null=True)
+    user = models.OneToOneField(
+        getattr(settings, "AUTH_USER_MODEL", "auth.User"),
+        null=True
+    )
     card_fingerprint = models.CharField(max_length=200, blank=True)
     card_last_4 = models.CharField(max_length=4, blank=True)
     card_kind = models.CharField(max_length=50, blank=True)

@@ -226,7 +226,7 @@ def customer_user(obj):
         username,
         email
     )
-customer_has_card.short_description = "Customer"
+customer_user.short_description = "Customer"
 
 
 admin.site.register(

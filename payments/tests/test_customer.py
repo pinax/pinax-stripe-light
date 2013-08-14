@@ -5,13 +5,14 @@ from django.test import TestCase
 from mock import patch
 
 from ..models import Customer, Charge
-from ..settings import User
+from ..settings import get_user_model
 
 
 class TestCustomer(TestCase):
 
     def setUp(self):
-        self.user = User.objects.create_user(username="patrick")
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(username="patrick")
         self.customer = Customer.objects.create(
             user=self.user,
             stripe_id="cus_xxxxxxxxxxxxxxx",
@@ -28,7 +29,7 @@ class TestCustomer(TestCase):
         self.assertTrue(customer.card_fingerprint == "")
         self.assertTrue(customer.card_last_4 == "")
         self.assertTrue(customer.card_kind == "")
-        self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
+        self.assertTrue(self.User.objects.filter(pk=self.user.pk).exists())
 
     @patch("stripe.Customer.retrieve")
     def test_customer_delete_same_as_purge(self, CustomerRetrieveMock):
@@ -38,7 +39,7 @@ class TestCustomer(TestCase):
         self.assertTrue(customer.card_fingerprint == "")
         self.assertTrue(customer.card_last_4 == "")
         self.assertTrue(customer.card_kind == "")
-        self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
+        self.assertTrue(self.User.objects.filter(pk=self.user.pk).exists())
 
     def test_change_charge(self):
         self.assertTrue(self.customer.can_charge())

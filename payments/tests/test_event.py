@@ -3,12 +3,13 @@ from django.test import TestCase
 from mock import patch
 
 from ..models import Customer, Event
-from ..settings import User
+from ..settings import get_user_model
 
 
 class TestEventMethods(TestCase):
 
     def setUp(self):
+        User = get_user_model()
         self.user = User.objects.create_user(username="testuser")
         self.user.save()
         self.customer = Customer.objects.create(

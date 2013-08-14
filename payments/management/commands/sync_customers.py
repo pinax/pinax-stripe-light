@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand
 
-
-from payments.settings import User
+from payments.settings import get_user_model
 
 
 class Command(BaseCommand):
@@ -9,6 +8,7 @@ class Command(BaseCommand):
     help = "Sync customer data"
 
     def handle(self, *args, **options):
+        User = get_user_model()
         qs = User.objects.exclude(customer__isnull=True)
         count = 0
         total = qs.count()

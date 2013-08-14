@@ -11,37 +11,41 @@ from payments.models import (
     InvoiceItem,
     Transfer
 )
-from payments.settings import User
+from payments.settings import get_user_model
 
 
-USERNAME_FIELD = getattr(User, "USERNAME_FIELD", None)
+def user_search_fields():
+    User = get_user_model()
+    USERNAME_FIELD = getattr(User, "USERNAME_FIELD", None)
+    fields = []
+    if USERNAME_FIELD is not None:
+        # Using a Django 1.5+ User model
+        fields = [
+            "user__{0}".format(USERNAME_FIELD)
+        ]
+
+        try:
+            # get_field_by_name throws FieldDoesNotExist if the field is not
+            # present on the model
+            # pylint: disable-msg=W0212,E1103
+            User._meta.get_field_by_name("email")
+            fields += ["user__email"]
+        except FieldDoesNotExist:
+            pass
+    else:
+        # Using a pre-Django 1.5 User model
+        fields = [
+            "user__username",
+            "user__email"
+        ]
+    return fields
 
 
-if USERNAME_FIELD is not None:
-    # Using a Django 1.5+ User model
-    user_search_fields = [
-        "user__{0}".format(USERNAME_FIELD)
+def customer_search_fields():
+    return [
+        "customer__{0}".format(field)
+        for field in user_search_fields()
     ]
-
-    try:
-        # get_field_by_name throws FieldDoesNotExist if the field is not
-        # present on the model
-        # pylint: disable-msg=W0212,E1103
-        User._meta.get_field_by_name("email")
-        user_search_fields += ["user__email"]
-    except FieldDoesNotExist:
-        pass
-else:
-    # Using a pre-Django 1.5 User model
-    user_search_fields = [
-        "user__username",
-        "user__email"
-    ]
-
-customer_search_fields = [
-    "customer__{0}".format(field)
-    for field in user_search_fields
-]
 
 
 class CustomerHasCardListFilter(admin.SimpleListFilter):
@@ -119,7 +123,7 @@ admin.site.register(
         "customer__stripe_id",
         "card_last_4",
         "invoice__stripe_id"
-    ] + customer_search_fields,
+    ] + customer_search_fields(),
     list_filter=[
         "paid",
         "disputed",
@@ -168,7 +172,7 @@ admin.site.register(
         "stripe_id",
         "customer__stripe_id",
         "validated_message"
-    ] + customer_search_fields,
+    ] + customer_search_fields(),
 )
 
 
@@ -198,7 +202,7 @@ admin.site.register(
     ],
     search_fields=[
         "stripe_id",
-    ] + user_search_fields,
+    ] + user_search_fields(),
     inlines=[CurrentSubscriptionInline]
 )
 
@@ -213,6 +217,7 @@ customer_has_card.short_description = "Customer Has Card"
 
 
 def customer_user(obj):
+    User = get_user_model()
     if hasattr(User, "USERNAME_FIELD"):
         # Using a Django 1.5+ User model
         username = getattr(obj, obj.USERNAME_FIELD)
@@ -246,7 +251,7 @@ admin.site.register(
     search_fields=[
         "stripe_id",
         "customer__stripe_id",
-    ] + customer_search_fields,
+    ] + customer_search_fields(),
     list_filter=[
         InvoiceCustomerHasCardListFilter,
         "paid",

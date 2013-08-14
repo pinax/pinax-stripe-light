@@ -218,6 +218,7 @@ class Event(StripeObject):
 
 
 class Transfer(StripeObject):
+    # pylint: disable-msg=C0301
     event = models.ForeignKey(Event, related_name="transfers")
     amount = models.DecimalField(decimal_places=2, max_digits=7)
     status = models.CharField(max_length=25)

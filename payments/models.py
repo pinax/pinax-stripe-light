@@ -223,20 +223,20 @@ class Transfer(StripeObject):
     status = models.CharField(max_length=25)
     date = models.DateTimeField()
     description = models.TextField(null=True, blank=True)
-    adjustment_count = models.IntegerField()
-    adjustment_fees = models.DecimalField(decimal_places=2, max_digits=7)
-    adjustment_gross = models.DecimalField(decimal_places=2, max_digits=7)
-    charge_count = models.IntegerField()
-    charge_fees = models.DecimalField(decimal_places=2, max_digits=7)
-    charge_gross = models.DecimalField(decimal_places=2, max_digits=7)
-    collected_fee_count = models.IntegerField()
-    collected_fee_gross = models.DecimalField(decimal_places=2, max_digits=7)
-    net = models.DecimalField(decimal_places=2, max_digits=7)
-    refund_count = models.IntegerField()
-    refund_fees = models.DecimalField(decimal_places=2, max_digits=7)
-    refund_gross = models.DecimalField(decimal_places=2, max_digits=7)
-    validation_count = models.IntegerField()
-    validation_fees = models.DecimalField(decimal_places=2, max_digits=7)
+    adjustment_count = models.IntegerField(null=True)
+    adjustment_fees = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    adjustment_gross = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    charge_count = models.IntegerField(null=True)
+    charge_fees = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    charge_gross = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    collected_fee_count = models.IntegerField(null=True)
+    collected_fee_gross = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    net = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    refund_count = models.IntegerField(null=True)
+    refund_fees = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    refund_gross = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    validation_count = models.IntegerField(null=True)
+    validation_fees = models.DecimalField(decimal_places=2, max_digits=7, null=True)
 
     objects = TransferManager()
 
@@ -250,22 +250,26 @@ class Transfer(StripeObject):
             "amount": transfer["amount"] / decimal.Decimal("100"),
             "status": transfer["status"],
             "date": convert_tstamp(transfer, "date"),
-            "description": transfer.get("description", ""),
-            "adjustment_count": transfer["summary"]["adjustment_count"],
-            "adjustment_fees": transfer["summary"]["adjustment_fees"],
-            "adjustment_gross": transfer["summary"]["adjustment_gross"],
-            "charge_count": transfer["summary"]["charge_count"],
-            "charge_fees": transfer["summary"]["charge_fees"],
-            "charge_gross": transfer["summary"]["charge_gross"],
-            "collected_fee_count": transfer["summary"]["collected_fee_count"],
-            "collected_fee_gross": transfer["summary"]["collected_fee_gross"],
-            "net": transfer["summary"]["net"] / decimal.Decimal("100"),
-            "refund_count": transfer["summary"]["refund_count"],
-            "refund_fees": transfer["summary"]["refund_fees"],
-            "refund_gross": transfer["summary"]["refund_gross"],
-            "validation_count": transfer["summary"]["validation_count"],
-            "validation_fees": transfer["summary"]["validation_fees"],
+            "description": transfer.get("description", "")
         }
+        summary = transfer.get("summary")
+        if summary:
+            defaults.update({
+                "adjustment_count": summary.get("adjustment_count"),
+                "adjustment_fees": summary.get("adjustment_fees"),
+                "adjustment_gross": summary.get("adjustment_gross"),
+                "charge_count": summary.get("charge_count"),
+                "charge_fees": summary.get("charge_fees"),
+                "charge_gross": summary.get("charge_gross"),
+                "collected_fee_count": summary.get("collected_fee_count"),
+                "collected_fee_gross": summary.get("collected_fee_gross"),
+                "refund_count": summary.get("refund_count"),
+                "refund_fees": summary.get("refund_fees"),
+                "refund_gross": summary.get("refund_gross"),
+                "validation_count": summary.get("validation_count"),
+                "validation_fees": summary.get("validation_fees"),
+                "net": summary.get("net") / decimal.Decimal("100")
+            })
         for field in defaults:
             if field.endswith("fees") or field.endswith("gross"):
                 defaults[field] = defaults[field] / decimal.Decimal("100")
@@ -281,8 +285,8 @@ class Transfer(StripeObject):
                 event=event,
                 defaults=defaults
             )
-        if created:
-            for fee in transfer["summary"]["charge_fee_details"]:
+        if created and summary:
+            for fee in summary.get("charge_fee_details", []):
                 obj.charge_fee_details.create(
                     amount=fee["amount"] / decimal.Decimal("100"),
                     application=fee.get("application", ""),

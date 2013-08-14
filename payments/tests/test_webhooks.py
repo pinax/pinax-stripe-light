@@ -7,7 +7,7 @@ from django.test.client import Client
 
 from mock import patch
 
-from . import TRANSFER_CREATED_TEST_DATA
+from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_PENDING_TEST_DATA
 from ..models import Event, Transfer
 
 
@@ -86,6 +86,20 @@ class TestTransferWebhooks(TestCase):
         transfer = Transfer.objects.get(stripe_id="tr_XXXXXXXXXXXX")
         self.assertEquals(transfer.amount, decimal.Decimal("4.55"))
         self.assertEquals(transfer.status, "paid")
+
+    def test_transfer_pending_create(self):
+        event = Event.objects.create(
+            stripe_id=TRANSFER_PENDING_TEST_DATA["id"],
+            kind="transfer.created",
+            livemode=True,
+            webhook_message=TRANSFER_PENDING_TEST_DATA,
+            validated_message=TRANSFER_PENDING_TEST_DATA,
+            valid=True
+        )
+        event.process()
+        transfer = Transfer.objects.get(stripe_id="tr_adlkj2l3kj23")
+        self.assertEquals(transfer.amount, decimal.Decimal("9.41"))
+        self.assertEquals(transfer.status, "pending")
 
     def test_transfer_paid_updates_existing_record(self):
         event = Event.objects.create(

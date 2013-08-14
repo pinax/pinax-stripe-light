@@ -89,3 +89,37 @@ TRANSFER_CREATED_TEST_DATA2 = {
     "pending_webhooks": 1,
     "type": "transfer.created"
 }
+
+TRANSFER_PENDING_TEST_DATA = {
+    "created": 1375603198,
+    "data": {
+        "object": {
+            "account": {
+                "bank_name": "BANK OF AMERICA, N.A.",
+                "country": "US",
+                "fingerprint": "xxxxxxxxxx",
+                "last4": "4444",
+                "object": "bank_account",
+                "validated": False
+            },
+            "amount": 941,
+            "currency": "usd",
+            "date": 1375747200,
+            "description": "STRIPE TRANSFER",
+            "fee": 0,
+            "fee_details": [],
+            "id": "tr_adlkj2l3kj23",
+            "livemode": True,
+            "object": "transfer",
+            "recipient": None,
+            "statement_descriptor": None,
+            "status": "pending"
+        }
+    },
+    "id": "evt_2l3kj232k223",
+    "livemode": True,
+    "object": "event",
+    "pending_webhooks": 1,
+    "request": None,
+    "type": "transfer.created"
+}

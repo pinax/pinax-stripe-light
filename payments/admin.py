@@ -220,7 +220,7 @@ def customer_user(obj):
     User = get_user_model()
     if hasattr(User, "USERNAME_FIELD"):
         # Using a Django 1.5+ User model
-        username = getattr(obj, obj.USERNAME_FIELD)
+        username = getattr(obj.customer.user, "USERNAME_FIELD")
     else:
         # Using a pre-Django 1.5 User model
         username = obj.customer.user.username

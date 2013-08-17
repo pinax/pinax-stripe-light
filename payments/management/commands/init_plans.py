@@ -13,7 +13,7 @@ class Command(BaseCommand):
         for plan in settings.PAYMENTS_PLANS:
             if settings.PAYMENTS_PLANS[plan].get("stripe_plan_id"):
                 stripe.Plan.create(
-                    amount=100 * settings.PAYMENTS_PLANS[plan]["price"],
+                    amount=int(100 * settings.PAYMENTS_PLANS[plan]["price"]),
                     interval=settings.PAYMENTS_PLANS[plan]["interval"],
                     name=settings.PAYMENTS_PLANS[plan]["name"],
                     currency=settings.PAYMENTS_PLANS[plan]["currency"],

@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_CREATED_TEST_DATA2
-from ..models import Event, Transfer, Customer, CurrentSubscription
+from ..models import Event, Transfer, Customer, CurrentSubscription, Charge
 from ..utils import get_user_model
 
 
@@ -170,3 +170,70 @@ class TransferManagerTest(TestCase):
         self.assertEquals(
             totals["total_validation_fees"], decimal.Decimal("0")
         )
+
+
+class ChargeManagerTests(TestCase):
+
+    def setUp(self):
+        customer = Customer.objects.create(
+            user=get_user_model().objects.create_user(username="patrick"),
+            stripe_id="cus_xxxxxxxxxxxxxx"
+        )
+        Charge.objects.create(
+            stripe_id="ch_1",
+            customer=customer,
+            charge_created=datetime.datetime(2013, 1, 1, tzinfo=timezone.utc),
+            paid=True,
+            amount=decimal.Decimal("100"),
+            fee=decimal.Decimal("3.42"),
+            amount_refunded=decimal.Decimal("0")
+        )
+        Charge.objects.create(
+            stripe_id="ch_2",
+            customer=customer,
+            charge_created=datetime.datetime(2013, 1, 1, tzinfo=timezone.utc),
+            paid=True,
+            amount=decimal.Decimal("100"),
+            fee=decimal.Decimal("3.42"),
+            amount_refunded=decimal.Decimal("10")
+        )
+        Charge.objects.create(
+            stripe_id="ch_3",
+            customer=customer,
+            charge_created=datetime.datetime(2013, 1, 1, tzinfo=timezone.utc),
+            paid=False,
+            amount=decimal.Decimal("100"),
+            fee=decimal.Decimal("3.42"),
+            amount_refunded=decimal.Decimal("0")
+        )
+        Charge.objects.create(
+            stripe_id="ch_4",
+            customer=customer,
+            charge_created=datetime.datetime(2013, 4, 1, tzinfo=timezone.utc),
+            paid=True,
+            amount=decimal.Decimal("500"),
+            fee=decimal.Decimal("6.04"),
+            amount_refunded=decimal.Decimal("15.42")
+        )
+
+    def test_charges_during(self):
+        charges = Charge.objects.during(2013, 1)
+        self.assertEqual(charges.count(), 3)
+
+    def test_paid_totals_for_jan(self):
+        totals = Charge.objects.paid_totals_for(2013, 1)
+        self.assertEqual(totals["total_amount"], decimal.Decimal("200"))
+        self.assertEqual(totals["total_fee"], decimal.Decimal("6.84"))
+        self.assertEqual(totals["total_refunded"], decimal.Decimal("10"))
+
+    def test_paid_totals_for_apr(self):
+        totals = Charge.objects.paid_totals_for(2013, 4)
+        self.assertEqual(totals["total_amount"], decimal.Decimal("500"))
+        self.assertEqual(totals["total_fee"], decimal.Decimal("6.04"))
+        self.assertEqual(totals["total_refunded"], decimal.Decimal("15.42"))
+
+    def test_paid_totals_for_dec(self):
+        totals = Charge.objects.paid_totals_for(2013, 12)
+        self.assertEqual(totals["total_amount"], None)
+        self.assertEqual(totals["total_fee"], None)
+        self.assertEqual(totals["total_refunded"], None)

@@ -1,3 +1,4 @@
+import decimal
 import sys
 
 from django.conf import settings
@@ -22,6 +23,9 @@ settings.configure(
     STRIPE_PUBLIC_KEY="",
     STRIPE_SECRET_KEY="",
     PAYMENTS_PLANS={
+        "free": {
+            "name": "Free Plan"
+        },
         "entry": {
             "stripe_plan_id": "entry-monthly",
             "name": "Entry ($9.54/month)",
@@ -42,7 +46,7 @@ settings.configure(
             "stripe_plan_id": "premium-monthly",
             "name": "Gold ($59.99/month)",
             "description": "The premium-level monthly subscription",
-            "price": 59.99,
+            "price": decimal.Decimal("59.99"),
             "interval": "month",
             "currency": "usd"
         }

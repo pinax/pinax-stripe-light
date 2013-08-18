@@ -1,3 +1,5 @@
+import decimal
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
@@ -12,8 +14,14 @@ class Command(BaseCommand):
         stripe.api_key = settings.STRIPE_SECRET_KEY
         for plan in settings.PAYMENTS_PLANS:
             if settings.PAYMENTS_PLANS[plan].get("stripe_plan_id"):
+                price = settings.PAYMENTS_PLANS[plan]["price"]
+                if isinstance(price, decimal.Decimal):
+                    amount = int(100 * price)
+                else:
+                    amount = int(100 * decimal.Decimal(str(price)))
+
                 stripe.Plan.create(
-                    amount=int(100 * settings.PAYMENTS_PLANS[plan]["price"]),
+                    amount=amount,
                     interval=settings.PAYMENTS_PLANS[plan]["interval"],
                     name=settings.PAYMENTS_PLANS[plan]["name"],
                     currency=settings.PAYMENTS_PLANS[plan]["currency"],

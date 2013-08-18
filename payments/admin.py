@@ -11,7 +11,7 @@ from payments.models import (
     InvoiceItem,
     Transfer
 )
-from payments.settings import get_user_model
+from payments.utils import get_user_model
 
 
 def user_search_fields():

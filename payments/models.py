@@ -27,27 +27,12 @@ from payments.signals import subscription_made, cancelled, card_changed
 from payments.signals import webhook_processing_error
 from payments.settings import TRIAL_PERIOD_FOR_USER_CALLBACK
 from payments.settings import DEFAULT_PLAN
+from payments.utils import convert_tstamp
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 stripe.api_version = getattr(settings, "STRIPE_API_VERSION", "2012-11-07")
 
-
-def convert_tstamp(response, field_name=None):
-    try:
-        if field_name and response[field_name]:
-            return datetime.datetime.fromtimestamp(
-                response[field_name],
-                timezone.utc
-            )
-        if not field_name:
-            return datetime.datetime.fromtimestamp(
-                response,
-                timezone.utc
-            )
-    except KeyError:
-        pass
-    return None
 
 
 class StripeObject(models.Model):

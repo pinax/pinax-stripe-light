@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_CREATED_TEST_DATA2
 from ..models import Event, Transfer, Customer, CurrentSubscription
-from ..settings import get_user_model
+from ..utils import get_user_model
 
 
 class CustomerManagerTest(TestCase):

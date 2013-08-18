@@ -6,7 +6,7 @@ from django.test import TestCase
 from mock import patch
 
 from ..models import Customer
-from ..settings import get_user_model
+from ..utils import get_user_model
 
 
 class EmailReceiptTest(TestCase):

@@ -16,14 +16,6 @@ You will also want to add ``django_forms_bootstrap`` to your `INSTALLED_APPS``::
         "django_forms_bootstrap",
     ]
 
-You will need to add the request context processor to TEMPLATE_CONTEXT_PROCESSORS
-if you wish to use the included templates by adding something like this in our
-settings.py::
-
-    TEMPLATE_CONTEXT_PROCESSORS += (
-        'django.core.context_processors.request',
-    )
-
 Add ``eldarion-ajax.js`` to your base template. eldarion-ajax_
 is a library used by the included templates to interact with the ajax views. You
 can certainly write your own javascript, but it is likely easier for you to just

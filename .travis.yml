@@ -13,9 +13,12 @@ install:
   - pip install -q pylint==0.27.0 --use-mirrors
   - pip install -q pep8 --use-mirrors
   - pip install -q coverage --use-mirrors
+  - pip install -q python-coveralls --use-mirrors
   - pip install -q pinax.checkers --use-mirrors
   - pip install -e . --use-mirrors
 before_script:
   - "./lint.sh"
 script:
-  - python runtests.py
+  - coverage run --source=payments --omit=payments\/tests\/\* --branch runtests.py
+after_script:
+  - coveralls

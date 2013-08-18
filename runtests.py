@@ -21,7 +21,33 @@ settings.configure(
     SITE_ID=1,
     STRIPE_PUBLIC_KEY="",
     STRIPE_SECRET_KEY="",
-    PAYMENTS_PLANS={}
+    PAYMENTS_PLANS={
+        "entry": {
+            "stripe_plan_id": "entry-monthly",
+            "name": "Entry ($9.54/month)",
+            "description": "The entry-level monthly subscription",
+            "price": 9.54,
+            "interval": "month",
+            "currency": "usd"
+        },
+        "pro": {
+            "stripe_plan_id": "pro-monthly",
+            "name": "Pro ($19.99/month)",
+            "description": "The pro-level monthly subscription",
+            "price": 19.99,
+            "interval": "month",
+            "currency": "usd"
+        },
+        "premium": {
+            "stripe_plan_id": "premium-monthly",
+            "name": "Gold ($59.99/month)",
+            "description": "The premium-level monthly subscription",
+            "price": 59.99,
+            "interval": "month",
+            "currency": "usd"
+        }
+    },
+    PAYMENTS_TRIAL_PERIOD_FOR_USER_CALLBACK="payments.tests.callbacks.callback_demo"
 )
 
 from django_nose import NoseTestSuiteRunner

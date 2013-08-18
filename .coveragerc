@@ -1,0 +1,7 @@
+[run]
+source = payments
+omit = payments/tests/*
+branch = true
+
+[report]
+omit = payments/tests/*

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db.models.fields import FieldDoesNotExist
 
-from payments.models import (
+from .models import (
     Charge,
     CurrentSubscription,
     Customer,
@@ -11,7 +11,7 @@ from payments.models import (
     InvoiceItem,
     Transfer
 )
-from payments.utils import get_user_model
+from .utils import get_user_model
 
 
 def user_search_fields():

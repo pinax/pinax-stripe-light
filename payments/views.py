@@ -13,10 +13,14 @@ from django.contrib.auth.decorators import login_required
 
 import stripe
 
-from payments.forms import PlanForm
-from payments.models import EventProcessingException, Customer
-from payments.models import Event, CurrentSubscription
-from payments import settings as app_settings
+from . import settings as app_settings
+from .forms import PlanForm
+from .models import (
+    Customer,
+    CurrentSubscription,
+    Event,
+    EventProcessingException
+)
 
 
 class PaymentsContextMixin(object):

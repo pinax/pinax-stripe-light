@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 
+
 URLS = [reverse(url) for url in settings.SUBSCRIPTION_REQUIRED_EXCEPTION_URLS]
 
 

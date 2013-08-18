@@ -15,24 +15,27 @@ import stripe
 
 from jsonfield.fields import JSONField
 
-from payments.managers import CustomerManager, ChargeManager, TransferManager
-from payments.settings import (
+from .managers import CustomerManager, ChargeManager, TransferManager
+from .settings import (
+    DEFAULT_PLAN,
     INVOICE_FROM_EMAIL,
     PAYMENTS_PLANS,
     plan_from_stripe_id,
-    SEND_EMAIL_RECEIPTS
+    SEND_EMAIL_RECEIPTS,
+    TRIAL_PERIOD_FOR_USER_CALLBACK
 )
-from payments.signals import WEBHOOK_SIGNALS
-from payments.signals import subscription_made, cancelled, card_changed
-from payments.signals import webhook_processing_error
-from payments.settings import TRIAL_PERIOD_FOR_USER_CALLBACK
-from payments.settings import DEFAULT_PLAN
-from payments.utils import convert_tstamp
+from .signals import (
+    cancelled,
+    card_changed,
+    subscription_made,
+    webhook_processing_error,
+    WEBHOOK_SIGNALS,
+)
+from .utils import convert_tstamp
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 stripe.api_version = getattr(settings, "STRIPE_API_VERSION", "2012-11-07")
-
 
 
 class StripeObject(models.Model):

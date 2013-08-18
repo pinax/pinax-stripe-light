@@ -1,6 +1,6 @@
 from django import template
 
-from payments.forms import PlanForm
+from ..forms import PlanForm
 
 
 register = template.Library()

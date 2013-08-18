@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from payments.utils import get_user_model
+from ...utils import get_user_model
 
 
 class Command(BaseCommand):

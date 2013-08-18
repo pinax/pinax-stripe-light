@@ -1,8 +1,13 @@
 from django.conf.urls import patterns, url
 from django.contrib.auth.decorators import login_required
 
-from payments.views import (SubscribeView, ChangeCardView, ChangePlanView,
-                            CancelView, HistoryView)
+from .views import (
+    CancelView,
+    ChangeCardView,
+    ChangePlanView,
+    HistoryView,
+    SubscribeView
+)
 
 
 urlpatterns = patterns(

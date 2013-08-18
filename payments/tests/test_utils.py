@@ -31,6 +31,13 @@ class TestTimestampConversion(TestCase):
             None
         )
 
+    def test_conversion_with_field_name_but_none(self):
+        stamp = convert_tstamp({"my_date": None}, "my_date")
+        self.assertEquals(
+            stamp,
+            None
+        )
+
 
 class TestPlanFromStripeId(TestCase):
 

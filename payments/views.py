@@ -77,19 +77,18 @@ class HistoryView(PaymentsContextMixin, TemplateView):
 @require_POST
 @login_required
 def change_card(request):
-    if request.POST.get("stripe_token"):
-        try:
-            customer = request.user.customer
-            send_invoice = customer.card_fingerprint == ""
-            customer.update_card(
-                request.POST.get("stripe_token")
-            )
-            if send_invoice:
-                customer.send_invoice()
-            customer.retry_unpaid_invoices()
-            data = {}
-        except stripe.CardError, e:
-            data = {"error": e.message}
+    try:
+        customer = request.user.customer
+        send_invoice = customer.card_fingerprint == ""
+        customer.update_card(
+            request.POST.get("stripe_token")
+        )
+        if send_invoice:
+            customer.send_invoice()
+        customer.retry_unpaid_invoices()
+        data = {}
+    except stripe.CardError, e:
+        data = {"error": e.message}
     return _ajax_response(request, "payments/_change_card_form.html", **data)
 
 

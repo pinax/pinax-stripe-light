@@ -36,16 +36,15 @@ class PaymentsContextMixin(object):
 
 
 def _ajax_response(request, template, **kwargs):
-    if request.is_ajax:
-        response = {
-            "html": render_to_string(
-                template,
-                RequestContext(request, kwargs)
-            )
-        }
-        if "location" in kwargs:
-            response.update({"location": kwargs["location"]})
-        return HttpResponse(json.dumps(response), mimetype="application/json")
+    response = {
+        "html": render_to_string(
+            template,
+            RequestContext(request, kwargs)
+        )
+    }
+    if "location" in kwargs:
+        response.update({"location": kwargs["location"]})
+    return HttpResponse(json.dumps(response), content_type="application/json")
 
 
 class SubscribeView(PaymentsContextMixin, TemplateView):

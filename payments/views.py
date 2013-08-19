@@ -104,23 +104,11 @@ def change_plan(request):
         try:
             request.user.customer.subscribe(form.cleaned_data["plan"])
             data = {
-                "form": PlanForm(initial={
-                    "plan": current_plan
-                }),
-                "plan": current_plan,
-                "name": settings.PAYMENTS_PLANS[current_plan]["name"]
+                "form": PlanForm(initial={"plan": form.cleaned_data["plan"]})
             }
         except stripe.StripeError, e:
-            if current_plan:
-                name = settings.PAYMENTS_PLANS[current_plan]["name"]
-            else:
-                name = ""
             data = {
-                "form": PlanForm(initial={
-                    "plan": current_plan
-                }),
-                "plan": current_plan,
-                "name": name,
+                "form": PlanForm(initial={"plan": current_plan}),
                 "error": e.message
             }
     else:

@@ -22,7 +22,8 @@ from .settings import (
     PAYMENTS_PLANS,
     plan_from_stripe_id,
     SEND_EMAIL_RECEIPTS,
-    TRIAL_PERIOD_FOR_USER_CALLBACK
+    TRIAL_PERIOD_FOR_USER_CALLBACK,
+    PLAN_QUANTITY_CALLBACK
 )
 from .signals import (
     cancelled,
@@ -489,8 +490,13 @@ class Customer(StripeObject):
             charge_immediately=charge_immediately
         )
 
-    def subscribe(self, plan, quantity=1, trial_days=None,
+    def subscribe(self, plan, quantity=None, trial_days=None,
                   charge_immediately=True):
+        if quantity is None:
+            if PLAN_QUANTITY_CALLBACK is not None:
+                quantity = PLAN_QUANTITY_CALLBACK(self)
+            else:
+                quantity = 1
         cu = self.stripe_customer
         if trial_days:
             resp = cu.update_subscription(

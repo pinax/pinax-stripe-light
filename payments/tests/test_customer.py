@@ -22,6 +22,40 @@ class TestCustomer(TestCase):
         )
 
     @patch("stripe.Customer.retrieve")
+    def test_customer_subscribe_with_specified_quantity(self, CustomerRetrieveMock):  # pylint: disable=C0301
+        customer = CustomerRetrieveMock()
+        customer.subscription.plan.id = "entry-monthly"
+        customer.subscription.current_period_start = 1348360173
+        customer.subscription.current_period_end = 1375603198
+        customer.subscription.plan.amount = decimal.Decimal("9.57")
+        customer.subscription.status = "active"
+        customer.subscription.cancel_at_period_end = True
+        customer.subscription.start = 1348360173
+        customer.subscription.quantity = 1
+        customer.subscription.trial_start = None
+        customer.subscription.trial_end = None
+        self.customer.subscribe("entry", quantity=3, charge_immediately=False)
+        _, kwargs = customer.update_subscription.call_args
+        self.assertEqual(kwargs["quantity"], 3)
+
+    @patch("stripe.Customer.retrieve")
+    def test_customer_subscribe_with_callback_quantity(self, CustomerRetrieveMock):  # pylint: disable=C0301
+        customer = CustomerRetrieveMock()
+        customer.subscription.plan.id = "entry-monthly"
+        customer.subscription.current_period_start = 1348360173
+        customer.subscription.current_period_end = 1375603198
+        customer.subscription.plan.amount = decimal.Decimal("9.57")
+        customer.subscription.status = "active"
+        customer.subscription.cancel_at_period_end = True
+        customer.subscription.start = 1348360173
+        customer.subscription.quantity = 1
+        customer.subscription.trial_start = None
+        customer.subscription.trial_end = None
+        self.customer.subscribe("entry", charge_immediately=False)
+        _, kwargs = customer.update_subscription.call_args
+        self.assertEqual(kwargs["quantity"], 4)
+
+    @patch("stripe.Customer.retrieve")
     def test_customer_purge_leaves_customer_record(self, CustomerRetrieveMock):
         self.customer.purge()
         customer = Customer.objects.get(stripe_id=self.customer.stripe_id)

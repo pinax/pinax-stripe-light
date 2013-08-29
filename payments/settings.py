@@ -24,10 +24,20 @@ TRIAL_PERIOD_FOR_USER_CALLBACK = getattr(
     "PAYMENTS_TRIAL_PERIOD_FOR_USER_CALLBACK",
     None
 )
+PLAN_QUANTITY_CALLBACK = getattr(
+    settings,
+    "PAYMENTS_PLAN_QUANTITY_CALLBACK",
+    None
+)
+
 if isinstance(TRIAL_PERIOD_FOR_USER_CALLBACK, basestring):
     TRIAL_PERIOD_FOR_USER_CALLBACK = load_path_attr(
         TRIAL_PERIOD_FOR_USER_CALLBACK
     )
+
+if isinstance(PLAN_QUANTITY_CALLBACK, basestring):
+    PLAN_QUANTITY_CALLBACK = load_path_attr(PLAN_QUANTITY_CALLBACK)
+
 SEND_EMAIL_RECEIPTS = getattr(settings, "SEND_EMAIL_RECEIPTS", True)
 
 

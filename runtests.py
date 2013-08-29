@@ -55,7 +55,8 @@ settings.configure(
     },
     SUBSCRIPTION_REQUIRED_EXCEPTION_URLS=["payments_subscribe"],
     SUBSCRIPTION_REQUIRED_REDIRECT="payments_subscribe",
-    PAYMENTS_TRIAL_PERIOD_FOR_USER_CALLBACK="payments.tests.callbacks.callback_demo"
+    PAYMENTS_TRIAL_PERIOD_FOR_USER_CALLBACK="payments.tests.callbacks.callback_demo",
+    PAYMENTS_PLAN_QUANTITY_CALLBACK="payments.tests.callbacks.quantity_call_back"
 )
 
 from django_nose import NoseTestSuiteRunner

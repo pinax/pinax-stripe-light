@@ -501,7 +501,9 @@ class Customer(StripeObject):
         if trial_days:
             resp = cu.update_subscription(
                 plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
-                trial_end=timezone.now() + datetime.timedelta(days=trial_days),
+                trial_end=datetime.datetime.utcnow() + datetime.timedelta(
+                    days=trial_days
+                ),
                 quantity=quantity
             )
         else:

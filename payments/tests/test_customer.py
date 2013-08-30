@@ -12,7 +12,10 @@ class TestCustomer(TestCase):
 
     def setUp(self):
         self.User = get_user_model()
-        self.user = self.User.objects.create_user(username="patrick")
+        self.user = self.User.objects.create_user(
+            username="patrick",
+            email="paltman@eldarion.com"
+        )
         self.customer = Customer.objects.create(
             user=self.user,
             stripe_id="cus_xxxxxxxxxxxxxxx",
@@ -20,6 +23,82 @@ class TestCustomer(TestCase):
             card_last_4="2342",
             card_kind="Visa"
         )
+
+    @patch("stripe.Customer.retrieve")
+    @patch("stripe.Customer.create")
+    def test_customer_create_user_only(self, CreateMock, RetrieveMock):
+        self.customer.delete()
+        stripe_customer = CreateMock()
+        stripe_customer.active_card = None
+        stripe_customer.subscription = None
+        stripe_customer.id = "cus_YYYYYYYYYYYYY"
+        customer = Customer.create(self.user)
+        self.assertEqual(customer.user, self.user)
+        self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["email"], self.user.email)
+        self.assertIsNone(kwargs["card"])
+        self.assertIsNone(kwargs["plan"])
+        self.assertIsNone(kwargs["trial_end"])
+
+    @patch("stripe.Invoice.create")
+    @patch("stripe.Customer.retrieve")
+    @patch("stripe.Customer.create")
+    def test_customer_create_user_with_plan(self, CreateMock, RetrieveMock, PayMock):  # pylint: disable=C0301
+        self.customer.delete()
+        stripe_customer = CreateMock()
+        stripe_customer.active_card = None
+        stripe_customer.subscription.plan.id = "pro-monthly"
+        stripe_customer.subscription.current_period_start = 1348876800
+        stripe_customer.subscription.current_period_end = 1349876800
+        stripe_customer.subscription.plan.amount = 9999
+        stripe_customer.subscription.status = "active"
+        stripe_customer.subscription.cancel_at_period_end = False
+        stripe_customer.subscription.start = 1348876800
+        stripe_customer.subscription.quantity = 1
+        stripe_customer.subscription.trial_start = 1348876800
+        stripe_customer.subscription.trial_end = 1349876800
+        stripe_customer.id = "cus_YYYYYYYYYYYYY"
+        customer = Customer.create(self.user, card="token232323", plan="pro")
+        self.assertEqual(customer.user, self.user)
+        self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["email"], self.user.email)
+        self.assertEqual(kwargs["card"], "token232323")
+        self.assertEqual(kwargs["plan"], "pro-monthly")
+        self.assertIsNotNone(kwargs["trial_end"])
+        self.assertTrue(PayMock.called)
+        self.assertTrue(customer.current_subscription.plan, "pro")
+
+    # @@@ Need to figure out a way to tempmorarily set DEFAULT_PLAN to "entry" for this test  # pylint: disable=C0301
+    # @patch("stripe.Invoice.create")
+    # @patch("stripe.Customer.retrieve")
+    # @patch("stripe.Customer.create")
+    # def test_customer_create_user_with_card_default_plan(self, CreateMock, RetrieveMock, PayMock):  # pylint: disable=C0301
+    #     self.customer.delete()
+    #     stripe_customer = CreateMock()
+    #     stripe_customer.active_card = None
+    #     stripe_customer.subscription.plan.id = "entry-monthly"
+    #     stripe_customer.subscription.current_period_start = 1348876800
+    #     stripe_customer.subscription.current_period_end = 1349876800
+    #     stripe_customer.subscription.plan.amount = 9999
+    #     stripe_customer.subscription.status = "active"
+    #     stripe_customer.subscription.cancel_at_period_end = False
+    #     stripe_customer.subscription.start = 1348876800
+    #     stripe_customer.subscription.quantity = 1
+    #     stripe_customer.subscription.trial_start = 1348876800
+    #     stripe_customer.subscription.trial_end = 1349876800
+    #     stripe_customer.id = "cus_YYYYYYYYYYYYY"
+    #     customer = Customer.create(self.user, card="token232323")
+    #     self.assertEqual(customer.user, self.user)
+    #     self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
+    #     _, kwargs = CreateMock.call_args
+    #     self.assertEqual(kwargs["email"], self.user.email)
+    #     self.assertEqual(kwargs["card"], "token232323")
+    #     self.assertEqual(kwargs["plan"], "entry-monthly")
+    #     self.assertIsNotNone(kwargs["trial_end"])
+    #     self.assertTrue(PayMock.called)
+    #     self.assertTrue(customer.current_subscription.plan, "entry")
 
     @patch("stripe.Customer.retrieve")
     def test_customer_subscribe_with_specified_quantity(self, CustomerRetrieveMock):  # pylint: disable=C0301

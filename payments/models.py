@@ -369,22 +369,48 @@ class Customer(StripeObject):
         cancelled.send(sender=self, stripe_response=sub)
 
     @classmethod
-    def create(cls, user):
+    def create(cls, user, card=None, plan=None, charge_immediately=True):
 
-        trial_days = None
-        if TRIAL_PERIOD_FOR_USER_CALLBACK:
+        if card and plan:
+            plan = PAYMENTS_PLANS[plan]["stripe_plan_id"]
+        elif DEFAULT_PLAN:
+            plan = PAYMENTS_PLANS[DEFAULT_PLAN]["stripe_plan_id"]
+        else:
+            plan = None
+
+        trial_end = None
+        if TRIAL_PERIOD_FOR_USER_CALLBACK and plan:
             trial_days = TRIAL_PERIOD_FOR_USER_CALLBACK(user)
+            trial_end = datetime.datetime.utcnow() + datetime.timedelta(
+                days=trial_days
+            )
 
         stripe_customer = stripe.Customer.create(
-            email=user.email
-        )
-        cus = Customer.objects.create(
-            user=user,
-            stripe_id=stripe_customer.id
+            email=user.email,
+            card=card,
+            plan=plan or DEFAULT_PLAN,
+            trial_end=trial_end
         )
 
-        if DEFAULT_PLAN and trial_days:
-            cus.subscribe(plan=DEFAULT_PLAN, trial_days=trial_days)
+        if stripe_customer.active_card:
+            cus = cls.objects.create(
+                user=user,
+                stripe_id=stripe_customer.id,
+                card_fingerprint=stripe_customer.active_card.fingerprint,
+                card_last_4=stripe_customer.active_card.last4,
+                card_kind=stripe_customer.active_card.type
+            )
+        else:
+            cus = cls.objects.create(
+                user=user,
+                stripe_id=stripe_customer.id,
+            )
+
+        if plan:
+            if stripe_customer.subscription:
+                cus.sync_current_subscription(cu=stripe_customer)
+            if charge_immediately:
+                cus.send_invoice()
 
         return cus
 

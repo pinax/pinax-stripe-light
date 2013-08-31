@@ -364,7 +364,7 @@ class Customer(StripeObject):
         )
         current.status = sub.status
         current.cancel_at_period_end = sub.cancel_at_period_end
-        current.period_end = convert_tstamp(sub, "current_period_end")
+        current.current_period_end = convert_tstamp(sub, "current_period_end")
         current.save()
         cancelled.send(sender=self, stripe_response=sub)
 

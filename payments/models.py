@@ -537,7 +537,7 @@ class Customer(StripeObject):
                 plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
                 quantity=quantity
             )
-        self.sync_current_subscription()
+        self.sync_current_subscription(cu)
         if charge_immediately:
             self.send_invoice()
         subscription_made.send(sender=self, plan=plan, stripe_response=resp)

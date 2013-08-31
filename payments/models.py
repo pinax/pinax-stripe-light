@@ -436,7 +436,8 @@ class Customer(StripeObject):
     def send_invoice(self):
         try:
             invoice = stripe.Invoice.create(customer=self.stripe_id)
-            invoice.pay()
+            if invoice.amount_due > 0:
+                invoice.pay()
             return True
         except stripe.InvalidRequestError:
             return False  # There was nothing to invoice

@@ -209,7 +209,7 @@ class Event(StripeObject):
 class Transfer(StripeObject):
     # pylint: disable-msg=C0301
     event = models.ForeignKey(Event, related_name="transfers")
-    amount = models.DecimalField(decimal_places=2, max_digits=7)
+    amount = models.DecimalField(decimal_places=2, max_digits=9)
     status = models.CharField(max_length=25)
     date = models.DateTimeField()
     description = models.TextField(null=True, blank=True)
@@ -218,10 +218,10 @@ class Transfer(StripeObject):
     adjustment_gross = models.DecimalField(decimal_places=2, max_digits=7, null=True)
     charge_count = models.IntegerField(null=True)
     charge_fees = models.DecimalField(decimal_places=2, max_digits=7, null=True)
-    charge_gross = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    charge_gross = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     collected_fee_count = models.IntegerField(null=True)
     collected_fee_gross = models.DecimalField(decimal_places=2, max_digits=7, null=True)
-    net = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    net = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     refund_count = models.IntegerField(null=True)
     refund_fees = models.DecimalField(decimal_places=2, max_digits=7, null=True)
     refund_gross = models.DecimalField(decimal_places=2, max_digits=7, null=True)

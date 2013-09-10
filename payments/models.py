@@ -590,6 +590,10 @@ class CurrentSubscription(models.Model):
     amount = models.DecimalField(decimal_places=2, max_digits=7)
     created_at = models.DateTimeField(default=timezone.now)
 
+    @property
+    def total_amount(self):
+        return self.amount * self.quantity
+
     def plan_display(self):
         return PAYMENTS_PLANS[self.plan]["name"]
 

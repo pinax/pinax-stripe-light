@@ -655,6 +655,7 @@ class Invoice(models.Model):
             defaults=dict(
                 customer=c,
                 attempted=stripe_invoice["attempted"],
+                attempts=stripe_invoice["attempt_count"],
                 closed=stripe_invoice["closed"],
                 paid=stripe_invoice["paid"],
                 period_end=period_end,
@@ -668,6 +669,7 @@ class Invoice(models.Model):
         if not created:
             # pylint: disable=C0301
             invoice.attempted = stripe_invoice["attempted"]
+            invoice.attempts = stripe_invoice["attempt_count"]
             invoice.closed = stripe_invoice["closed"]
             invoice.paid = stripe_invoice["paid"]
             invoice.period_end = period_end

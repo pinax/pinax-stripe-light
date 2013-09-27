@@ -19,14 +19,13 @@
                 <tr>
                     <td class="fixed">#{{ invoice.id }}</td>
                     <td>{{ invoice.date|date:"M d" }}</td>
-                    </td>
                     <td>
                         {% if invoice.paid and invoice.total > 0 %}
                             <p>
                                 <span class="label label-success">Paid</span> ${{ invoice.total|floatformat:"2" }}
                             </p>
                         {% endif %}
-                        
+
                         {% if invoice.paid and invoice.total < 0 %}
                             <p>
                                 <span class="label label-success">Credit</span> ${{ invoice.total|floatformat:"2" }}

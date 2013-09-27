@@ -78,6 +78,15 @@ Configuration (Modifications to `settings.py`)
             "currency": "usd",
             "interval": "year"
         }
+        "monthly-trial": {
+            "stripe_plan_id": "pro-monthly-trial",
+            "name": "Web App Pro ($25/month with 30 days free)",
+            "description": "The monthly subscription plan to WebApp",
+            "price": 25,
+            "currency": "usd",
+            "interval": "month",
+            "trial_period_days": 30
+        },
     }
 
 

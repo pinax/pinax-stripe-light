@@ -25,6 +25,8 @@ class Command(BaseCommand):
                     interval=settings.PAYMENTS_PLANS[plan]["interval"],
                     name=settings.PAYMENTS_PLANS[plan]["name"],
                     currency=settings.PAYMENTS_PLANS[plan]["currency"],
+                    trial_period_days=settings.PAYMENTS_PLANS[plan].get(
+                        "trial_period_days"),
                     id=settings.PAYMENTS_PLANS[plan].get("stripe_plan_id")
                 )
                 print "Plan created for {0}".format(plan)

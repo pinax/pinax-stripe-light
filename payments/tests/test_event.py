@@ -195,7 +195,7 @@ class TestEventMethods(TestCase):
         signal.disconnect(func, **kwargs)
 
     @patch("stripe.Customer.retrieve")
-    def test_customer_subscription_deleted(self, CustomerMock):
+    def test_customer_subscription_deleted(self, CustomerMock): # pylint: disable=C0301
         """
         Tests to make sure downstream signal handlers do not see stale CurrentSubscription object properties
         after a customer.subscription.deleted event occurs.  While the delete method is called

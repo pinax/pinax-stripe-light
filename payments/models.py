@@ -611,6 +611,15 @@ class CurrentSubscription(models.Model):
 
         return True
 
+    def delete(self, using=None):
+        # Set values to None so that any lingering references will not show previous values
+        # (such as when an Event signal is triggered after a subscription has been deleted)
+        super(CurrentSubscription, self).delete(using=using)
+        self.plan = None
+        self.status = None
+        self.quantity = 0
+        self.amount = 0
+
 
 class Invoice(models.Model):
 

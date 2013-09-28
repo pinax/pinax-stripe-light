@@ -617,7 +617,7 @@ class CurrentSubscription(models.Model):
         references will not show previous values (such as when an Event
         signal is triggered after a subscription has been deleted)
         """
-        super(CurrentSubscription, self).delete(using=using)
+        super(CurrentSubscription, self).delete(using=using)  # pylint: disable=E1002,C0301
         self.plan = None
         self.status = None
         self.quantity = 0

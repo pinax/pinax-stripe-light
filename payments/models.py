@@ -44,7 +44,7 @@ class StripeObject(models.Model):
     stripe_id = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
 
-    class Meta:  # pylint: disable=C1001
+    class Meta:  # pylint: disable-msg=E0012,C1001
         abstract = True
 
 
@@ -640,7 +640,7 @@ class Invoice(models.Model):
     charge = models.CharField(max_length=50, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
-    class Meta:  # pylint: disable=C1001
+    class Meta:  # pylint: disable-msg=E0012,C1001
         ordering = ["-date"]
 
     def retry(self):
@@ -678,7 +678,7 @@ class Invoice(models.Model):
             )
         )
         if not created:
-            # pylint: disable=C0301
+            # pylint: disable-msg=C0301
             invoice.attempted = stripe_invoice["attempted"]
             invoice.closed = stripe_invoice["closed"]
             invoice.paid = stripe_invoice["paid"]
@@ -792,7 +792,7 @@ class Charge(StripeObject):
         return int(amount_to_refund * 100)
 
     def refund(self, amount=None):
-        # pylint: disable=E1121
+        # pylint: disable-msg=E1121
         charge_obj = stripe.Charge.retrieve(
             self.stripe_id
         ).refund(
@@ -820,7 +820,7 @@ class Charge(StripeObject):
         if data.get("description"):
             obj.description = data["description"]
         if data.get("amount_refunded"):
-            # pylint: disable=C0301
+            # pylint: disable-msg=C0301
             obj.amount_refunded = (data["amount_refunded"] / decimal.Decimal("100"))
         if data["refunded"]:
             obj.amount_refunded = (data["amount"] / decimal.Decimal("100"))

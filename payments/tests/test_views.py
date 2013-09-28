@@ -1,4 +1,4 @@
-# pylint: disable-msg=C0301
+# pylint: disable=C0301
 import decimal
 import json
 
@@ -168,6 +168,6 @@ class AjaxViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         print dir(response)
         self.assertEqual(
-            json.loads(response.content)["location"],  # pylint: disable-msg=E1103
+            json.loads(response.content)["location"],  # pylint: disable=E1103
             reverse("payments_history")
         )

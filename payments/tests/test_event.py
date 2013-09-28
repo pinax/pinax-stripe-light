@@ -1,4 +1,4 @@
-# pylint: disable-msg=C0301
+# pylint: disable=C0301
 from django.test import TestCase
 from django.utils import timezone
 

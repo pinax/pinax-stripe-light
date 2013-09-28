@@ -1,4 +1,4 @@
-# pylint: disable-msg=C0301
+# pylint: disable=C0301
 import decimal
 
 from django.test import TestCase

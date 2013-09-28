@@ -1,3 +1,4 @@
+# pylint: disable-msg=C0301
 import decimal
 
 from django.test import TestCase
@@ -44,7 +45,7 @@ class TestCustomer(TestCase):
     @patch("stripe.Invoice.create")
     @patch("stripe.Customer.retrieve")
     @patch("stripe.Customer.create")
-    def test_customer_create_user_with_plan(self, CreateMock, RetrieveMock, PayMock):  # pylint: disable=C0301
+    def test_customer_create_user_with_plan(self, CreateMock, RetrieveMock, PayMock):
         self.customer.delete()
         stripe_customer = CreateMock()
         stripe_customer.active_card = None
@@ -70,11 +71,11 @@ class TestCustomer(TestCase):
         self.assertTrue(PayMock.called)
         self.assertTrue(customer.current_subscription.plan, "pro")
 
-    # @@@ Need to figure out a way to tempmorarily set DEFAULT_PLAN to "entry" for this test  # pylint: disable=C0301
+    # @@@ Need to figure out a way to tempmorarily set DEFAULT_PLAN to "entry" for this test
     # @patch("stripe.Invoice.create")
     # @patch("stripe.Customer.retrieve")
     # @patch("stripe.Customer.create")
-    # def test_customer_create_user_with_card_default_plan(self, CreateMock, RetrieveMock, PayMock):  # pylint: disable=C0301
+    # def test_customer_create_user_with_card_default_plan(self, CreateMock, RetrieveMock, PayMock):
     #     self.customer.delete()
     #     stripe_customer = CreateMock()
     #     stripe_customer.active_card = None
@@ -101,7 +102,7 @@ class TestCustomer(TestCase):
     #     self.assertTrue(customer.current_subscription.plan, "entry")
 
     @patch("stripe.Customer.retrieve")
-    def test_customer_subscribe_with_specified_quantity(self, CustomerRetrieveMock):  # pylint: disable=C0301
+    def test_customer_subscribe_with_specified_quantity(self, CustomerRetrieveMock):
         customer = CustomerRetrieveMock()
         customer.subscription.plan.id = "entry-monthly"
         customer.subscription.current_period_start = 1348360173
@@ -118,7 +119,7 @@ class TestCustomer(TestCase):
         self.assertEqual(kwargs["quantity"], 3)
 
     @patch("stripe.Customer.retrieve")
-    def test_customer_subscribe_with_callback_quantity(self, CustomerRetrieveMock):  # pylint: disable=C0301
+    def test_customer_subscribe_with_callback_quantity(self, CustomerRetrieveMock):
         customer = CustomerRetrieveMock()
         customer.subscription.plan.id = "entry-monthly"
         customer.subscription.current_period_start = 1348360173

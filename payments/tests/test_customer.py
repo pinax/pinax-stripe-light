@@ -70,7 +70,7 @@ class TestCustomer(TestCase):
         self.assertTrue(PayMock.called)
         self.assertTrue(customer.current_subscription.plan, "pro")
 
-    # @@@ Need to figure out a way to tempmorarily set DEFAULT_PLAN to "entry" for this test  # pylint: disable=C0301
+    # @@@ Need to figure out a way to temporarily set DEFAULT_PLAN to "entry" for this test  # pylint: disable=C0301
     # @patch("stripe.Invoice.create")
     # @patch("stripe.Customer.retrieve")
     # @patch("stripe.Customer.create")

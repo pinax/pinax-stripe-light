@@ -24,7 +24,7 @@ class EmailReceiptTest(TestCase):
 
     @patch("stripe.Charge.retrieve")
     @patch("stripe.Charge.create")
-    def test_email_reciept_renders_amount_properly(self, ChargeMock, RetrieveMock):  # pylint: disable=C0301
+    def test_email_receipt_renders_amount_properly(self, ChargeMock, RetrieveMock):  # pylint: disable=C0301
         ChargeMock.return_value.id = "ch_XXXXX"
         RetrieveMock.return_value = {
             "id": "ch_XXXXXX",

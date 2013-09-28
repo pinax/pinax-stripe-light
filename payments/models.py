@@ -446,7 +446,8 @@ class Customer(StripeObject):
         cu = cu or self.stripe_customer
         updated = False
         if hasattr(cu, "active_card") and cu.active_card:
-            # Test to make sure the card has changed, otherwise do not update it (i.e. refrain from sending any signals)
+            # Test to make sure the card has changed, otherwise do not update it
+            # (i.e. refrain from sending any signals)
             if (self.card_last_4 != cu.active_card.last4 or
                 self.card_fingerprint != cu.active_card.fingerprint or
                 self.card_kind != cu.active_card.type):

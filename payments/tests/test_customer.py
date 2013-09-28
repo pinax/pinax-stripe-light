@@ -2,14 +2,14 @@ import decimal
 
 from django.test import TestCase
 
-from mock import patch
+from mock import patch, Mock
 
 from ..models import Customer, Charge
+from ..signals import card_changed
 from ..utils import get_user_model
 
 
 class TestCustomer(TestCase):
-
     def setUp(self):
         self.User = get_user_model()
         self.user = self.User.objects.create_user(
@@ -153,6 +153,115 @@ class TestCustomer(TestCase):
         self.assertTrue(customer.card_last_4 == "")
         self.assertTrue(customer.card_kind == "")
         self.assertTrue(self.User.objects.filter(pk=self.user.pk).exists())
+
+    @patch("stripe.Customer.retrieve")
+    def test_customer_sync_updates_credit_card(self, StripeCustomerRetrieveMock):
+        """
+        Test to make sure Customer.sync will update a credit card when there is a new card
+        """
+        StripeCustomerRetrieveMock.return_value.active_card.fingerprint = "FINGERPRINT"
+        StripeCustomerRetrieveMock.return_value.active_card.type = "DINERS"
+        StripeCustomerRetrieveMock.return_value.active_card.last4 = "BEEF"
+
+        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+
+        self.assertNotEqual(customer.card_fingerprint, customer.stripe_customer.active_card.fingerprint)
+        self.assertNotEqual(customer.card_last_4, customer.stripe_customer.active_card.last4)
+        self.assertNotEqual(customer.card_kind, customer.stripe_customer.active_card.type)
+
+        customer.sync()
+
+        # Reload saved customer
+        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+
+        self.assertEqual(customer.card_fingerprint, customer.stripe_customer.active_card.fingerprint)
+        self.assertEqual(customer.card_last_4, customer.stripe_customer.active_card.last4)
+        self.assertEqual(customer.card_kind, customer.stripe_customer.active_card.type)
+
+    @patch("stripe.Customer.retrieve")
+    def test_customer_sync_does_not_update_credit_card(self, StripeCustomerRetrieveMock):
+        """
+        Test to make sure Customer.sync will not update a credit card when there are no changes
+        """
+        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+
+        StripeCustomerRetrieveMock.return_value.active_card.fingerprint = customer.card_fingerprint
+        StripeCustomerRetrieveMock.return_value.active_card.type = customer.card_kind
+        StripeCustomerRetrieveMock.return_value.active_card.last4 = customer.card_last_4
+
+        self.assertEqual(customer.card_fingerprint, customer.stripe_customer.active_card.fingerprint)
+        self.assertEqual(customer.card_last_4, customer.stripe_customer.active_card.last4)
+        self.assertEqual(customer.card_kind, customer.stripe_customer.active_card.type)
+
+        customer.sync()
+
+        self.assertEqual(customer.card_fingerprint, customer.stripe_customer.active_card.fingerprint)
+        self.assertEqual(customer.card_last_4, customer.stripe_customer.active_card.last4)
+        self.assertEqual(customer.card_kind, customer.stripe_customer.active_card.type)
+
+    @patch("stripe.Customer.retrieve")
+    def test_customer_sync_removes_credit_card(self, StripeCustomerRetrieveMock):
+        """
+        Test to make sure Customer.sync removes credit card when there is no active card
+        """
+        def _perform_test(kitchen):
+            kitchen.sync()
+
+            # Reload saved customer
+            cus = Customer.objects.get(stripe_id=self.customer.stripe_id)
+
+            # Test to make sure card details were removed
+            self.assertEqual(cus.card_fingerprint, "")
+            self.assertEqual(cus.card_last_4, "")
+            self.assertEqual(cus.card_kind, "")
+
+        StripeCustomerRetrieveMock.return_value.active_card = None
+
+        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+        _perform_test(customer)
+
+        # Test removal of attribute for active_card so hasattr will fail
+
+        # Add back credit card to the customer
+        self.test_customer_sync_updates_credit_card()
+
+        # Reload saved customer
+        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+        # Remove the credit card from the mocked object
+        del customer.stripe_customer.active_card
+
+        _perform_test(customer)
+
+    def test_customer_sync_sends_credit_card_updated_signal(self):
+        """
+        Test to make sure the card_changed signal gets sent when there is an updated credit card during sync
+        """
+        mocked_func = Mock()
+        card_changed.connect(mocked_func)
+
+        mocked_func.reset_mock()
+        self.test_customer_sync_updates_credit_card()
+        # Make sure the signal was called
+        self.assertTrue(mocked_func.called)
+
+        mocked_func.reset_mock()
+        self.test_customer_sync_removes_credit_card()
+        # Make sure the signal was called
+        self.assertTrue(mocked_func.called)
+
+        card_changed.disconnect(mocked_func)
+
+    def test_customer_sync_does_not_send_credit_card_updated_signal(self):
+        """
+        Test to make sure the card_changed signal does not get sent when there is no change to the credit card during sync
+        """
+        mocked_func = Mock()
+        card_changed.connect(mocked_func)
+        mocked_func.reset_mock()
+        self.test_customer_sync_does_not_update_credit_card()
+        # Make sure the signal was not called
+        self.assertFalse(mocked_func.called)
+        card_changed.disconnect(mocked_func)
 
     def test_change_charge(self):
         self.assertTrue(self.customer.can_charge())

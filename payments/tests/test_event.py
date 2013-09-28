@@ -1,3 +1,4 @@
+# pylint: disable=C0301
 from django.test import TestCase
 from django.utils import timezone
 
@@ -195,7 +196,7 @@ class TestEventMethods(TestCase):
         signal.disconnect(func, **kwargs)
 
     @patch("stripe.Customer.retrieve")
-    def test_customer_subscription_deleted(self, CustomerMock): # pylint: disable=C0301
+    def test_customer_subscription_deleted(self, CustomerMock):
         """
         Tests to make sure downstream signal handlers do not see stale CurrentSubscription object properties
         after a customer.subscription.deleted event occurs.  While the delete method is called

@@ -44,7 +44,7 @@ class StripeObject(models.Model):
     stripe_id = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
 
-    class Meta:
+    class Meta:  # pylint: disable=C1001
         abstract = True
 
 
@@ -640,7 +640,7 @@ class Invoice(models.Model):
     charge = models.CharField(max_length=50, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
-    class Meta:
+    class Meta:  # pylint: disable=C1001
         ordering = ["-date"]
 
     def retry(self):

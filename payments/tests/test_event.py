@@ -197,6 +197,10 @@ class TestEventMethods(TestCase):
     @patch("stripe.Customer.retrieve")
     def test_customer_subscription_deleted(self, CustomerMock):
         """
+        Tests to make sure downstream signal handlers do not see stale CurrentSubscription object properties
+        after a customer.subscription.deleted event occurs.  While the delete method is called
+        on the affected CurrentSubscription object's properties are still accessible (unless the
+        Customer object for the event gets refreshed before sending the complimentary signal)
         """
         kind = "customer.subscription.deleted"
         cs = CurrentSubscription(customer=self.customer, quantity=1, start=timezone.now(), amount=0)

@@ -237,7 +237,7 @@ class TestCustomer(TestCase):
         Test to make sure the card_changed signal gets sent when there is an updated credit card during sync
         """
         mocked_func = Mock()
-        card_changed.connect(mocked_func)
+        card_changed.connect(mocked_func, weak=False)
 
         mocked_func.reset_mock()
         self.test_customer_sync_updates_credit_card()
@@ -249,19 +249,19 @@ class TestCustomer(TestCase):
         # Make sure the signal was called
         self.assertTrue(mocked_func.called)
 
-        card_changed.disconnect(mocked_func)
+        card_changed.disconnect(mocked_func, weak=False)
 
     def test_customer_sync_does_not_send_credit_card_updated_signal(self):
         """
         Test to make sure the card_changed signal does not get sent when there is no change to the credit card during sync
         """
         mocked_func = Mock()
-        card_changed.connect(mocked_func)
+        card_changed.connect(mocked_func, weak=False)
         mocked_func.reset_mock()
         self.test_customer_sync_does_not_update_credit_card()
         # Make sure the signal was not called
         self.assertFalse(mocked_func.called)
-        card_changed.disconnect(mocked_func)
+        card_changed.disconnect(mocked_func, weak=False)
 
     def test_change_charge(self):
         self.assertTrue(self.customer.can_charge())

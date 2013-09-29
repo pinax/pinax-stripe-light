@@ -1,3 +1,4 @@
+# pylint: disable=C0301
 import decimal
 
 from django.conf import settings
@@ -35,7 +36,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         user = authenticate(username="patrick", password="eldarion")
         login(self.request, user)
 
-    def test_authed_user_with_no_customer_redirects_on_non_exempt_url(self):  # pylint: disable=C0301
+    def test_authed_user_with_no_customer_redirects_on_non_exempt_url(self):
         self.request.path = "/the/app/"
         response = self.middleware.process_request(self.request)
         self.assertEqual(response.status_code, 302)
@@ -44,20 +45,20 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
             reverse(settings.SUBSCRIPTION_REQUIRED_REDIRECT)
         )
 
-    def test_authed_user_with_no_customer_passes_with_exempt_url(self):  # pylint: disable=C0301
+    def test_authed_user_with_no_customer_passes_with_exempt_url(self):
         URLS.append("/accounts/signup/")
         self.request.path = "/accounts/signup/"
         response = self.middleware.process_request(self.request)
         self.assertIsNone(response)
 
-    def test_authed_user_with_no_active_subscription_passes_with_exempt_url(self):  # pylint: disable=C0301
+    def test_authed_user_with_no_active_subscription_passes_with_exempt_url(self):
         Customer.objects.create(stripe_id="cus_1", user=self.request.user)
         URLS.append("/accounts/signup/")
         self.request.path = "/accounts/signup/"
         response = self.middleware.process_request(self.request)
         self.assertIsNone(response)
 
-    def test_authed_user_with_no_active_subscription_redirects_on_non_exempt_url(self):  # pylint: disable=C0301
+    def test_authed_user_with_no_active_subscription_redirects_on_non_exempt_url(self):
         Customer.objects.create(stripe_id="cus_1", user=self.request.user)
         URLS.append("/accounts/signup/")
         self.request.path = "/the/app/"
@@ -68,7 +69,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
             reverse(settings.SUBSCRIPTION_REQUIRED_REDIRECT)
         )
 
-    def test_authed_user_with_active_subscription_redirects_on_non_exempt_url(self):  # pylint: disable=C0301
+    def test_authed_user_with_active_subscription_redirects_on_non_exempt_url(self):
         customer = Customer.objects.create(
             stripe_id="cus_1",
             user=self.request.user

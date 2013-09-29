@@ -44,7 +44,7 @@ class StripeObject(models.Model):
     stripe_id = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
 
-    class Meta:
+    class Meta:  # pylint: disable=E0012,C1001
         abstract = True
 
 
@@ -207,7 +207,7 @@ class Event(StripeObject):
 
 
 class Transfer(StripeObject):
-    # pylint: disable-msg=C0301
+    # pylint: disable=C0301
     event = models.ForeignKey(Event, related_name="transfers")
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     status = models.CharField(max_length=25)
@@ -611,6 +611,18 @@ class CurrentSubscription(models.Model):
 
         return True
 
+    def delete(self, using=None):  # pylint: disable=E1002
+        """
+        Set values to None while deleting the object so that any lingering
+        references will not show previous values (such as when an Event
+        signal is triggered after a subscription has been deleted)
+        """
+        super(CurrentSubscription, self).delete(using=using)
+        self.plan = None
+        self.status = None
+        self.quantity = 0
+        self.amount = 0
+
 
 class Invoice(models.Model):
 
@@ -628,7 +640,7 @@ class Invoice(models.Model):
     charge = models.CharField(max_length=50, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
-    class Meta:
+    class Meta:  # pylint: disable=E0012,C1001
         ordering = ["-date"]
 
     def retry(self):

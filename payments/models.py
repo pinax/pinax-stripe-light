@@ -611,13 +611,13 @@ class CurrentSubscription(models.Model):
 
         return True
 
-    def delete(self, using=None):
+    def delete(self, using=None):  # pylint: disable=E1002
         """
         Set values to None while deleting the object so that any lingering
         references will not show previous values (such as when an Event
         signal is triggered after a subscription has been deleted)
         """
-        super(CurrentSubscription, self).delete(using=using)  # pylint: disable=E1002,C0301
+        super(CurrentSubscription, self).delete(using=using)
         self.plan = None
         self.status = None
         self.quantity = 0

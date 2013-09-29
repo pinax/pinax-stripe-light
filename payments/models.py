@@ -418,9 +418,14 @@ class Customer(StripeObject):
         cu = self.stripe_customer
         cu.card = token
         cu.save()
-        self.card_fingerprint = cu.active_card.fingerprint
-        self.card_last_4 = cu.active_card.last4
-        self.card_kind = cu.active_card.type
+        self.save_card(cu)
+
+    def save_card(self, cu=None):
+        cu = cu or self.stripe_customer
+        active_card = cu.active_card
+        self.card_fingerprint = active_card.fingerprint
+        self.card_last_4 = active_card.last4
+        self.card_kind = active_card.type
         self.save()
         card_changed.send(sender=self, stripe_response=cu)
 
@@ -518,26 +523,31 @@ class Customer(StripeObject):
         )
 
     def subscribe(self, plan, quantity=None, trial_days=None,
-                  charge_immediately=True):
+                  charge_immediately=True, token=None):
         if quantity is None:
             if PLAN_QUANTITY_CALLBACK is not None:
                 quantity = PLAN_QUANTITY_CALLBACK(self)
             else:
                 quantity = 1
         cu = self.stripe_customer
+
+        subscription_params = {}
         if trial_days:
-            resp = cu.update_subscription(
-                plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
-                trial_end=datetime.datetime.utcnow() + datetime.timedelta(
+            subscription_params['trial_end'] = datetime.datetime.utcnow() + datetime.timedelta(
                     days=trial_days
-                ),
-                quantity=quantity
-            )
-        else:
-            resp = cu.update_subscription(
-                plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
-                quantity=quantity
-            )
+                )
+        if token:
+            subscription_params['card'] = token
+
+        subscription_params['plan'] = PAYMENTS_PLANS[plan]["stripe_plan_id"]
+        subscription_params['quantity'] = quantity
+        resp = cu.update_subscription(**subscription_params)
+
+        if token:
+            # Refetch the stripe customer so we have the updated card info
+            cu = self.stripe_customer
+            self.save_card(cu)
+
         self.sync_current_subscription(cu)
         if charge_immediately:
             self.send_invoice()

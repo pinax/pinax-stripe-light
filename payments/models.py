@@ -309,6 +309,8 @@ class Customer(StripeObject):
     card_fingerprint = models.CharField(max_length=200, blank=True)
     card_last_4 = models.CharField(max_length=4, blank=True)
     card_kind = models.CharField(max_length=50, blank=True)
+    card_exp_month = models.IntegerField(null=True, blank=True)
+    card_exp_year = models.IntegerField(null=True, blank=True)
     date_purged = models.DateTimeField(null=True, editable=False)
 
     objects = CustomerManager()
@@ -335,6 +337,8 @@ class Customer(StripeObject):
         self.card_fingerprint = ""
         self.card_last_4 = ""
         self.card_kind = ""
+        self.card_exp_month = None
+        self.card_exp_year = None
         self.date_purged = timezone.now()
         self.save()
 
@@ -346,6 +350,8 @@ class Customer(StripeObject):
         return self.card_fingerprint and \
             self.card_last_4 and \
             self.card_kind and \
+            self.card_exp_month and \
+            self.card_exp_year and \
             self.date_purged is None
 
     def has_active_subscription(self):
@@ -398,7 +404,9 @@ class Customer(StripeObject):
                 stripe_id=stripe_customer.id,
                 card_fingerprint=stripe_customer.active_card.fingerprint,
                 card_last_4=stripe_customer.active_card.last4,
-                card_kind=stripe_customer.active_card.type
+                card_kind=stripe_customer.active_card.type,
+                card_exp_month=stripe_customer.active_card.exp_month,
+                card_exp_year=stripe_customer.active_card.exp_year
             )
         else:
             cus = cls.objects.create(
@@ -421,6 +429,8 @@ class Customer(StripeObject):
         self.card_fingerprint = cu.active_card.fingerprint
         self.card_last_4 = cu.active_card.last4
         self.card_kind = cu.active_card.type
+        self.card_exp_month = cu.exp_month
+        self.card_exp_year = cu.exp_year
         self.save()
         card_changed.send(sender=self, stripe_response=cu)
 
@@ -448,6 +458,8 @@ class Customer(StripeObject):
             self.card_fingerprint = cu.active_card.fingerprint
             self.card_last_4 = cu.active_card.last4
             self.card_kind = cu.active_card.type
+            self.card_exp_month = cu.active_card.exp_month
+            self.card_exp_year = cu.active_card.exp_year
             self.save()
 
     def sync_invoices(self, cu=None):

@@ -8,7 +8,7 @@ from ..models import Customer
 from ..utils import get_user_model
 
 
-class CammandTests(TestCase):
+class CommandTests(TestCase):
 
     def setUp(self):
         User = get_user_model()
@@ -40,13 +40,13 @@ class CammandTests(TestCase):
     @patch("payments.models.Customer.sync_current_subscription")
     @patch("payments.models.Customer.sync_invoices")
     @patch("payments.models.Customer.sync_charges")
-    def test_sync_customers(self, SyncChargeesMock, SyncInvoicesMock, SyncSubscriptionMock, SyncMock, RetrieveMock):
+    def test_sync_customers(self, SyncChargesMock, SyncInvoicesMock, SyncSubscriptionMock, SyncMock, RetrieveMock):
         user2 = get_user_model().objects.create_user(username="thomas")
         get_user_model().objects.create_user(username="altman")
         Customer.objects.create(stripe_id="cus_XXXXX", user=self.user)
         Customer.objects.create(stripe_id="cus_YYYYY", user=user2)
         management.call_command("sync_customers")
-        self.assertEqual(SyncChargeesMock.call_count, 2)
+        self.assertEqual(SyncChargesMock.call_count, 2)
         self.assertEqual(SyncInvoicesMock.call_count, 2)
         self.assertEqual(SyncSubscriptionMock.call_count, 2)
         self.assertEqual(SyncMock.call_count, 2)

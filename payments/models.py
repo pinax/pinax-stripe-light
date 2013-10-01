@@ -449,11 +449,26 @@ class Customer(StripeObject):
 
     def sync(self, cu=None):
         cu = cu or self.stripe_customer
-        if hasattr(cu, "active_card"):
-            self.card_fingerprint = cu.active_card.fingerprint
-            self.card_last_4 = cu.active_card.last4
-            self.card_kind = cu.active_card.type
+        updated = False
+        if hasattr(cu, "active_card") and cu.active_card:
+            # Test to make sure the card has changed, otherwise do not update it
+            # (i.e. refrain from sending any signals)
+            if (self.card_last_4 != cu.active_card.last4 or
+                    self.card_fingerprint != cu.active_card.fingerprint or
+                    self.card_kind != cu.active_card.type):
+                updated = True
+                self.card_last_4 = cu.active_card.last4
+                self.card_fingerprint = cu.active_card.fingerprint
+                self.card_kind = cu.active_card.type
+        else:
+            updated = True
+            self.card_fingerprint = ""
+            self.card_last_4 = ""
+            self.card_kind = ""
+
+        if updated:
             self.save()
+            card_changed.send(sender=self, stripe_response=cu)
 
     def sync_invoices(self, cu=None):
         cu = cu or self.stripe_customer
@@ -533,14 +548,13 @@ class Customer(StripeObject):
 
         subscription_params = {}
         if trial_days:
-            subscription_params['trial_end'] = datetime.datetime.utcnow() + datetime.timedelta(
-                    days=trial_days
-                )
+            subscription_params["trial_end"] = \
+                datetime.datetime.utcnow() + datetime.timedelta(days=trial_days)
         if token:
-            subscription_params['card'] = token
+            subscription_params["card"] = token
 
-        subscription_params['plan'] = PAYMENTS_PLANS[plan]["stripe_plan_id"]
-        subscription_params['quantity'] = quantity
+        subscription_params["plan"] = PAYMENTS_PLANS[plan]["stripe_plan_id"]
+        subscription_params["quantity"] = quantity
         resp = cu.update_subscription(**subscription_params)
 
         if token:

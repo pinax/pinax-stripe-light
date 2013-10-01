@@ -548,14 +548,13 @@ class Customer(StripeObject):
 
         subscription_params = {}
         if trial_days:
-            subscription_params['trial_end'] = datetime.datetime.utcnow() + datetime.timedelta(
-                    days=trial_days
-                )
+            subscription_params["trial_end"] = \
+                datetime.datetime.utcnow() + datetime.timedelta(days=trial_days)
         if token:
-            subscription_params['card'] = token
+            subscription_params["card"] = token
 
-        subscription_params['plan'] = PAYMENTS_PLANS[plan]["stripe_plan_id"]
-        subscription_params['quantity'] = quantity
+        subscription_params["plan"] = PAYMENTS_PLANS[plan]["stripe_plan_id"]
+        subscription_params["quantity"] = quantity
         resp = cu.update_subscription(**subscription_params)
 
         if token:

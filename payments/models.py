@@ -44,7 +44,7 @@ class StripeObject(models.Model):
     stripe_id = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
 
-    class Meta:
+    class Meta:  # pylint: disable=E0012,C1001
         abstract = True
 
 
@@ -207,7 +207,7 @@ class Event(StripeObject):
 
 
 class Transfer(StripeObject):
-    # pylint: disable-msg=C0301
+    # pylint: disable=C0301
     event = models.ForeignKey(Event, related_name="transfers")
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     status = models.CharField(max_length=25)
@@ -418,9 +418,14 @@ class Customer(StripeObject):
         cu = self.stripe_customer
         cu.card = token
         cu.save()
-        self.card_fingerprint = cu.active_card.fingerprint
-        self.card_last_4 = cu.active_card.last4
-        self.card_kind = cu.active_card.type
+        self.save_card(cu)
+
+    def save_card(self, cu=None):
+        cu = cu or self.stripe_customer
+        active_card = cu.active_card
+        self.card_fingerprint = active_card.fingerprint
+        self.card_last_4 = active_card.last4
+        self.card_kind = active_card.type
         self.save()
         card_changed.send(sender=self, stripe_response=cu)
 
@@ -533,26 +538,31 @@ class Customer(StripeObject):
         )
 
     def subscribe(self, plan, quantity=None, trial_days=None,
-                  charge_immediately=True):
+                  charge_immediately=True, token=None):
         if quantity is None:
             if PLAN_QUANTITY_CALLBACK is not None:
                 quantity = PLAN_QUANTITY_CALLBACK(self)
             else:
                 quantity = 1
         cu = self.stripe_customer
+
+        subscription_params = {}
         if trial_days:
-            resp = cu.update_subscription(
-                plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
-                trial_end=datetime.datetime.utcnow() + datetime.timedelta(
+            subscription_params['trial_end'] = datetime.datetime.utcnow() + datetime.timedelta(
                     days=trial_days
-                ),
-                quantity=quantity
-            )
-        else:
-            resp = cu.update_subscription(
-                plan=PAYMENTS_PLANS[plan]["stripe_plan_id"],
-                quantity=quantity
-            )
+                )
+        if token:
+            subscription_params['card'] = token
+
+        subscription_params['plan'] = PAYMENTS_PLANS[plan]["stripe_plan_id"]
+        subscription_params['quantity'] = quantity
+        resp = cu.update_subscription(**subscription_params)
+
+        if token:
+            # Refetch the stripe customer so we have the updated card info
+            cu = self.stripe_customer
+            self.save_card(cu)
+
         self.sync_current_subscription(cu)
         if charge_immediately:
             self.send_invoice()
@@ -605,6 +615,10 @@ class CurrentSubscription(models.Model):
     amount = models.DecimalField(decimal_places=2, max_digits=7)
     created_at = models.DateTimeField(default=timezone.now)
 
+    @property
+    def total_amount(self):
+        return self.amount * self.quantity
+
     def plan_display(self):
         return PAYMENTS_PLANS[self.plan]["name"]
 
@@ -626,6 +640,18 @@ class CurrentSubscription(models.Model):
 
         return True
 
+    def delete(self, using=None):  # pylint: disable=E1002
+        """
+        Set values to None while deleting the object so that any lingering
+        references will not show previous values (such as when an Event
+        signal is triggered after a subscription has been deleted)
+        """
+        super(CurrentSubscription, self).delete(using=using)
+        self.plan = None
+        self.status = None
+        self.quantity = 0
+        self.amount = 0
+
 
 class Invoice(models.Model):
 
@@ -643,7 +669,7 @@ class Invoice(models.Model):
     charge = models.CharField(max_length=50, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
-    class Meta:
+    class Meta:  # pylint: disable=E0012,C1001
         ordering = ["-date"]
 
     def retry(self):
@@ -670,6 +696,7 @@ class Invoice(models.Model):
             defaults=dict(
                 customer=c,
                 attempted=stripe_invoice["attempted"],
+                attempts=stripe_invoice["attempt_count"],
                 closed=stripe_invoice["closed"],
                 paid=stripe_invoice["paid"],
                 period_end=period_end,
@@ -683,6 +710,7 @@ class Invoice(models.Model):
         if not created:
             # pylint: disable=C0301
             invoice.attempted = stripe_invoice["attempted"]
+            invoice.attempts = stripe_invoice["attempt_count"]
             invoice.closed = stripe_invoice["closed"]
             invoice.paid = stripe_invoice["paid"]
             invoice.period_end = period_end

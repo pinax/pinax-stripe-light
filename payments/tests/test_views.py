@@ -1,3 +1,4 @@
+# pylint: disable=C0301
 import decimal
 import json
 

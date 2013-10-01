@@ -1,3 +1,4 @@
+# pylint: disable=C0301
 from django.core import management
 from django.test import TestCase
 
@@ -15,7 +16,7 @@ class CommandTests(TestCase):
 
     @patch("stripe.Customer.retrieve")
     @patch("stripe.Customer.create")
-    def test_init_customer_creates_customer(self, CreateMock, RetrieveMock):  # pylint: disable=C0301
+    def test_init_customer_creates_customer(self, CreateMock, RetrieveMock):
         CreateMock.return_value.id = "cus_XXXXX"
         management.call_command("init_customers")
         self.assertEquals(self.user.customer.stripe_id, "cus_XXXXX")
@@ -39,7 +40,7 @@ class CommandTests(TestCase):
     @patch("payments.models.Customer.sync_current_subscription")
     @patch("payments.models.Customer.sync_invoices")
     @patch("payments.models.Customer.sync_charges")
-    def test_sync_customers(self, SyncChargesMock, SyncInvoicesMock, SyncSubscriptionMock, SyncMock, RetrieveMock):  # pylint: disable=C0301
+    def test_sync_customers(self, SyncChargesMock, SyncInvoicesMock, SyncSubscriptionMock, SyncMock, RetrieveMock):
         user2 = get_user_model().objects.create_user(username="thomas")
         get_user_model().objects.create_user(username="altman")
         Customer.objects.create(stripe_id="cus_XXXXX", user=self.user)

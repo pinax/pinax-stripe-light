@@ -37,7 +37,7 @@ Installation
     INSTALLED_APPS = [
         "payments",
     ]
-    
+
 * Add ``'payments'`` to your ``urls.py`` ::
 
     urlpatterns = patterns("",
@@ -48,12 +48,12 @@ Installation
 
 Configuration (Modifications to `settings.py`)
 =======================
-* Add entries to for your publishable and secret keys. The recommended method is 
-  to setup your production keys using environment variables.  This helps to keep them 
+* Add entries to for your publishable and secret keys. The recommended method is
+  to setup your production keys using environment variables.  This helps to keep them
   more secure.  Your test keys can be displayed in your code directly.
 
   The following entries look for your STRIPE_PUBLIC_KEY and
-  STRIPE_SECRET_KEY in your environment and, if it can't find them, 
+  STRIPE_SECRET_KEY in your environment and, if it can't find them,
   uses your test keys values instead::
 
     STRIPE_PUBLIC_KEY = os.environ.get("STRIPE_PUBLIC_KEY", "<your publishable test key>")
@@ -77,7 +77,7 @@ Configuration (Modifications to `settings.py`)
             "price": 199,
             "currency": "usd",
             "interval": "year"
-        }
+        },
         "monthly-trial": {
             "stripe_plan_id": "pro-monthly-trial",
             "name": "Web App Pro ($25/month with 30 days free)",
@@ -107,14 +107,14 @@ An example of integrating Checkout_ is to put this in your base template::
                     $form.find("input[name=stripe_token]").val(res.id);
                     $form.trigger("submit");
                   };
-     
+
               StripeCheckout.open({
                 key:         $form.data("stripe-key"),
                 name:        'Payment Method',
                 panelLabel:  'Add Payment Method',
                 token:       token
               });
-     
+
               return false;
             });
         });

@@ -22,3 +22,16 @@ def subscribe_form(context):
         "form": PlanForm()
     })
     return context
+    
+
+class PaymentPlanNode(template.Node):
+    def render(self, context):
+        context['payment_plans'] = settings.PAYMENTS_PLANS
+        return ''
+  
+# Usage: {% payment_plans %}
+@register.tag
+def payment_plans(parser, token):
+    return PaymentPlanNode()
+
+

@@ -538,7 +538,7 @@ class Customer(StripeObject):
         )
 
     def subscribe(self, plan, quantity=None, trial_days=None,
-                  charge_immediately=True, token=None):
+                  charge_immediately=True, token=None, coupon=None):
         if quantity is None:
             if PLAN_QUANTITY_CALLBACK is not None:
                 quantity = PLAN_QUANTITY_CALLBACK(self)
@@ -555,6 +555,7 @@ class Customer(StripeObject):
 
         subscription_params["plan"] = PAYMENTS_PLANS[plan]["stripe_plan_id"]
         subscription_params["quantity"] = quantity
+        subscription_params["coupon"] = coupon
         resp = cu.update_subscription(**subscription_params)
 
         if token:
@@ -566,6 +567,7 @@ class Customer(StripeObject):
         if charge_immediately:
             self.send_invoice()
         subscription_made.send(sender=self, plan=plan, stripe_response=resp)
+        return resp
 
     def charge(self, amount, currency="usd", description=None):
         """

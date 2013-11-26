@@ -38,7 +38,7 @@ if isinstance(TRIAL_PERIOD_FOR_USER_CALLBACK, basestring):
 if isinstance(PLAN_QUANTITY_CALLBACK, basestring):
     PLAN_QUANTITY_CALLBACK = load_path_attr(PLAN_QUANTITY_CALLBACK)
 
-SEND_EMAIL_RECEIPTS = getattr(settings, "SEND_EMAIL_RECEIPTS", True)
+SEND_EMAIL_RECEIPTS = getattr(settings, "SEND_EMAIL_RECEIPTS", False)
 
 
 def plan_from_stripe_id(stripe_id):

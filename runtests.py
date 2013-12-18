@@ -6,6 +6,7 @@ from django.conf import settings
 settings.configure(
     DEBUG=True,
     USE_TZ=True,
+    TIME_ZONE='UTC',
     DATABASES={
         "default": {
             "ENGINE": "django.db.backends.sqlite3",

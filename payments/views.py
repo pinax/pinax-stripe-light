@@ -129,7 +129,8 @@ def subscribe(request, form_class=PlanForm):
                 customer = request.user.customer
             except ObjectDoesNotExist:
                 customer = Customer.create(request.user)
-            customer.update_card(request.POST.get("stripe_token"))
+            if request.POST.get("stripe_token"):
+                customer.update_card(request.POST.get("stripe_token"))
             customer.subscribe(form.cleaned_data["plan"])
             data["form"] = form_class()
             data["location"] = reverse("payments_history")

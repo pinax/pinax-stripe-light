@@ -606,7 +606,7 @@ class CurrentSubscription(models.Model):
     start = models.DateTimeField()
     # trialing, active, past_due, canceled, or unpaid
     status = models.CharField(max_length=25)
-    cancel_at_period_end = models.BooleanField()
+    cancel_at_period_end = models.BooleanField(default=False)
     canceled_at = models.DateTimeField(null=True)
     current_period_end = models.DateTimeField(null=True)
     current_period_start = models.DateTimeField(null=True)

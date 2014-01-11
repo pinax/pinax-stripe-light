@@ -607,12 +607,12 @@ class CurrentSubscription(models.Model):
     # trialing, active, past_due, canceled, or unpaid
     status = models.CharField(max_length=25)
     cancel_at_period_end = models.BooleanField()
-    canceled_at = models.DateTimeField(null=True)
-    current_period_end = models.DateTimeField(null=True)
-    current_period_start = models.DateTimeField(null=True)
-    ended_at = models.DateTimeField(null=True)
-    trial_end = models.DateTimeField(null=True)
-    trial_start = models.DateTimeField(null=True)
+    canceled_at = models.DateTimeField(blank=True, null=True)
+    current_period_end = models.DateTimeField(blank=True, null=True)
+    current_period_start = models.DateTimeField(blank=True, null=True)
+    ended_at = models.DateTimeField(blank=True, null=True)
+    trial_end = models.DateTimeField(blank=True, null=True)
+    trial_start = models.DateTimeField(blank=True, null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=7)
     created_at = models.DateTimeField(default=timezone.now)
 

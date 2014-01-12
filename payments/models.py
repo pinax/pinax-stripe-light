@@ -569,7 +569,8 @@ class Customer(StripeObject):
         subscription_made.send(sender=self, plan=plan, stripe_response=resp)
         return resp
 
-    def charge(self, amount, currency="usd", description=None):
+    def charge(self, amount, currency="usd", description=None,
+               send_receipt=True):
         """
         This method expects `amount` to be a Decimal type representing a
         dollar amount. It will be converted to cents so any decimals beyond
@@ -586,7 +587,8 @@ class Customer(StripeObject):
             description=description,
         )
         obj = self.record_charge(resp["id"])
-        obj.send_receipt()
+        if send_receipt:
+            obj.send_receipt()
         return obj
 
     def record_charge(self, charge_id):
@@ -606,7 +608,7 @@ class CurrentSubscription(models.Model):
     start = models.DateTimeField()
     # trialing, active, past_due, canceled, or unpaid
     status = models.CharField(max_length=25)
-    cancel_at_period_end = models.BooleanField()
+    cancel_at_period_end = models.BooleanField(default=False)
     canceled_at = models.DateTimeField(blank=True, null=True)
     current_period_end = models.DateTimeField(blank=True, null=True)
     current_period_start = models.DateTimeField(blank=True, null=True)
@@ -660,8 +662,8 @@ class Invoice(models.Model):
     customer = models.ForeignKey(Customer, related_name="invoices")
     attempted = models.NullBooleanField()
     attempts = models.PositiveIntegerField(null=True)
-    closed = models.BooleanField()
-    paid = models.BooleanField()
+    closed = models.BooleanField(default=False)
+    paid = models.BooleanField(default=False)
     period_end = models.DateTimeField()
     period_start = models.DateTimeField()
     subtotal = models.DecimalField(decimal_places=2, max_digits=7)
@@ -783,7 +785,7 @@ class InvoiceItem(models.Model):
     currency = models.CharField(max_length=10)
     period_start = models.DateTimeField()
     period_end = models.DateTimeField()
-    proration = models.BooleanField()
+    proration = models.BooleanField(default=False)
     line_type = models.CharField(max_length=50)
     description = models.CharField(max_length=200, blank=True)
     plan = models.CharField(max_length=100, blank=True)

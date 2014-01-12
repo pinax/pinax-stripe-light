@@ -149,6 +149,9 @@ admin.site.register(
         "traceback",
         "data"
     ],
+    raw_id_fields=[
+        "event"
+    ],
 )
 
 admin.site.register(

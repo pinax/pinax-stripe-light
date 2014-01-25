@@ -1,5 +1,6 @@
 htmlcov
 .coverage
-.pyc
 dist
 *.egg-info
+*.pyc
+.tox/

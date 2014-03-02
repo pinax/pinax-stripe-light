@@ -15,6 +15,14 @@ recurring subscriptions managed by Stripe.
 
 Documentation can be found at http://django-stripe-payments.readthedocs.org
 
+Some suggested integration steps:
+  1. Overload the templates provided to use your inheritance tree (for bases etc) and block names.
+  2. Point your stripe account at the webhook address in the payments urls.
+  3. Add the static media snippet from here (or else nothing will actually talk to stripe):
+    * http://django-stripe-payments.readthedocs.org/en/latest/installation.html#configuration-modifications-to-settings-py
+  4. Set up SSL if you have not already.
+  5. Define some plans (see docs).
+  6. Run syncdb to generate the necessary tables, then init_plans and init_customers.
 
 Development
 -----------

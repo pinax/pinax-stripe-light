@@ -32,7 +32,11 @@ from .signals import (
     webhook_processing_error,
     WEBHOOK_SIGNALS,
 )
-from .utils import convert_tstamp
+from .utils import (
+    convert_tstamp,
+    convert_amount_for_db,
+    convert_amount_for_api,
+)
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -210,23 +214,24 @@ class Transfer(StripeObject):
     # pylint: disable=C0301
     event = models.ForeignKey(Event, related_name="transfers")
     amount = models.DecimalField(decimal_places=2, max_digits=9)
+    currency = models.CharField(max_length=25, default="usd")
     status = models.CharField(max_length=25)
     date = models.DateTimeField()
     description = models.TextField(null=True, blank=True)
     adjustment_count = models.IntegerField(null=True)
-    adjustment_fees = models.DecimalField(decimal_places=2, max_digits=7, null=True)
-    adjustment_gross = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    adjustment_fees = models.DecimalField(decimal_places=2, max_digits=9, null=True)
+    adjustment_gross = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     charge_count = models.IntegerField(null=True)
-    charge_fees = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    charge_fees = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     charge_gross = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     collected_fee_count = models.IntegerField(null=True)
-    collected_fee_gross = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    collected_fee_gross = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     net = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     refund_count = models.IntegerField(null=True)
-    refund_fees = models.DecimalField(decimal_places=2, max_digits=7, null=True)
-    refund_gross = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    refund_fees = models.DecimalField(decimal_places=2, max_digits=9, null=True)
+    refund_gross = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     validation_count = models.IntegerField(null=True)
-    validation_fees = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    validation_fees = models.DecimalField(decimal_places=2, max_digits=9, null=True)
 
     objects = TransferManager()
 
@@ -237,7 +242,8 @@ class Transfer(StripeObject):
     @classmethod
     def process_transfer(cls, event, transfer):
         defaults = {
-            "amount": transfer["amount"] / decimal.Decimal("100"),
+            "amount": convert_amount_for_db(transfer["amount"], transfer["currency"]),
+            "currency": transfer["currency"],
             "status": transfer["status"],
             "date": convert_tstamp(transfer, "date"),
             "description": transfer.get("description", "")
@@ -258,11 +264,13 @@ class Transfer(StripeObject):
                 "refund_gross": summary.get("refund_gross"),
                 "validation_count": summary.get("validation_count"),
                 "validation_fees": summary.get("validation_fees"),
-                "net": summary.get("net") / decimal.Decimal("100")
+                "net": convert_amount_for_db(summary.get("net"), transfer["currency"]),
             })
         for field in defaults:
-            if field.endswith("fees") or field.endswith("gross"):
-                defaults[field] = defaults[field] / decimal.Decimal("100")
+            if field.endswith("fees"):
+                defaults[field] = convert_amount_for_db(defaults[field]) # assume in usd only
+            elif field.endswith("gross"):
+                defaults[field] = convert_amount_for_db(defaults[field]) # assume in usd only
         if event.kind == "transfer.paid":
             defaults.update({"event": event})
             obj, created = Transfer.objects.get_or_create(
@@ -278,7 +286,8 @@ class Transfer(StripeObject):
         if created and summary:
             for fee in summary.get("charge_fee_details", []):
                 obj.charge_fee_details.create(
-                    amount=fee["amount"] / decimal.Decimal("100"),
+                    amount=convert_amount_for_db(fee["amount"], fee["currency"]),
+                    currency=fee["currency"],
                     application=fee.get("application", ""),
                     description=fee.get("description", ""),
                     kind=fee["type"]
@@ -293,7 +302,8 @@ class Transfer(StripeObject):
 class TransferChargeFee(models.Model):
 
     transfer = models.ForeignKey(Transfer, related_name="charge_fee_details")
-    amount = models.DecimalField(decimal_places=2, max_digits=7)
+    amount = models.DecimalField(decimal_places=2, max_digits=9)
+    currency = models.CharField(max_length=10, default="usd")
     application = models.TextField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     kind = models.CharField(max_length=150)
@@ -498,7 +508,8 @@ class Customer(StripeObject):
                 sub_obj.current_period_end = convert_tstamp(
                     sub.current_period_end
                 )
-                sub_obj.amount = (sub.plan.amount / decimal.Decimal("100"))
+                sub_obj.amount = convert_amount_for_db(sub.plan.amount, sub.plan.currency)
+                sub_obj.currency = sub.plan.currency
                 sub_obj.status = sub.status
                 sub_obj.cancel_at_period_end = sub.cancel_at_period_end
                 sub_obj.start = convert_tstamp(sub.start)
@@ -514,7 +525,8 @@ class Customer(StripeObject):
                     current_period_end=convert_tstamp(
                         sub.current_period_end
                     ),
-                    amount=(sub.plan.amount / decimal.Decimal("100")),
+                    amount=convert_amount_for_db(sub.plan.amount, sub.plan.currency),
+                    currency=sub.plan.currency,
                     status=sub.status,
                     cancel_at_period_end=sub.cancel_at_period_end,
                     start=convert_tstamp(sub.start),
@@ -581,7 +593,7 @@ class Customer(StripeObject):
                 "You must supply a decimal value representing dollars."
             )
         resp = stripe.Charge.create(
-            amount=int(amount * 100),  # Convert dollars into cents
+            amount=convert_amount_for_api(amount, currency),  # find the final amount
             currency=currency,
             customer=self.stripe_id,
             description=description,
@@ -615,7 +627,8 @@ class CurrentSubscription(models.Model):
     ended_at = models.DateTimeField(blank=True, null=True)
     trial_end = models.DateTimeField(blank=True, null=True)
     trial_start = models.DateTimeField(blank=True, null=True)
-    amount = models.DecimalField(decimal_places=2, max_digits=7)
+    amount = models.DecimalField(decimal_places=2, max_digits=9)
+    currency = models.CharField(max_length=10, default="usd")
     created_at = models.DateTimeField(default=timezone.now)
 
     @property
@@ -666,8 +679,9 @@ class Invoice(models.Model):
     paid = models.BooleanField(default=False)
     period_end = models.DateTimeField()
     period_start = models.DateTimeField()
-    subtotal = models.DecimalField(decimal_places=2, max_digits=7)
-    total = models.DecimalField(decimal_places=2, max_digits=7)
+    subtotal = models.DecimalField(decimal_places=2, max_digits=9)
+    total = models.DecimalField(decimal_places=2, max_digits=9)
+    currency = models.CharField(max_length=10, default="usd")
     date = models.DateTimeField()
     charge = models.CharField(max_length=50, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -704,8 +718,9 @@ class Invoice(models.Model):
                 paid=stripe_invoice["paid"],
                 period_end=period_end,
                 period_start=period_start,
-                subtotal=stripe_invoice["subtotal"] / decimal.Decimal("100"),
-                total=stripe_invoice["total"] / decimal.Decimal("100"),
+                subtotal=convert_amount_for_db(stripe_invoice["subtotal"], stripe_invoice["currency"]),
+                total=convert_amount_for_db(stripe_invoice["total"], stripe_invoice["currency"]),
+                currency=stripe_invoice["currency"],
                 date=date,
                 charge=stripe_invoice.get("charge") or ""
             )
@@ -718,8 +733,9 @@ class Invoice(models.Model):
             invoice.paid = stripe_invoice["paid"]
             invoice.period_end = period_end
             invoice.period_start = period_start
-            invoice.subtotal = stripe_invoice["subtotal"] / decimal.Decimal("100")
-            invoice.total = stripe_invoice["total"] / decimal.Decimal("100")
+            invoice.subtotal = convert_amount_for_db(stripe_invoice["subtotal"], stripe_invoice["currency"])
+            invoice.total = convert_amount_for_db(stripe_invoice["total"], stripe_invoice["currency"])
+            invoice.currency = stripe_invoice["currency"]
             invoice.date = date
             invoice.charge = stripe_invoice.get("charge") or ""
             invoice.save()
@@ -736,7 +752,7 @@ class Invoice(models.Model):
             inv_item, inv_item_created = invoice.items.get_or_create(
                 stripe_id=item["id"],
                 defaults=dict(
-                    amount=(item["amount"] / decimal.Decimal("100")),
+                    amount=convert_amount_for_db(item["amount"], item["currency"]),
                     currency=item["currency"],
                     proration=item["proration"],
                     description=item.get("description") or "",
@@ -748,7 +764,7 @@ class Invoice(models.Model):
                 )
             )
             if not inv_item_created:
-                inv_item.amount = (item["amount"] / decimal.Decimal("100"))
+                inv_item.amount = convert_amount_for_db(item["amount"], item["currency"])
                 inv_item.currency = item["currency"]
                 inv_item.proration = item["proration"]
                 inv_item.description = item.get("description") or ""
@@ -781,8 +797,8 @@ class InvoiceItem(models.Model):
     stripe_id = models.CharField(max_length=255)
     created_at = models.DateTimeField(default=timezone.now)
     invoice = models.ForeignKey(Invoice, related_name="items")
-    amount = models.DecimalField(decimal_places=2, max_digits=7)
-    currency = models.CharField(max_length=10)
+    amount = models.DecimalField(decimal_places=2, max_digits=9)
+    currency = models.CharField(max_length=10, default="usd")
     period_start = models.DateTimeField()
     period_end = models.DateTimeField()
     proration = models.BooleanField(default=False)
@@ -801,17 +817,18 @@ class Charge(StripeObject):
     invoice = models.ForeignKey(Invoice, null=True, related_name="charges")
     card_last_4 = models.CharField(max_length=4, blank=True)
     card_kind = models.CharField(max_length=50, blank=True)
-    amount = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    currency = models.CharField(max_length=10, default="usd")
+    amount = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     amount_refunded = models.DecimalField(
         decimal_places=2,
-        max_digits=7,
+        max_digits=9,
         null=True
     )
     description = models.TextField(blank=True)
     paid = models.NullBooleanField(null=True)
     disputed = models.NullBooleanField(null=True)
     refunded = models.NullBooleanField(null=True)
-    fee = models.DecimalField(decimal_places=2, max_digits=7, null=True)
+    fee = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     receipt_sent = models.BooleanField(default=False)
     charge_created = models.DateTimeField(null=True, blank=True)
 
@@ -820,17 +837,15 @@ class Charge(StripeObject):
     def calculate_refund_amount(self, amount=None):
         eligible_to_refund = self.amount - (self.amount_refunded or 0)
         if amount:
-            amount_to_refund = min(eligible_to_refund, amount)
-        else:
-            amount_to_refund = eligible_to_refund
-        return int(amount_to_refund * 100)
+            return min(eligible_to_refund, amount)
+        return eligible_to_refund
 
     def refund(self, amount=None):
         # pylint: disable=E1121
         charge_obj = stripe.Charge.retrieve(
             self.stripe_id
         ).refund(
-            amount=self.calculate_refund_amount(amount=amount)
+            amount=convert_amount_for_api(self.calculate_refund_amount(amount=amount), self.currency)
         )
         Charge.sync_from_stripe_data(charge_obj)
 
@@ -845,19 +860,20 @@ class Charge(StripeObject):
             obj.invoice = obj.customer.invoices.get(stripe_id=invoice_id)
         obj.card_last_4 = data["card"]["last4"]
         obj.card_kind = data["card"]["type"]
-        obj.amount = (data["amount"] / decimal.Decimal("100"))
+        obj.currency = data["currency"]
+        obj.amount = convert_amount_for_db(data["amount"], obj.currency)
         obj.paid = data["paid"]
         obj.refunded = data["refunded"]
-        obj.fee = (data["fee"] / decimal.Decimal("100"))
+        obj.fee = convert_amount_for_db(data["fee"]) # assume in usd only
         obj.disputed = data["dispute"] is not None
         obj.charge_created = convert_tstamp(data, "created")
         if data.get("description"):
             obj.description = data["description"]
         if data.get("amount_refunded"):
             # pylint: disable=C0301
-            obj.amount_refunded = (data["amount_refunded"] / decimal.Decimal("100"))
+            obj.amount_refunded = convert_amount_for_db(data["amount_refunded"], obj.currency)
         if data["refunded"]:
-            obj.amount_refunded = (data["amount"] / decimal.Decimal("100"))
+            obj.amount_refunded = obj.amount
         obj.save()
         return obj
 

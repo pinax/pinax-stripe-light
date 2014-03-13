@@ -29,6 +29,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
     def setUp(self):
         self.middleware = ActiveSubscriptionMiddleware()
         self.request = Mock()
+        self.request.META = {}
         self.request.session = DummySession()
         user = get_user_model().objects.create_user(username="patrick")
         user.set_password("eldarion")

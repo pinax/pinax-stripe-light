@@ -18,6 +18,7 @@ class PaymentsTagTests(TestCase):
 
     def test_change_plan_form(self):
         request = Mock()
+        request.META = {}
         request.session = DummySession()
         user = get_user_model().objects.create_user(username="patrick")
         user.set_password("eldarion")

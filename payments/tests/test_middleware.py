@@ -81,7 +81,8 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
             start=timezone.now(),
             status="active",
             cancel_at_period_end=False,
-            amount=decimal.Decimal("19.99")
+            amount=decimal.Decimal("19.99"),
+            currency="usd"
         )
         URLS.append("/accounts/signup/")
         self.request.path = "/the/app/"

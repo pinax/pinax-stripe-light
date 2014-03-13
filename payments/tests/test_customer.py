@@ -53,6 +53,7 @@ class TestCustomer(TestCase):
         stripe_customer.subscription.current_period_start = 1348876800
         stripe_customer.subscription.current_period_end = 1349876800
         stripe_customer.subscription.plan.amount = 9999
+        stripe_customer.subscription.plan.currency = "usd"
         stripe_customer.subscription.status = "active"
         stripe_customer.subscription.cancel_at_period_end = False
         stripe_customer.subscription.start = 1348876800
@@ -285,6 +286,7 @@ class TestCustomer(TestCase):
                 "type": "Visa"
             },
             "amount": 1000,
+            "currency": "usd",
             "paid": True,
             "refunded": False,
             "fee": 499,
@@ -307,6 +309,7 @@ class TestCustomer(TestCase):
             card_last_4="4323",
             card_kind="Visa",
             amount=decimal.Decimal("10.00"),
+            currency="usd",
             paid=True,
             refunded=False,
             fee=decimal.Decimal("4.99"),
@@ -319,6 +322,7 @@ class TestCustomer(TestCase):
                 "type": "Visa"
             },
             "amount": 1000,
+            "currency": "usd",
             "paid": True,
             "refunded": True,
             "amount_refunded": 1000,
@@ -336,33 +340,36 @@ class TestCustomer(TestCase):
         charge = Charge(
             stripe_id="ch_111111",
             customer=self.customer,
-            amount=decimal.Decimal("500.00")
+            amount=decimal.Decimal("500.00"),
+            currency="usd",
         )
         self.assertEquals(
             charge.calculate_refund_amount(),
-            50000
+            500
         )
 
     def test_calculate_refund_amount_partial_refund(self):
         charge = Charge(
             stripe_id="ch_111111",
             customer=self.customer,
-            amount=decimal.Decimal("500.00")
+            amount=decimal.Decimal("500.00"),
+            currency="usd",
         )
         self.assertEquals(
             charge.calculate_refund_amount(amount=decimal.Decimal("300.00")),
-            30000
+            300
         )
 
     def test_calculate_refund_above_max_refund(self):
         charge = Charge(
             stripe_id="ch_111111",
             customer=self.customer,
-            amount=decimal.Decimal("500.00")
+            amount=decimal.Decimal("500.00"),
+            currency="usd",
         )
         self.assertEquals(
             charge.calculate_refund_amount(amount=decimal.Decimal("600.00")),
-            50000
+            500
         )
 
     @patch("stripe.Charge.retrieve")
@@ -376,6 +383,7 @@ class TestCustomer(TestCase):
                 "type": "Visa"
             },
             "amount": 1000,
+            "currency": "usd",
             "paid": True,
             "refunded": False,
             "fee": 499,
@@ -384,7 +392,131 @@ class TestCustomer(TestCase):
             "customer": "cus_xxxxxxxxxxxxxxx"
         }
         self.customer.charge(
-            amount=decimal.Decimal("10.00")
+            amount=decimal.Decimal("10.00"),
+            currency="usd"
         )
         _, kwargs = ChargeMock.call_args
         self.assertEquals(kwargs["amount"], 1000)
+
+    @patch("stripe.Charge.retrieve")
+    def test_record_charge_in_jpy_with(self, RetrieveMock):
+        RetrieveMock.return_value = {
+            "id": "ch_XXXXXX",
+            "card": {
+                "last4": "4323",
+                "type": "Visa"
+            },
+            "amount": 1000,
+            "currency": "jpy",
+            "paid": True,
+            "refunded": False,
+            "fee": 499,
+            "dispute": None,
+            "created": 1363911708,
+            "customer": "cus_xxxxxxxxxxxxxxx"
+        }
+        obj = self.customer.record_charge("ch_XXXXXX")
+        self.assertEquals(Charge.objects.get(stripe_id="ch_XXXXXX").pk, obj.pk)
+        self.assertEquals(obj.paid, True)
+        self.assertEquals(obj.disputed, False)
+        self.assertEquals(obj.refunded, False)
+        self.assertEquals(obj.amount_refunded, None)
+        self.assertEquals(obj.amount, decimal.Decimal("1000"))
+
+    @patch("stripe.Charge.retrieve")
+    def test_refund_charge_in_jpy(self, RetrieveMock):
+        charge = Charge.objects.create(
+            stripe_id="ch_XXXXXX",
+            customer=self.customer,
+            card_last_4="4323",
+            card_kind="Visa",
+            amount=decimal.Decimal("1000.00"),
+            currency="jpy",
+            paid=True,
+            refunded=False,
+            fee=decimal.Decimal("4.99"),
+            disputed=False
+        )
+        RetrieveMock.return_value.refund.return_value = {
+            "id": "ch_XXXXXX",
+            "card": {
+                "last4": "4323",
+                "type": "Visa"
+            },
+            "amount": 1000,
+            "currency": "jpy",
+            "paid": True,
+            "refunded": True,
+            "amount_refunded": 1000,
+            "fee": 499,
+            "dispute": None,
+            "created": 1363911708,
+            "customer": "cus_xxxxxxxxxxxxxxx"
+        }
+        charge.refund()
+        charge2 = Charge.objects.get(stripe_id="ch_XXXXXX")
+        self.assertEquals(charge2.refunded, True)
+        self.assertEquals(charge2.amount_refunded, decimal.Decimal("1000.00"))
+
+    def test_calculate_refund_amount_full_refund_in_jpy(self):
+        charge = Charge(
+            stripe_id="ch_111111",
+            customer=self.customer,
+            amount=decimal.Decimal("500.00"),
+            currency="jpy",
+        )
+        self.assertEquals(
+            charge.calculate_refund_amount(),
+            500
+        )
+
+    def test_calculate_refund_amount_partial_refund_in_jpy(self):
+        charge = Charge(
+            stripe_id="ch_111111",
+            customer=self.customer,
+            amount=decimal.Decimal("500.00"),
+            currency="jpy",
+        )
+        self.assertEquals(
+            charge.calculate_refund_amount(amount=decimal.Decimal("300.00")),
+            300
+        )
+
+    def test_calculate_refund_above_max_refund_in_jpy(self):
+        charge = Charge(
+            stripe_id="ch_111111",
+            customer=self.customer,
+            amount=decimal.Decimal("500.00"),
+            currency="jpy",
+        )
+        self.assertEquals(
+            charge.calculate_refund_amount(amount=decimal.Decimal("600.00")),
+            500
+        )
+
+    @patch("stripe.Charge.retrieve")
+    @patch("stripe.Charge.create")
+    def test_charge_do_not_converts_dollars_in_jpy(self, ChargeMock, RetrieveMock):
+        ChargeMock.return_value.id = "ch_XXXXX"
+        RetrieveMock.return_value = {
+            "id": "ch_XXXXXX",
+            "card": {
+                "last4": "4323",
+                "type": "Visa"
+            },
+            "amount": 1000,
+            "currency": "jpy",
+            "paid": True,
+            "refunded": False,
+            "fee": 499,
+            "dispute": None,
+            "created": 1363911708,
+            "customer": "cus_xxxxxxxxxxxxxxx"
+        }
+        self.customer.charge(
+            amount=decimal.Decimal("1000.00"),
+            currency="jpy"
+        )
+        _, kwargs = ChargeMock.call_args
+        self.assertEquals(kwargs["amount"], 1000)
+

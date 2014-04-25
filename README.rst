@@ -21,7 +21,7 @@ Development
 
 To run test suite::
 
-    $ pip install Django stripe django-nose django-jsonfield mock
+    $ pip install Django stripe django-nose django-jsonfield mock django-forms-bootstrap pytz
     $ python runtests.py
 
 

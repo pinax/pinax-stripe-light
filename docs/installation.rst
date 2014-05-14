@@ -3,8 +3,9 @@
 Requirements
 ============
 
-The models and management commands should work without any additional requirements, but if you want to use the templates, especially the templates involving forms,
-that ship with this app, then you will need ``django-forms-bootstrap`` and ``eldarion-ajax``.
+The models and management commands should work without any additional requirements,
+but if you want to use the templates, especially the templates involving forms that
+ship with this app, then you will need ``django-forms-bootstrap`` and ``eldarion-ajax``.
 
 Add ``django-forms-bootstrap`` to your project::
 

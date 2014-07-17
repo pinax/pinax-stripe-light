@@ -4,11 +4,22 @@ django-stripe-payments
 
 a payments Django app for Stripe
 
-.. image:: https://travis-ci.org/eldarion/django-stripe-payments.png
+
+.. image:: https://img.shields.io/travis/eldarion/django-stripe-payments.svg
     :target: https://travis-ci.org/eldarion/django-stripe-payments
 
-.. image:: https://coveralls.io/repos/eldarion/django-stripe-payments/badge.png
+.. image:: https://img.shields.io/coveralls/eldarion/django-stripe-payments.svg
     :target: https://coveralls.io/r/eldarion/django-stripe-payments
+
+.. image:: https://img.shields.io/pypi/dm/django-stripe-payments.svg
+    :target:  https://pypi.python.org/pypi/django-stripe-payments/
+
+.. image:: https://img.shields.io/pypi/v/django-stripe-payments.svg
+    :target:  https://pypi.python.org/pypi/django-stripe-payments/
+
+.. image:: https://img.shields.io/badge/license-BSD-blue.svg
+    :target:  https://pypi.python.org/pypi/django-stripe-payments/
+
 
 This app allows you to process one off charges as well as signup users for
 recurring subscriptions managed by Stripe.

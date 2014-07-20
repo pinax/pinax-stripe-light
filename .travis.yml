@@ -7,20 +7,17 @@ env:
   - DJANGO=1.5
   - DJANGO=1.6
 install:
+  - pip install flake8
   - pip install -q Django==$DJANGO --use-mirrors
   - pip install -q django-jsonfield==0.8.12
   - pip install -q django-forms-bootstrap
   - pip install -q mock --use-mirrors
   - pip install -q django-nose --use-mirrors
-  - pip install -q pylint==0.27.0 --use-mirrors
-  - pip install -q pep8 --use-mirrors
   - pip install -q coverage --use-mirrors
   - pip install -q python-coveralls --use-mirrors
-  - pip install -q pinax.checkers --use-mirrors
   - pip install -e . --use-mirrors
-before_script:
-  - "./lint.sh"
 script:
+  - flake8 .
   - coverage run runtests.py
 after_script:
   - coveralls

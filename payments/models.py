@@ -124,7 +124,7 @@ class Event(StripeObject):
             self.valid = False
         self.save()
 
-    def process(self):
+    def process(self):  # @@@ to complex, fix later  # noqa
         """
             "account.updated",
             "account.application.deauthorized",
@@ -162,47 +162,41 @@ class Event(StripeObject):
             "transfer.failed",
             "ping"
         """
-        if self.valid and not self.processed:
-            try:
-                if not self.kind.startswith("plan.") and \
-                        not self.kind.startswith("transfer."):
-                    self.link_customer()
-                if self.kind.startswith("invoice."):
-                    Invoice.handle_event(self)
-                elif self.kind.startswith("charge."):
-                    if not self.customer:
-                        self.link_customer()
-                    self.customer.record_charge(
-                        self.message["data"]["object"]["id"]
-                    )
-                elif self.kind.startswith("transfer."):
-                    Transfer.process_transfer(
-                        self,
-                        self.message["data"]["object"]
-                    )
-                elif self.kind.startswith("customer.subscription."):
-                    if not self.customer:
-                        self.link_customer()
-                    if self.customer:
-                        self.customer.sync_current_subscription()
-                elif self.kind == "customer.deleted":
-                    if not self.customer:
-                        self.link_customer()
-                    self.customer.purge()
-                self.send_signal()
-                self.processed = True
-                self.save()
-            except stripe.StripeError, e:
-                EventProcessingException.log(
-                    data=e.http_body,
-                    exception=e,
-                    event=self
+        if not self.valid or self.processed:
+            return
+        try:
+            if not self.kind.startswith("plan.") and not self.kind.startswith("transfer."):
+                self.link_customer()
+            if self.kind.startswith("invoice."):
+                Invoice.handle_event(self)
+            elif self.kind.startswith("charge."):
+                self.customer.record_charge(
+                    self.message["data"]["object"]["id"]
                 )
-                webhook_processing_error.send(
-                    sender=Event,
-                    data=e.http_body,
-                    exception=e
+            elif self.kind.startswith("transfer."):
+                Transfer.process_transfer(
+                    self,
+                    self.message["data"]["object"]
                 )
+            elif self.kind.startswith("customer.subscription."):
+                if self.customer:
+                    self.customer.sync_current_subscription()
+            elif self.kind == "customer.deleted":
+                self.customer.purge()
+            self.send_signal()
+            self.processed = True
+            self.save()
+        except stripe.StripeError as e:
+            EventProcessingException.log(
+                data=e.http_body,
+                exception=e,
+                event=self
+            )
+            webhook_processing_error.send(
+                sender=Event,
+                data=e.http_body,
+                exception=e
+            )
 
     def send_signal(self):
         signal = WEBHOOK_SIGNALS.get(self.kind)
@@ -267,10 +261,8 @@ class Transfer(StripeObject):
                 "net": convert_amount_for_db(summary.get("net"), transfer["currency"]),
             })
         for field in defaults:
-            if field.endswith("fees"):
-                defaults[field] = convert_amount_for_db(defaults[field]) # assume in usd only
-            elif field.endswith("gross"):
-                defaults[field] = convert_amount_for_db(defaults[field]) # assume in usd only
+            if field.endswith("fees") or field.endswith("gross"):
+                defaults[field] = convert_amount_for_db(defaults[field])  # assume in usd only
         if event.kind == "transfer.paid":
             defaults.update({"event": event})
             obj, created = Transfer.objects.get_or_create(
@@ -864,7 +856,7 @@ class Charge(StripeObject):
         obj.amount = convert_amount_for_db(data["amount"], obj.currency)
         obj.paid = data["paid"]
         obj.refunded = data["refunded"]
-        obj.fee = convert_amount_for_db(data["fee"]) # assume in usd only
+        obj.fee = convert_amount_for_db(data["fee"])  # assume in usd only
         obj.disputed = data["dispute"] is not None
         obj.charge_created = convert_tstamp(data, "created")
         if data.get("description"):

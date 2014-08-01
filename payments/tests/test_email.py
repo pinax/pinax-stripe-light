@@ -71,4 +71,3 @@ class EmailReceiptTest(TestCase):
             currency="jpy"
         )
         self.assertTrue("$40000.00" in mail.outbox[0].body)
-

@@ -519,4 +519,3 @@ class TestCustomer(TestCase):
         )
         _, kwargs = ChargeMock.call_args
         self.assertEquals(kwargs["amount"], 1000)
-

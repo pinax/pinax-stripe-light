@@ -30,6 +30,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
     def setUp(self):
         self.middleware = ActiveSubscriptionMiddleware()
         self.request = Mock()
+        self.request.META = {}
         self.request.session = DummySession()
 
         self.old_urls = settings.SUBSCRIPTION_REQUIRED_EXCEPTION_URLS

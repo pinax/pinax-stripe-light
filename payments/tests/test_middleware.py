@@ -94,7 +94,8 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
             start=timezone.now(),
             status="active",
             cancel_at_period_end=False,
-            amount=decimal.Decimal("19.99")
+            amount=decimal.Decimal("19.99"),
+            currency="usd"
         )
         self.request.path = "/the/app/"
         response = self.middleware.process_request(self.request)

@@ -510,7 +510,7 @@ class Customer(StripeObject):
             except CurrentSubscription.DoesNotExist:
                 sub_obj = CurrentSubscription.objects.create(
                     customer=self,
-                    plan=plan_from_stripe_id(sub.plan.id),
+                    plan=sub.plan.id,
                     current_period_start=convert_tstamp(
                         sub.current_period_start
                     ),
@@ -541,7 +541,7 @@ class Customer(StripeObject):
             charge_immediately=charge_immediately
         )
 
-    def subscribe(self, plan, quantity=None, trial_days=None,
+    def subscribe(self, cart, quantity=None, trial_days=None,
                   charge_immediately=True, token=None, coupon=None):
         if quantity is None:
             if PLAN_QUANTITY_CALLBACK is not None:
@@ -549,6 +549,13 @@ class Customer(StripeObject):
             else:
                 quantity = 1
         cu = self.stripe_customer
+        
+        for item in cart.products.all():
+            stripe.InvoiceItem.create(
+                customer=self.stripe_customer.id,
+                amount=int(item.total * 100),
+                currency="usd",
+                description=item.product.title)
 
         subscription_params = {}
         if trial_days:
@@ -557,9 +564,10 @@ class Customer(StripeObject):
         if token:
             subscription_params["card"] = token
 
-        subscription_params["plan"] = PAYMENTS_PLANS[plan]["stripe_plan_id"]
+        subscription_params["plan"] = cart.product_set.stripe_id
         subscription_params["quantity"] = quantity
         subscription_params["coupon"] = coupon
+        
         resp = cu.update_subscription(**subscription_params)
 
         if token:
@@ -570,7 +578,7 @@ class Customer(StripeObject):
         self.sync_current_subscription(cu)
         if charge_immediately:
             self.send_invoice()
-        subscription_made.send(sender=self, plan=plan, stripe_response=resp)
+        subscription_made.send(sender=self, plan=cart.product_set.stripe_id, stripe_response=resp)
         return resp
 
     def charge(self, amount, currency="usd", description=None,

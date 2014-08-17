@@ -13,7 +13,6 @@ from .models import (
 )
 from .utils import get_user_model
 
-
 def user_search_fields():
     User = get_user_model()
     USERNAME_FIELD = getattr(User, "USERNAME_FIELD", None)
@@ -184,7 +183,8 @@ class CurrentSubscriptionInline(admin.TabularInline):
 
 
 def subscription_status(obj):
-    return obj.current_subscription.status
+    return 'Not implemented'
+
 subscription_status.short_description = "Subscription Status"
 
 

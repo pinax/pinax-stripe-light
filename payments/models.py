@@ -72,7 +72,7 @@ class EventProcessingException(models.Model):
 class Event(StripeObject):
 
     kind = models.CharField(max_length=250)
-    livemode = models.BooleanField()
+    livemode = models.BooleanField(default=False)
     customer = models.ForeignKey("Customer", null=True)
     webhook_message = JSONField()
     validated_message = JSONField(null=True)

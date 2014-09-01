@@ -1,1 +1,0 @@
-coverage run --source=payments --omit=payments\/tests\/\* --branch runtests.py && coverage report -m --omit=payments\/tests\/\*

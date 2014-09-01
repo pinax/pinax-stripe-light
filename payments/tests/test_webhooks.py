@@ -1,6 +1,7 @@
 import decimal
 import json
 
+import six
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.test.client import Client
@@ -64,7 +65,7 @@ class TestWebhook(TestCase):
         msg = json.dumps(data)
         resp = Client().post(
             reverse("payments_webhook"),
-            msg,
+            six.u(msg),
             content_type="application/json"
         )
         self.assertEquals(resp.status_code, 200)

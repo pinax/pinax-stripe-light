@@ -29,4 +29,4 @@ class Command(BaseCommand):
                         "trial_period_days"),
                     id=settings.PAYMENTS_PLANS[plan].get("stripe_plan_id")
                 )
-                print "Plan created for {0}".format(plan)
+                print("Plan created for {0}".format(plan))

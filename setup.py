@@ -140,6 +140,7 @@ setup(
         "stripe>=1.7.9",
         "django>=1.4",
         "pytz",
+        "six",
     ],
     test_suite="runtests",
     tests_require=[

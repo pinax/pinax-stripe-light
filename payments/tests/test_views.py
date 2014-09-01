@@ -5,6 +5,7 @@ import json
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.utils import timezone
+from django.utils.encoding import smart_str
 
 import stripe
 
@@ -166,8 +167,7 @@ class AjaxViewsTests(TestCase):
         self.assertEqual(upd_card_mock.call_count, 1)
         self.assertEqual(subscribe_mock.call_count, 1)
         self.assertEqual(response.status_code, 200)
-        print dir(response)
         self.assertEqual(
-            json.loads(response.content)["location"],  # pylint: disable=E1103
+            json.loads(smart_str(response.content))["location"],  # pylint: disable=E1103
             reverse("payments_history")
         )

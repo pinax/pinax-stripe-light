@@ -15,9 +15,9 @@ class Command(BaseCommand):
         for user in qs:
             count += 1
             perc = int(round(100 * (float(count) / float(total))))
-            print "[{0}/{1} {2}%] Syncing {3} [{4}]".format(
+            print("[{0}/{1} {2}%] Syncing {3} [{4}]".format(
                 count, total, perc, user.username, user.pk
-            )
+            ))
             customer = user.customer
             cu = customer.stripe_customer
             customer.sync(cu=cu)

@@ -1,23 +1,7 @@
 language: python
-python:
-  - "2.6"
-  - "2.7"
-env:
-  - DJANGO=1.4
-  - DJANGO=1.5
-  - DJANGO=1.6
 install:
-  - pip install flake8
-  - pip install -q Django==$DJANGO
-  - pip install -q django-jsonfield==0.8.12
-  - pip install -q django-forms-bootstrap
-  - pip install -q mock
-  - pip install -q django-nose
-  - pip install -q coverage
-  - pip install -q python-coveralls
-  - pip install -e .
+  - pip install detox coveralls
 script:
-  - flake8 --max-line-length=100 --max-complexity=10 --statistics --benchmark payments
-  - coverage run runtests.py
+  - detox
 after_script:
   - coveralls

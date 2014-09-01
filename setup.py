@@ -8,7 +8,8 @@ from setuptools import setup, find_packages
 
 
 def read(fname):
-    return codecs.open(os.path.join(os.path.dirname(__file__), fname)).read()
+    path = os.path.join(os.path.dirname(__file__), fname)
+    return codecs.open(path, 'r', 'utf-8').read()
 
 
 # Provided as an attribute, so you can append to these instead

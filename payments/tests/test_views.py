@@ -171,3 +171,70 @@ class AjaxViewsTests(TestCase):
             json.loads(smart_str(response.content))["location"],  # pylint: disable=E1103
             reverse("payments_history")
         )
+
+    @patch("payments.models.Customer.subscribe")
+    @patch("payments.models.Customer.update_card")
+    @patch("payments.models.Customer.create")
+    def test_subscribe_no_customer(self, create_cus_mock, upd_card_mock, subscribe_mock):
+        self.client.login(username=self.user.username, password=self.password)
+        Customer.objects.all().delete()
+        response = self.client.post(
+            reverse("payments_ajax_subscribe"),
+            {"plan": "premium", "stripe_token": "XXXXX"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(create_cus_mock.call_count, 1)
+        self.assertEqual(
+            json.loads(smart_str(response.content))["location"],  # pylint: disable=E1103
+            reverse("payments_history")
+        )
+
+    @patch("payments.models.Customer.subscribe")
+    @patch("payments.models.Customer.update_card")
+    @patch("payments.models.Customer.create")
+    def test_subscribe_error(self, create_cus_mock, upd_card_mock, subscribe_mock):
+        self.client.login(username=self.user.username, password=self.password)
+        upd_card_mock.side_effect = stripe.StripeError("foo")
+        response = self.client.post(
+            reverse("payments_ajax_subscribe"),
+            {"plan": "premium", "stripe_token": "XXXXX"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertEqual(create_cus_mock.call_count, 0)
+        self.assertEqual(upd_card_mock.call_count, 1)
+        self.assertEqual(subscribe_mock.call_count, 0)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['error'], 'foo')
+
+    def test_subscribe_invalid_form_data(self):
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.post(
+            reverse("payments_ajax_subscribe"),
+            {},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertEqual(response.context['error'],
+                         {'plan': ['This field is required.']})
+
+    @patch("payments.models.Customer.cancel")
+    def test_cancel(self, cancel_mock):
+        self.client.login(username=self.user.username, password=self.password)
+        self.client.post(
+            reverse("payments_ajax_cancel"),
+            {},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertEqual(cancel_mock.call_count, 1)
+
+    @patch("payments.models.Customer.cancel")
+    def test_cancel_error(self, cancel_mock):
+        cancel_mock.side_effect = stripe.StripeError("foo")
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.post(
+            reverse("payments_ajax_cancel"),
+            {},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        )
+        self.assertEqual(cancel_mock.call_count, 1)
+        self.assertEqual(response.context['error'], 'foo')

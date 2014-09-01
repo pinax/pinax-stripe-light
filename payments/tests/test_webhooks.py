@@ -9,7 +9,7 @@ from django.test.client import Client
 from mock import patch
 
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_PENDING_TEST_DATA
-from ..models import Event, Transfer
+from ..models import Event, Transfer, EventProcessingException
 
 
 class TestWebhook(TestCase):
@@ -70,6 +70,18 @@ class TestWebhook(TestCase):
         )
         self.assertEquals(resp.status_code, 200)
         self.assertTrue(Event.objects.filter(kind="transfer.created").exists())
+
+    def test_webhook_duplicate_event(self):
+        data = {"id": 123}
+        Event.objects.create(stripe_id=123, livemode=True)
+        msg = json.dumps(data)
+        resp = Client().post(
+            reverse("payments_webhook"),
+            six.u(msg),
+            content_type="application/json"
+        )
+        self.assertEquals(resp.status_code, 200)
+        self.assertTrue(EventProcessingException.objects.filter(message="Duplicate event record").exists())
 
 
 class TestTransferWebhooks(TestCase):

@@ -137,10 +137,7 @@ def subscribe(request, form_class=PlanForm):
             data["location"] = reverse("payments_history")
         except stripe.StripeError as e:
             data["form"] = form
-            try:
-                data["error"] = e.args[0]
-            except IndexError:
-                data["error"] = "Unknown error"
+            data["error"] = smart_str(e) or "Unknown error"
     else:
         data["error"] = form.errors
         data["form"] = form

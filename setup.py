@@ -135,7 +135,13 @@ setup(
         "django-jsonfield>=0.8",
         "stripe>=1.7.9",
         "django>=1.4",
-        "pytz"
+        "pytz",
+    ],
+    test_suite="runtests",
+    tests_require=[
+        "mock",
+        "django-nose",
+        "django_forms_bootstrap",
     ],
     zip_safe=False,
 )

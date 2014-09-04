@@ -76,7 +76,7 @@ class EventProcessingException(models.Model):
 class Event(StripeObject):
 
     kind = models.CharField(max_length=250)
-    livemode = models.BooleanField()
+    livemode = models.BooleanField(default=False)
     customer = models.ForeignKey("Customer", null=True)
     webhook_message = JSONField()
     validated_message = JSONField(null=True)
@@ -665,7 +665,7 @@ class Invoice(models.Model):
 
     stripe_id = models.CharField(max_length=255)
     customer = models.ForeignKey(Customer, related_name="invoices")
-    attempted = models.NullBooleanField(default=False)
+    attempted = models.NullBooleanField()
     attempts = models.PositiveIntegerField(null=True)
     closed = models.BooleanField(default=False)
     paid = models.BooleanField(default=False)

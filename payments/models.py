@@ -574,7 +574,7 @@ class Customer(StripeObject):
         return resp
 
     def charge(self, amount, currency="usd", description=None,
-               send_receipt=True):
+               send_receipt=True, capture=True):
         """
         This method expects `amount` to be a Decimal type representing a
         dollar amount. It will be converted to cents so any decimals beyond
@@ -589,6 +589,7 @@ class Customer(StripeObject):
             currency=currency,
             customer=self.stripe_id,
             description=description,
+            captured=capture,
         )
         obj = self.record_charge(resp["id"])
         if send_receipt:
@@ -820,6 +821,7 @@ class Charge(StripeObject):
     paid = models.NullBooleanField(null=True)
     disputed = models.NullBooleanField(null=True)
     refunded = models.NullBooleanField(null=True)
+    captured = models.NullBooleanField(null=True)
     fee = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     receipt_sent = models.BooleanField(default=False)
     charge_created = models.DateTimeField(null=True, blank=True)
@@ -841,6 +843,15 @@ class Charge(StripeObject):
         )
         Charge.sync_from_stripe_data(charge_obj)
 
+    def capture(self, amount=None):
+        self.captured = True
+        charge_obj = stripe.Charge.retrieve(
+            self.stripe_id
+        ).capture(
+            amount=convert_amount_for_api(self.calculate_refund_amount(amount=amount), self.currency)
+        )
+        Charge.sync_from_stripe_data(charge_obj)
+
     @classmethod
     def sync_from_stripe_data(cls, data):
         customer = Customer.objects.get(stripe_id=data["customer"])
@@ -856,6 +867,7 @@ class Charge(StripeObject):
         obj.amount = convert_amount_for_db(data["amount"], obj.currency)
         obj.paid = data["paid"]
         obj.refunded = data["refunded"]
+        obj.captured = data["captured"]
         obj.fee = convert_amount_for_db(data["fee"])  # assume in usd only
         obj.disputed = data["dispute"] is not None
         obj.charge_created = convert_tstamp(data, "created")

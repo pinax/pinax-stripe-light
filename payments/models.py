@@ -665,7 +665,7 @@ class Invoice(models.Model):
 
     stripe_id = models.CharField(max_length=255)
     customer = models.ForeignKey(Customer, related_name="invoices")
-    attempted = models.NullBooleanField()
+    attempted = models.NullBooleanField(default=False)
     attempts = models.PositiveIntegerField(null=True)
     closed = models.BooleanField(default=False)
     paid = models.BooleanField(default=False)

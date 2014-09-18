@@ -1,23 +1,31 @@
 language: python
+  
 python:
-  - "2.6"
   - "2.7"
+  - "3.2"
+  - "3.3"
+  - "3.4"
+
 env:
   - DJANGO=1.4
   - DJANGO=1.5
   - DJANGO=1.6
+  - DJANGO=master
+
+matrix:
+  exclude:  # Django 1.4 doesn't support py3k
+    - python: "3.2"
+      env: DJANGO=1.4
+    - python: "3.3"
+      env: DJANGO=1.4
+    - python: "3.4"
+      env: DJANGO=1.4
+  allow_failures: # django-nose 1.2 doesn't support Django 1.7 yet
+    - env: DJANGO=master 
+ 
 install:
-  - pip install flake8
-  - pip install -q Django==$DJANGO
-  - pip install -q django-jsonfield==0.8.12
-  - pip install -q django-forms-bootstrap
-  - pip install -q mock
-  - pip install -q django-nose
-  - pip install -q coverage
-  - pip install -q python-coveralls
-  - pip install -e .
+  - pip install tox coveralls
 script:
-  - flake8 --max-line-length=100 --max-complexity=10 --statistics --benchmark payments
-  - coverage run runtests.py
-after_script:
+  - tox -e py${TRAVIS_PYTHON_VERSION//[.]/}-$DJANGO
+after_success:
   - coveralls

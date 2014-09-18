@@ -3,10 +3,12 @@ import decimal
 import json
 import traceback
 
+import six
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.db import models
 from django.utils import timezone
+from django.utils.encoding import smart_str
 from django.template.loader import render_to_string
 
 from django.contrib.sites.models import Site
@@ -70,7 +72,7 @@ class EventProcessingException(models.Model):
         )
 
     def __unicode__(self):
-        return u"<%s, pk=%s, Event=%s>" % (self.message, self.pk, self.event)
+        return six.u("<{}, pk={}, Event={}>").format(self.message, self.pk, self.event)
 
 
 class Event(StripeObject):
@@ -316,7 +318,7 @@ class Customer(StripeObject):
     objects = CustomerManager()
 
     def __unicode__(self):
-        return unicode(self.user)
+        return smart_str(self.user)
 
     @property
     def stripe_customer(self):
@@ -326,7 +328,7 @@ class Customer(StripeObject):
         try:
             self.stripe_customer.delete()
         except stripe.InvalidRequestError as e:
-            if e.message.startswith("No such customer:"):
+            if smart_str(e).startswith("No such customer:"):
                 # The exception was thrown because the customer was already
                 # deleted on the stripe side, ignore the exception
                 pass
@@ -436,8 +438,8 @@ class Customer(StripeObject):
         for inv in self.invoices.filter(paid=False, closed=False):
             try:
                 inv.retry()  # Always retry unpaid invoices
-            except stripe.InvalidRequestError, error:
-                if error.message != "Invoice is already paid":
+            except stripe.InvalidRequestError as error:
+                if smart_str(error) != "Invoice is already paid":
                     raise error
 
     def send_invoice(self):

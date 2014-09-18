@@ -3,7 +3,7 @@ import decimal
 
 from django.test import TestCase
 
-from mock import patch, Mock
+from mock import patch, PropertyMock, Mock
 
 from ..models import Customer, Charge
 from ..signals import card_changed
@@ -45,8 +45,9 @@ class TestCustomer(TestCase):
     @patch("stripe.Invoice.create")
     @patch("stripe.Customer.retrieve")
     @patch("stripe.Customer.create")
-    def test_customer_create_user_with_plan(self, CreateMock, RetrieveMock, PayMock):
+    def test_customer_create_user_with_plan(self, CreateMock, RetrieveMock, InvoiceMock):
         self.customer.delete()
+        type(InvoiceMock()).amount_due = PropertyMock(return_value=3)
         stripe_customer = CreateMock()
         stripe_customer.active_card = None
         stripe_customer.subscription.plan.id = "pro-monthly"
@@ -69,7 +70,7 @@ class TestCustomer(TestCase):
         self.assertEqual(kwargs["card"], "token232323")
         self.assertEqual(kwargs["plan"], "pro-monthly")
         self.assertIsNotNone(kwargs["trial_end"])
-        self.assertTrue(PayMock.called)
+        self.assertTrue(InvoiceMock.called)
         self.assertTrue(customer.current_subscription.plan, "pro")
 
     # @@@ Need to figure out a way to temporarily set DEFAULT_PLAN to "entry" for this test

@@ -8,7 +8,8 @@ from setuptools import setup, find_packages
 
 
 def read(fname):
-    return codecs.open(os.path.join(os.path.dirname(__file__), fname)).read()
+    path = os.path.join(os.path.dirname(__file__), fname)
+    return codecs.open(path, 'r', 'utf-8').read()
 
 
 # Provided as an attribute, so you can append to these instead
@@ -128,13 +129,24 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.2",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
         "Framework :: Django",
     ],
     install_requires=[
         "django-jsonfield>=0.8",
         "stripe>=1.7.9",
         "django>=1.4",
-        "pytz"
+        "pytz",
+        "six",
+    ],
+    test_suite="runtests",
+    tests_require=[
+        "mock",
+        "django-nose",
+        "django_forms_bootstrap",
     ],
     zip_safe=False,
 )

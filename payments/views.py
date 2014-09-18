@@ -6,6 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.template import RequestContext
 from django.template.loader import render_to_string
+from django.utils.encoding import smart_str
 from django.views.generic import TemplateView
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -87,8 +88,8 @@ def change_card(request):
             customer.send_invoice()
         customer.retry_unpaid_invoices()
         data = {}
-    except stripe.CardError, e:
-        data = {"error": e.message}
+    except stripe.CardError as e:
+        data = {"error": smart_str(e)}
     return _ajax_response(request, "payments/_change_card_form.html", **data)
 
 
@@ -106,10 +107,10 @@ def change_plan(request):
             data = {
                 "form": PlanForm(initial={"plan": form.cleaned_data["plan"]})
             }
-        except stripe.StripeError, e:
+        except stripe.StripeError as e:
             data = {
                 "form": PlanForm(initial={"plan": current_plan}),
-                "error": e.message
+                "error": smart_str(e)
             }
     else:
         data = {
@@ -136,10 +137,7 @@ def subscribe(request, form_class=PlanForm):
             data["location"] = reverse("payments_history")
         except stripe.StripeError as e:
             data["form"] = form
-            try:
-                data["error"] = e.args[0]
-            except IndexError:
-                data["error"] = "Unknown error"
+            data["error"] = smart_str(e) or "Unknown error"
     else:
         data["error"] = form.errors
         data["form"] = form
@@ -152,15 +150,15 @@ def cancel(request):
     try:
         request.user.customer.cancel()
         data = {}
-    except stripe.StripeError, e:
-        data = {"error": e.message}
+    except stripe.StripeError as e:
+        data = {"error": smart_str(e)}
     return _ajax_response(request, "payments/_cancel_form.html", **data)
 
 
 @csrf_exempt
 @require_POST
 def webhook(request):
-    data = json.loads(request.body)
+    data = json.loads(smart_str(request.body))
     if Event.objects.filter(stripe_id=data["id"]).exists():
         EventProcessingException.objects.create(
             data=data,

@@ -1,5 +1,6 @@
 import datetime
 
+import six
 from django.conf import settings
 from django.test import TestCase
 from django.utils import timezone
@@ -56,7 +57,7 @@ class TrialPeriodCallbackSettingTest(TestCase):
     def setUp(self):
         self.old_setting = settings.PAYMENTS_TRIAL_PERIOD_FOR_USER_CALLBACK
         del settings.PAYMENTS_TRIAL_PERIOD_FOR_USER_CALLBACK
-        reload(app_settings)
+        six.moves.reload_module(app_settings)
 
     def tearDown(self):
         settings.PAYMENTS_TRIAL_PERIOD_FOR_USER_CALLBACK = self.old_setting

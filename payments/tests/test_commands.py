@@ -25,15 +25,17 @@ class CommandTests(TestCase):
     def test_plans_create(self, CreateMock):
         management.call_command("init_plans")
         self.assertEquals(CreateMock.call_count, 3)
-        _, _, kwargs = CreateMock.mock_calls[0]
+        # order of plans creating is not important, but dict doesn't preserve it
+        calls = sorted(CreateMock.mock_calls, key=lambda x: x[2]['id'])
+        _, _, kwargs = calls[0]
         self.assertEqual(kwargs["id"], "entry-monthly")
         self.assertEqual(kwargs["amount"], 954)
-        _, _, kwargs = CreateMock.mock_calls[1]
-        self.assertEqual(kwargs["id"], "pro-monthly")
-        self.assertEqual(kwargs["amount"], 1999)
-        _, _, kwargs = CreateMock.mock_calls[2]
+        _, _, kwargs = calls[1]
         self.assertEqual(kwargs["id"], "premium-monthly")
         self.assertEqual(kwargs["amount"], 5999)
+        _, _, kwargs = calls[2]
+        self.assertEqual(kwargs["id"], "pro-monthly")
+        self.assertEqual(kwargs["amount"], 1999)
 
     @patch("stripe.Customer.retrieve")
     @patch("payments.models.Customer.sync")

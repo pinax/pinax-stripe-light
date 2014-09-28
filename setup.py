@@ -142,10 +142,9 @@ setup(
         "pytz",
         "six",
     ],
-    test_suite="runtests",
+    test_suite="runtests.runtests",
     tests_require=[
         "mock",
-        "django-nose",
         "django_forms_bootstrap",
     ],
     zip_safe=False,

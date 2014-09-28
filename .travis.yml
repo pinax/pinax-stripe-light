@@ -1,5 +1,5 @@
 language: python
-  
+
 python:
   - "2.7"
   - "3.2"
@@ -7,22 +7,10 @@ python:
   - "3.4"
 
 env:
-  - DJANGO=1.4
-  - DJANGO=1.5
   - DJANGO=1.6
+  - DJANGO=1.7
   - DJANGO=master
 
-matrix:
-  exclude:  # Django 1.4 doesn't support py3k
-    - python: "3.2"
-      env: DJANGO=1.4
-    - python: "3.3"
-      env: DJANGO=1.4
-    - python: "3.4"
-      env: DJANGO=1.4
-  allow_failures: # django-nose 1.2 doesn't support Django 1.7 yet
-    - env: DJANGO=master 
- 
 install:
   - pip install tox coveralls
 script:

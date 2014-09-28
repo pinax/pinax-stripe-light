@@ -1,9 +1,14 @@
+#!/usr/bin/env python
 import decimal
+import os
 import sys
+
+import django
 
 from django.conf import settings
 
-settings.configure(
+
+DEFAULT_SETTINGS = dict(
     DEBUG=True,
     USE_TZ=True,
     TIME_ZONE='UTC',
@@ -12,6 +17,11 @@ settings.configure(
             "ENGINE": "django.db.backends.sqlite3",
         }
     },
+    MIDDLEWARE_CLASSES=[
+        "django.contrib.sessions.middleware.SessionMiddleware",
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
+        "django.contrib.messages.middleware.MessageMiddleware"
+    ],
     ROOT_URLCONF="payments.urls",
     INSTALLED_APPS=[
         "django.contrib.auth",
@@ -60,10 +70,31 @@ settings.configure(
     PAYMENTS_PLAN_QUANTITY_CALLBACK="payments.tests.callbacks.quantity_call_back"
 )
 
-from django_nose import NoseTestSuiteRunner
 
-test_runner = NoseTestSuiteRunner(verbosity=1)
-failures = test_runner.run_tests(["payments"])
+def runtests(*test_args):
+    if not settings.configured:
+        settings.configure(**DEFAULT_SETTINGS)
 
-if failures:
+    # Compatibility with Django 1.7's stricter initialization
+    if hasattr(django, "setup"):
+        django.setup()
+
+    parent = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, parent)
+
+    try:
+        from django.test.runner import DiscoverRunner
+        runner_class = DiscoverRunner
+        test_args = ["payments.tests"]
+    except ImportError:
+        from django.test.simple import DjangoTestSuiteRunner
+        runner_class = DjangoTestSuiteRunner
+        test_args = ["tests"]
+
+    failures = runner_class(
+        verbosity=1, interactive=True, failfast=False).run_tests(test_args)
     sys.exit(failures)
+
+
+if __name__ == "__main__":
+    runtests(*sys.argv[1:])

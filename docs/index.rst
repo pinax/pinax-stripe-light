@@ -6,7 +6,7 @@ django-stripe-payments
 Development
 -----------
 
-The source repository can be found at https://github.com/eldarion/django-stripe-payments
+The source repository can be found at https://github.com/pinax/django-stripe-payments
 
 
 Contents

@@ -1,13 +1,13 @@
-import os
-import sys
+import pkg_resources
+
 
 extensions = []
 templates_path = []
 source_suffix = '.rst'
 master_doc = 'index'
 project = u'django-stripe-payments'
-copyright_holder = 'Eldarion'
-copyright = u'2013, %s' % copyright_holder
+copyright_holder = 'James Tauber and Contributors'
+copyright = u'2014, %s' % copyright_holder
 exclude_patterns = ['_build']
 pygments_style = 'sphinx'
 html_theme = 'default'
@@ -20,8 +20,5 @@ man_pages = [
      [copyright_holder], 1)
 ]
 
-sys.path.insert(0, os.pardir)
-m = __import__('payments')
-
-version = m.__version__
+version = pkg_resources.get_distribution("payments").version
 release = version

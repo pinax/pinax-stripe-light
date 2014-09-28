@@ -5,11 +5,11 @@ django-stripe-payments
 a payments Django app for Stripe
 
 
-.. image:: https://img.shields.io/travis/eldarion/django-stripe-payments.svg
-    :target: https://travis-ci.org/eldarion/django-stripe-payments
+.. image:: https://img.shields.io/travis/pinax/django-stripe-payments.svg
+    :target: https://travis-ci.org/pinax/django-stripe-payments
 
-.. image:: https://img.shields.io/coveralls/eldarion/django-stripe-payments.svg
-    :target: https://coveralls.io/r/eldarion/django-stripe-payments
+.. image:: https://img.shields.io/coveralls/pinax/django-stripe-payments.svg
+    :target: https://coveralls.io/r/pinax/django-stripe-payments
 
 .. image:: https://img.shields.io/pypi/dm/django-stripe-payments.svg
     :target:  https://pypi.python.org/pypi/django-stripe-payments/
@@ -17,7 +17,7 @@ a payments Django app for Stripe
 .. image:: https://img.shields.io/pypi/v/django-stripe-payments.svg
     :target:  https://pypi.python.org/pypi/django-stripe-payments/
 
-.. image:: https://img.shields.io/badge/license-BSD-blue.svg
+.. image:: https://img.shields.io/badge/license-MIT-blue.svg
     :target:  https://pypi.python.org/pypi/django-stripe-payments/
 
 
@@ -42,10 +42,3 @@ To run test suite::
 
     $ pip install detox
     $ detox
-
-Commercial Support
-------------------
-
-This app, and many others like it, have been built in support of many of Eldarion's
-own sites, and sites of our clients. We would love to help you on your next project
-so get in touch by dropping us a note at info@eldarion.com.

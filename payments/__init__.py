@@ -1,4 +1,4 @@
 import pkg_resources
 
 
-__version__ = pkg_resources.get_distribution("payments").version
+__version__ = pkg_resources.get_distribution("django-stripe-payments").version

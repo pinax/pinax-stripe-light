@@ -575,8 +575,7 @@ class Customer(StripeObject):
         subscription_made.send(sender=self, plan=plan, stripe_response=resp)
         return resp
 
-    def charge(self, amount, currency="usd", description=None,
-               send_receipt=True):
+    def charge(self, amount, currency="usd", description=None):
         """
         This method expects `amount` to be a Decimal type representing a
         dollar amount. It will be converted to cents so any decimals beyond
@@ -593,8 +592,7 @@ class Customer(StripeObject):
             description=description,
         )
         obj = self.record_charge(resp["id"])
-        if send_receipt:
-            obj.send_receipt()
+        obj.send_receipt()
         return obj
 
     def record_charge(self, charge_id):
@@ -696,7 +694,7 @@ class Invoice(models.Model):
         return "Open"
 
     @classmethod
-    def sync_from_stripe_data(cls, stripe_invoice, send_receipt=True):
+    def sync_from_stripe_data(cls, stripe_invoice):
         c = Customer.objects.get(stripe_id=stripe_invoice["customer"])
         period_end = convert_tstamp(stripe_invoice, "period_end")
         period_start = convert_tstamp(stripe_invoice, "period_start")
@@ -773,17 +771,15 @@ class Invoice(models.Model):
             obj = c.record_charge(stripe_invoice["charge"])
             obj.invoice = invoice
             obj.save()
-            if send_receipt:
-                obj.send_receipt()
         return invoice
 
     @classmethod
-    def handle_event(cls, event, send_receipt=SEND_EMAIL_RECEIPTS):
+    def handle_event(cls, event):
         valid_events = ["invoice.payment_failed", "invoice.payment_succeeded"]
         if event.kind in valid_events:
             invoice_data = event.message["data"]["object"]
             stripe_invoice = stripe.Invoice.retrieve(invoice_data["id"])
-            cls.sync_from_stripe_data(stripe_invoice, send_receipt=send_receipt)
+            cls.sync_from_stripe_data(stripe_invoice)
 
 
 class InvoiceItem(models.Model):
@@ -824,6 +820,7 @@ class Charge(StripeObject):
     refunded = models.NullBooleanField(null=True)
     fee = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     receipt_sent = models.BooleanField(default=False)
+    refund_receipt_sent = models.BooleanField(default=False)
     charge_created = models.DateTimeField(null=True, blank=True)
 
     objects = ChargeManager()
@@ -842,6 +839,7 @@ class Charge(StripeObject):
             amount=convert_amount_for_api(self.calculate_refund_amount(amount=amount), self.currency)
         )
         Charge.sync_from_stripe_data(charge_obj)
+        self.send_receipt()
 
     @classmethod
     def sync_from_stripe_data(cls, data):
@@ -871,8 +869,13 @@ class Charge(StripeObject):
         obj.save()
         return obj
 
-    def send_receipt(self):
-        if not self.receipt_sent:
+    def send_receipt(self, force_email=False):
+        has_receipt = (
+            self.receipt_sent
+            if not self.refunded
+            else self.refund_receipt_sent
+        )
+        if force_email or (SEND_EMAIL_RECEIPTS and not has_receipt):
             site = Site.objects.get_current()
             protocol = getattr(settings, "DEFAULT_HTTP_PROTOCOL", "http")
             ctx = {
@@ -889,5 +892,8 @@ class Charge(StripeObject):
                 to=[self.customer.user.email],
                 from_email=INVOICE_FROM_EMAIL
             ).send()
-            self.receipt_sent = num_sent > 0
-            self.save()
+            # Only update the receipt sent properties as needed.
+            if not self.refunded:
+                Charge.objects.filter(pk=self.pk).update(receipt_sent=num_sent > 0)
+            else:
+                Charge.objects.filter(pk=self.pk).update(refund_receipt_sent=num_sent > 0)

@@ -591,7 +591,7 @@ class Customer(StripeObject):
             currency=currency,
             customer=self.stripe_id,
             description=description,
-            captured=capture,
+            capture=capture,
         )
         obj = self.record_charge(resp["id"])
         if send_receipt:

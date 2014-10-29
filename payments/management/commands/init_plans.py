@@ -35,4 +35,4 @@ class Command(BaseCommand):
                     )
                     print("Plan created for {0}".format(plan))
                 except Exception as e:
-                    print "{0} ({1}): {2}".format(plan_name, plan_id, e)
+                    print("{0} ({1}): {2}".format(plan_name, plan_id, e))

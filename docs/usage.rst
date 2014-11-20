@@ -17,10 +17,10 @@ to your `settings.py`::
 
 There are two settings you'll need to define for this middleware to work. The first,
 ``SUBSCRIPTION_REQUIRED_EXCEPTION_URLS`` is a list of url names that the user can
-no matter what and the second one, ``SUBSCRIPTION_REQUIRED_REDIRECT`` is the url to
-redirect them to if they hit a pay-only page.
+access no matter what, and the second one, ``SUBSCRIPTION_REQUIRED_REDIRECT`` is the url
+to redirect them to if they hit a pay-only page.
 
 Of course, your site might function more on levels and limits rather than lockout. It's up
-to use to write the necessary code to interpret how your site should behave, however, you
+to you to write the necessary code to interpret how your site should behave, however, you
 can rely on ``request.user.customer`` giving you an object with relevant information to
 make that decision such as ``customer.plan`` and ``customer.has_active_subscription``.

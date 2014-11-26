@@ -23,6 +23,7 @@ class Command(BaseCommand):
                 stripe.Plan.create(
                     amount=amount,
                     interval=settings.PAYMENTS_PLANS[plan]["interval"],
+                    interval_count=settings.PAYMENTS_PLANS[plan]["interval_count"],
                     name=settings.PAYMENTS_PLANS[plan]["name"],
                     currency=settings.PAYMENTS_PLANS[plan]["currency"],
                     trial_period_days=settings.PAYMENTS_PLANS[plan].get(

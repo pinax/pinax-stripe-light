@@ -90,6 +90,8 @@ Configuration (Modifications to `settings.py`)
         },
     }
 
+* If you're using Stripe to send email receipts for you, set ``SEND_EMAIL_RECEIPTS = False`` (and configure your emails from your Stripe Account Settings).  Alternatively ``payments`` can send them for you - you'll want to set ``PAYMENTS_INVOICE_FROM_EMAIL`` to the email address that your receipts will be sent from.
+
 
 Static Media
 ============

@@ -41,6 +41,10 @@ if isinstance(PLAN_QUANTITY_CALLBACK, six.string_types):
 
 SEND_EMAIL_RECEIPTS = getattr(settings, "SEND_EMAIL_RECEIPTS", True)
 
+CUSTOMER_REF_MODEL = getattr(settings, "CUSTOMER_REF_MODEL", None)
+
+CUSTOMER_REF_SEARCH_FIELDS = getattr(settings, "CUSTOMER_REF_SEARCH_FIELDS", [])
+
 
 def plan_from_stripe_id(stripe_id):
     for key in PAYMENTS_PLANS.keys():

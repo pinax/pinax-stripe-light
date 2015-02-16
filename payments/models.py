@@ -24,8 +24,7 @@ from .settings import (
     PAYMENTS_PLANS,
     plan_from_stripe_id,
     SEND_EMAIL_RECEIPTS,
-    TRIAL_PERIOD_FOR_USER_CALLBACK,
-    PLAN_QUANTITY_CALLBACK
+    PLAN_QUANTITY_CALLBACK,
 )
 from .signals import (
     cancelled,
@@ -306,10 +305,9 @@ class TransferChargeFee(models.Model):
 
 class Customer(StripeObject):
 
-    user = models.OneToOneField(
-        getattr(settings, "AUTH_USER_MODEL", "auth.User"),
-        null=True
-    )
+    ref = models.OneToOneField(getattr(settings, "CUSTOMER_REF_MODEL",
+                                       getattr(settings, "AUTH_USER_MODEL", "auth.User")),
+                               null=True)
     card_fingerprint = models.CharField(max_length=200, blank=True)
     card_last_4 = models.CharField(max_length=4, blank=True)
     card_kind = models.CharField(max_length=50, blank=True)
@@ -318,7 +316,7 @@ class Customer(StripeObject):
     objects = CustomerManager()
 
     def __unicode__(self):
-        return smart_str(self.user)
+        return smart_str(self.ref)
 
     @property
     def stripe_customer(self):
@@ -335,7 +333,7 @@ class Customer(StripeObject):
             else:
                 # The exception was raised for another reason, re-raise it
                 raise
-        self.user = None
+        self.ref = None
         self.card_fingerprint = ""
         self.card_last_4 = ""
         self.card_kind = ""
@@ -373,7 +371,7 @@ class Customer(StripeObject):
         cancelled.send(sender=self, stripe_response=sub)
 
     @classmethod
-    def create(cls, user, card=None, plan=None, charge_immediately=True):
+    def create(cls, ref, card=None, plan=None, charge_immediately=True):
 
         if card and plan:
             plan = PAYMENTS_PLANS[plan]["stripe_plan_id"]
@@ -383,14 +381,13 @@ class Customer(StripeObject):
             plan = None
 
         trial_end = None
-        if TRIAL_PERIOD_FOR_USER_CALLBACK and plan:
-            trial_days = TRIAL_PERIOD_FOR_USER_CALLBACK(user)
-            trial_end = datetime.datetime.utcnow() + datetime.timedelta(
-                days=trial_days
-            )
+        # if TRIAL_PERIOD_FOR_USER_CALLBACK and plan:
+        #     trial_days = TRIAL_PERIOD_FOR_USER_CALLBACK(user)
+        #     trial_end = datetime.datetime.utcnow() + datetime.timedelta(
+        #         days=trial_days
+        #     )
 
         stripe_customer = stripe.Customer.create(
-            email=user.email,
             card=card,
             plan=plan or DEFAULT_PLAN,
             trial_end=trial_end
@@ -398,7 +395,7 @@ class Customer(StripeObject):
 
         if stripe_customer.active_card:
             cus = cls.objects.create(
-                user=user,
+                ref=ref,
                 stripe_id=stripe_customer.id,
                 card_fingerprint=stripe_customer.active_card.fingerprint,
                 card_last_4=stripe_customer.active_card.last4,
@@ -406,7 +403,7 @@ class Customer(StripeObject):
             )
         else:
             cus = cls.objects.create(
-                user=user,
+                ref=ref,
                 stripe_id=stripe_customer.id,
             )
 
@@ -898,7 +895,7 @@ class Charge(StripeObject):
             num_sent = EmailMessage(
                 subject,
                 message,
-                to=[self.customer.user.email],
+                to=[self.customer.ref.email],
                 from_email=INVOICE_FROM_EMAIL
             ).send()
             self.receipt_sent = num_sent > 0

@@ -12,7 +12,7 @@ import stripe
 from mock import patch
 
 from ..models import Customer, CurrentSubscription
-from ..utils import get_user_model
+from ..utils import get_ref_model
 from ..views import SubscribeView
 
 
@@ -36,14 +36,14 @@ class AjaxViewsTests(TestCase):
 
     def setUp(self):
         self.password = "eldarion"
-        self.user = get_user_model().objects.create_user(
+        self.user = get_ref_model().objects.create_user(
             username="patrick",
             password=self.password
         )
         self.user.save()
         customer = Customer.objects.create(
             stripe_id="cus_1",
-            user=self.user
+            ref=self.user
         )
         CurrentSubscription.objects.create(
             customer=customer,

@@ -22,14 +22,18 @@ def convert_tstamp(response, field_name=None):
     return None
 
 
-def get_user_model():  # pragma: no cover
-    try:
-        # pylint: disable=E0611
-        from django.contrib.auth import get_user_model as django_get_user_model
-        return django_get_user_model()
-    except ImportError:
-        from django.contrib.auth.models import User
-        return User
+def get_ref_model():  # pragma: no cover
+    from .settings import CUSTOMER_REF_MODEL
+    if CUSTOMER_REF_MODEL is not None:
+        return load_path_attr(CUSTOMER_REF_MODEL)
+    else:
+        try:
+            # pylint: disable=E0611
+            from django.contrib.auth import get_user_model as django_get_user_model
+            return django_get_user_model()
+        except ImportError:
+            from django.contrib.auth.models import User
+            return User
 
 
 def load_path_attr(path):  # pragma: no cover
@@ -38,7 +42,7 @@ def load_path_attr(path):  # pragma: no cover
     try:
         mod = importlib.import_module(module)
     except ImportError as e:
-        raise ImproperlyConfigured("Error importing {0}: '{1}'".format(module, e))
+        raise ImproperlyConfigured("Error importing {0}.{1}: '{2}'".format(module, attr, e))
     try:
         attr = getattr(mod, attr)
     except AttributeError:

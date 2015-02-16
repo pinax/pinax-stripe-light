@@ -6,17 +6,17 @@ from mock import patch, Mock
 
 from ..models import Customer, Event, CurrentSubscription
 from payments.signals import WEBHOOK_SIGNALS
-from ..utils import get_user_model
+from ..utils import get_ref_model
 
 
 class TestEventMethods(TestCase):
     def setUp(self):
-        User = get_user_model()
+        User = get_ref_model()
         self.user = User.objects.create_user(username="testuser")
         self.user.save()
         self.customer = Customer.objects.create(
             stripe_id="cus_xxxxxxxxxxxxxxx",
-            user=self.user
+            ref=self.user
         )
 
     def test_link_customer_customer_created(self):
@@ -177,7 +177,7 @@ class TestEventMethods(TestCase):
         )
         event.process()
         self.assertEquals(event.customer, self.customer)
-        self.assertEquals(event.customer.user, None)
+        self.assertEquals(event.customer.ref, None)
 
     @staticmethod
     def send_signal(customer, kind):

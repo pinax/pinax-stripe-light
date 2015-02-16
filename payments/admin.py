@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.db.models.fields import FieldDoesNotExist
 
 from .models import (
     Charge,
@@ -11,40 +10,13 @@ from .models import (
     InvoiceItem,
     Transfer
 )
-from .utils import get_user_model
-
-
-def user_search_fields():
-    User = get_user_model()
-    USERNAME_FIELD = getattr(User, "USERNAME_FIELD", None)
-    fields = []
-    if USERNAME_FIELD is not None:
-        # Using a Django 1.5+ User model
-        fields = [
-            "user__{0}".format(USERNAME_FIELD)
-        ]
-
-        try:
-            # get_field_by_name throws FieldDoesNotExist if the field is not
-            # present on the model
-            # pylint: disable=W0212,E1103
-            User._meta.get_field_by_name("email")
-            fields += ["user__email"]
-        except FieldDoesNotExist:
-            pass
-    else:
-        # Using a pre-Django 1.5 User model
-        fields = [
-            "user__username",
-            "user__email"
-        ]
-    return fields
+from .settings import CUSTOMER_REF_SEARCH_FIELDS
 
 
 def customer_search_fields():
     return [
         "customer__{0}".format(field)
-        for field in user_search_fields()
+        for field in CUSTOMER_REF_SEARCH_FIELDS
     ]
 
 
@@ -190,10 +162,10 @@ subscription_status.short_description = "Subscription Status"
 
 admin.site.register(
     Customer,
-    raw_id_fields=["user"],
+    raw_id_fields=["ref"],
     list_display=[
         "stripe_id",
-        "user",
+        "ref",
         "card_kind",
         "card_last_4",
         subscription_status
@@ -205,7 +177,7 @@ admin.site.register(
     ],
     search_fields=[
         "stripe_id",
-    ] + user_search_fields(),
+    ] + customer_search_fields(),
     inlines=[CurrentSubscriptionInline]
 )
 
@@ -219,22 +191,11 @@ def customer_has_card(obj):
 customer_has_card.short_description = "Customer Has Card"
 
 
-def customer_user(obj):
-    User = get_user_model()
-    if hasattr(User, "USERNAME_FIELD"):
-        # Using a Django 1.5+ User model
-        username = getattr(obj.customer.user, "USERNAME_FIELD")
-    else:
-        # Using a pre-Django 1.5 User model
-        username = obj.customer.user.username
-
-    # In Django 1.5+ a User is not guaranteed to have an email field
-    email = getattr(obj, "email", "")
-    return "{0} <{1}>".format(
-        username,
-        email
+def customer_ref(obj):
+    return "{0}".format(
+        obj.customer.ref
     )
-customer_user.short_description = "Customer"
+customer_ref.short_description = "Customer"
 
 
 admin.site.register(
@@ -244,7 +205,7 @@ admin.site.register(
         "stripe_id",
         "paid",
         "closed",
-        customer_user,
+        customer_ref,
         customer_has_card,
         "period_start",
         "period_end",

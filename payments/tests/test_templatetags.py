@@ -9,7 +9,7 @@ from mock import Mock
 
 from ..models import CurrentSubscription, Customer
 from ..templatetags.payments_tags import change_plan_form, subscribe_form
-from ..utils import get_user_model
+from ..utils import get_ref_model
 
 from .test_middleware import DummySession
 
@@ -20,12 +20,12 @@ class PaymentsTagTests(TestCase):
         request = Mock()
         request.META = {}
         request.session = DummySession()
-        user = get_user_model().objects.create_user(username="patrick")
+        user = get_ref_model().objects.create_user(username="patrick")
         user.set_password("eldarion")
         user.save()
         customer = Customer.objects.create(
             stripe_id="cus_1",
-            user=user
+            ref=user
         )
         CurrentSubscription.objects.create(
             customer=customer,

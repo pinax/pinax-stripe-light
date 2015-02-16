@@ -7,16 +7,16 @@ from django.test import TestCase
 from mock import patch
 
 from ..models import Customer
-from ..utils import get_user_model
+from ..utils import get_ref_model
 
 
 class EmailReceiptTest(TestCase):
 
     def setUp(self):
-        User = get_user_model()
+        User = get_ref_model()
         self.user = User.objects.create_user(username="patrick")
         self.customer = Customer.objects.create(
-            user=self.user,
+            ref=self.user,
             stripe_id="cus_xxxxxxxxxxxxxxx",
             card_fingerprint="YYYYYYYY",
             card_last_4="2342",

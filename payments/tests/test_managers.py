@@ -6,20 +6,20 @@ from django.utils import timezone
 
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_CREATED_TEST_DATA2
 from ..models import Event, Transfer, Customer, CurrentSubscription, Charge
-from ..utils import get_user_model
+from ..utils import get_ref_model
 
 
 class CustomerManagerTest(TestCase):
 
     def setUp(self):
-        User = get_user_model()
+        User = get_ref_model()
         # create customers and current subscription records
         period_start = datetime.datetime(2013, 4, 1, tzinfo=timezone.utc)
         period_end = datetime.datetime(2013, 4, 30, tzinfo=timezone.utc)
         start = datetime.datetime(2013, 1, 1, tzinfo=timezone.utc)
         for i in range(10):
             customer = Customer.objects.create(
-                user=User.objects.create_user(username="patrick{0}".format(i)),
+                ref=User.objects.create_user(username="patrick{0}".format(i)),
                 stripe_id="cus_xxxxxxxxxxxxxx{0}".format(i),
                 card_fingerprint="YYYYYYYY",
                 card_last_4="2342",
@@ -36,7 +36,7 @@ class CustomerManagerTest(TestCase):
                 quantity=1
             )
         customer = Customer.objects.create(
-            user=User.objects.create_user(username="patrick{0}".format(11)),
+            ref=User.objects.create_user(username="patrick{0}".format(11)),
             stripe_id="cus_xxxxxxxxxxxxxx{0}".format(11),
             card_fingerprint="YYYYYYYY",
             card_last_4="2342",
@@ -54,7 +54,7 @@ class CustomerManagerTest(TestCase):
             quantity=1
         )
         customer = Customer.objects.create(
-            user=User.objects.create_user(username="patrick{0}".format(12)),
+            ref=User.objects.create_user(username="patrick{0}".format(12)),
             stripe_id="cus_xxxxxxxxxxxxxx{0}".format(12),
             card_fingerprint="YYYYYYYY",
             card_last_4="2342",
@@ -176,7 +176,7 @@ class ChargeManagerTests(TestCase):
 
     def setUp(self):
         customer = Customer.objects.create(
-            user=get_user_model().objects.create_user(username="patrick"),
+            ref=get_ref_model().objects.create_user(username="patrick"),
             stripe_id="cus_xxxxxxxxxxxxxx"
         )
         Charge.objects.create(

@@ -85,7 +85,7 @@ Stores details about each fee associated with a particular `Transfer`.
 ^^^^^^^^^^
 
 The `Customer` object maps to a customer record in Stripe and has a nullable
-foriegn key to a `User` object. It's nullable because you maybe delete a user
+foreign key to a `User` object. It's nullable because you maybe delete a user
 from your site but would likely want/need to keep financial record history.
 
 There are lots of public API methods on `Customer` intances that are likely of

@@ -608,6 +608,13 @@ class Customer(StripeObject):
         self.questions_asked = 0
         self.save()
 
+    def remaining_questions(self):
+
+        plan = self.current_subscription.plan
+        question_limit = settings.PAYMENTS_PLANS[plan]['question_limit']
+
+        return question_limit - self.questions_asked
+
 
 class CurrentSubscription(models.Model):
 

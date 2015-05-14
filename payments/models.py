@@ -315,6 +315,8 @@ class Customer(StripeObject):
     card_kind = models.CharField(max_length=50, blank=True)
     date_purged = models.DateTimeField(null=True, editable=False)
 
+    questions_asked = models.IntegerField(default=0)
+
     objects = CustomerManager()
 
     def __unicode__(self):
@@ -601,6 +603,10 @@ class Customer(StripeObject):
     def record_charge(self, charge_id):
         data = stripe.Charge.retrieve(charge_id)
         return Charge.sync_from_stripe_data(data)
+
+    def reset_questions_asked(self):
+        self.questions_asked = 0
+        self.save()
 
 
 class CurrentSubscription(models.Model):

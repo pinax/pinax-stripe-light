@@ -97,25 +97,30 @@ def change_card(request):
 @login_required
 def change_plan(request):
     form = PlanForm(request.POST)
-    try:
-        current_plan = request.user.customer.current_subscription.plan
-    except CurrentSubscription.DoesNotExist:
-        current_plan = None
-    if form.is_valid():
+    can_charge = request.user.customer.can_charge()
+
+    data = {
+        "form": form
+    }
+
+    if form.is_valid() and can_charge:
         try:
-            request.user.customer.subscribe(form.cleaned_data["plan"])
-            data = {
-                "form": PlanForm(initial={"plan": form.cleaned_data["plan"]})
-            }
+
+            coupon_code = form.cleaned_data["coupon"]
+            if coupon_code.strip() == "":
+                coupon_code = None
+
+            request.user.customer.subscribe(
+                form.cleaned_data["plan"],
+                coupon=coupon_code
+            )
         except stripe.StripeError as e:
-            data = {
-                "form": PlanForm(initial={"plan": current_plan}),
-                "error": smart_str(e)
-            }
+            data["error"] = smart_str(e)
+
     else:
-        data = {
-            "form": form
-        }
+        if not can_charge:
+            data['error'] = smart_str("You don't have an active payment method.")
+
     return _ajax_response(request, "payments/_change_plan_form.html", **data)
 
 

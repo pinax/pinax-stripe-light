@@ -99,10 +99,6 @@ def change_plan(request):
     form = PlanForm(request.POST)
     can_charge = request.user.customer.can_charge()
 
-    data = {
-        "form": form
-    }
-
     if form.is_valid() and can_charge:
         try:
 
@@ -115,13 +111,14 @@ def change_plan(request):
                 coupon=coupon_code
             )
         except stripe.StripeError as e:
-            data["error"] = smart_str(e)
+
+            form.add_error(None, e)
 
     else:
         if not can_charge:
-            data['error'] = smart_str("You don't have an active payment method.")
+            form.add_error(None, "You don't have an active payment method.")
 
-    return _ajax_response(request, "payments/_change_plan_form.html", **data)
+    return _ajax_response(request, "payments/_change_plan_form.html", form=form)
 
 
 @require_POST

@@ -87,7 +87,9 @@ def change_card(request):
         if send_invoice:
             customer.send_invoice()
         customer.retry_unpaid_invoices()
-        data = {}
+        data = {
+            "STRIPE_PUBLIC_KEY": app_settings.STRIPE_PUBLIC_KEY,
+        }
     except stripe.CardError as e:
         data = {"error": smart_str(e)}
     return _ajax_response(request, "payments/_change_card_form.html", **data)

@@ -23,20 +23,23 @@ from .models import (
     EventProcessingException
 )
 
+EXTRA_CONTEXT = {
+    "STRIPE_PUBLIC_KEY": app_settings.STRIPE_PUBLIC_KEY,
+    "PLAN_CHOICES": app_settings.PLAN_CHOICES,
+    "PAYMENT_PLANS": app_settings.PAYMENTS_PLANS,
+}
+
 
 class PaymentsContextMixin(object):
 
     def get_context_data(self, **kwargs):
         context = super(PaymentsContextMixin, self).get_context_data(**kwargs)
-        context.update({
-            "STRIPE_PUBLIC_KEY": app_settings.STRIPE_PUBLIC_KEY,
-            "PLAN_CHOICES": app_settings.PLAN_CHOICES,
-            "PAYMENT_PLANS": app_settings.PAYMENTS_PLANS
-        })
+        context.update(EXTRA_CONTEXT)
         return context
 
 
 def _ajax_response(request, template, **kwargs):
+    kwargs.update(EXTRA_CONTEXT)
     response = {
         "html": render_to_string(
             template,
@@ -87,9 +90,6 @@ def change_card(request):
         if send_invoice:
             customer.send_invoice()
         customer.retry_unpaid_invoices()
-        data = {
-            "STRIPE_PUBLIC_KEY": app_settings.STRIPE_PUBLIC_KEY,
-        }
     except stripe.CardError as e:
         data = {"error": smart_str(e)}
     return _ajax_response(request, "payments/_change_card_form.html", **data)

@@ -1,8 +1,9 @@
 import datetime
 import decimal
+import importlib
 
 from django.core.exceptions import ImproperlyConfigured
-from django.utils import importlib, timezone
+from django.utils import timezone
 
 
 def convert_tstamp(response, field_name=None):

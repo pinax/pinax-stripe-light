@@ -9,6 +9,7 @@ from django.core.mail import EmailMessage
 from django.db import models
 from django.utils import timezone
 from django.utils.encoding import smart_str
+from django.utils.encoding import smart_text
 from django.template.loader import render_to_string
 
 from django.contrib.sites.models import Site
@@ -318,7 +319,7 @@ class Customer(StripeObject):
     objects = CustomerManager()
 
     def __unicode__(self):
-        return smart_str(self.user)
+        return smart_text(self.user)
 
     @property
     def stripe_customer(self):

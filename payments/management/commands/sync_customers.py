@@ -15,8 +15,14 @@ class Command(BaseCommand):
         for user in qs:
             count += 1
             perc = int(round(100 * (float(count) / float(total))))
+            if hasattr(User, "USERNAME_FIELD"):
+                # Using a Django 1.5+ User model
+                username = getattr(user, user.USERNAME_FIELD)
+            else:
+                # Using a pre-Django 1.5 User model
+                username = user.username
             print("[{0}/{1} {2}%] Syncing {3} [{4}]".format(
-                count, total, perc, user.username, user.pk
+                count, total, perc, username, user.pk
             ))
             customer = user.customer
             cu = customer.stripe_customer

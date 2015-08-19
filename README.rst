@@ -2,7 +2,7 @@
 django-stripe-payments
 ======================
 
-a payments Django app for Stripe
+Django-stripe-payments is a payments Django app for Stripe.
 
 .. image:: http://slack.pinaxproject.com/badge.svg
     :target: http://slack.pinaxproject.com/
@@ -26,7 +26,17 @@ a payments Django app for Stripe
 This app allows you to process one off charges as well as signup users for
 recurring subscriptions managed by Stripe.
 
-Documentation can be found at http://django-stripe-payments.readthedocs.org
+Pinax is an open-source platform built on the Django Web Framework. It is an ecosystem of reusable Django apps, themes, and starter project templates. 
+This collection can be found at http://pinaxproject.com.
+
+This app was developed as part of the Pinax ecosystem but is just a Django app and can be used independently of other Pinax apps.
+
+In order to foster a kind, inclusive, and harassment-free community, the Pinax Project has a code of conduct, which can be found here  http://pinaxproject.com/pinax/code_of_conduct/.
+
+For updates and news regarding the Pinax Project, please follow us on Twitter at @pinaxproject and check out our blog http://blog.pinaxproject.com.
+
+Documentation for django-stripe-payments can be found at http://django-stripe-payments.readthedocs.org
+The Pinax documentation is available at http://pinaxproject.com/pinax/.
 
 Some suggested integration steps:
   1. Overload the templates provided to use your inheritance tree (for bases etc) and block names.

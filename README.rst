@@ -2,7 +2,7 @@
 django-stripe-payments
 ======================
 
-Django-stripe-payments is a payments Django app for Stripe.
+django-stripe-payments is a payments Django app for Stripe.
 
 .. image:: http://slack.pinaxproject.com/badge.svg
     :target: http://slack.pinaxproject.com/

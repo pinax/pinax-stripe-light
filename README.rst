@@ -2,8 +2,6 @@
 django-stripe-payments
 ======================
 
-django-stripe-payments is a payments Django app for Stripe.
-
 .. image:: http://slack.pinaxproject.com/badge.svg
     :target: http://slack.pinaxproject.com/
 
@@ -22,6 +20,7 @@ django-stripe-payments is a payments Django app for Stripe.
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
     :target:  https://pypi.python.org/pypi/django-stripe-payments/
 
+django-stripe-payments is a payments Django app for Stripe.
 
 This app allows you to process one off charges as well as signup users for
 recurring subscriptions managed by Stripe.

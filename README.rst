@@ -1,5 +1,5 @@
 ======================
-django-stripe-payments
+Django Stripe Payments
 ======================
 
 .. image:: http://slack.pinaxproject.com/badge.svg
@@ -20,22 +20,23 @@ django-stripe-payments
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
     :target:  https://pypi.python.org/pypi/django-stripe-payments/
 
-django-stripe-payments is a payments Django app for Stripe.
 
-This app allows you to process one off charges as well as signup users for
-recurring subscriptions managed by Stripe.
+Pinax
+------
 
 Pinax is an open-source platform built on the Django Web Framework. It is an ecosystem of reusable Django apps, themes, and starter project templates. 
 This collection can be found at http://pinaxproject.com.
 
 This app was developed as part of the Pinax ecosystem but is just a Django app and can be used independently of other Pinax apps.
 
-In order to foster a kind, inclusive, and harassment-free community, the Pinax Project has a code of conduct, which can be found here  http://pinaxproject.com/pinax/code_of_conduct/.
 
-For updates and news regarding the Pinax Project, please follow us on Twitter at @pinaxproject and check out our blog http://blog.pinaxproject.com.
+django-stripe-payments
+-----------------------
 
-Documentation for django-stripe-payments can be found at http://django-stripe-payments.readthedocs.org
-The Pinax documentation is available at http://pinaxproject.com/pinax/.
+``django-stripe-payments`` is a payments Django app for Stripe.
+
+This app allows you to process one off charges as well as signup users for
+recurring subscriptions managed by Stripe.
 
 Some suggested integration steps:
   1. Overload the templates provided to use your inheritance tree (for bases etc) and block names.
@@ -45,11 +46,33 @@ Some suggested integration steps:
   4. Set up SSL if you have not already.
   5. Define some plans (see docs).
   6. Run syncdb to generate the necessary tables, then init_plans and init_customers.
+  
 
 Development
------------
+------------
 
 To run test suite::
 
     $ pip install detox
     $ detox
+
+
+Documentation
+--------------
+
+For updates and news regarding the Pinax Project, please follow us on Twitter at @pinaxproject and check out our blog http://blog.pinaxproject.com.
+
+
+Code of Conduct
+-----------------
+
+In order to foster a kind, inclusive, and harassment-free community, the Pinax Project has a code of conduct, which can be found here  http://pinaxproject.com/pinax/code_of_conduct/.
+
+
+Pinax Project Blog and Twitter
+-------------------------------
+
+Documentation for django-stripe-payments can be found at http://django-stripe-payments.readthedocs.org
+The Pinax documentation is available at http://pinaxproject.com/pinax/.
+
+

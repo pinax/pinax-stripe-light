@@ -59,8 +59,8 @@ To run test suite::
 
 Documentation
 --------------
-
-For updates and news regarding the Pinax Project, please follow us on Twitter at @pinaxproject and check out our blog http://blog.pinaxproject.com.
+Documentation for django-stripe-payments can be found at http://django-stripe-payments.readthedocs.org
+The Pinax documentation is available at http://pinaxproject.com/pinax/.
 
 
 Code of Conduct
@@ -71,8 +71,7 @@ In order to foster a kind, inclusive, and harassment-free community, the Pinax P
 
 Pinax Project Blog and Twitter
 -------------------------------
+For updates and news regarding the Pinax Project, please follow us on Twitter at @pinaxproject and check out our blog http://blog.pinaxproject.com.
 
-Documentation for django-stripe-payments can be found at http://django-stripe-payments.readthedocs.org
-The Pinax documentation is available at http://pinaxproject.com/pinax/.
 
 

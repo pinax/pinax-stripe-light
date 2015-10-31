@@ -38,8 +38,8 @@ urlpatterns = patterns(
         name="payments_cancel"
     ),
     url(
-        r"^history/$",
-        login_required(HistoryView.as_view()),
+        regex=r"^history/$",
+        view=HistoryView.as_view(),
         name="payments_history"
     ),
 )

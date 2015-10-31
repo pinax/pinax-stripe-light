@@ -6,7 +6,7 @@
     {% include "payments/_subscription_status.html" %}
     <h2>Payment History</h2>
     <p class="lead">Your transaction history</p>
-    {% if request.user.customer.invoices.all %}
+    {% if invoices %}
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -15,7 +15,7 @@
                     <th>Amount</th>
                 </tr>
             </thead>
-            {% for invoice in request.user.customer.invoices.all %}
+            {% for invoice in invoices %}
                 <tr>
                     <td class="fixed">#{{ invoice.id }}</td>
                     <td>{{ invoice.date|date:"M d" }}</td>

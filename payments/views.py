@@ -11,6 +11,8 @@ from django.views.generic import TemplateView
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.views.generic.list import ListView
 
 import stripe
 
@@ -20,7 +22,8 @@ from .models import (
     Customer,
     CurrentSubscription,
     Event,
-    EventProcessingException
+    EventProcessingException,
+    Invoice
 )
 
 
@@ -71,8 +74,17 @@ class ChangePlanView(SubscribeView):
     template_name = "payments/change_plan.html"
 
 
-class HistoryView(PaymentsContextMixin, TemplateView):
+class HistoryView(PaymentsContextMixin, ListView):
+    model = Invoice
     template_name = "payments/history.html"
+    context_object_name = 'invoices'
+
+    def get_queryset(self):
+        return Invoice.objects.filter(customer__invoices=self.request.user)
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(HistoryView, self).dispatch(*args, **kwargs)
 
 
 @require_POST

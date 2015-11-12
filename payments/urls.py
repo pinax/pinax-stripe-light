@@ -1,5 +1,9 @@
 from django.conf.urls import patterns, url
-from django.contrib.auth.decorators import login_required
+
+try:
+    from account.decorators import login_required
+except ImportError:
+    from django.contrib.auth.decorators import login_required
 
 from .views import (
     CancelView,

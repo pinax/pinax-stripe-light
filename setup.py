@@ -60,7 +60,7 @@ setup(
     install_requires=[
         "django-jsonfield>=0.8",
         "stripe>=1.7.9",
-        "django>=1.6",
+        "django>=1.7",
         "pytz",
         "six",
     ],

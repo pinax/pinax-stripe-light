@@ -7,12 +7,13 @@ from django.test import TestCase
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
+from django.contrib.auth import get_user_model
+
 import stripe
 
 from mock import patch
 
 from ..models import Customer, CurrentSubscription
-from ..utils import get_user_model
 from ..views import SubscribeView
 
 

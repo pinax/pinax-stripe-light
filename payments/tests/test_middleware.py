@@ -6,13 +6,12 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.utils import timezone
 
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 
 from mock import Mock
 
 from ..middleware import ActiveSubscriptionMiddleware
 from ..models import Customer, CurrentSubscription
-from ..utils import get_user_model
 
 
 class DummySession(dict):

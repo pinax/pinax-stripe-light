@@ -3,13 +3,12 @@ import decimal
 from django.test import TestCase
 from django.utils import timezone
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, get_user_model
 
 from mock import Mock
 
 from ..models import CurrentSubscription, Customer
 from ..templatetags.payments_tags import change_plan_form, subscribe_form
-from ..utils import get_user_model
 
 from .test_middleware import DummySession
 

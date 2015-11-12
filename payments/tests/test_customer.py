@@ -3,11 +3,12 @@ import decimal
 
 from django.test import TestCase
 
+from django.contrib.auth import get_user_model
+
 from mock import patch, PropertyMock, Mock
 
 from ..models import Customer, Charge
 from ..signals import card_changed
-from ..utils import get_user_model
 
 
 class TestCustomer(TestCase):

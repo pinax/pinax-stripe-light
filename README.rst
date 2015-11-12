@@ -45,14 +45,13 @@ added to them once they do:
 * better handling of one-off charges - `Issue #43`_
 
 
-Subsequent milestones:
+Subsequent (shorter) milestones involve adding support for the following Stripe services:
 
-* support for the following Stripe services:
-** ACH - `Issue #173`_
-** Connect - `Issue #174`_
-** File Uploads - `Issue #175`_
-** Bitcoin - `Issue #176`_
-** Alipay - `Issue #177`_
+* ACH - `Issue #173`_
+* Connect - `Issue #174`_
+* File Uploads - `Issue #175`_
+* Bitcoin - `Issue #176`_
+* Alipay - `Issue #177`_
 
 
 Pinax

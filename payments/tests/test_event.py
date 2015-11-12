@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from mock import patch, Mock
 
 from ..models import Customer, Event, CurrentSubscription
-from payments.signals import WEBHOOK_SIGNALS
+from ..signals import WEBHOOK_SIGNALS
 
 
 class TestEventMethods(TestCase):

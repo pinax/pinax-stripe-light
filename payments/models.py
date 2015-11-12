@@ -3,17 +3,16 @@ import decimal
 import json
 import traceback
 
-import six
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.db import models
 from django.utils import timezone
-from django.utils.encoding import smart_str
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str, smart_text
 from django.template.loader import render_to_string
 
 from django.contrib.sites.models import Site
 
+import six
 import stripe
 
 from jsonfield.fields import JSONField

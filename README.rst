@@ -24,7 +24,7 @@ Django Stripe Payments
 Pinax
 ------
 
-Pinax is an open-source platform built on the Django Web Framework. It is an ecosystem of reusable Django apps, themes, and starter project templates. 
+Pinax is an open-source platform built on the Django Web Framework. It is an ecosystem of reusable Django apps, themes, and starter project templates.
 This collection can be found at http://pinaxproject.com.
 
 This app was developed as part of the Pinax ecosystem but is just a Django app and can be used independently of other Pinax apps.
@@ -46,7 +46,7 @@ Some suggested integration steps:
   4. Set up SSL if you have not already.
   5. Define some plans (see docs).
   6. Run syncdb to generate the necessary tables, then init_plans and init_customers.
-  
+
 
 Development
 ------------
@@ -72,6 +72,3 @@ In order to foster a kind, inclusive, and harassment-free community, the Pinax P
 Pinax Project Blog and Twitter
 -------------------------------
 For updates and news regarding the Pinax Project, please follow us on Twitter at @pinaxproject and check out our blog http://blog.pinaxproject.com.
-
-
-

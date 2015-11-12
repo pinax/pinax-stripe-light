@@ -58,7 +58,7 @@ setup(
         "Framework :: Django",
     ],
     install_requires=[
-        "django-jsonfield>=0.8",
+        "django-jsonfield>=0.9.15",
         "stripe>=1.7.9",
         "django>=1.7",
         "pytz",

@@ -21,6 +21,36 @@ Django Stripe Payments
     :target:  https://pypi.python.org/pypi/django-stripe-payments/
 
 
+Plans
+-----
+
+*November 12, 2015*–A long time ago we started a `2.0 Milestone`_ then when
+got really busy with other areas of Pinax, our day jobs, and life. Today, we
+getting back into the swing of things starting with this ``long-overdue-updates``
+branch that initially is just doing a bit of clean up.
+
+These items will be made into issues in the `2.0 Milestone`_. Links will be
+added to them once they do:
+
+* address namespace issue with ``payments``
+* full Python 3 compatibility (DSP should support every Python that Django supports)
+* make sure custom user model support is fully in place
+* support Django 1.7, 1.8, 1.9 (currently ``master``)
+* add migrations
+* support for the following Stripe services:
+  * File Uploads
+  * Connect
+  * Bitcoin
+  * Alipay
+  * ACH
+* update for latest / greatest API compatiblity
+* refactor out ``payments/settings.py`` to ``payments/conf.py`` to support django-appconf or do something with ``payments/apps.py``
+* add hooksets for key points of extensibility
+* convert ajax views to CBVs
+* add new webhooks
+* better handling of one-off charges
+
+
 Pinax
 ------
 
@@ -72,3 +102,6 @@ In order to foster a kind, inclusive, and harassment-free community, the Pinax P
 Pinax Project Blog and Twitter
 -------------------------------
 For updates and news regarding the Pinax Project, please follow us on Twitter at @pinaxproject and check out our blog http://blog.pinaxproject.com.
+
+
+.. _2.0 Milestone: https://github.com/pinax/django-stripe-payments/issues?q=is%3Aopen+is%3Aissue+milestone%3A2.0

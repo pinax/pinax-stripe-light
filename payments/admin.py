@@ -28,7 +28,6 @@ def user_search_fields():
         try:
             # get_field_by_name throws FieldDoesNotExist if the field is not
             # present on the model
-            # pylint: disable=W0212,E1103
             User._meta.get_field_by_name("email")
             fields += ["user__email"]
         except FieldDoesNotExist:

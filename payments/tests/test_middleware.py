@@ -1,4 +1,3 @@
-# pylint: disable=C0301
 import decimal
 
 from django.conf import settings
@@ -52,7 +51,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         response = self.middleware.process_request(self.request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
-            response._headers["location"][1],  # pylint: disable=W0212
+            response._headers["location"][1],
             reverse(settings.SUBSCRIPTION_REQUIRED_REDIRECT)
         )
 
@@ -78,7 +77,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         response = self.middleware.process_request(self.request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
-            response._headers["location"][1],  # pylint: disable=W0212
+            response._headers["location"][1],
             reverse(settings.SUBSCRIPTION_REQUIRED_REDIRECT)
         )
 

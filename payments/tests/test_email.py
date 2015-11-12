@@ -1,4 +1,3 @@
-# pylint: disable=C0301
 import decimal
 
 from django.core import mail

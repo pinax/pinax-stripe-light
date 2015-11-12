@@ -51,7 +51,7 @@ class StripeObject(models.Model):
     stripe_id = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
 
-    class Meta:  # pylint: disable=E0012,C1001
+    class Meta:
         abstract = True
 
 
@@ -208,7 +208,6 @@ class Event(StripeObject):
 
 
 class Transfer(StripeObject):
-    # pylint: disable=C0301
     event = models.ForeignKey(Event, related_name="transfers")
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=25, default="usd")
@@ -652,7 +651,7 @@ class CurrentSubscription(models.Model):
 
         return True
 
-    def delete(self, using=None):  # pylint: disable=E1002
+    def delete(self, using=None):
         """
         Set values to None while deleting the object so that any lingering
         references will not show previous values (such as when an Event
@@ -682,7 +681,7 @@ class Invoice(models.Model):
     charge = models.CharField(max_length=50, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
-    class Meta:  # pylint: disable=E0012,C1001
+    class Meta:
         ordering = ["-date"]
 
     def retry(self):
@@ -722,7 +721,6 @@ class Invoice(models.Model):
             )
         )
         if not created:
-            # pylint: disable=C0301
             invoice.attempted = stripe_invoice["attempted"]
             invoice.attempts = stripe_invoice["attempt_count"]
             invoice.closed = stripe_invoice["closed"]
@@ -838,7 +836,6 @@ class Charge(StripeObject):
         return eligible_to_refund
 
     def refund(self, amount=None):
-        # pylint: disable=E1121
         charge_obj = stripe.Charge.retrieve(
             self.stripe_id
         ).refund(
@@ -877,7 +874,6 @@ class Charge(StripeObject):
         if data.get("description"):
             obj.description = data["description"]
         if data.get("amount_refunded"):
-            # pylint: disable=C0301
             obj.amount_refunded = convert_amount_for_db(data["amount_refunded"], obj.currency)
         if data["refunded"]:
             obj.amount_refunded = obj.amount

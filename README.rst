@@ -37,18 +37,22 @@ added to them once they do:
 * make sure custom user model support is fully in place - `Issue #172`_
 * support Django 1.7, 1.8, 1.9 (currently ``master``) - `Issue #171`_
 * add migrations - `Issue #164`_
-* support for the following Stripe services:
-  * File Uploads - `Issue #175`_ (later milestone)
-  * Connect - `Issue #174`_ (later milestone)
-  * Bitcoin - `Issue #176`_ (later milestone)
-  * Alipay - `Issue #177`_ (later milestone)
-  * ACH - `Issue #173`_
 * update for latest / greatest API compatiblity - `Issue #178`_
 * refactor out ``payments/settings.py`` to ``payments/conf.py`` to support django-appconf or do something with ``payments/apps.py`` - `Issue #179`_
 * add hooksets for key points of extensibility - `Issue #180`_
 * convert ajax views to CBVs - `Issue #181`_
 * add new webhooks - `Issue #182`_
 * better handling of one-off charges - `Issue #43`_
+
+
+Subsequent milestones:
+
+* support for the following Stripe services:
+** ACH - `Issue #173`_
+** Connect - `Issue #174`_
+** File Uploads - `Issue #175`_
+** Bitcoin - `Issue #176`_
+** Alipay - `Issue #177`_
 
 
 Pinax

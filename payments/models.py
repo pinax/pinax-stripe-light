@@ -3,7 +3,6 @@ import decimal
 import json
 import traceback
 
-from django.conf import settings
 from django.core.mail import EmailMessage
 from django.db import models
 from django.utils import timezone
@@ -17,16 +16,9 @@ import stripe
 
 from jsonfield.fields import JSONField
 
+from .conf import settings
+from .hooks import hookset
 from .managers import CustomerManager, ChargeManager, TransferManager
-from .settings import (
-    DEFAULT_PLAN,
-    INVOICE_FROM_EMAIL,
-    PAYMENTS_PLANS,
-    plan_from_stripe_id,
-    SEND_EMAIL_RECEIPTS,
-    TRIAL_PERIOD_FOR_USER_CALLBACK,
-    PLAN_QUANTITY_CALLBACK
-)
 from .signals import (
     cancelled,
     card_changed,
@@ -41,8 +33,14 @@ from .utils import (
 )
 
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
-stripe.api_version = getattr(settings, "STRIPE_API_VERSION", "2012-11-07")
+stripe.api_key = settings.PINAX_STRIPE_SECRET_KEY
+stripe.api_version = settings.PINAX_STRIPE_API_VERSION
+
+
+def plan_from_stripe_id(stripe_id):
+    for key in settings.PINAX_STRIPE_PLANS.keys():
+        if settings.PINAX_STRIPE_PLANS[key].get("stripe_plan_id") == stripe_id:
+            return key
 
 
 class StripeObject(models.Model):
@@ -375,23 +373,18 @@ class Customer(StripeObject):
     def create(cls, user, card=None, plan=None, charge_immediately=True):
 
         if card and plan:
-            plan = PAYMENTS_PLANS[plan]["stripe_plan_id"]
-        elif DEFAULT_PLAN:
-            plan = PAYMENTS_PLANS[DEFAULT_PLAN]["stripe_plan_id"]
+            plan = settings.PINAX_STRIPE_PLANS[plan]["stripe_plan_id"]
+        elif settings.PINAX_STRIPE_DEFAULT_PLAN:
+            plan = settings.PINAX_STRIPE_PLANS[settings.PINAX_STRIPE_DEFAULT_PLAN]["stripe_plan_id"]
         else:
             plan = None
 
-        trial_end = None
-        if TRIAL_PERIOD_FOR_USER_CALLBACK and plan:
-            trial_days = TRIAL_PERIOD_FOR_USER_CALLBACK(user)
-            trial_end = datetime.datetime.utcnow() + datetime.timedelta(
-                days=trial_days
-            )
+        trial_end = hookset.trial_period(user, plan)
 
         stripe_customer = stripe.Customer.create(
             email=user.email,
             card=card,
-            plan=plan or DEFAULT_PLAN,
+            plan=plan or settings.PINAX_STRIPE_DEFAULT_PLAN,
             trial_end=trial_end
         )
 
@@ -544,11 +537,7 @@ class Customer(StripeObject):
 
     def subscribe(self, plan, quantity=None, trial_days=None,
                   charge_immediately=True, token=None, coupon=None):
-        if quantity is None:
-            if PLAN_QUANTITY_CALLBACK is not None:
-                quantity = PLAN_QUANTITY_CALLBACK(self)
-            else:
-                quantity = 1
+        quantity = hookset.adjust_subscription_quantity(customer=self, plan=plan, quantity=quantity)
         cu = self.stripe_customer
 
         subscription_params = {}
@@ -558,7 +547,7 @@ class Customer(StripeObject):
         if token:
             subscription_params["card"] = token
 
-        subscription_params["plan"] = PAYMENTS_PLANS[plan]["stripe_plan_id"]
+        subscription_params["plan"] = settings.PINAX_STRIPE_PLANS[plan]["stripe_plan_id"]
         subscription_params["quantity"] = quantity
         subscription_params["coupon"] = coupon
         resp = cu.update_subscription(**subscription_params)
@@ -630,7 +619,7 @@ class CurrentSubscription(models.Model):
         return self.amount * self.quantity
 
     def plan_display(self):
-        return PAYMENTS_PLANS[self.plan]["name"]
+        return settings.PINAX_STRIPE_PLANS[self.plan]["name"]
 
     def status_display(self):
         return self.status.replace("_", " ").title()
@@ -777,7 +766,7 @@ class Invoice(models.Model):
         return invoice
 
     @classmethod
-    def handle_event(cls, event, send_receipt=SEND_EMAIL_RECEIPTS):
+    def handle_event(cls, event, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
         valid_events = ["invoice.payment_failed", "invoice.payment_succeeded"]
         if event.kind in valid_events:
             invoice_data = event.message["data"]["object"]
@@ -801,7 +790,7 @@ class InvoiceItem(models.Model):
     quantity = models.IntegerField(null=True)
 
     def plan_display(self):
-        return PAYMENTS_PLANS[self.plan]["name"]
+        return settings.PINAX_STRIPE_PLANS[self.plan]["name"]
 
 
 class Charge(StripeObject):
@@ -895,7 +884,7 @@ class Charge(StripeObject):
                 subject,
                 message,
                 to=[self.customer.user.email],
-                from_email=INVOICE_FROM_EMAIL
+                from_email=settings.PINAX_STRIPE_INVOICE_FROM_EMAIL
             ).send()
             self.receipt_sent = num_sent > 0
             self.save()

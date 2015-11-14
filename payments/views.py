@@ -1,6 +1,5 @@
 import json
 
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
@@ -15,8 +14,8 @@ import stripe
 
 from eldarion.ajax.views import EldarionAjaxResponseMixin
 
-from . import settings as app_settings
-from .forms import PlanForm
+from .conf import settings
+from .forms import PlanForm, PLAN_CHOICES
 from .models import (
     Customer,
     CurrentSubscription,
@@ -30,9 +29,9 @@ class PaymentsContextMixin(object):
     def get_context_data(self, **kwargs):
         context = super(PaymentsContextMixin, self).get_context_data(**kwargs)
         context.update({
-            "STRIPE_PUBLIC_KEY": app_settings.STRIPE_PUBLIC_KEY,
-            "PLAN_CHOICES": app_settings.PLAN_CHOICES,
-            "PAYMENT_PLANS": app_settings.PAYMENTS_PLANS
+            "STRIPE_PUBLIC_KEY": settings.PINAX_STRIPE_PUBLIC_KEY,
+            "PLAN_CHOICES": PLAN_CHOICES,
+            "PAYMENT_PLANS": settings.PINAX_STRIPE_PLANS
         })
         return context
 
@@ -178,7 +177,7 @@ class AjaxSubscribe(EldarionAjaxResponseMixin, CustomerMixin, View):
             self.customer.update_card(token)
 
     def form_valid(self, form):
-        data = {"plans": settings.PAYMENTS_PLANS}
+        data = {"plans": settings.PINAX_STRIPE_PLANS}
         self.set_customer()
         try:
             if self.request.POST.get("stripe_token"):

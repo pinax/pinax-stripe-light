@@ -33,9 +33,9 @@ DEFAULT_SETTINGS = dict(
         "payments",
     ],
     SITE_ID=1,
-    STRIPE_PUBLIC_KEY="",
-    STRIPE_SECRET_KEY="",
-    PAYMENTS_PLANS={
+    PINAX_STRIPE_PUBLIC_KEY="",
+    PINAX_STRIPE_SECRET_KEY="",
+    PINAX_STRIPE_PLANS={
         "free": {
             "name": "Free Plan"
         },
@@ -64,10 +64,9 @@ DEFAULT_SETTINGS = dict(
             "currency": "usd"
         }
     },
-    SUBSCRIPTION_REQUIRED_EXCEPTION_URLS=["payments_subscribe"],
-    SUBSCRIPTION_REQUIRED_REDIRECT="payments_subscribe",
-    PAYMENTS_TRIAL_PERIOD_FOR_USER_CALLBACK="payments.tests.callbacks.callback_demo",
-    PAYMENTS_PLAN_QUANTITY_CALLBACK="payments.tests.callbacks.quantity_call_back"
+    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS=["payments_subscribe"],
+    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT="payments_subscribe",
+    PINAX_STRIPE_HOOKSET="payments.tests.hooks.TestHookSet"
 )
 
 

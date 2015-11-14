@@ -1,6 +1,5 @@
 import decimal
 
-from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.utils import timezone
@@ -9,6 +8,7 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 
 from mock import Mock
 
+from ..conf import settings
 from ..middleware import ActiveSubscriptionMiddleware
 from ..models import Customer, CurrentSubscription
 
@@ -31,8 +31,8 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         self.request.META = {}
         self.request.session = DummySession()
 
-        self.old_urls = settings.SUBSCRIPTION_REQUIRED_EXCEPTION_URLS
-        settings.SUBSCRIPTION_REQUIRED_EXCEPTION_URLS += (
+        self.old_urls = settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS
+        settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS += (
             'signup',
             'password_reset'
         )
@@ -44,7 +44,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         login(self.request, user)
 
     def tearDown(self):
-        settings.SUBSCRIPTION_REQUIRED_EXCEPTION_URLS = self.old_urls
+        settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS = self.old_urls
 
     def test_authed_user_with_no_customer_redirects_on_non_exempt_url(self):
         self.request.path = "/the/app/"
@@ -52,7 +52,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
             response._headers["location"][1],
-            reverse(settings.SUBSCRIPTION_REQUIRED_REDIRECT)
+            reverse(settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT)
         )
 
     def test_authed_user_with_no_customer_passes_with_exempt_url(self):
@@ -78,7 +78,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
             response._headers["location"][1],
-            reverse(settings.SUBSCRIPTION_REQUIRED_REDIRECT)
+            reverse(settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT)
         )
 
     def test_authed_user_with_active_subscription_redirects_on_non_exempt_url(self):

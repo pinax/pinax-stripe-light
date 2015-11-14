@@ -1,8 +1,6 @@
 import datetime
 import decimal
-import importlib
 
-from django.core.exceptions import ImproperlyConfigured
 from django.utils import timezone
 
 
@@ -21,25 +19,6 @@ def convert_tstamp(response, field_name=None):
     except KeyError:
         pass
     return None
-
-
-def load_path_attr(path):  # pragma: no cover
-    i = path.rfind(".")
-    module, attr = path[:i], path[i + 1:]
-    try:
-        mod = importlib.import_module(module)
-    except ImportError as e:
-        raise ImproperlyConfigured("Error importing {0}: '{1}'".format(module, e))
-    try:
-        attr = getattr(mod, attr)
-    except AttributeError:
-        raise ImproperlyConfigured(
-            "Module '{0}' does not define a '{1}'".format(
-                module,
-                attr
-            )
-        )
-    return attr
 
 
 # currencies those amount=1 means 100 cents

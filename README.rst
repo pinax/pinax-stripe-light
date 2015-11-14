@@ -21,10 +21,43 @@ Django Stripe Payments
     :target:  https://pypi.python.org/pypi/django-stripe-payments/
 
 
+Plans
+-----
+
+*November 12, 2015*–A long time ago we started a `2.0 Milestone`_ then when
+got really busy with other areas of Pinax, our day jobs, and life. Today, we
+getting back into the swing of things starting with this ``long-overdue-updates``
+branch that initially is just doing a bit of clean up.
+
+These items will be made into issues in the `2.0 Milestone`_. Links will be
+added to them once they do:
+
+* address namespace issue with ``payments`` - `Issue #169`_
+* full Python 3 compatibility (DSP should support every Python that Django supports) - `Issue #170`_
+* make sure custom user model support is fully in place - `Issue #172`_
+* support Django 1.7, 1.8, 1.9 (currently ``master``) - `Issue #171`_
+* add migrations - `Issue #164`_
+* update for latest / greatest API compatiblity - `Issue #178`_
+* refactor out ``payments/settings.py`` to ``payments/conf.py`` to support django-appconf or do something with ``payments/apps.py`` - `Issue #179`_
+* add hooksets for key points of extensibility - `Issue #180`_
+* convert ajax views to CBVs - `Issue #181`_
+* add new webhooks - `Issue #182`_
+* better handling of one-off charges - `Issue #43`_
+
+
+Subsequent (shorter) milestones involve adding support for the following Stripe services:
+
+* ACH - `Issue #173`_
+* Connect - `Issue #174`_
+* File Uploads - `Issue #175`_
+* Bitcoin - `Issue #176`_
+* Alipay - `Issue #177`_
+
+
 Pinax
 ------
 
-Pinax is an open-source platform built on the Django Web Framework. It is an ecosystem of reusable Django apps, themes, and starter project templates. 
+Pinax is an open-source platform built on the Django Web Framework. It is an ecosystem of reusable Django apps, themes, and starter project templates.
 This collection can be found at http://pinaxproject.com.
 
 This app was developed as part of the Pinax ecosystem but is just a Django app and can be used independently of other Pinax apps.
@@ -46,7 +79,7 @@ Some suggested integration steps:
   4. Set up SSL if you have not already.
   5. Define some plans (see docs).
   6. Run syncdb to generate the necessary tables, then init_plans and init_customers.
-  
+
 
 Development
 ------------
@@ -74,4 +107,20 @@ Pinax Project Blog and Twitter
 For updates and news regarding the Pinax Project, please follow us on Twitter at @pinaxproject and check out our blog http://blog.pinaxproject.com.
 
 
-
+.. _2.0 Milestone: https://github.com/pinax/django-stripe-payments/issues?q=is%3Aopen+is%3Aissue+milestone%3A2.0
+.. _Issue #169: https://github.com/pinax/django-stripe-payments/issues/169
+.. _Issue #170: https://github.com/pinax/django-stripe-payments/issues/170
+.. _Issue #171: https://github.com/pinax/django-stripe-payments/issues/171
+.. _Issue #172: https://github.com/pinax/django-stripe-payments/issues/172
+.. _Issue #164: https://github.com/pinax/django-stripe-payments/issues/164
+.. _Issue #173: https://github.com/pinax/django-stripe-payments/issues/173
+.. _Issue #174: https://github.com/pinax/django-stripe-payments/issues/174
+.. _Issue #175: https://github.com/pinax/django-stripe-payments/issues/175
+.. _Issue #176: https://github.com/pinax/django-stripe-payments/issues/176
+.. _Issue #177: https://github.com/pinax/django-stripe-payments/issues/177
+.. _Issue #178: https://github.com/pinax/django-stripe-payments/issues/178
+.. _Issue #179: https://github.com/pinax/django-stripe-payments/issues/179
+.. _Issue #180: https://github.com/pinax/django-stripe-payments/issues/180
+.. _Issue #181: https://github.com/pinax/django-stripe-payments/issues/181
+.. _Issue #182: https://github.com/pinax/django-stripe-payments/issues/182
+.. _Issue #43: https://github.com/pinax/django-stripe-payments/issues/43

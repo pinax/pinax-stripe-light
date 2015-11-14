@@ -4,9 +4,10 @@ import decimal
 from django.test import TestCase
 from django.utils import timezone
 
+from django.contrib.auth import get_user_model
+
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_CREATED_TEST_DATA2
 from ..models import Event, Transfer, Customer, CurrentSubscription, Charge
-from ..utils import get_user_model
 
 
 class CustomerManagerTest(TestCase):

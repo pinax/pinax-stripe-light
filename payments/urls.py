@@ -1,22 +1,30 @@
-from django.conf.urls import patterns, url
-from django.contrib.auth.decorators import login_required
+from django.conf.urls import url
+
+try:
+    from account.decorators import login_required
+except ImportError:
+    from django.contrib.auth.decorators import login_required
 
 from .views import (
     CancelView,
     ChangeCardView,
     ChangePlanView,
     HistoryView,
-    SubscribeView
+    SubscribeView,
+    webhook,
+    subscribe,
+    change_card,
+    change_plan,
+    cancel
 )
 
 
-urlpatterns = patterns(
-    "payments.views",
-    url(r"^webhook/$", "webhook", name="payments_webhook"),
-    url(r"^a/subscribe/$", "subscribe", name="payments_ajax_subscribe"),
-    url(r"^a/change/card/$", "change_card", name="payments_ajax_change_card"),
-    url(r"^a/change/plan/$", "change_plan", name="payments_ajax_change_plan"),
-    url(r"^a/cancel/$", "cancel", name="payments_ajax_cancel"),
+urlpatterns = [
+    url(r"^webhook/$", webhook, name="payments_webhook"),
+    url(r"^a/subscribe/$", subscribe, name="payments_ajax_subscribe"),
+    url(r"^a/change/card/$", change_card, name="payments_ajax_change_card"),
+    url(r"^a/change/plan/$", change_plan, name="payments_ajax_change_plan"),
+    url(r"^a/cancel/$", cancel, name="payments_ajax_cancel"),
     url(
         r"^subscribe/$",
         login_required(SubscribeView.as_view()),
@@ -42,4 +50,4 @@ urlpatterns = patterns(
         login_required(HistoryView.as_view()),
         name="payments_history"
     ),
-)
+]

@@ -1,4 +1,3 @@
-# pylint: disable=C0301
 import decimal
 import json
 
@@ -7,12 +6,13 @@ from django.test import TestCase
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
+from django.contrib.auth import get_user_model
+
 import stripe
 
 from mock import patch
 
 from ..models import Customer, CurrentSubscription
-from ..utils import get_user_model
 from ..views import SubscribeView
 
 
@@ -168,7 +168,7 @@ class AjaxViewsTests(TestCase):
         self.assertEqual(subscribe_mock.call_count, 1)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            json.loads(smart_str(response.content))["location"],  # pylint: disable=E1103
+            json.loads(smart_str(response.content))["location"],
             reverse("payments_history")
         )
 
@@ -186,7 +186,7 @@ class AjaxViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(create_cus_mock.call_count, 1)
         self.assertEqual(
-            json.loads(smart_str(response.content))["location"],  # pylint: disable=E1103
+            json.loads(smart_str(response.content))["location"],
             reverse("payments_history")
         )
 

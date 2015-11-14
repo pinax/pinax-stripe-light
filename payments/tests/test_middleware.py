@@ -1,4 +1,3 @@
-# pylint: disable=C0301
 import decimal
 
 from django.conf import settings
@@ -6,13 +5,12 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.utils import timezone
 
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 
 from mock import Mock
 
 from ..middleware import ActiveSubscriptionMiddleware
 from ..models import Customer, CurrentSubscription
-from ..utils import get_user_model
 
 
 class DummySession(dict):
@@ -53,7 +51,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         response = self.middleware.process_request(self.request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
-            response._headers["location"][1],  # pylint: disable=W0212
+            response._headers["location"][1],
             reverse(settings.SUBSCRIPTION_REQUIRED_REDIRECT)
         )
 
@@ -79,7 +77,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         response = self.middleware.process_request(self.request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
-            response._headers["location"][1],  # pylint: disable=W0212
+            response._headers["location"][1],
             reverse(settings.SUBSCRIPTION_REQUIRED_REDIRECT)
         )
 

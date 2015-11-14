@@ -1,8 +1,9 @@
 import datetime
 import decimal
+import importlib
 
 from django.core.exceptions import ImproperlyConfigured
-from django.utils import importlib, timezone
+from django.utils import timezone
 
 
 def convert_tstamp(response, field_name=None):
@@ -20,16 +21,6 @@ def convert_tstamp(response, field_name=None):
     except KeyError:
         pass
     return None
-
-
-def get_user_model():  # pragma: no cover
-    try:
-        # pylint: disable=E0611
-        from django.contrib.auth import get_user_model as django_get_user_model
-        return django_get_user_model()
-    except ImportError:
-        from django.contrib.auth.models import User
-        return User
 
 
 def load_path_attr(path):  # pragma: no cover

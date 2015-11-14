@@ -1,13 +1,13 @@
-# pylint: disable=C0301
 import decimal
 
 from django.core import mail
 from django.test import TestCase
 
+from django.contrib.auth import get_user_model
+
 from mock import patch
 
 from ..models import Customer
-from ..utils import get_user_model
 
 
 class EmailReceiptTest(TestCase):

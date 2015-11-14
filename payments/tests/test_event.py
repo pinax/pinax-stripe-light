@@ -1,12 +1,12 @@
-# pylint: disable=C0301
 from django.test import TestCase
 from django.utils import timezone
+
+from django.contrib.auth import get_user_model
 
 from mock import patch, Mock
 
 from ..models import Customer, Event, CurrentSubscription
-from payments.signals import WEBHOOK_SIGNALS
-from ..utils import get_user_model
+from ..signals import WEBHOOK_SIGNALS
 
 
 class TestEventMethods(TestCase):

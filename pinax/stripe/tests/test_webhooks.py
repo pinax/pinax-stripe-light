@@ -64,7 +64,7 @@ class TestWebhook(TestCase):
         StripeEventMock.return_value.to_dict.return_value = data
         msg = json.dumps(data)
         resp = Client().post(
-            reverse("payments_webhook"),
+            reverse("pinax_stripe_webhook"),
             six.u(msg),
             content_type="application/json"
         )
@@ -76,7 +76,7 @@ class TestWebhook(TestCase):
         Event.objects.create(stripe_id=123, livemode=True)
         msg = json.dumps(data)
         resp = Client().post(
-            reverse("payments_webhook"),
+            reverse("pinax_stripe_webhook"),
             six.u(msg),
             content_type="application/json"
         )

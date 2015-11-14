@@ -23,7 +23,7 @@ class DummySession(dict):
 
 
 class ActiveSubscriptionMiddlewareTests(TestCase):
-    urls = 'payments.tests.test_urls'
+    urls = 'pinax.stripe.tests.test_urls'
 
     def setUp(self):
         self.middleware = ActiveSubscriptionMiddleware()

@@ -10,12 +10,11 @@ def read(*parts):
         return fp.read()
 
 
-PACKAGE = "payments"
-NAME = "django-stripe-payments"
+NAME = "pinax-stripe"
 DESCRIPTION = "a payments Django app for Stripe"
 AUTHOR = "Pinax Team"
 AUTHOR_EMAIL = "team@pinaxproject.com"
-URL = "https://github.com/pinax/django-stripe-payments"
+URL = "https://github.com/pinax/pinax-stripe"
 
 
 setup(
@@ -29,21 +28,21 @@ setup(
     url=URL,
     packages=find_packages(),
     package_data={
-        "payments": [
-            "templates/payments/email/body_base.txt",
-            "templates/payments/email/body.txt",
-            "templates/payments/email/subject.txt",
-            "templates/payments/_cancel_form.html",
-            "templates/payments/_change_card_form.html",
-            "templates/payments/_change_plan_form.html",
-            "templates/payments/_subscribe_form.html",
-            "templates/payments/_subscription_status.html",
-            "templates/payments/base.html",
-            "templates/payments/cancel.html",
-            "templates/payments/change_card.html",
-            "templates/payments/change_plan.html",
-            "templates/payments/history.html",
-            "templates/payments/subscribe.html",
+        "pinax.stripe": [
+            "templates/pinax/stripe/email/body_base.txt",
+            "templates/pinax/stripe/email/body.txt",
+            "templates/pinax/stripe/email/subject.txt",
+            "templates/pinax/stripe/_cancel_form.html",
+            "templates/pinax/stripe/_change_card_form.html",
+            "templates/pinax/stripe/_change_plan_form.html",
+            "templates/pinax/stripe/_subscribe_form.html",
+            "templates/pinax/stripe/_subscription_status.html",
+            "templates/pinax/stripe/base.html",
+            "templates/pinax/stripe/cancel.html",
+            "templates/pinax/stripe/change_card.html",
+            "templates/pinax/stripe/change_plan.html",
+            "templates/pinax/stripe/history.html",
+            "templates/pinax/stripe/subscribe.html",
         ]
     },
     classifiers=[

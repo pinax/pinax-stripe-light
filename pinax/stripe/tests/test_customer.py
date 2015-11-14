@@ -25,6 +25,9 @@ class TestCustomer(TestCase):
             card_kind="Visa"
         )
 
+    def test_model_table_name(self):
+        self.assertEquals(Customer()._meta.db_table, "pinax_stripe_customer")
+
     @patch("stripe.Customer.retrieve")
     @patch("stripe.Customer.create")
     def test_customer_create_user_only(self, CreateMock, RetrieveMock):

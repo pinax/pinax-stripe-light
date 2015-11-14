@@ -1,7 +1,7 @@
 [run]
-source = payments
-omit = payments/tests/*,payments/admin.py
+source = pinax
+omit = pinax/stripe/tests/*,pinax/stripe/admin.py
 branch = true
 
 [report]
-omit = payments/tests/*,payments/admin.py
+omit = pinax/stripe/tests/*,pinax/stripe/admin.py

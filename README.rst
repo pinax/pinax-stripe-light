@@ -1,6 +1,6 @@
-======================
-Django Stripe Payments
-======================
+============
+Pinax Stripe
+============
 
 .. image:: http://slack.pinaxproject.com/badge.svg
     :target: http://slack.pinaxproject.com/
@@ -19,6 +19,10 @@ Django Stripe Payments
 
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
     :target:  https://pypi.python.org/pypi/django-stripe-payments/
+
+
+This app was formerly called `django-stripe-payments` and has been renamed to
+avoid namespace collisions and to have more consistancy with Pinax.
 
 
 Plans

@@ -49,7 +49,7 @@ def _ajax_response(request, template, **kwargs):
 
 
 class SubscribeView(PaymentsContextMixin, TemplateView):
-    template_name = "payments/subscribe.html"
+    template_name = "pinax/stripe/subscribe.html"
 
     def get_context_data(self, **kwargs):
         context = super(SubscribeView, self).get_context_data(**kwargs)
@@ -60,19 +60,19 @@ class SubscribeView(PaymentsContextMixin, TemplateView):
 
 
 class ChangeCardView(PaymentsContextMixin, TemplateView):
-    template_name = "payments/change_card.html"
+    template_name = "pinax/stripe/change_card.html"
 
 
 class CancelView(PaymentsContextMixin, TemplateView):
-    template_name = "payments/cancel.html"
+    template_name = "pinax/stripe/cancel.html"
 
 
 class ChangePlanView(SubscribeView):
-    template_name = "payments/change_plan.html"
+    template_name = "pinax/stripe/change_plan.html"
 
 
 class HistoryView(PaymentsContextMixin, TemplateView):
-    template_name = "payments/history.html"
+    template_name = "pinax/stripe/history.html"
 
 
 class CustomerMixin(object):
@@ -86,7 +86,7 @@ class CustomerMixin(object):
 
 class AjaxChangeCard(EldarionAjaxResponseMixin, CustomerMixin, View):
 
-    template_fragment = "payments/_change_card_form.html"
+    template_fragment = "pinax/stripe/_change_card_form.html"
 
     def send_invoice(self):
         if self.customer.card_fingerprint == "":
@@ -112,7 +112,7 @@ class AjaxChangeCard(EldarionAjaxResponseMixin, CustomerMixin, View):
 class AjaxChangePlan(EldarionAjaxResponseMixin, CustomerMixin, View):
 
     form_class = PlanForm
-    template_fragment = "payments/_change_plan_form.html"
+    template_fragment = "pinax/stripe/_change_plan_form.html"
 
     @property
     def current_plan(self):
@@ -154,7 +154,7 @@ class AjaxChangePlan(EldarionAjaxResponseMixin, CustomerMixin, View):
 class AjaxSubscribe(EldarionAjaxResponseMixin, CustomerMixin, View):
 
     form_class = PlanForm
-    template_fragment = "payments/_subscribe_form.html"
+    template_fragment = "pinax/stripe/_subscribe_form.html"
 
     def redirect(self):
         return self.response_class(
@@ -164,7 +164,7 @@ class AjaxSubscribe(EldarionAjaxResponseMixin, CustomerMixin, View):
         )
 
     def get_success_url(self):
-        return reverse("payments_history")
+        return reverse("pinax_stripe_history")
 
     def set_customer(self):
         try:
@@ -206,7 +206,7 @@ class AjaxSubscribe(EldarionAjaxResponseMixin, CustomerMixin, View):
 
 class AjaxCancelSubscription(EldarionAjaxResponseMixin, CustomerMixin, View):
 
-    template_fragment = "payments/_cancel_form.html"
+    template_fragment = "pinax/stripe/_cancel_form.html"
 
     def post(self, request, *args, **kwargs):
         try:

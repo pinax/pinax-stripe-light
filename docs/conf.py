@@ -5,9 +5,9 @@ extensions = []
 templates_path = []
 source_suffix = '.rst'
 master_doc = 'index'
-project = u'django-stripe-payments'
+project = u'pinax-stripe'
 copyright_holder = 'James Tauber and Contributors'
-copyright = u'2014, %s' % copyright_holder
+copyright = u'2015, %s' % copyright_holder
 exclude_patterns = ['_build']
 pygments_style = 'sphinx'
 html_theme = 'default'
@@ -20,5 +20,5 @@ man_pages = [
      [copyright_holder], 1)
 ]
 
-version = pkg_resources.get_distribution("payments").version
+version = pkg_resources.get_distribution("pinax-stripe").version
 release = version

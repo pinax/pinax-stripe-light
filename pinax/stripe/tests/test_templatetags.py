@@ -8,12 +8,12 @@ from django.contrib.auth import authenticate, login, get_user_model
 from mock import Mock
 
 from ..models import CurrentSubscription, Customer
-from ..templatetags.payments_tags import change_plan_form, subscribe_form
+from ..templatetags.pinax_stripe_tags import change_plan_form, subscribe_form
 
 from .test_middleware import DummySession
 
 
-class PaymentsTagTests(TestCase):
+class PinaxStripeTagTests(TestCase):
 
     def test_change_plan_form(self):
         request = Mock()

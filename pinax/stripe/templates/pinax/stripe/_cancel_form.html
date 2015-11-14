@@ -8,7 +8,7 @@
     {% if error %}
         <div class="alert alert-error">{{ error }}</div>
     {% endif %}
-    <form class="form ajax" data-replace-closest=".cancel-subscription" action="{% url 'payments_ajax_cancel' %}" method="POST">
+    <form class="form ajax" data-replace-closest=".cancel-subscription" action="{% url 'pinax_stripe_ajax_cancel' %}" method="POST">
         {% csrf_token %}
         <div class="actions">
             <button type="submit" class="btn btn-mini btn-danger">Cancel</button>

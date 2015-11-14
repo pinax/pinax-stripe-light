@@ -6,7 +6,7 @@
     {% if error %}
         <div class="alert alert-error">{{ error }}</div>
     {% endif %}
-    <form action="{% url 'payments_ajax_subscribe' %}" class="form ajax"  data-stripe-key="{{ STRIPE_PUBLIC_KEY }}" data-replace-closest=".subscribe-form" method="POST">
+    <form action="{% url 'pinax_stripe_ajax_subscribe' %}" class="form ajax"  data-stripe-key="{{ STRIPE_PUBLIC_KEY }}" data-replace-closest=".subscribe-form" method="POST">
         {% csrf_token %}
         {{ form|as_bootstrap }}
         <input name="stripe_token" type="hidden" />

@@ -32,7 +32,7 @@ class PinaxStripeAppConf(AppConf):
     INVOICE_FROM_EMAIL = "billing@example.com"
     PLANS = {}
     DEFAULT_PLAN = None
-    HOOKSET = "payments.hooks.DefaultHookSet"
+    HOOKSET = "pinax.stripe.hooks.DefaultHookSet"
     SEND_EMAIL_RECEIPTS = True
     SUBSCRIPTION_REQUIRED_EXCEPTION_URLS = []
     SUBSCRIPTION_REQUIRED_REDIRECT = None

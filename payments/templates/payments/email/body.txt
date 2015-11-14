@@ -1,1 +1,0 @@
-{% extends "payments/email/body_base.txt" %}

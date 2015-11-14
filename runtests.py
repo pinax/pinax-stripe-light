@@ -22,7 +22,7 @@ DEFAULT_SETTINGS = dict(
         "django.contrib.auth.middleware.AuthenticationMiddleware",
         "django.contrib.messages.middleware.MessageMiddleware"
     ],
-    ROOT_URLCONF="payments.urls",
+    ROOT_URLCONF="pinax.stripe.urls",
     INSTALLED_APPS=[
         "django.contrib.auth",
         "django.contrib.contenttypes",
@@ -30,7 +30,7 @@ DEFAULT_SETTINGS = dict(
         "django.contrib.sites",
         "django_forms_bootstrap",
         "jsonfield",
-        "payments",
+        "pinax.stripe",
     ],
     SITE_ID=1,
     PINAX_STRIPE_PUBLIC_KEY="",
@@ -64,9 +64,9 @@ DEFAULT_SETTINGS = dict(
             "currency": "usd"
         }
     },
-    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS=["payments_subscribe"],
-    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT="payments_subscribe",
-    PINAX_STRIPE_HOOKSET="payments.tests.hooks.TestHookSet"
+    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS=["pinax_stripe_subscribe"],
+    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT="pinax_stripe_subscribe",
+    PINAX_STRIPE_HOOKSET="pinax.stripe.tests.hooks.TestHookSet"
 )
 
 
@@ -82,7 +82,7 @@ def runtests(*test_args):
     try:
         from django.test.runner import DiscoverRunner
         runner_class = DiscoverRunner
-        test_args = ["payments.tests"]
+        test_args = ["pinax.stripe.tests"]
     except ImportError:
         from django.test.simple import DjangoTestSuiteRunner
         runner_class = DjangoTestSuiteRunner

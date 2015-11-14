@@ -1,9 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from .mock_views import MockView
 from ..urls import urlpatterns
 
-urlpatterns += patterns(
-    '',
+urlpatterns += [
     url(
         r'^the/app/$',
         MockView.as_view(),
@@ -19,4 +18,4 @@ urlpatterns += patterns(
         MockView.as_view(),
         name='password_reset'
     ),
-)
+]

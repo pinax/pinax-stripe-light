@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 try:
     from account.decorators import login_required
@@ -19,8 +19,7 @@ from .views import (
 )
 
 
-urlpatterns = patterns(
-    "",
+urlpatterns = [
     url(r"^webhook/$", webhook, name="payments_webhook"),
     url(r"^a/subscribe/$", subscribe, name="payments_ajax_subscribe"),
     url(r"^a/change/card/$", change_card, name="payments_ajax_change_card"),
@@ -51,4 +50,4 @@ urlpatterns = patterns(
         login_required(HistoryView.as_view()),
         name="payments_history"
     ),
-)
+]

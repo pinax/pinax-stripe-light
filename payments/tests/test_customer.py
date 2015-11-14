@@ -110,6 +110,7 @@ class TestCustomer(TestCase):
         customer.subscription.current_period_start = 1348360173
         customer.subscription.current_period_end = 1375603198
         customer.subscription.plan.amount = decimal.Decimal("9.57")
+        customer.subscription.plan.currency = "usd"
         customer.subscription.status = "active"
         customer.subscription.cancel_at_period_end = True
         customer.subscription.start = 1348360173
@@ -127,6 +128,7 @@ class TestCustomer(TestCase):
         customer.subscription.current_period_start = 1348360173
         customer.subscription.current_period_end = 1375603198
         customer.subscription.plan.amount = decimal.Decimal("9.57")
+        customer.subscription.plan.currency = "usd"
         customer.subscription.status = "active"
         customer.subscription.cancel_at_period_end = True
         customer.subscription.start = 1348360173

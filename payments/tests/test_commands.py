@@ -18,6 +18,9 @@ class CommandTests(TestCase):
     @patch("stripe.Customer.create")
     def test_init_customer_creates_customer(self, CreateMock, RetrieveMock):
         CreateMock.return_value.id = "cus_XXXXX"
+        CreateMock.return_value.active_card.fingerprint = "X"
+        CreateMock.return_value.active_card.last4 = "1234"
+        CreateMock.return_value.active_card.type = "Visa"
         management.call_command("init_customers")
         self.assertEquals(self.user.customer.stripe_id, "cus_XXXXX")
 

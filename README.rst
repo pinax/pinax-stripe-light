@@ -5,20 +5,20 @@ Pinax Stripe
 .. image:: http://slack.pinaxproject.com/badge.svg
     :target: http://slack.pinaxproject.com/
 
-.. image:: https://img.shields.io/travis/pinax/django-stripe-payments.svg
-    :target: https://travis-ci.org/pinax/django-stripe-payments
+.. image:: https://img.shields.io/travis/pinax/pinax-stripe.svg
+    :target: https://travis-ci.org/pinax/pinax-stripe
 
-.. image:: https://img.shields.io/coveralls/pinax/django-stripe-payments.svg
-    :target: https://coveralls.io/r/pinax/django-stripe-payments
+.. image:: https://img.shields.io/coveralls/pinax/pinax-stripe.svg
+    :target: https://coveralls.io/r/pinax/pinax-stripe
 
-.. image:: https://img.shields.io/pypi/dm/django-stripe-payments.svg
-    :target:  https://pypi.python.org/pypi/django-stripe-payments/
+.. image:: https://img.shields.io/pypi/dm/pinax-stripe.svg
+    :target:  https://pypi.python.org/pypi/pinax-stripe/
 
-.. image:: https://img.shields.io/pypi/v/django-stripe-payments.svg
-    :target:  https://pypi.python.org/pypi/django-stripe-payments/
+.. image:: https://img.shields.io/pypi/v/pinax-stripe.svg
+    :target:  https://pypi.python.org/pypi/pinax-stripe/
 
 .. image:: https://img.shields.io/badge/license-MIT-blue.svg
-    :target:  https://pypi.python.org/pypi/django-stripe-payments/
+    :target:  https://pypi.python.org/pypi/pinax-stripe/
 
 
 This app was formerly called `django-stripe-payments` and has been renamed to

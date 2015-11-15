@@ -1,13 +1,4 @@
-import codecs
-
-from os import path
 from setuptools import find_packages, setup
-
-
-def read(*parts):
-    filename = path.join(path.dirname(__file__), *parts)
-    with codecs.open(filename, encoding="utf-8") as fp:
-        return fp.read()
 
 
 NAME = "pinax-stripe"
@@ -15,14 +6,59 @@ DESCRIPTION = "a payments Django app for Stripe"
 AUTHOR = "Pinax Team"
 AUTHOR_EMAIL = "team@pinaxproject.com"
 URL = "https://github.com/pinax/pinax-stripe"
+LONG_DESCRIPTION = """
+============
+Pinax Stripe
+============
 
+.. image:: http://slack.pinaxproject.com/badge.svg
+    :target: http://slack.pinaxproject.com/
+
+.. image:: https://img.shields.io/travis/pinax/pinax-stripe.svg
+    :target: https://travis-ci.org/pinax/pinax-stripe
+
+.. image:: https://img.shields.io/coveralls/pinax/pinax-stripe.svg
+    :target: https://coveralls.io/r/pinax/pinax-stripe
+
+.. image:: https://img.shields.io/pypi/dm/pinax-stripe.svg
+    :target:  https://pypi.python.org/pypi/pinax-stripe/
+
+.. image:: https://img.shields.io/pypi/v/pinax-stripe.svg
+    :target:  https://pypi.python.org/pypi/pinax-stripe/
+
+.. image:: https://img.shields.io/badge/license-MIT-blue.svg
+    :target:  https://pypi.python.org/pypi/pinax-stripe/
+
+
+This app was formerly called ``django-stripe-payments`` and has been renamed to
+avoid namespace collisions and to have more consistancy with Pinax.
+
+Pinax
+------
+
+Pinax is an open-source platform built on the Django Web Framework. It is an
+ecosystem of reusable Django apps, themes, and starter project templates.
+This collection can be found at http://pinaxproject.com.
+
+This app was developed as part of the Pinax ecosystem but is just a Django app
+and can be used independently of other Pinax apps.
+
+
+pinax-stripe
+------------
+
+``pinax-stripe`` is a payments Django app for Stripe.
+
+This app allows you to process one off charges as well as signup users for
+recurring subscriptions managed by Stripe.
+"""
 
 setup(
     name=NAME,
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,
-    long_description=read("README.rst"),
+    long_description=LONG_DESCRIPTION,
     version="2.0.0",
     license="MIT",
     url=URL,

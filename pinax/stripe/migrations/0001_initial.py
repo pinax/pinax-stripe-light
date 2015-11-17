@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db import models, migrations
-import __builtin__
+from django.db import migrations, models
 import jsonfield.fields
 import django.utils.timezone
 from django.conf import settings
@@ -38,7 +37,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='CurrentSubscription',
@@ -59,9 +57,6 @@ class Migration(migrations.Migration):
                 ('currency', models.CharField(default=b'usd', max_length=10)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
             ],
-            options={
-            },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Customer',
@@ -78,7 +73,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Event',
@@ -88,7 +82,7 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('kind', models.CharField(max_length=250)),
                 ('livemode', models.BooleanField(default=False)),
-                ('webhook_message', jsonfield.fields.JSONField(default=__builtin__.dict)),
+                ('webhook_message', jsonfield.fields.JSONField(default=dict)),
                 ('validated_message', jsonfield.fields.JSONField(null=True)),
                 ('valid', models.NullBooleanField()),
                 ('processed', models.BooleanField(default=False)),
@@ -97,7 +91,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='EventProcessingException',
@@ -109,9 +102,6 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('event', models.ForeignKey(to='pinax_stripe.Event', null=True)),
             ],
-            options={
-            },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Invoice',
@@ -130,12 +120,11 @@ class Migration(migrations.Migration):
                 ('date', models.DateTimeField()),
                 ('charge', models.CharField(max_length=50, blank=True)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('customer', models.ForeignKey(related_name=b'invoices', to='pinax_stripe.Customer')),
+                ('customer', models.ForeignKey(related_name='invoices', to='pinax_stripe.Customer')),
             ],
             options={
                 'ordering': ['-date'],
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='InvoiceItem',
@@ -152,11 +141,8 @@ class Migration(migrations.Migration):
                 ('description', models.CharField(max_length=200, blank=True)),
                 ('plan', models.CharField(max_length=100, blank=True)),
                 ('quantity', models.IntegerField(null=True)),
-                ('invoice', models.ForeignKey(related_name=b'items', to='pinax_stripe.Invoice')),
+                ('invoice', models.ForeignKey(related_name='items', to='pinax_stripe.Invoice')),
             ],
-            options={
-            },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Transfer',
@@ -183,12 +169,11 @@ class Migration(migrations.Migration):
                 ('refund_gross', models.DecimalField(null=True, max_digits=9, decimal_places=2)),
                 ('validation_count', models.IntegerField(null=True)),
                 ('validation_fees', models.DecimalField(null=True, max_digits=9, decimal_places=2)),
-                ('event', models.ForeignKey(related_name=b'transfers', to='pinax_stripe.Event')),
+                ('event', models.ForeignKey(related_name='transfers', to='pinax_stripe.Event')),
             ],
             options={
                 'abstract': False,
             },
-            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='TransferChargeFee',
@@ -200,28 +185,22 @@ class Migration(migrations.Migration):
                 ('description', models.TextField(null=True, blank=True)),
                 ('kind', models.CharField(max_length=150)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('transfer', models.ForeignKey(related_name=b'charge_fee_details', to='pinax_stripe.Transfer')),
+                ('transfer', models.ForeignKey(related_name='charge_fee_details', to='pinax_stripe.Transfer')),
             ],
-            options={
-            },
-            bases=(models.Model,),
         ),
         migrations.AddField(
             model_name='currentsubscription',
             name='customer',
-            field=models.OneToOneField(related_name=b'current_subscription', null=True, to='pinax_stripe.Customer'),
-            preserve_default=True,
+            field=models.OneToOneField(related_name='current_subscription', null=True, to='pinax_stripe.Customer'),
         ),
         migrations.AddField(
             model_name='charge',
             name='customer',
-            field=models.ForeignKey(related_name=b'charges', to='pinax_stripe.Customer'),
-            preserve_default=True,
+            field=models.ForeignKey(related_name='charges', to='pinax_stripe.Customer'),
         ),
         migrations.AddField(
             model_name='charge',
             name='invoice',
-            field=models.ForeignKey(related_name=b'charges', to='pinax_stripe.Invoice', null=True),
-            preserve_default=True,
+            field=models.ForeignKey(related_name='charges', to='pinax_stripe.Invoice', null=True),
         ),
     ]

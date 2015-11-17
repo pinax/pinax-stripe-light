@@ -29,7 +29,7 @@ These items will be made into issues in the [2.0 Milestone](https://github.com/p
 * [x] refactor out ``payments/settings.py`` to ``payments/conf.py`` to support django-appconf or do something with ``payments/apps.py`` - [Issue #179](https://github.com/pinax/django-stripe-payments/issues/179)
 * [x] add hooksets for key points of extensibility - [Issue #180](https://github.com/pinax/django-stripe-payments/issues/180)
 * [x] convert ajax views to CBVs - [Issue #181](https://github.com/pinax/django-stripe-payments/issues/181)
-* [ ] add migrations - [Issue #164](https://github.com/pinax/django-stripe-payments/issues/164)
+* [x] add migrations - [Issue #164](https://github.com/pinax/django-stripe-payments/issues/164)
 * [ ] update for latest / greatest API compatibility - [Issue #178](https://github.com/pinax/django-stripe-payments/issues/178)
 * [ ] add new webhooks - [Issue #182](https://github.com/pinax/django-stripe-payments/issues/182)
 * [ ] better handling of one-off charges - [Issue #43](https://github.com/pinax/django-stripe-payments/issues/43)

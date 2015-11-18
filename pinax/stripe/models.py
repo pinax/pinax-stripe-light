@@ -3,13 +3,9 @@ import decimal
 import json
 import traceback
 
-from django.core.mail import EmailMessage
 from django.db import models
 from django.utils import timezone
 from django.utils.encoding import smart_str, smart_text
-from django.template.loader import render_to_string
-
-from django.contrib.sites.models import Site
 
 import six
 
@@ -865,23 +861,3 @@ class Charge(StripeObject):
         obj.save()
         return obj
 
-    def send_receipt(self):
-        if not self.receipt_sent:
-            site = Site.objects.get_current()
-            protocol = getattr(settings, "DEFAULT_HTTP_PROTOCOL", "http")
-            ctx = {
-                "charge": self,
-                "site": site,
-                "protocol": protocol,
-            }
-            subject = render_to_string("pinax/stripe/email/subject.txt", ctx)
-            subject = subject.strip()
-            message = render_to_string("pinax/stripe/email/body.txt", ctx)
-            num_sent = EmailMessage(
-                subject,
-                message,
-                to=[self.customer.user.email],
-                from_email=settings.PINAX_STRIPE_INVOICE_FROM_EMAIL
-            ).send()
-            self.receipt_sent = num_sent > 0
-            self.save()

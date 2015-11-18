@@ -1,3 +1,9 @@
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
+
+from django.contrib.sites.models import Site
+
+
 class DefaultHookSet(object):
 
     def adjust_subscription_quantity(self, customer, plan, quantity):
@@ -20,6 +26,28 @@ class DefaultHookSet(object):
         Was previously in the setting `TRIAL_PERIOD_FOR_USER_CALLBACK`
         """
         return None
+
+    def send_receipt(self, charge):
+        from django.conf import settings
+        if not charge.receipt_sent:
+            site = Site.objects.get_current()
+            protocol = getattr(settings, "DEFAULT_HTTP_PROTOCOL", "http")
+            ctx = {
+                "charge": charge,
+                "site": site,
+                "protocol": protocol,
+            }
+            subject = render_to_string("pinax/stripe/email/subject.txt", ctx)
+            subject = subject.strip()
+            message = render_to_string("pinax/stripe/email/body.txt", ctx)
+            num_sent = EmailMessage(
+                subject,
+                message,
+                to=[charge.customer.user.email],
+                from_email=settings.PINAX_STRIPE_INVOICE_FROM_EMAIL
+            ).send()
+            charge.receipt_sent = num_sent > 0
+            charge.save()
 
 
 class HookProxy(object):

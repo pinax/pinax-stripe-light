@@ -14,14 +14,9 @@ import stripe
 
 from eldarion.ajax.views import EldarionAjaxResponseMixin
 
+from . import actions
 from .conf import settings
 from .forms import PlanForm, PLAN_CHOICES
-from .models import (
-    Customer,
-    CurrentSubscription,
-    Event,
-    EventProcessingException
-)
 
 
 class PaymentsContextMixin(object):
@@ -80,7 +75,7 @@ class CustomerMixin(object):
     @property
     def customer(self):
         if not hasattr(self, "_customer"):
-            self._customer = self.request.user.customer
+            self._customer = actions.CustomerProxy.get_for_user(self.request.user)
         return self._customer
 
 
@@ -117,7 +112,7 @@ class AjaxChangePlan(EldarionAjaxResponseMixin, CustomerMixin, View):
     @property
     def current_plan(self):
         if not hasattr(self, "_current_plan"):
-            sub = next(iter(CurrentSubscription.objects.filter(customer=self.customer)), None)
+            sub = self.customer.current_subscription()
             if sub:
                 self._current_plan = sub.plan
         return self._current_plan
@@ -170,7 +165,7 @@ class AjaxSubscribe(EldarionAjaxResponseMixin, CustomerMixin, View):
         try:
             self.customer
         except ObjectDoesNotExist:
-            self._customer = Customer.create(self.request.user)
+            self._customer = actions.CustomerProxy.create(self.request.user)
 
     def update_card(self, token):
         if token:
@@ -227,32 +222,12 @@ class Webhook(View):
         data = json.loads(smart_str(self.request.body))
         return data
 
-    def dupe_exists(self, stripe_id):
-        return Event.objects.filter(stripe_id=stripe_id).exists()
-
-    def log_exception(self, data):
-        EventProcessingException.objects.create(
-            data=data,
-            message="Duplicate event record",
-            traceback=""
-        )
-
-    def add_event(self, stripe_id, kind, livemode, message):
-        event = Event.objects.create(
-            stripe_id=stripe_id,
-            kind=kind,
-            livemode=livemode,
-            webhook_message=message
-        )
-        event.validate()
-        event.process()
-
     def post(self, request, *args, **kwargs):
         data = self.extract_json()
-        if self.dupe_exists(data["id"]):
-            self.log_exception(data)
+        if actions.EventProxy.dupe_exists(data["id"]):
+            actions.EventProcessingExceptionProxy.log(data, "Duplicate event record")
         else:
-            self.add_event(
+            actions.EventProxy.add_event(
                 stripe_id=data["id"],
                 kind=data["type"],
                 livemode=data["livemode"],

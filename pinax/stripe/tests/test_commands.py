@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 
 from mock import patch
 
-from ..models import Customer
+from ..actions import CustomerProxy
 
 
 class CommandTests(TestCase):
@@ -22,7 +22,8 @@ class CommandTests(TestCase):
         CreateMock.return_value.active_card.last4 = "1234"
         CreateMock.return_value.active_card.type = "Visa"
         management.call_command("init_customers")
-        self.assertEquals(self.user.customer.stripe_id, "cus_XXXXX")
+        customer = CustomerProxy.get_for_user(self.user)
+        self.assertEquals(customer.stripe_id, "cus_XXXXX")
 
     @patch("stripe.Plan.create")
     def test_plans_create(self, CreateMock):
@@ -41,15 +42,15 @@ class CommandTests(TestCase):
         self.assertEqual(kwargs["amount"], 1999)
 
     @patch("stripe.Customer.retrieve")
-    @patch("pinax.stripe.models.Customer.sync")
-    @patch("pinax.stripe.models.Customer.sync_current_subscription")
-    @patch("pinax.stripe.models.Customer.sync_invoices")
-    @patch("pinax.stripe.models.Customer.sync_charges")
+    @patch("pinax.stripe.actions.CustomerProxy.sync")
+    @patch("pinax.stripe.actions.CustomerProxy.sync_current_subscription")
+    @patch("pinax.stripe.actions.CustomerProxy.sync_invoices")
+    @patch("pinax.stripe.actions.CustomerProxy.sync_charges")
     def test_sync_customers(self, SyncChargesMock, SyncInvoicesMock, SyncSubscriptionMock, SyncMock, RetrieveMock):
         user2 = get_user_model().objects.create_user(username="thomas")
         get_user_model().objects.create_user(username="altman")
-        Customer.objects.create(stripe_id="cus_XXXXX", user=self.user)
-        Customer.objects.create(stripe_id="cus_YYYYY", user=user2)
+        CustomerProxy.objects.create(stripe_id="cus_XXXXX", user=self.user)
+        CustomerProxy.objects.create(stripe_id="cus_YYYYY", user=user2)
         management.call_command("sync_customers")
         self.assertEqual(SyncChargesMock.call_count, 2)
         self.assertEqual(SyncInvoicesMock.call_count, 2)

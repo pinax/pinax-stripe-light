@@ -10,7 +10,7 @@ from mock import Mock
 
 from ..conf import settings
 from ..middleware import ActiveSubscriptionMiddleware
-from ..models import Customer, CurrentSubscription
+from ..actions import CustomerProxy, CurrentSubscriptionProxy
 
 
 class DummySession(dict):
@@ -66,13 +66,13 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         self.assertIsNone(response)
 
     def test_authed_user_with_no_active_subscription_passes_with_exempt_url(self):
-        Customer.objects.create(stripe_id="cus_1", user=self.request.user)
+        CustomerProxy.objects.create(stripe_id="cus_1", user=self.request.user)
         self.request.path = "/accounts/signup/"
         response = self.middleware.process_request(self.request)
         self.assertIsNone(response)
 
     def test_authed_user_with_no_active_subscription_redirects_on_non_exempt_url(self):
-        Customer.objects.create(stripe_id="cus_1", user=self.request.user)
+        CustomerProxy.objects.create(stripe_id="cus_1", user=self.request.user)
         self.request.path = "/the/app/"
         response = self.middleware.process_request(self.request)
         self.assertEqual(response.status_code, 302)
@@ -82,11 +82,11 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         )
 
     def test_authed_user_with_active_subscription_redirects_on_non_exempt_url(self):
-        customer = Customer.objects.create(
+        customer = CustomerProxy.objects.create(
             stripe_id="cus_1",
             user=self.request.user
         )
-        CurrentSubscription.objects.create(
+        CurrentSubscriptionProxy.objects.create(
             customer=customer,
             plan="pro",
             quantity=1,

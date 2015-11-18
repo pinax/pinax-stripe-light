@@ -2,6 +2,8 @@ from django.core.management.base import BaseCommand
 
 from django.contrib.auth import get_user_model
 
+from ...actions import CustomerProxy
+
 
 class Command(BaseCommand):
 
@@ -19,7 +21,7 @@ class Command(BaseCommand):
             print("[{0}/{1} {2}%] Syncing {3} [{4}]".format(
                 count, total, perc, username, user.pk
             ))
-            customer = user.customer
+            customer = CustomerProxy.get_for_user(user)
             cu = customer.stripe_customer
             customer.sync(cu=cu)
             customer.sync_current_subscription(cu=cu)

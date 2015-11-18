@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, login, get_user_model
 
 from mock import Mock
 
-from ..models import CurrentSubscription, Customer
+from ..actions import CurrentSubscriptionProxy, CustomerProxy
 from ..templatetags.pinax_stripe_tags import change_plan_form, subscribe_form
 
 from .test_middleware import DummySession
@@ -22,11 +22,11 @@ class PinaxStripeTagTests(TestCase):
         user = get_user_model().objects.create_user(username="patrick")
         user.set_password("eldarion")
         user.save()
-        customer = Customer.objects.create(
+        customer = CustomerProxy.objects.create(
             stripe_id="cus_1",
             user=user
         )
-        CurrentSubscription.objects.create(
+        CurrentSubscriptionProxy.objects.create(
             customer=customer,
             plan="pro",
             quantity=1,

@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 
 from mock import patch
 
-from ..models import Customer
+from ..actions import CustomerProxy
 
 
 class EmailReceiptTest(TestCase):
@@ -15,7 +15,7 @@ class EmailReceiptTest(TestCase):
     def setUp(self):
         User = get_user_model()
         self.user = User.objects.create_user(username="patrick")
-        self.customer = Customer.objects.create(
+        self.customer = CustomerProxy.objects.create(
             user=self.user,
             stripe_id="cus_xxxxxxxxxxxxxxx",
             card_fingerprint="YYYYYYYY",

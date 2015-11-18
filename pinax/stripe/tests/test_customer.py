@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 
 from mock import patch, PropertyMock, Mock
 
-from ..models import Customer, Charge
+from ..actions import CustomerProxy, ChargeProxy
 from ..signals import card_changed
 
 
@@ -17,7 +17,7 @@ class TestCustomer(TestCase):
             username="patrick",
             email="paltman@eldarion.com"
         )
-        self.customer = Customer.objects.create(
+        self.customer = CustomerProxy.objects.create(
             user=self.user,
             stripe_id="cus_xxxxxxxxxxxxxxx",
             card_fingerprint="YYYYYYYY",
@@ -26,7 +26,7 @@ class TestCustomer(TestCase):
         )
 
     def test_model_table_name(self):
-        self.assertEquals(Customer()._meta.db_table, "pinax_stripe_customer")
+        self.assertEquals(CustomerProxy()._meta.db_table, "pinax_stripe_customer")
 
     @patch("stripe.Customer.retrieve")
     @patch("stripe.Customer.create")
@@ -36,7 +36,7 @@ class TestCustomer(TestCase):
         stripe_customer.active_card = None
         stripe_customer.subscription = None
         stripe_customer.id = "cus_YYYYYYYYYYYYY"
-        customer = Customer.create(self.user)
+        customer = CustomerProxy.create(self.user)
         self.assertEqual(customer.user, self.user)
         self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
         _, kwargs = CreateMock.call_args
@@ -65,7 +65,7 @@ class TestCustomer(TestCase):
         stripe_customer.subscription.trial_start = 1348876800
         stripe_customer.subscription.trial_end = 1349876800
         stripe_customer.id = "cus_YYYYYYYYYYYYY"
-        customer = Customer.create(self.user, card="token232323", plan="pro")
+        customer = CustomerProxy.create(self.user, card="token232323", plan="pro")
         self.assertEqual(customer.user, self.user)
         self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
         _, kwargs = CreateMock.call_args
@@ -74,7 +74,7 @@ class TestCustomer(TestCase):
         self.assertEqual(kwargs["plan"], "pro-monthly")
         self.assertIsNotNone(kwargs["trial_end"])
         self.assertTrue(InvoiceMock.called)
-        self.assertTrue(customer.current_subscription.plan, "pro")
+        self.assertTrue(customer.current_subscription().plan, "pro")
 
     # @@@ Need to figure out a way to temporarily set DEFAULT_PLAN to "entry" for this test
     # @patch("stripe.Invoice.create")
@@ -145,7 +145,7 @@ class TestCustomer(TestCase):
     @patch("stripe.Customer.retrieve")
     def test_customer_purge_leaves_customer_record(self, CustomerRetrieveMock):
         self.customer.purge()
-        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+        customer = CustomerProxy.objects.get(stripe_id=self.customer.stripe_id)
         self.assertTrue(customer.user is None)
         self.assertTrue(customer.card_fingerprint == "")
         self.assertTrue(customer.card_last_4 == "")
@@ -155,7 +155,7 @@ class TestCustomer(TestCase):
     @patch("stripe.Customer.retrieve")
     def test_customer_delete_same_as_purge(self, CustomerRetrieveMock):
         self.customer.delete()
-        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+        customer = CustomerProxy.objects.get(stripe_id=self.customer.stripe_id)
         self.assertTrue(customer.user is None)
         self.assertTrue(customer.card_fingerprint == "")
         self.assertTrue(customer.card_last_4 == "")
@@ -171,7 +171,7 @@ class TestCustomer(TestCase):
         StripeCustomerRetrieveMock.return_value.active_card.type = "DINERS"
         StripeCustomerRetrieveMock.return_value.active_card.last4 = "BEEF"
 
-        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+        customer = CustomerProxy.objects.get(stripe_id=self.customer.stripe_id)
 
         self.assertNotEqual(customer.card_fingerprint, customer.stripe_customer.active_card.fingerprint)
         self.assertNotEqual(customer.card_last_4, customer.stripe_customer.active_card.last4)
@@ -180,7 +180,7 @@ class TestCustomer(TestCase):
         customer.sync()
 
         # Reload saved customer
-        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+        customer = CustomerProxy.objects.get(stripe_id=self.customer.stripe_id)
 
         self.assertEqual(customer.card_fingerprint, customer.stripe_customer.active_card.fingerprint)
         self.assertEqual(customer.card_last_4, customer.stripe_customer.active_card.last4)
@@ -191,7 +191,7 @@ class TestCustomer(TestCase):
         """
         Test to make sure Customer.sync will not update a credit card when there are no changes
         """
-        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+        customer = CustomerProxy.objects.get(stripe_id=self.customer.stripe_id)
 
         StripeCustomerRetrieveMock.return_value.active_card.fingerprint = customer.card_fingerprint
         StripeCustomerRetrieveMock.return_value.active_card.type = customer.card_kind
@@ -216,7 +216,7 @@ class TestCustomer(TestCase):
             kitchen.sync()
 
             # Reload saved customer
-            cus = Customer.objects.get(stripe_id=self.customer.stripe_id)
+            cus = CustomerProxy.objects.get(stripe_id=self.customer.stripe_id)
 
             # Test to make sure card details were removed
             self.assertEqual(cus.card_fingerprint, "")
@@ -225,7 +225,7 @@ class TestCustomer(TestCase):
 
         StripeCustomerRetrieveMock.return_value.active_card = None
 
-        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+        customer = CustomerProxy.objects.get(stripe_id=self.customer.stripe_id)
         _perform_test(customer)
 
         # Test removal of attribute for active_card so hasattr will fail
@@ -234,7 +234,7 @@ class TestCustomer(TestCase):
         self.test_customer_sync_updates_credit_card()
 
         # Reload saved customer
-        customer = Customer.objects.get(stripe_id=self.customer.stripe_id)
+        customer = CustomerProxy.objects.get(stripe_id=self.customer.stripe_id)
         # Remove the credit card from the mocked object
         del customer.stripe_customer.active_card
 
@@ -302,7 +302,7 @@ class TestCustomer(TestCase):
             "customer": "cus_xxxxxxxxxxxxxxx"
         }
         obj = self.customer.record_charge("ch_XXXXXX")
-        self.assertEquals(Charge.objects.get(stripe_id="ch_XXXXXX").pk, obj.pk)
+        self.assertEquals(ChargeProxy.objects.get(stripe_id="ch_XXXXXX").pk, obj.pk)
         self.assertEquals(obj.paid, True)
         self.assertEquals(obj.disputed, False)
         self.assertEquals(obj.refunded, False)
@@ -310,7 +310,7 @@ class TestCustomer(TestCase):
 
     @patch("stripe.Charge.retrieve")
     def test_refund_charge(self, RetrieveMock):
-        charge = Charge.objects.create(
+        charge = ChargeProxy.objects.create(
             stripe_id="ch_XXXXXX",
             customer=self.customer,
             card_last_4="4323",
@@ -340,12 +340,12 @@ class TestCustomer(TestCase):
             "customer": "cus_xxxxxxxxxxxxxxx"
         }
         charge.refund()
-        charge2 = Charge.objects.get(stripe_id="ch_XXXXXX")
+        charge2 = ChargeProxy.objects.get(stripe_id="ch_XXXXXX")
         self.assertEquals(charge2.refunded, True)
         self.assertEquals(charge2.amount_refunded, decimal.Decimal("10.00"))
 
     def test_calculate_refund_amount_full_refund(self):
-        charge = Charge(
+        charge = ChargeProxy(
             stripe_id="ch_111111",
             customer=self.customer,
             amount=decimal.Decimal("500.00"),
@@ -357,7 +357,7 @@ class TestCustomer(TestCase):
         )
 
     def test_calculate_refund_amount_partial_refund(self):
-        charge = Charge(
+        charge = ChargeProxy(
             stripe_id="ch_111111",
             customer=self.customer,
             amount=decimal.Decimal("500.00"),
@@ -369,7 +369,7 @@ class TestCustomer(TestCase):
         )
 
     def test_calculate_refund_above_max_refund(self):
-        charge = Charge(
+        charge = ChargeProxy(
             stripe_id="ch_111111",
             customer=self.customer,
             amount=decimal.Decimal("500.00"),
@@ -426,7 +426,7 @@ class TestCustomer(TestCase):
             "customer": "cus_xxxxxxxxxxxxxxx"
         }
         obj = self.customer.record_charge("ch_XXXXXX")
-        self.assertEquals(Charge.objects.get(stripe_id="ch_XXXXXX").pk, obj.pk)
+        self.assertEquals(ChargeProxy.objects.get(stripe_id="ch_XXXXXX").pk, obj.pk)
         self.assertEquals(obj.paid, True)
         self.assertEquals(obj.disputed, False)
         self.assertEquals(obj.refunded, False)
@@ -435,7 +435,7 @@ class TestCustomer(TestCase):
 
     @patch("stripe.Charge.retrieve")
     def test_refund_charge_in_jpy(self, RetrieveMock):
-        charge = Charge.objects.create(
+        charge = ChargeProxy.objects.create(
             stripe_id="ch_XXXXXX",
             customer=self.customer,
             card_last_4="4323",
@@ -466,12 +466,12 @@ class TestCustomer(TestCase):
             "customer": "cus_xxxxxxxxxxxxxxx"
         }
         charge.refund()
-        charge2 = Charge.objects.get(stripe_id="ch_XXXXXX")
+        charge2 = ChargeProxy.objects.get(stripe_id="ch_XXXXXX")
         self.assertEquals(charge2.refunded, True)
         self.assertEquals(charge2.amount_refunded, decimal.Decimal("1000.00"))
 
     def test_calculate_refund_amount_full_refund_in_jpy(self):
-        charge = Charge(
+        charge = ChargeProxy(
             stripe_id="ch_111111",
             customer=self.customer,
             amount=decimal.Decimal("500.00"),
@@ -483,7 +483,7 @@ class TestCustomer(TestCase):
         )
 
     def test_calculate_refund_amount_partial_refund_in_jpy(self):
-        charge = Charge(
+        charge = ChargeProxy(
             stripe_id="ch_111111",
             customer=self.customer,
             amount=decimal.Decimal("500.00"),
@@ -495,7 +495,7 @@ class TestCustomer(TestCase):
         )
 
     def test_calculate_refund_above_max_refund_in_jpy(self):
-        charge = Charge(
+        charge = ChargeProxy(
             stripe_id="ch_111111",
             customer=self.customer,
             amount=decimal.Decimal("500.00"),

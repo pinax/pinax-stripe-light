@@ -56,29 +56,6 @@ class CustomerManager(models.Manager):
         return decimal.Decimal(str(canceled)) / decimal.Decimal(str(active))
 
 
-class TransferManager(models.Manager):
-
-    def during(self, year, month):
-        return self.filter(
-            date__year=year,
-            date__month=month
-        )
-
-    def paid_totals_for(self, year, month):
-        return self.during(year, month).filter(
-            status="paid"
-        ).aggregate(
-            total_gross=models.Sum("charge_gross"),
-            total_net=models.Sum("net"),
-            total_charge_fees=models.Sum("charge_fees"),
-            total_adjustment_fees=models.Sum("adjustment_fees"),
-            total_refund_gross=models.Sum("refund_gross"),
-            total_refund_fees=models.Sum("refund_fees"),
-            total_validation_fees=models.Sum("validation_fees"),
-            total_amount=models.Sum("amount")
-        )
-
-
 class ChargeManager(models.Manager):
 
     def during(self, year, month):

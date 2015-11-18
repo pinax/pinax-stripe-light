@@ -3,7 +3,7 @@ import datetime
 from django.test import TestCase
 from django.utils import timezone
 
-from ..models import convert_tstamp, plan_from_stripe_id
+from ..utils import convert_tstamp, plan_from_stripe_id
 
 
 class TestTimestampConversion(TestCase):

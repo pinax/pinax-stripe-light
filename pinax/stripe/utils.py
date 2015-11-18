@@ -1,6 +1,7 @@
 import datetime
 import decimal
 
+from django.conf import settings
 from django.utils import timezone
 
 
@@ -35,3 +36,9 @@ def convert_amount_for_db(amount, currency="usd"):
 
 def convert_amount_for_api(amount, currency="usd"):
     return int(amount * 100) if currency.lower() not in ZERO_DECIMAL_CURRENCIES else int(amount)
+
+
+def plan_from_stripe_id(stripe_id):
+    for key in settings.PINAX_STRIPE_PLANS.keys():
+        if settings.PINAX_STRIPE_PLANS[key].get("stripe_plan_id") == stripe_id:
+            return key

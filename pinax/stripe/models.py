@@ -12,7 +12,6 @@ from django.template.loader import render_to_string
 from django.contrib.sites.models import Site
 
 import six
-import stripe
 
 from jsonfield.fields import JSONField
 
@@ -33,8 +32,6 @@ from .utils import (
 )
 
 
-stripe.api_key = settings.PINAX_STRIPE_SECRET_KEY
-stripe.api_version = settings.PINAX_STRIPE_API_VERSION
 
 
 def plan_from_stripe_id(stripe_id):

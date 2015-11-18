@@ -10,7 +10,7 @@ from mock import Mock
 
 from ..conf import settings
 from ..middleware import ActiveSubscriptionMiddleware
-from ..actions import CustomerProxy, CurrentSubscriptionProxy
+from ..proxies import CustomerProxy, CurrentSubscriptionProxy
 
 
 class DummySession(dict):

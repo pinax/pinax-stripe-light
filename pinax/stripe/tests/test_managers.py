@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_CREATED_TEST_DATA2
-from ..actions import EventProxy, TransferProxy, CustomerProxy, CurrentSubscriptionProxy, ChargeProxy
+from ..proxies import EventProxy, TransferProxy, CustomerProxy, CurrentSubscriptionProxy, ChargeProxy
 
 
 class CustomerManagerTest(TestCase):

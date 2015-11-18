@@ -7,7 +7,8 @@ from django.contrib.auth import get_user_model
 
 from mock import patch
 
-from ..actions import CustomerProxy
+from ..actions import customers
+from ..proxies import CustomerProxy
 
 
 class EmailReceiptTest(TestCase):
@@ -43,7 +44,8 @@ class EmailReceiptTest(TestCase):
             "created": 1363911708,
             "customer": "cus_xxxxxxxxxxxxxxx"
         }
-        self.customer.charge(
+        customers.charge(
+            customer=self.customer,
             amount=decimal.Decimal("400.00")
         )
         self.assertTrue("$400.00" in mail.outbox[0].body)
@@ -68,7 +70,8 @@ class EmailReceiptTest(TestCase):
             "created": 1363911708,
             "customer": "cus_xxxxxxxxxxxxxxx"
         }
-        self.customer.charge(
+        customers.charge(
+            customer=self.customer,
             amount=decimal.Decimal("40000"),
             currency="jpy"
         )

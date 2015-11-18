@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 
 from mock import patch
 
-from ..actions import CustomerProxy
+from ..proxies import CustomerProxy
 
 
 class CommandTests(TestCase):
@@ -42,10 +42,10 @@ class CommandTests(TestCase):
         self.assertEqual(kwargs["amount"], 1999)
 
     @patch("stripe.Customer.retrieve")
-    @patch("pinax.stripe.actions.CustomerProxy.sync")
-    @patch("pinax.stripe.actions.CustomerProxy.sync_current_subscription")
-    @patch("pinax.stripe.actions.CustomerProxy.sync_invoices")
-    @patch("pinax.stripe.actions.CustomerProxy.sync_charges")
+    @patch("pinax.stripe.actions.syncs.sync_customer")
+    @patch("pinax.stripe.actions.syncs.sync_current_subscription_for_customer")
+    @patch("pinax.stripe.actions.syncs.sync_invoices_for_customer")
+    @patch("pinax.stripe.actions.syncs.sync_charges_for_customer")
     def test_sync_customers(self, SyncChargesMock, SyncInvoicesMock, SyncSubscriptionMock, SyncMock, RetrieveMock):
         user2 = get_user_model().objects.create_user(username="thomas")
         get_user_model().objects.create_user(username="altman")

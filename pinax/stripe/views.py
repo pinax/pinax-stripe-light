@@ -14,7 +14,7 @@ import stripe
 
 from eldarion.ajax.views import EldarionAjaxResponseMixin
 
-from . import actions
+from .actions import events, customers
 from .conf import settings
 from .forms import PlanForm, PLAN_CHOICES
 
@@ -75,7 +75,7 @@ class CustomerMixin(object):
     @property
     def customer(self):
         if not hasattr(self, "_customer"):
-            self._customer = actions.CustomerProxy.get_for_user(self.request.user)
+            self._customer = customers.get_customer_for_user(self.request.user)
         return self._customer
 
 
@@ -91,7 +91,7 @@ class AjaxChangeCard(EldarionAjaxResponseMixin, CustomerMixin, View):
         self.customer.update_card(stripe_token)
 
     def retry_unpaid_invoices(self):
-        self.customer.retry_unpaid_invoices()
+        customers.retry_unpaid_invoices(self.customer)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -119,7 +119,7 @@ class AjaxChangePlan(EldarionAjaxResponseMixin, CustomerMixin, View):
 
     def subscribe(self, plan):
         try:
-            self.customer.subscribe(plan)
+            customers.subscribe(self.customer, plan)
             data = {
                 "form": PlanForm(initial={"plan": plan})
             }
@@ -165,7 +165,7 @@ class AjaxSubscribe(EldarionAjaxResponseMixin, CustomerMixin, View):
         try:
             self.customer
         except ObjectDoesNotExist:
-            self._customer = actions.CustomerProxy.create(self.request.user)
+            self._customer = customers.create_customer(self.request.user)
 
     def update_card(self, token):
         if token:
@@ -177,7 +177,7 @@ class AjaxSubscribe(EldarionAjaxResponseMixin, CustomerMixin, View):
         try:
             if self.request.POST.get("stripe_token"):
                 self.update_card(self.request.POST.get("stripe_token"))
-            self.customer.subscribe(plan=form.cleaned_data["plan"])
+            customers.subscribe(self.customer, plan=form.cleaned_data["plan"])
             return self.redirect()
         except stripe.StripeError as e:
             data["form"] = form
@@ -224,10 +224,10 @@ class Webhook(View):
 
     def post(self, request, *args, **kwargs):
         data = self.extract_json()
-        if actions.EventProxy.dupe_exists(data["id"]):
-            actions.EventProcessingExceptionProxy.log(data, "Duplicate event record")
+        if events.dupe_event_exists(data["id"]):
+            events.log_exception(data, "Duplicate event record")
         else:
-            actions.EventProxy.add_event(
+            events.add_event(
                 stripe_id=data["id"],
                 kind=data["type"],
                 livemode=data["livemode"],

@@ -12,7 +12,7 @@ import stripe
 
 from mock import patch
 
-from ..actions import CustomerProxy, CurrentSubscriptionProxy
+from ..proxies import CustomerProxy, CurrentSubscriptionProxy
 from ..views import SubscribeView
 
 
@@ -55,9 +55,9 @@ class AjaxViewsTests(TestCase):
             amount=decimal.Decimal("19.99")
         )
 
-    @patch("pinax.stripe.actions.CustomerProxy.update_card")
-    @patch("pinax.stripe.actions.CustomerProxy.send_invoice")
-    @patch("pinax.stripe.actions.CustomerProxy.retry_unpaid_invoices")
+    @patch("pinax.stripe.proxies.customers.CustomerProxy.update_card")
+    @patch("pinax.stripe.proxies.customers.CustomerProxy.send_invoice")
+    @patch("pinax.stripe.actions.customers.retry_unpaid_invoices")
     def test_change_card(self, retry_mock, send_mock, update_mock):
         self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(
@@ -70,9 +70,9 @@ class AjaxViewsTests(TestCase):
         self.assertEqual(retry_mock.call_count, 1)
         self.assertEqual(response.status_code, 200)
 
-    @patch("pinax.stripe.actions.CustomerProxy.update_card")
-    @patch("pinax.stripe.actions.CustomerProxy.send_invoice")
-    @patch("pinax.stripe.actions.CustomerProxy.retry_unpaid_invoices")
+    @patch("pinax.stripe.proxies.customers.CustomerProxy.update_card")
+    @patch("pinax.stripe.proxies.customers.CustomerProxy.send_invoice")
+    @patch("pinax.stripe.actions.customers.retry_unpaid_invoices")
     def test_change_card_error(self, retry_mock, send_mock, update_mock):
         update_mock.side_effect = stripe.CardError("Bad card", "Param", "CODE")
         self.client.login(username=self.user.username, password=self.password)
@@ -86,9 +86,9 @@ class AjaxViewsTests(TestCase):
         self.assertEqual(retry_mock.call_count, 0)
         self.assertEqual(response.status_code, 200)
 
-    @patch("pinax.stripe.actions.CustomerProxy.update_card")
-    @patch("pinax.stripe.actions.CustomerProxy.send_invoice")
-    @patch("pinax.stripe.actions.CustomerProxy.retry_unpaid_invoices")
+    @patch("pinax.stripe.proxies.customers.CustomerProxy.update_card")
+    @patch("pinax.stripe.proxies.customers.CustomerProxy.send_invoice")
+    @patch("pinax.stripe.actions.customers.retry_unpaid_invoices")
     def test_change_card_no_invoice(self, retry_mock, send_mock, update_mock):
         customer = CustomerProxy.get_for_user(self.user)
         customer.card_fingerprint = "XXXXXX"
@@ -104,7 +104,7 @@ class AjaxViewsTests(TestCase):
         self.assertEqual(retry_mock.call_count, 1)
         self.assertEqual(response.status_code, 200)
 
-    @patch("pinax.stripe.actions.CustomerProxy.subscribe")
+    @patch("pinax.stripe.actions.customers.subscribe")
     def test_change_plan_with_subscription(self, subscribe_mock):
         self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(
@@ -115,7 +115,7 @@ class AjaxViewsTests(TestCase):
         self.assertEqual(subscribe_mock.call_count, 1)
         self.assertEqual(response.status_code, 200)
 
-    @patch("pinax.stripe.actions.CustomerProxy.subscribe")
+    @patch("pinax.stripe.actions.customers.subscribe")
     def test_change_plan_no_subscription(self, subscribe_mock):
         customer = CustomerProxy.get_for_user(self.user)
         customer.current_subscription().delete()
@@ -128,7 +128,7 @@ class AjaxViewsTests(TestCase):
         self.assertEqual(subscribe_mock.call_count, 1)
         self.assertEqual(response.status_code, 200)
 
-    @patch("pinax.stripe.actions.CustomerProxy.subscribe")
+    @patch("pinax.stripe.actions.customers.subscribe")
     def test_change_plan_invalid_form(self, subscribe_mock):
         self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(
@@ -139,7 +139,7 @@ class AjaxViewsTests(TestCase):
         self.assertEqual(subscribe_mock.call_count, 0)
         self.assertEqual(response.status_code, 200)
 
-    @patch("pinax.stripe.actions.CustomerProxy.subscribe")
+    @patch("pinax.stripe.actions.customers.subscribe")
     def test_change_plan_stripe_error(self, subscribe_mock):
         subscribe_mock.side_effect = stripe.StripeError(
             "Bad card",
@@ -155,9 +155,9 @@ class AjaxViewsTests(TestCase):
         self.assertEqual(subscribe_mock.call_count, 1)
         self.assertEqual(response.status_code, 200)
 
-    @patch("pinax.stripe.actions.CustomerProxy.subscribe")
-    @patch("pinax.stripe.actions.CustomerProxy.update_card")
-    @patch("pinax.stripe.actions.CustomerProxy.create")
+    @patch("pinax.stripe.actions.customers.subscribe")
+    @patch("pinax.stripe.proxies.customers.CustomerProxy.update_card")
+    @patch("pinax.stripe.actions.customers.create_customer")
     def test_subscribe(self, create_cus_mock, upd_card_mock, subscribe_mock):
         self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(
@@ -174,9 +174,9 @@ class AjaxViewsTests(TestCase):
             reverse("pinax_stripe_history")
         )
 
-    @patch("pinax.stripe.actions.CustomerProxy.subscribe")
-    @patch("pinax.stripe.actions.CustomerProxy.update_card")
-    @patch("pinax.stripe.actions.CustomerProxy.create")
+    @patch("pinax.stripe.actions.customers.subscribe")
+    @patch("pinax.stripe.proxies.customers.CustomerProxy.update_card")
+    @patch("pinax.stripe.actions.customers.create_customer")
     def test_subscribe_no_customer(self, create_cus_mock, upd_card_mock, subscribe_mock):
         self.client.login(username=self.user.username, password=self.password)
         CustomerProxy.objects.all().delete()
@@ -192,9 +192,9 @@ class AjaxViewsTests(TestCase):
             reverse("pinax_stripe_history")
         )
 
-    @patch("pinax.stripe.actions.CustomerProxy.subscribe")
-    @patch("pinax.stripe.actions.CustomerProxy.update_card")
-    @patch("pinax.stripe.actions.CustomerProxy.create")
+    @patch("pinax.stripe.actions.customers.subscribe")
+    @patch("pinax.stripe.proxies.customers.CustomerProxy.update_card")
+    @patch("pinax.stripe.actions.customers.create_customer")
     def test_subscribe_error(self, create_cus_mock, upd_card_mock, subscribe_mock):
         self.client.login(username=self.user.username, password=self.password)
         upd_card_mock.side_effect = stripe.StripeError("foo")
@@ -219,7 +219,7 @@ class AjaxViewsTests(TestCase):
         self.assertEqual(response.context['error'],
                          {'plan': ['This field is required.']})
 
-    @patch("pinax.stripe.actions.CustomerProxy.cancel")
+    @patch("pinax.stripe.proxies.customers.CustomerProxy.cancel")
     def test_cancel(self, cancel_mock):
         self.client.login(username=self.user.username, password=self.password)
         self.client.post(
@@ -229,7 +229,7 @@ class AjaxViewsTests(TestCase):
         )
         self.assertEqual(cancel_mock.call_count, 1)
 
-    @patch("pinax.stripe.actions.CustomerProxy.cancel")
+    @patch("pinax.stripe.proxies.customers.CustomerProxy.cancel")
     def test_cancel_error(self, cancel_mock):
         cancel_mock.side_effect = stripe.StripeError("foo")
         self.client.login(username=self.user.username, password=self.password)

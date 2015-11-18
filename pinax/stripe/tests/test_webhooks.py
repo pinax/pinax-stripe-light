@@ -9,7 +9,7 @@ from django.test.client import Client
 from mock import patch
 
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_PENDING_TEST_DATA
-from ..actions import EventProxy, TransferProxy, EventProcessingExceptionProxy
+from ..proxies import EventProxy, TransferProxy, EventProcessingExceptionProxy
 
 
 class TestWebhook(TestCase):

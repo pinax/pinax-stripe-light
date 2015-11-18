@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 
 from mock import patch, Mock
 
-from ..actions import CustomerProxy, EventProxy, CurrentSubscriptionProxy
+from ..proxies import CustomerProxy, EventProxy, CurrentSubscriptionProxy
 from ..signals import WEBHOOK_SIGNALS
 
 

@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, login, get_user_model
 
 from mock import Mock
 
-from ..actions import CurrentSubscriptionProxy, CustomerProxy
+from ..proxies import CurrentSubscriptionProxy, CustomerProxy
 from ..templatetags.pinax_stripe_tags import change_plan_form, subscribe_form
 
 from .test_middleware import DummySession

@@ -6,7 +6,8 @@ from django.contrib.auth import get_user_model
 
 from mock import patch, PropertyMock, Mock
 
-from ..actions import CustomerProxy, ChargeProxy
+from .. import actions
+from ..proxies import CustomerProxy, ChargeProxy
 from ..signals import card_changed
 
 
@@ -36,7 +37,7 @@ class TestCustomer(TestCase):
         stripe_customer.active_card = None
         stripe_customer.subscription = None
         stripe_customer.id = "cus_YYYYYYYYYYYYY"
-        customer = CustomerProxy.create(self.user)
+        customer = actions.customers.create_customer(self.user)
         self.assertEqual(customer.user, self.user)
         self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
         _, kwargs = CreateMock.call_args
@@ -65,7 +66,21 @@ class TestCustomer(TestCase):
         stripe_customer.subscription.trial_start = 1348876800
         stripe_customer.subscription.trial_end = 1349876800
         stripe_customer.id = "cus_YYYYYYYYYYYYY"
-        customer = CustomerProxy.create(self.user, card="token232323", plan="pro")
+        rm = RetrieveMock()
+        rm.active_card = None
+        rm.subscription.plan.id = "pro-monthly"
+        rm.subscription.current_period_start = 1348876800
+        rm.subscription.current_period_end = 1349876800
+        rm.subscription.plan.amount = 9999
+        rm.subscription.plan.currency = "usd"
+        rm.subscription.status = "active"
+        rm.subscription.cancel_at_period_end = False
+        rm.subscription.start = 1348876800
+        rm.subscription.quantity = 1
+        rm.subscription.trial_start = 1348876800
+        rm.subscription.trial_end = 1349876800
+        rm.id = "cus_YYYYYYYYYYYYY"
+        customer = actions.customers.create_customer(self.user, card="token232323", plan="pro")
         self.assertEqual(customer.user, self.user)
         self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
         _, kwargs = CreateMock.call_args
@@ -120,7 +135,7 @@ class TestCustomer(TestCase):
         customer.subscription.quantity = 1
         customer.subscription.trial_start = None
         customer.subscription.trial_end = None
-        self.customer.subscribe("entry", quantity=3, charge_immediately=False)
+        actions.customers.subscribe(self.customer, "entry", quantity=3, charge_immediately=False)
         _, kwargs = customer.update_subscription.call_args
         self.assertEqual(kwargs["quantity"], 3)
 
@@ -138,7 +153,7 @@ class TestCustomer(TestCase):
         customer.subscription.quantity = 1
         customer.subscription.trial_start = None
         customer.subscription.trial_end = None
-        self.customer.subscribe("entry", charge_immediately=False)
+        actions.customers.subscribe(self.customer, "entry", charge_immediately=False)
         _, kwargs = customer.update_subscription.call_args
         self.assertEqual(kwargs["quantity"], 4)
 
@@ -177,7 +192,7 @@ class TestCustomer(TestCase):
         self.assertNotEqual(customer.card_last_4, customer.stripe_customer.active_card.last4)
         self.assertNotEqual(customer.card_kind, customer.stripe_customer.active_card.type)
 
-        customer.sync()
+        actions.syncs.sync_customer(customer)
 
         # Reload saved customer
         customer = CustomerProxy.objects.get(stripe_id=self.customer.stripe_id)
@@ -201,7 +216,7 @@ class TestCustomer(TestCase):
         self.assertEqual(customer.card_last_4, customer.stripe_customer.active_card.last4)
         self.assertEqual(customer.card_kind, customer.stripe_customer.active_card.type)
 
-        customer.sync()
+        actions.syncs.sync_customer(customer)
 
         self.assertEqual(customer.card_fingerprint, customer.stripe_customer.active_card.fingerprint)
         self.assertEqual(customer.card_last_4, customer.stripe_customer.active_card.last4)
@@ -213,7 +228,7 @@ class TestCustomer(TestCase):
         Test to make sure Customer.sync removes credit card when there is no active card
         """
         def _perform_test(kitchen):
-            kitchen.sync()
+            actions.syncs.sync_customer(kitchen)
 
             # Reload saved customer
             cus = CustomerProxy.objects.get(stripe_id=self.customer.stripe_id)
@@ -281,32 +296,7 @@ class TestCustomer(TestCase):
 
     def test_charge_accepts_only_decimals(self):
         with self.assertRaises(ValueError):
-            self.customer.charge(10)
-
-    @patch("stripe.Charge.retrieve")
-    def test_record_charge(self, RetrieveMock):
-        RetrieveMock.return_value = {
-            "id": "ch_XXXXXX",
-            "card": {
-                "last4": "4323",
-                "type": "Visa"
-            },
-            "amount": 1000,
-            "currency": "usd",
-            "paid": True,
-            "refunded": False,
-            "captured": True,
-            "fee": 499,
-            "dispute": None,
-            "created": 1363911708,
-            "customer": "cus_xxxxxxxxxxxxxxx"
-        }
-        obj = self.customer.record_charge("ch_XXXXXX")
-        self.assertEquals(ChargeProxy.objects.get(stripe_id="ch_XXXXXX").pk, obj.pk)
-        self.assertEquals(obj.paid, True)
-        self.assertEquals(obj.disputed, False)
-        self.assertEquals(obj.refunded, False)
-        self.assertEquals(obj.amount_refunded, None)
+            actions.customers.charge(self.customer, 10)
 
     @patch("stripe.Charge.retrieve")
     def test_refund_charge(self, RetrieveMock):
@@ -322,23 +312,32 @@ class TestCustomer(TestCase):
             fee=decimal.Decimal("4.99"),
             disputed=False
         )
-        RetrieveMock.return_value.refund.return_value = {
-            "id": "ch_XXXXXX",
-            "card": {
-                "last4": "4323",
-                "type": "Visa"
-            },
-            "amount": 1000,
-            "currency": "usd",
-            "paid": True,
-            "refunded": True,
-            "captured": True,
-            "amount_refunded": 1000,
-            "fee": 499,
-            "dispute": None,
-            "created": 1363911708,
-            "customer": "cus_xxxxxxxxxxxxxxx"
-        }
+
+        class ChargeMock(dict):
+            def __init__(self):
+                self.update({
+                    "id": "ch_XXXXXX",
+                    "card": {
+                        "last4": "4323",
+                        "type": "Visa"
+                    },
+                    "amount": 1000,
+                    "currency": "usd",
+                    "paid": True,
+                    "refunded": True,
+                    "captured": True,
+                    "amount_refunded": 1000,
+                    "fee": 499,
+                    "dispute": None,
+                    "created": 1363911708,
+                    "customer": "cus_xxxxxxxxxxxxxxx"
+                })
+
+            def refund(self, amount):
+                return self
+
+        RetrieveMock.return_value = ChargeMock()
+
         charge.refund()
         charge2 = ChargeProxy.objects.get(stripe_id="ch_XXXXXX")
         self.assertEquals(charge2.refunded, True)
@@ -400,16 +399,12 @@ class TestCustomer(TestCase):
             "created": 1363911708,
             "customer": "cus_xxxxxxxxxxxxxxx"
         }
-        self.customer.charge(
-            amount=decimal.Decimal("10.00"),
-            currency="usd"
-        )
+        actions.customers.charge(self.customer, amount=decimal.Decimal("10.00"), currency="usd")
         _, kwargs = ChargeMock.call_args
         self.assertEquals(kwargs["amount"], 1000)
 
-    @patch("stripe.Charge.retrieve")
-    def test_record_charge_in_jpy_with(self, RetrieveMock):
-        RetrieveMock.return_value = {
+    def test_record_charge_in_jpy_with(self):
+        data = {
             "id": "ch_XXXXXX",
             "card": {
                 "last4": "4323",
@@ -425,7 +420,7 @@ class TestCustomer(TestCase):
             "created": 1363911708,
             "customer": "cus_xxxxxxxxxxxxxxx"
         }
-        obj = self.customer.record_charge("ch_XXXXXX")
+        obj = actions.syncs.sync_charge_from_stripe_data(data)
         self.assertEquals(ChargeProxy.objects.get(stripe_id="ch_XXXXXX").pk, obj.pk)
         self.assertEquals(obj.paid, True)
         self.assertEquals(obj.disputed, False)
@@ -448,23 +443,31 @@ class TestCustomer(TestCase):
             fee=decimal.Decimal("4.99"),
             disputed=False
         )
-        RetrieveMock.return_value.refund.return_value = {
-            "id": "ch_XXXXXX",
-            "card": {
-                "last4": "4323",
-                "type": "Visa"
-            },
-            "amount": 1000,
-            "currency": "jpy",
-            "paid": True,
-            "refunded": True,
-            "amount_refunded": 1000,
-            "fee": 499,
-            "captured": True,
-            "dispute": None,
-            "created": 1363911708,
-            "customer": "cus_xxxxxxxxxxxxxxx"
-        }
+
+        class ChargeMock(dict):
+            def __init__(self):
+                self.update({
+                    "id": "ch_XXXXXX",
+                    "card": {
+                        "last4": "4323",
+                        "type": "Visa"
+                    },
+                    "amount": 1000,
+                    "currency": "jpy",
+                    "paid": True,
+                    "refunded": True,
+                    "amount_refunded": 1000,
+                    "fee": 499,
+                    "captured": True,
+                    "dispute": None,
+                    "created": 1363911708,
+                    "customer": "cus_xxxxxxxxxxxxxxx"
+                })
+
+            def refund(self, amount):
+                return self
+
+        RetrieveMock.return_value = ChargeMock()
         charge.refund()
         charge2 = ChargeProxy.objects.get(stripe_id="ch_XXXXXX")
         self.assertEquals(charge2.refunded, True)
@@ -526,9 +529,6 @@ class TestCustomer(TestCase):
             "created": 1363911708,
             "customer": "cus_xxxxxxxxxxxxxxx"
         }
-        self.customer.charge(
-            amount=decimal.Decimal("1000.00"),
-            currency="jpy"
-        )
+        actions.customers.charge(self.customer, amount=decimal.Decimal("1000.00"), currency="jpy")
         _, kwargs = ChargeMock.call_args
         self.assertEquals(kwargs["amount"], 1000)

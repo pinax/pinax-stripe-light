@@ -1,7 +1,8 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import resolve
 from django.shortcuts import redirect
 
-from .actions import CustomerProxy
+from .actions import customers
 from .conf import settings
 
 
@@ -12,10 +13,10 @@ class ActiveSubscriptionMiddleware(object):
             url_name = resolve(request.path).url_name
             if url_name not in settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS:
                 try:
-                    customer = CustomerProxy.get_for_user(request.user)
+                    customer = customers.get_customer_for_user(request.user)
                     if not customer.has_active_subscription():
                         return redirect(
                             settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT
                         )
-                except CustomerProxy.DoesNotExist:
+                except ObjectDoesNotExist:
                     return redirect(settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT)

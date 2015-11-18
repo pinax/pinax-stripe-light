@@ -5,6 +5,9 @@ from .. import models
 
 class EventProcessingExceptionProxy(models.EventProcessingException):
 
+    class Meta:
+        proxy = True
+
     @classmethod
     def log(cls, data, exception, event=None):
         cls.objects.create(

@@ -3,7 +3,7 @@ from django.db.models.fields import FieldDoesNotExist
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 
-from .models import (
+from .models import (  # @@@ make all these read-only
     Charge,
     CurrentSubscription,
     Customer,

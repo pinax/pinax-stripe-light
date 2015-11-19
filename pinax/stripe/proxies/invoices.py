@@ -9,12 +9,9 @@ class InvoiceProxy(models.Invoice):
         proxy = True
         ordering = ["-date"]
 
-    def retry(self):
-        if not self.paid and not self.closed:
-            inv = stripe.Invoice.retrieve(self.stripe_id)
-            inv.pay()
-            return True
-        return False
+    @property
+    def stripe_invoice(self):
+        return stripe.Invoice.retrieve(self.stripe_id)
 
     def status(self):
         if self.paid:

@@ -1,13 +1,19 @@
 from django.conf import settings
 from django.utils import timezone
 
+import stripe
+
 from .. import models
 
 
-class CurrentSubscriptionProxy(models.CurrentSubscription):
+class SubscriptionProxy(models.Subscription):
 
     class Meta:
         proxy = True
+
+    @property
+    def stripe_subscription(self):
+        return stripe.Customer.retrieve(self.customer.stripe_id).subscriptions.retrieve(self.stripe_id)
 
     @property
     def total_amount(self):
@@ -40,7 +46,7 @@ class CurrentSubscriptionProxy(models.CurrentSubscription):
         references will not show previous values (such as when an Event
         signal is triggered after a subscription has been deleted)
         """
-        super(CurrentSubscriptionProxy, self).delete(using=using)
+        super(SubscriptionProxy, self).delete(using=using)
         self.plan = None
         self.status = None
         self.quantity = 0

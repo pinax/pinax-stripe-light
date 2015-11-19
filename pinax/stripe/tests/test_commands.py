@@ -17,10 +17,12 @@ class CommandTests(TestCase):
     @patch("stripe.Customer.retrieve")
     @patch("stripe.Customer.create")
     def test_init_customer_creates_customer(self, CreateMock, RetrieveMock):
-        CreateMock.return_value.id = "cus_XXXXX"
-        CreateMock.return_value.active_card.fingerprint = "X"
-        CreateMock.return_value.active_card.last4 = "1234"
-        CreateMock.return_value.active_card.type = "Visa"
+        cu = CreateMock()
+        cu.account_balance = 0
+        cu.delinquent = False
+        cu.default_source = "card_178Zqj2eZvKYlo2Cr2fUZZz7"
+        cu.currency = "usd"
+        cu.id = "cus_XXXXX"
         management.call_command("init_customers")
         customer = CustomerProxy.get_for_user(self.user)
         self.assertEquals(customer.stripe_id, "cus_XXXXX")
@@ -43,10 +45,9 @@ class CommandTests(TestCase):
 
     @patch("stripe.Customer.retrieve")
     @patch("pinax.stripe.actions.syncs.sync_customer")
-    @patch("pinax.stripe.actions.syncs.sync_current_subscription_for_customer")
     @patch("pinax.stripe.actions.syncs.sync_invoices_for_customer")
     @patch("pinax.stripe.actions.syncs.sync_charges_for_customer")
-    def test_sync_customers(self, SyncChargesMock, SyncInvoicesMock, SyncSubscriptionMock, SyncMock, RetrieveMock):
+    def test_sync_customers(self, SyncChargesMock, SyncInvoicesMock, SyncMock, RetrieveMock):
         user2 = get_user_model().objects.create_user(username="thomas")
         get_user_model().objects.create_user(username="altman")
         CustomerProxy.objects.create(stripe_id="cus_XXXXX", user=self.user)
@@ -54,5 +55,4 @@ class CommandTests(TestCase):
         management.call_command("sync_customers")
         self.assertEqual(SyncChargesMock.call_count, 2)
         self.assertEqual(SyncInvoicesMock.call_count, 2)
-        self.assertEqual(SyncSubscriptionMock.call_count, 2)
         self.assertEqual(SyncMock.call_count, 2)

@@ -7,6 +7,7 @@ from .. import signals
 
 from .customers import CustomerProxy
 from .exceptions import EventProcessingExceptionProxy
+from .subscriptions import SubscriptionProxy
 from .transfers import TransferProxy
 
 
@@ -47,50 +48,10 @@ class EventProxy(models.Event):
                 cls=stripe.StripeObjectEncoder
             )
         )
-        if self.webhook_message["data"] == self.validated_message["data"]:
-            self.valid = True
-        else:
-            self.valid = False
+        self.valid = self.webhook_message["data"] == self.validated_message["data"]
         self.save()
 
     def process(self):  # @@@ to complex, fix later  # noqa
-        """
-            "account.updated",
-            "account.application.deauthorized",
-            "charge.succeeded",
-            "charge.failed",
-            "charge.refunded",
-            "charge.dispute.created",
-            "charge.dispute.updated",
-            "charge.dispute.closed",
-            "customer.created",
-            "customer.updated",
-            "customer.deleted",
-            "customer.subscription.created",
-            "customer.subscription.updated",
-            "customer.subscription.deleted",
-            "customer.subscription.trial_will_end",
-            "customer.discount.created",
-            "customer.discount.updated",
-            "customer.discount.deleted",
-            "invoice.created",
-            "invoice.updated",
-            "invoice.payment_succeeded",
-            "invoice.payment_failed",
-            "invoiceitem.created",
-            "invoiceitem.updated",
-            "invoiceitem.deleted",
-            "plan.created",
-            "plan.updated",
-            "plan.deleted",
-            "coupon.created",
-            "coupon.updated",
-            "coupon.deleted",
-            "transfer.created",
-            "transfer.updated",
-            "transfer.failed",
-            "ping"
-        """
         if not self.valid or self.processed:
             return
         try:
@@ -106,6 +67,10 @@ class EventProxy(models.Event):
                     self.message["data"]["object"]
                 )
             elif self.kind.startswith("customer.subscription."):
+                if self.kind == "customer.subscription.deleted":
+                    sub = next(iter(SubscriptionProxy.objects.filter(stripe_id=self.validated_message["data"]["object"]["id"])), None)
+                    if sub is not None:
+                        sub.delete()
                 if self.customer:
                     signals.customer_subscription_event.send(sender=EventProxy, event=self, customer=self.customer)
             elif self.kind == "customer.deleted":
@@ -129,18 +94,3 @@ class EventProxy(models.Event):
         signal = signals.WEBHOOK_SIGNALS.get(self.kind)
         if signal:
             return signal.send(sender=EventProxy, event=self)
-
-    @classmethod
-    def dupe_exists(cls, stripe_id):
-        return cls.objects.filter(stripe_id=stripe_id).exists()
-
-    @classmethod
-    def add_event(cls, stripe_id, kind, livemode, message):
-        event = cls.objects.create(
-            stripe_id=stripe_id,
-            kind=kind,
-            livemode=livemode,
-            webhook_message=message
-        )
-        event.validate()
-        event.process()

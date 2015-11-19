@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 
 from .models import (  # @@@ make all these read-only
     Charge,
-    CurrentSubscription,
+    Subscription,
     Customer,
     Event,
     EventProcessingException,
@@ -76,7 +76,7 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
     def lookups(self, request, model_admin):
         statuses = [
             [x, x.replace("_", " ").title()]
-            for x in CurrentSubscription.objects.all().values_list(
+            for x in Subscription.objects.all().values_list(
                 "status",
                 flat=True
             ).distinct()
@@ -88,7 +88,7 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
         if self.value() is None:
             return queryset.all()
         else:
-            return queryset.filter(current_subscription__status=self.value())
+            return queryset.filter(subscription_set__status=self.value())
 
 
 admin.site.register(
@@ -166,12 +166,12 @@ admin.site.register(
 )
 
 
-class CurrentSubscriptionInline(admin.TabularInline):
-    model = CurrentSubscription
+class SubscriptionInline(admin.TabularInline):
+    model = Subscription
 
 
 def subscription_status(obj):
-    return obj.current_subscription.status
+    return ", ".join([subscription.status for subscription in obj.subscription_set.all()])
 subscription_status.short_description = "Subscription Status"
 
 
@@ -193,7 +193,7 @@ admin.site.register(
     search_fields=[
         "stripe_id",
     ] + user_search_fields(),
-    inlines=[CurrentSubscriptionInline]
+    inlines=[SubscriptionInline]
 )
 
 

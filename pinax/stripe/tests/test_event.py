@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 
 from mock import patch, Mock
 
-from ..proxies import CustomerProxy, EventProxy, CurrentSubscriptionProxy
+from ..proxies import CustomerProxy, EventProxy, SubscriptionProxy
 from ..signals import WEBHOOK_SIGNALS
 
 
@@ -198,19 +198,24 @@ class TestEventMethods(TestCase):
     @patch("stripe.Customer.retrieve")
     def test_customer_subscription_deleted(self, CustomerMock):
         """
-        Tests to make sure downstream signal handlers do not see stale CurrentSubscription object properties
+        Tests to make sure downstream signal handlers do not see stale Subscription object properties
         after a customer.subscription.deleted event occurs.  While the delete method is called
-        on the affected CurrentSubscription object's properties are still accessible (unless the
+        on the affected Subscription object's properties are still accessible (unless the
         Customer object for the event gets refreshed before sending the complimentary signal)
         """
+        cm = CustomerMock()
+        cm.currency = "usd"
+        cm.delinquent = False
+        cm.default_source = ""
+        cm.account_balance = 0
         kind = "customer.subscription.deleted"
-        cs = CurrentSubscriptionProxy(customer=self.customer, quantity=1, start=timezone.now(), amount=0)
+        cs = SubscriptionProxy(stripe_id="su_2ZDdGxJ3EQQc7Q", customer=self.customer, quantity=1, start=timezone.now())
         cs.save()
         customer = CustomerProxy.objects.get(pk=self.customer.pk)
 
         # Stripe objects will not have this attribute so we must delete it from the mocked object
         del customer.stripe_customer.subscription
-        self.assertIsNotNone(customer.current_subscription)
+        self.assertIsNotNone(customer.subscription_set.all()[0])
 
         # This is the expected format of a customer.subscription.delete message
         msg = {
@@ -265,7 +270,7 @@ class TestEventMethods(TestCase):
 
         def signal_handler(sender, event, **kwargs):
             # Illustrate and test what signal handlers would experience
-            self.assertIsNone(event.customer.current_subscription())
+            self.assertIsNone(next(iter(event.customer.subscription_set.all()), None))
 
         signal_handler_mock = Mock()
         # Let's make the side effect call our real function, the mock is a proxy so we can assert it was called
@@ -276,7 +281,7 @@ class TestEventMethods(TestCase):
         # Now process the event - at the end of this the signal should get sent
         test_event.process()
 
-        self.assertIsNone(test_event.customer.current_subscription())
+        self.assertIsNone(next(iter(test_event.customer.subscription_set.all()), None))
 
         # Verify our signal handler was called
         self.assertTrue(signal_handler_mock.called)

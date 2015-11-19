@@ -10,7 +10,7 @@ register = template.Library()
 def change_plan_form(context):
     context.update({
         "form": PlanForm(initial={
-            "plan": context["request"].user.customer.current_subscription.plan
+            "plan": context["request"].user.customer.subscription_set.all()[0].plan
         })
     })
     return context

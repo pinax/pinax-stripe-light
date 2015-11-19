@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 
 from mock import patch
 
-from ..actions import customers
+from ..actions import charges
 from ..proxies import CustomerProxy
 
 
@@ -18,10 +18,7 @@ class EmailReceiptTest(TestCase):
         self.user = User.objects.create_user(username="patrick")
         self.customer = CustomerProxy.objects.create(
             user=self.user,
-            stripe_id="cus_xxxxxxxxxxxxxxx",
-            card_fingerprint="YYYYYYYY",
-            card_last_4="2342",
-            card_kind="Visa"
+            stripe_id="cus_xxxxxxxxxxxxxxx"
         )
 
     @patch("stripe.Charge.retrieve")
@@ -44,7 +41,7 @@ class EmailReceiptTest(TestCase):
             "created": 1363911708,
             "customer": "cus_xxxxxxxxxxxxxxx"
         }
-        customers.charge(
+        charges.create(
             customer=self.customer,
             amount=decimal.Decimal("400.00")
         )
@@ -70,7 +67,7 @@ class EmailReceiptTest(TestCase):
             "created": 1363911708,
             "customer": "cus_xxxxxxxxxxxxxxx"
         }
-        customers.charge(
+        charges.create(
             customer=self.customer,
             amount=decimal.Decimal("40000"),
             currency="jpy"

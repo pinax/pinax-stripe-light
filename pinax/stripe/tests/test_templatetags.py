@@ -1,5 +1,3 @@
-import decimal
-
 from django.test import TestCase
 from django.utils import timezone
 
@@ -7,7 +5,7 @@ from django.contrib.auth import authenticate, login, get_user_model
 
 from mock import Mock
 
-from ..proxies import CurrentSubscriptionProxy, CustomerProxy
+from ..proxies import SubscriptionProxy, CustomerProxy
 from ..templatetags.pinax_stripe_tags import change_plan_form, subscribe_form
 
 from .test_middleware import DummySession
@@ -26,14 +24,13 @@ class PinaxStripeTagTests(TestCase):
             stripe_id="cus_1",
             user=user
         )
-        CurrentSubscriptionProxy.objects.create(
+        SubscriptionProxy.objects.create(
             customer=customer,
             plan="pro",
             quantity=1,
             start=timezone.now(),
             status="active",
-            cancel_at_period_end=False,
-            amount=decimal.Decimal("19.99")
+            cancel_at_period_end=False
         )
         user = authenticate(username="patrick", password="eldarion")
         login(request, user)

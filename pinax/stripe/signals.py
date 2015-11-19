@@ -4,7 +4,6 @@ from django.dispatch import Signal
 charge_refunded = Signal(providing_args=["charge_proxy"])
 charge_captured = Signal(providing_args=["charge_proxy"])
 cancelled = Signal(providing_args=["stripe_response"])
-card_changed = Signal(providing_args=["stripe_response"])
 charge_event_received = Signal(providing_args=["event"])
 customer_subscription_event = Signal(providing_args=["event", "customer"])
 invoice_event_received = Signal(providing_args=["event"])

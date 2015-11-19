@@ -1,32 +1,108 @@
 import stripe
 
+from ..conf import settings
 from .. import utils
-from .. import signals
 from .. import proxies
 
 
-def sync_customer(customer):
-    cu = customer.stripe_customer
-    updated = False
-    if hasattr(cu, "active_card") and cu.active_card:
-        # Test to make sure the card has changed, otherwise do not update it
-        # (i.e. refrain from sending any signals)
-        if (customer.card_last_4 != cu.active_card.last4 or
-                customer.card_fingerprint != cu.active_card.fingerprint or
-                customer.card_kind != cu.active_card.type):
-            updated = True
-            customer.card_last_4 = cu.active_card.last4
-            customer.card_fingerprint = cu.active_card.fingerprint
-            customer.card_kind = cu.active_card.type
+def sync_payment_source_from_stripe_data(customer, source):
+    if source.id.startswith("card_"):
+        defaults = dict(
+            customer=customer,
+            name=source.name or "",
+            address_line_1=source.address_line1 or "",
+            address_line_1_check=source.address_line1_check or "",
+            address_line_2=source.address_line2 or "",
+            address_city=source.address_city or "",
+            address_state=source.address_state or "",
+            address_country=source.address_country or "",
+            address_zip=source.address_zip or "",
+            address_zip_check=source.address_zip_check or "",
+            brand=source.brand,
+            country=source.country,
+            cvc_check=source.cvc_check,
+            dynamic_last4=source.dynamic_last4 or "",
+            exp_month=source.exp_month,
+            exp_year=source.exp_year,
+            funding=source.funding or "",
+            last4=source.last4 or "",
+            fingerprint=source.fingerprint or ""
+        )
+        card, created = proxies.CardProxy.objects.get_or_create(
+            stripe_id=source.id,
+            defaults=defaults
+        )
+        if not created:
+            for key in defaults:
+                setattr(card, key, defaults[key])
+            card.save()
     else:
-        updated = True
-        customer.card_fingerprint = ""
-        customer.card_last_4 = ""
-        customer.card_kind = ""
+        defaults = dict(
+            customer=customer,
+            active=source.active,
+            amount=utils.convert_amount_for_db(source.amount, source.currency),
+            amount_received=utils.convert_amount_for_db(source.amount_received, source.currency),
+            bitcoin_amount=source.bitcoin_amount,
+            bitcoin_amount_received=source.bitcoin_amount_received,
+            bitcoin_uri=source.bitcoin_uri,
+            currency=source.currency,
+            description=source.description,
+            email=source.email,
+            filled=source.filled,
+            inbound_address=source.inbound_address,
+            payment=source.payment,
+            refund_address=source.refund_address,
+            uncaptured_funds=source.uncaptured_funds,
+            used_for_payment=source.used_for_payment
+        )
+        receiver, created = proxies.BitcoinRecieverProxy.objects.get_or_create(
+            stripe_id=source.id,
+            defaults=defaults
+        )
+        if not created:
+            for key in defaults:
+                setattr(receiver, key, defaults[key])
+            receiver.save()
 
-    if updated:
-        customer.save()
-        signals.card_changed.send(sender=customer, stripe_response=cu)
+
+def sync_subscription_from_stripe_data(customer, subscription):
+    defaults = dict(
+        customer=customer,
+        application_fee_percent=subscription.application_fee_percent,
+        cancel_at_period_end=subscription.cancel_at_period_end,
+        canceled_at=utils.convert_tstamp(subscription.canceled_at),
+        current_period_start=utils.convert_tstamp(subscription.current_period_start),
+        current_period_end=utils.convert_tstamp(subscription.current_period_end),
+        ended_at=utils.convert_tstamp(subscription.ended_at),
+        plan=utils.plan_from_stripe_id(subscription.plan.id),
+        quantity=subscription.quantity,
+        start=utils.convert_tstamp(subscription.start),
+        status=subscription.status,
+        trial_start=utils.convert_tstamp(subscription.trial_start) if subscription.trial_start else None,
+        trial_end=utils.convert_tstamp(subscription.trial_end) if subscription.trial_end else None
+    )
+    sub, created = proxies.SubscriptionProxy.objects.get_or_create(
+        stripe_id=subscription.id,
+        defaults=defaults
+    )
+    if not created:
+        for key in defaults:
+            setattr(sub, key, defaults[key])
+        sub.save()
+
+
+def sync_customer(customer, cu=None):
+    if cu is None:
+        cu = customer.stripe_customer
+    customer.account_balance = utils.convert_amount_for_db(cu.account_balance, cu.currency)
+    customer.currency = cu.currency
+    customer.delinquent = cu.delinquent
+    customer.default_source = cu.default_source
+    customer.save()
+    for source in cu.sources.data:
+        sync_payment_source_from_stripe_data(customer, source)
+    for subscription in cu.subscriptions.data:
+        sync_subscription_from_stripe_data(customer, subscription)
 
 
 def sync_invoices_for_customer(customer):
@@ -37,55 +113,6 @@ def sync_invoices_for_customer(customer):
 def sync_charges_for_customer(customer):
     for charge in customer.stripe_customer.charges().data:
         sync_charge_from_stripe_data(charge)
-
-
-def sync_current_subscription_for_customer(customer):
-    stripe_customer = customer.stripe_customer
-    sub = getattr(stripe_customer, "subscription", None)
-    sub_obj = customer.current_subscription()
-    if sub is None:
-        if sub_obj:
-            sub_obj.delete()
-    else:
-        if sub_obj is not None:
-            sub_obj.plan = utils.plan_from_stripe_id(sub.plan.id)
-            sub_obj.current_period_start = utils.convert_tstamp(
-                sub.current_period_start
-            )
-            sub_obj.current_period_end = utils.convert_tstamp(
-                sub.current_period_end
-            )
-            sub_obj.amount = utils.convert_amount_for_db(sub.plan.amount, sub.plan.currency)
-            sub_obj.currency = sub.plan.currency
-            sub_obj.status = sub.status
-            sub_obj.cancel_at_period_end = sub.cancel_at_period_end
-            sub_obj.start = utils.convert_tstamp(sub.start)
-            sub_obj.quantity = sub.quantity
-            sub_obj.save()
-        else:
-            sub_obj = proxies.CurrentSubscriptionProxy.objects.create(
-                customer=customer,
-                plan=utils.plan_from_stripe_id(sub.plan.id),
-                current_period_start=utils.convert_tstamp(
-                    sub.current_period_start
-                ),
-                current_period_end=utils.convert_tstamp(
-                    sub.current_period_end
-                ),
-                amount=utils.convert_amount_for_db(sub.plan.amount, sub.plan.currency),
-                currency=sub.plan.currency,
-                status=sub.status,
-                cancel_at_period_end=sub.cancel_at_period_end,
-                start=utils.convert_tstamp(sub.start),
-                quantity=sub.quantity
-            )
-
-        if sub.trial_start and sub.trial_end:
-            sub_obj.trial_start = utils.convert_tstamp(sub.trial_start)
-            sub_obj.trial_end = utils.convert_tstamp(sub.trial_end)
-            sub_obj.save()
-
-        return sub_obj
 
 
 def sync_charge_from_stripe_data(data):
@@ -117,7 +144,11 @@ def sync_charge_from_stripe_data(data):
     return obj
 
 
-def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=True):
+def fetch_and_sync_invoice(stripe_id, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
+    sync_invoice_from_stripe_data(stripe.Invoice.retrieve(stripe_id))
+
+
+def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
     c = proxies.CustomerProxy.objects.get(stripe_id=stripe_invoice["customer"])
     period_end = utils.convert_tstamp(stripe_invoice, "period_end")
     period_start = utils.convert_tstamp(stripe_invoice, "period_start")

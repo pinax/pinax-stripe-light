@@ -1,5 +1,3 @@
-import decimal
-
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.utils import timezone
@@ -10,7 +8,7 @@ from mock import Mock
 
 from ..conf import settings
 from ..middleware import ActiveSubscriptionMiddleware
-from ..proxies import CustomerProxy, CurrentSubscriptionProxy
+from ..proxies import CustomerProxy, SubscriptionProxy
 
 
 class DummySession(dict):
@@ -86,15 +84,13 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
             stripe_id="cus_1",
             user=self.request.user
         )
-        CurrentSubscriptionProxy.objects.create(
+        SubscriptionProxy.objects.create(
             customer=customer,
             plan="pro",
             quantity=1,
             start=timezone.now(),
             status="active",
-            cancel_at_period_end=False,
-            amount=decimal.Decimal("19.99"),
-            currency="usd"
+            cancel_at_period_end=False
         )
         self.request.path = "/the/app/"
         response = self.middleware.process_request(self.request)

@@ -14,7 +14,7 @@ import stripe
 
 from eldarion.ajax.views import EldarionAjaxResponseMixin
 
-from .actions import events, customers
+from .actions import events, customers, subscriptions, invoices, sources
 from .conf import settings
 from .forms import PlanForm, PLAN_CHOICES
 
@@ -84,14 +84,13 @@ class AjaxChangeCard(EldarionAjaxResponseMixin, CustomerMixin, View):
     template_fragment = "pinax/stripe/_change_card_form.html"
 
     def send_invoice(self):
-        if self.customer.card_fingerprint == "":
-            self.customer.send_invoice()
+        invoices.create_and_pay(self.customer)
 
     def update_card(self, stripe_token):
-        self.customer.update_card(stripe_token)
+        sources.update_card(self.customer, source=stripe_token)
 
     def retry_unpaid_invoices(self):
-        customers.retry_unpaid_invoices(self.customer)
+        invoices.retry_unpaid(self.customer)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -105,21 +104,21 @@ class AjaxChangeCard(EldarionAjaxResponseMixin, CustomerMixin, View):
 
 
 class AjaxChangePlan(EldarionAjaxResponseMixin, CustomerMixin, View):
-
+    # @@@ rewrite // can't assume only a single subscription anymore
     form_class = PlanForm
     template_fragment = "pinax/stripe/_change_plan_form.html"
 
     @property
     def current_plan(self):
         if not hasattr(self, "_current_plan"):
-            sub = self.customer.current_subscription()
+            sub = subscriptions.current_subscription(self.customer)
             if sub:
                 self._current_plan = sub.plan
         return self._current_plan
 
     def subscribe(self, plan):
         try:
-            customers.subscribe(self.customer, plan)
+            subscriptions.update(subscriptions.current_subscription(self.customer), plan)
             data = {
                 "form": PlanForm(initial={"plan": plan})
             }
@@ -165,11 +164,10 @@ class AjaxSubscribe(EldarionAjaxResponseMixin, CustomerMixin, View):
         try:
             self.customer
         except ObjectDoesNotExist:
-            self._customer = customers.create_customer(self.request.user)
+            self._customer = customers.create(self.request.user)
 
     def update_card(self, token):
-        if token:
-            self.customer.update_card(token)
+        customers.set_default_source(self.customer, token)
 
     def form_valid(self, form):
         data = {"plans": settings.PINAX_STRIPE_PLANS}
@@ -177,7 +175,7 @@ class AjaxSubscribe(EldarionAjaxResponseMixin, CustomerMixin, View):
         try:
             if self.request.POST.get("stripe_token"):
                 self.update_card(self.request.POST.get("stripe_token"))
-            customers.subscribe(self.customer, plan=form.cleaned_data["plan"])
+            subscriptions.create(self.customer, plan=form.cleaned_data["plan"])
             return self.redirect()
         except stripe.StripeError as e:
             data["form"] = form
@@ -200,12 +198,12 @@ class AjaxSubscribe(EldarionAjaxResponseMixin, CustomerMixin, View):
 
 
 class AjaxCancelSubscription(EldarionAjaxResponseMixin, CustomerMixin, View):
-
+    # @@@ rewrite // can't assume only a single subscription anymore // need to select a subscription object
     template_fragment = "pinax/stripe/_cancel_form.html"
 
     def post(self, request, *args, **kwargs):
         try:
-            self.customer.cancel()
+            subscriptions.cancel(subscriptions.current_subscription(self.customer))
             data = {}
         except stripe.StripeError as e:
             data = {"error": smart_str(e)}

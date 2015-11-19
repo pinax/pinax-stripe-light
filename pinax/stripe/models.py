@@ -1,3 +1,5 @@
+import decimal
+
 from django.db import models
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
@@ -39,6 +41,9 @@ class Event(StripeObject):
     validated_message = JSONField(null=True)
     valid = models.NullBooleanField(null=True)
     processed = models.BooleanField(default=False)
+    request = models.CharField(max_length=100, blank=True)
+    pending_webhooks = models.PositiveIntegerField(default=0)
+    api_version = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
         return "%s - %s".format(self.kind, self.stripe_id)
@@ -85,64 +90,107 @@ class Customer(StripeObject):
         getattr(settings, "AUTH_USER_MODEL", "auth.User"),
         null=True
     )
-    card_fingerprint = models.CharField(max_length=200, blank=True)
-    card_last_4 = models.CharField(max_length=4, blank=True)
-    card_kind = models.CharField(max_length=50, blank=True)
+    account_balance = models.DecimalField(decimal_places=2, max_digits=9, null=True)
+    currency = models.CharField(max_length=10, default="usd", blank=True)
+    delinquent = models.BooleanField(default=False)
+    default_source = models.TextField(blank=True)
     date_purged = models.DateTimeField(null=True, editable=False)
 
     def __str__(self):
         return str(self.user)
 
 
-class CurrentSubscription(models.Model):
+class Card(StripeObject):
 
-    customer = models.OneToOneField(
-        Customer,
-        related_name="current_subscription",
-        null=True
-    )
-    plan = models.CharField(max_length=100)
-    quantity = models.IntegerField()
-    start = models.DateTimeField()
-    # trialing, active, past_due, canceled, or unpaid
-    status = models.CharField(max_length=25)
+    customer = models.ForeignKey(Customer)
+    name = models.TextField(blank=True)
+    address_line_1 = models.TextField(blank=True)
+    address_line_1_check = models.CharField(max_length=15)
+    address_line_2 = models.TextField(blank=True)
+    address_city = models.TextField(blank=True)
+    address_state = models.TextField(blank=True)
+    address_country = models.TextField(blank=True)
+    address_zip = models.TextField(blank=True)
+    address_zip_check = models.CharField(max_length=15)
+    brand = models.TextField(blank=True)
+    country = models.CharField(max_length=2)
+    cvc_check = models.CharField(max_length=15)
+    dynamic_last4 = models.CharField(max_length=4, blank=True)
+    tokenization_method = models.CharField(max_length=15, blank=True)
+    exp_month = models.IntegerField()
+    exp_year = models.IntegerField()
+    funding = models.CharField(max_length=15)
+    last4 = models.CharField(max_length=4, blank=True)
+    fingerprint = models.TextField()
+
+
+class BitcoinReceiver(StripeObject):
+
+    customer = models.ForeignKey(Customer)
+    active = models.BooleanField(default=False)
+    amount = models.DecimalField(decimal_places=2, max_digits=9)
+    amount_received = models.DecimalField(decimal_places=2, max_digits=9, default=decimal.Decimal("0"))
+    bitcoin_amount = models.PositiveIntegerField()  # Satoshi (10^8 Satoshi in one bitcoin)
+    bitcoin_amount_received = models.PositiveIntegerField(default=0)
+    bitcoin_uri = models.TextField(blank=True)
+    currency = models.CharField(max_length=10, default="usd")
+    description = models.TextField(blank=True)
+    email = models.TextField(blank=True)
+    filled = models.BooleanField(default=False)
+    inbound_address = models.TextField(blank=True)
+    payment = models.TextField(blank=True)
+    refund_address = models.TextField(blank=True)
+    uncaptured_funds = models.BooleanField(default=False)
+    used_for_payment = models.BooleanField(default=False)
+
+
+class Subscription(StripeObject):
+
+    customer = models.ForeignKey(Customer)
+    application_fee_percent = models.DecimalField(decimal_places=2, max_digits=3, default=None, null=True)
     cancel_at_period_end = models.BooleanField(default=False)
     canceled_at = models.DateTimeField(blank=True, null=True)
     current_period_end = models.DateTimeField(blank=True, null=True)
     current_period_start = models.DateTimeField(blank=True, null=True)
     ended_at = models.DateTimeField(blank=True, null=True)
+    plan = models.CharField(max_length=100)
+    quantity = models.IntegerField()
+    start = models.DateTimeField()
+    status = models.CharField(max_length=25)  # trialing, active, past_due, canceled, or unpaid
     trial_end = models.DateTimeField(blank=True, null=True)
     trial_start = models.DateTimeField(blank=True, null=True)
-    amount = models.DecimalField(decimal_places=2, max_digits=9)
-    currency = models.CharField(max_length=10, default="usd")
-    created_at = models.DateTimeField(default=timezone.now)
 
 
-class Invoice(models.Model):
+class Invoice(StripeObject):
 
-    stripe_id = models.CharField(max_length=255)
     customer = models.ForeignKey(Customer, related_name="invoices")
+    amount_due = models.DecimalField(decimal_places=2, max_digits=9)
     attempted = models.NullBooleanField()
-    attempts = models.PositiveIntegerField(null=True)
+    attempt_count = models.PositiveIntegerField(null=True)
+    charge = models.ForeignKey("Charge", null=True, related_name="charges")
+    subscription = models.ForeignKey(Subscription, null=True)
+    statement_descriptor = models.TextField(blank=True)
+    currency = models.CharField(max_length=10, default="usd")
     closed = models.BooleanField(default=False)
+    description = models.TextField(blank=True)
     paid = models.BooleanField(default=False)
+    receipt_number = models.TextField(blank=True)
     period_end = models.DateTimeField()
     period_start = models.DateTimeField()
     subtotal = models.DecimalField(decimal_places=2, max_digits=9)
     total = models.DecimalField(decimal_places=2, max_digits=9)
-    currency = models.CharField(max_length=10, default="usd")
     date = models.DateTimeField()
-    charge = models.CharField(max_length=50, blank=True)
-    created_at = models.DateTimeField(default=timezone.now)
+    webhooks_delivered_at = models.DateTimeField(null=True)
 
 
-class InvoiceItem(models.Model):
+class InvoiceItem(StripeObject):
 
-    stripe_id = models.CharField(max_length=255)
-    created_at = models.DateTimeField(default=timezone.now)
     invoice = models.ForeignKey(Invoice, related_name="items")
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=10, default="usd")
+    quantity = models.PositiveIntegerField(null=True)
+    kind = models.CharField(max_length=25, blank=True)
+    subscription = models.ForeignKey(Subscription, null=True)
     period_start = models.DateTimeField()
     period_end = models.DateTimeField()
     proration = models.BooleanField(default=False)

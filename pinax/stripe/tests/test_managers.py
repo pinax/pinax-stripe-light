@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_CREATED_TEST_DATA2
-from ..proxies import EventProxy, TransferProxy, CustomerProxy, CurrentSubscriptionProxy, ChargeProxy
+from ..proxies import EventProxy, TransferProxy, CustomerProxy, SubscriptionProxy, ChargeProxy
 
 
 class CustomerManagerTest(TestCase):
@@ -21,34 +21,28 @@ class CustomerManagerTest(TestCase):
         for i in range(10):
             customer = CustomerProxy.objects.create(
                 user=User.objects.create_user(username="patrick{0}".format(i)),
-                stripe_id="cus_xxxxxxxxxxxxxx{0}".format(i),
-                card_fingerprint="YYYYYYYY",
-                card_last_4="2342",
-                card_kind="Visa"
+                stripe_id="cus_xxxxxxxxxxxxxx{0}".format(i)
             )
-            CurrentSubscriptionProxy.objects.create(
+            SubscriptionProxy.objects.create(
+                stripe_id="sub_{}".format(i),
                 customer=customer,
                 plan="test",
                 current_period_start=period_start,
                 current_period_end=period_end,
-                amount=(500 / decimal.Decimal("100.0")),
                 status="active",
                 start=start,
                 quantity=1
             )
         customer = CustomerProxy.objects.create(
             user=User.objects.create_user(username="patrick{0}".format(11)),
-            stripe_id="cus_xxxxxxxxxxxxxx{0}".format(11),
-            card_fingerprint="YYYYYYYY",
-            card_last_4="2342",
-            card_kind="Visa"
+            stripe_id="cus_xxxxxxxxxxxxxx{0}".format(11)
         )
-        CurrentSubscriptionProxy.objects.create(
+        SubscriptionProxy.objects.create(
+            stripe_id="sub_{}".format(11),
             customer=customer,
             plan="test",
             current_period_start=period_start,
             current_period_end=period_end,
-            amount=(500 / decimal.Decimal("100.0")),
             status="canceled",
             canceled_at=period_end,
             start=start,
@@ -56,17 +50,14 @@ class CustomerManagerTest(TestCase):
         )
         customer = CustomerProxy.objects.create(
             user=User.objects.create_user(username="patrick{0}".format(12)),
-            stripe_id="cus_xxxxxxxxxxxxxx{0}".format(12),
-            card_fingerprint="YYYYYYYY",
-            card_last_4="2342",
-            card_kind="Visa"
+            stripe_id="cus_xxxxxxxxxxxxxx{0}".format(12)
         )
-        CurrentSubscriptionProxy.objects.create(
+        SubscriptionProxy.objects.create(
+            stripe_id="sub_{}".format(12),
             customer=customer,
             plan="test-2",
             current_period_start=period_start,
             current_period_end=period_end,
-            amount=(500 / decimal.Decimal("100.0")),
             status="active",
             start=start,
             quantity=1
@@ -104,23 +95,23 @@ class CustomerManagerTest(TestCase):
 
     def test_started_plan_summary(self):
         for plan in CustomerProxy.objects.started_plan_summary_for(2013, 1):
-            if plan["current_subscription__plan"] == "test":
+            if plan["subscription__plan"] == "test":
                 self.assertEquals(plan["count"], 11)
-            if plan["current_subscription__plan"] == "test-2":
+            if plan["subscription__plan"] == "test-2":
                 self.assertEquals(plan["count"], 1)
 
     def test_active_plan_summary(self):
         for plan in CustomerProxy.objects.active_plan_summary():
-            if plan["current_subscription__plan"] == "test":
+            if plan["subscription__plan"] == "test":
                 self.assertEquals(plan["count"], 10)
-            if plan["current_subscription__plan"] == "test-2":
+            if plan["subscription__plan"] == "test-2":
                 self.assertEquals(plan["count"], 1)
 
     def test_canceled_plan_summary(self):
         for plan in CustomerProxy.objects.canceled_plan_summary_for(2013, 1):
-            if plan["current_subscription__plan"] == "test":
+            if plan["subscription__plan"] == "test":
                 self.assertEquals(plan["count"], 1)
-            if plan["current_subscription__plan"] == "test-2":
+            if plan["subscription__plan"] == "test-2":
                 self.assertEquals(plan["count"], 0)
 
     def test_churn(self):

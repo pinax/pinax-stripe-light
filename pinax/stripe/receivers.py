@@ -15,16 +15,14 @@ def handle_charge_actions(sender, *args, **kwargs):
 @receiver(invoice_event_received)
 def handle_invoice_event_received(sender, *args, **kwargs):
     event = kwargs.get("event")
-    if event.kind in ["invoice.payment_failed", "invoice.payment_succeeded"]:
-        invoice_data = event.message["data"]["object"]
-        stripe_invoice = stripe.Invoice.retrieve(invoice_data["id"])
-        syncs.sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS)
+    if event.kind.startswith("invoice."):
+        syncs.fetch_and_sync_invoice(event.message["data"]["object"]["id"], send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS)
 
 
 @receiver(customer_subscription_event)
 def handle_customer_subscription_event(sender, *args, **kwargs):
     customer = kwargs.get("customer")
-    syncs.sync_current_subscription_for_customer(customer)
+    syncs.sync_customer(customer, customer.stripe_customer)
 
 
 @receiver(charge_event_received)

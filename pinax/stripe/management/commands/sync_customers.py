@@ -23,6 +23,5 @@ class Command(BaseCommand):
             ))
             customer = customers.get_customer_for_user(user)
             syncs.sync_customer(customer)
-            syncs.sync_current_subscription_for_customer(customer)
             syncs.sync_invoices_for_customer(customer)
             syncs.sync_charges_for_customer(customer)

@@ -167,7 +167,7 @@ class Invoice(StripeObject):
     amount_due = models.DecimalField(decimal_places=2, max_digits=9)
     attempted = models.NullBooleanField()
     attempt_count = models.PositiveIntegerField(null=True)
-    charge = models.ForeignKey("Charge", null=True, related_name="charges")
+    charge = models.ForeignKey("Charge", null=True, related_name="invoices")
     subscription = models.ForeignKey(Subscription, null=True)
     statement_descriptor = models.TextField(blank=True)
     currency = models.CharField(max_length=10, default="usd")

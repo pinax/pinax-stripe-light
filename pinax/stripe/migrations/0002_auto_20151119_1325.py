@@ -16,16 +16,16 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='BitcoinReceiver',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
-                ('stripe_id', models.CharField(max_length=255, unique=True)),
+                ('id', models.AutoField(primary_key=True, verbose_name='ID', serialize=False, auto_created=True)),
+                ('stripe_id', models.CharField(unique=True, max_length=255)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('active', models.BooleanField(default=False)),
-                ('amount', models.DecimalField(max_digits=9, decimal_places=2)),
-                ('amount_received', models.DecimalField(max_digits=9, default=Decimal('0'), decimal_places=2)),
+                ('amount', models.DecimalField(decimal_places=2, max_digits=9)),
+                ('amount_received', models.DecimalField(decimal_places=2, max_digits=9, default=Decimal('0'))),
                 ('bitcoin_amount', models.PositiveIntegerField()),
                 ('bitcoin_amount_received', models.PositiveIntegerField(default=0)),
                 ('bitcoin_uri', models.TextField(blank=True)),
-                ('currency', models.CharField(default=b'usd', max_length=10)),
+                ('currency', models.CharField(max_length=10, default=b'usd')),
                 ('description', models.TextField(blank=True)),
                 ('email', models.TextField(blank=True)),
                 ('filled', models.BooleanField(default=False)),
@@ -42,8 +42,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Card',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
-                ('stripe_id', models.CharField(max_length=255, unique=True)),
+                ('id', models.AutoField(primary_key=True, verbose_name='ID', serialize=False, auto_created=True)),
+                ('stripe_id', models.CharField(unique=True, max_length=255)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('name', models.TextField(blank=True)),
                 ('address_line_1', models.TextField(blank=True)),
@@ -72,21 +72,21 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Subscription',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
-                ('stripe_id', models.CharField(max_length=255, unique=True)),
+                ('id', models.AutoField(primary_key=True, verbose_name='ID', serialize=False, auto_created=True)),
+                ('stripe_id', models.CharField(unique=True, max_length=255)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('application_fee_percent', models.DecimalField(null=True, max_digits=3, default=None, decimal_places=2)),
+                ('application_fee_percent', models.DecimalField(decimal_places=2, max_digits=3, null=True, default=None)),
                 ('cancel_at_period_end', models.BooleanField(default=False)),
-                ('canceled_at', models.DateTimeField(null=True, blank=True)),
-                ('current_period_end', models.DateTimeField(null=True, blank=True)),
-                ('current_period_start', models.DateTimeField(null=True, blank=True)),
-                ('ended_at', models.DateTimeField(null=True, blank=True)),
+                ('canceled_at', models.DateTimeField(blank=True, null=True)),
+                ('current_period_end', models.DateTimeField(blank=True, null=True)),
+                ('current_period_start', models.DateTimeField(blank=True, null=True)),
+                ('ended_at', models.DateTimeField(blank=True, null=True)),
                 ('plan', models.CharField(max_length=100)),
                 ('quantity', models.IntegerField()),
                 ('start', models.DateTimeField()),
                 ('status', models.CharField(max_length=25)),
-                ('trial_end', models.DateTimeField(null=True, blank=True)),
-                ('trial_start', models.DateTimeField(null=True, blank=True)),
+                ('trial_end', models.DateTimeField(blank=True, null=True)),
+                ('trial_start', models.DateTimeField(blank=True, null=True)),
             ],
             options={
                 'abstract': False,
@@ -175,12 +175,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='customer',
             name='account_balance',
-            field=models.DecimalField(null=True, max_digits=9, decimal_places=2),
+            field=models.DecimalField(decimal_places=2, max_digits=9, null=True),
         ),
         migrations.AddField(
             model_name='customer',
             name='currency',
-            field=models.CharField(blank=True, default=b'usd', max_length=10),
+            field=models.CharField(blank=True, max_length=10, default=b'usd'),
         ),
         migrations.AddField(
             model_name='customer',
@@ -210,7 +210,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='invoice',
             name='amount_due',
-            field=models.DecimalField(max_digits=9, default=0, decimal_places=2),
+            field=models.DecimalField(decimal_places=2, max_digits=9, default=0),
             preserve_default=False,
         ),
         migrations.AddField(
@@ -241,17 +241,17 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='invoice',
             name='charge',
-            field=models.ForeignKey(null=True, to='pinax_stripe.Charge', related_name='charges'),
+            field=models.ForeignKey(null=True, related_name='invoices', to='pinax_stripe.Charge'),
         ),
         migrations.AlterField(
             model_name='invoice',
             name='stripe_id',
-            field=models.CharField(max_length=255, unique=True),
+            field=models.CharField(unique=True, max_length=255),
         ),
         migrations.AlterField(
             model_name='invoiceitem',
             name='stripe_id',
-            field=models.CharField(max_length=255, unique=True),
+            field=models.CharField(unique=True, max_length=255),
         ),
         migrations.DeleteModel(
             name='CurrentSubscription',
@@ -301,11 +301,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='invoice',
             name='subscription',
-            field=models.ForeignKey(to='pinax_stripe.Subscription', null=True),
+            field=models.ForeignKey(null=True, to='pinax_stripe.Subscription'),
         ),
         migrations.AddField(
             model_name='invoiceitem',
             name='subscription',
-            field=models.ForeignKey(to='pinax_stripe.Subscription', null=True),
+            field=models.ForeignKey(null=True, to='pinax_stripe.Subscription'),
         ),
     ]

@@ -112,6 +112,44 @@ $ detox
 This will execute the testing matrix in parallel as defined in the `tox.ini`.
 
 
+## API
+
+In order to make this app more maintainable and scale with all the services that
+Stripe is offering, we have refactored this internal API away from being just
+model methods into a service layer in `pinax.stripe.actions`.
+
+Internally, things like views, management commands, and receivers, all flow
+through the public API defined in the `pinax.stripe.actions` modules.  These
+modules interact with both the Stripe API as well as `pinax-stripe`'s internal
+models. To interface with the models, they work through a set of proxy models
+found in `pinax.stripe.proxies`.  Methods on this proxy models are for internal
+use only and provide a clean separation from the actual models.
+
+### Charges
+
+
+### Customers
+
+
+### Events
+
+
+### Invoices
+
+
+### Refunds
+
+
+### Sources
+
+
+### Subscriptions
+
+
+### Syncs
+
+
+
 ## Documentation
 
 Documentation for django-stripe-payments can be found at http://django-stripe-payments.readthedocs.org

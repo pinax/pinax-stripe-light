@@ -31,7 +31,7 @@ These items will be made into issues in the [2.0 Milestone](https://github.com/p
 * [x] convert ajax views to CBVs - [Issue #181](https://github.com/pinax/django-stripe-payments/issues/181)
 * [x] add migrations - [Issue #164](https://github.com/pinax/django-stripe-payments/issues/164)
 * [ ] update for latest / greatest API compatibility - [Issue #178](https://github.com/pinax/django-stripe-payments/issues/178)
-* [ ] add new webhooks - [Issue #182](https://github.com/pinax/django-stripe-payments/issues/182)
+* [x] add new webhooks - [Issue #182](https://github.com/pinax/django-stripe-payments/issues/182)
 * [ ] better handling of one-off charges - [Issue #43](https://github.com/pinax/django-stripe-payments/issues/43)
 
 

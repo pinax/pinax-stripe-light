@@ -10,6 +10,7 @@ from mock import patch
 
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_PENDING_TEST_DATA
 from ..proxies import EventProxy, TransferProxy, EventProcessingExceptionProxy
+from ..webhooks import registry
 
 
 class TestWebhook(TestCase):
@@ -86,7 +87,10 @@ class TestWebhook(TestCase):
 
 class TestTransferWebhooks(TestCase):
 
-    def test_transfer_created(self):
+    @patch("stripe.Event.retrieve")
+    def test_transfer_created(self, EventMock):
+        ev = EventMock()
+        ev.to_dict.return_value = TRANSFER_CREATED_TEST_DATA
         event = EventProxy.objects.create(
             stripe_id=TRANSFER_CREATED_TEST_DATA["id"],
             kind="transfer.created",
@@ -95,12 +99,15 @@ class TestTransferWebhooks(TestCase):
             validated_message=TRANSFER_CREATED_TEST_DATA,
             valid=True
         )
-        event.process()
+        registry.get(event.kind)(event).process()
         transfer = TransferProxy.objects.get(stripe_id="tr_XXXXXXXXXXXX")
         self.assertEquals(transfer.amount, decimal.Decimal("4.55"))
         self.assertEquals(transfer.status, "paid")
 
-    def test_transfer_pending_create(self):
+    @patch("stripe.Event.retrieve")
+    def test_transfer_pending_create(self, EventMock):
+        ev = EventMock()
+        ev.to_dict.return_value = TRANSFER_PENDING_TEST_DATA
         event = EventProxy.objects.create(
             stripe_id=TRANSFER_PENDING_TEST_DATA["id"],
             kind="transfer.created",
@@ -109,12 +116,15 @@ class TestTransferWebhooks(TestCase):
             validated_message=TRANSFER_PENDING_TEST_DATA,
             valid=True
         )
-        event.process()
+        registry.get(event.kind)(event).process()
         transfer = TransferProxy.objects.get(stripe_id="tr_adlkj2l3kj23")
         self.assertEquals(transfer.amount, decimal.Decimal("9.41"))
         self.assertEquals(transfer.status, "pending")
 
-    def test_transfer_paid_updates_existing_record(self):
+    @patch("stripe.Event.retrieve")
+    def test_transfer_paid_updates_existing_record(self, EventMock):
+        ev = EventMock()
+        ev.to_dict.return_value = TRANSFER_CREATED_TEST_DATA
         event = EventProxy.objects.create(
             stripe_id=TRANSFER_CREATED_TEST_DATA["id"],
             kind="transfer.created",
@@ -123,7 +133,7 @@ class TestTransferWebhooks(TestCase):
             validated_message=TRANSFER_CREATED_TEST_DATA,
             valid=True
         )
-        event.process()
+        registry.get(event.kind)(event).process()
         data = {
             "created": 1364658818,
             "data": {
@@ -210,6 +220,6 @@ class TestTransferWebhooks(TestCase):
             validated_message=data,
             valid=True
         )
-        paid_event.process()
+        registry.get(paid_event.kind)(paid_event).process()
         transfer = TransferProxy.objects.get(stripe_id="tr_XXXXXXXXXXXX")
         self.assertEquals(transfer.status, "paid")

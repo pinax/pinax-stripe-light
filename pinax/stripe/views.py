@@ -14,7 +14,7 @@ import stripe
 
 from eldarion.ajax.views import EldarionAjaxResponseMixin
 
-from .actions import events, customers, subscriptions, invoices, sources
+from .actions import events, exceptions, customers, subscriptions, invoices, sources
 from .conf import settings
 from .forms import PlanForm, PLAN_CHOICES
 
@@ -223,7 +223,7 @@ class Webhook(View):
     def post(self, request, *args, **kwargs):
         data = self.extract_json()
         if events.dupe_event_exists(data["id"]):
-            events.log_exception(data, "Duplicate event record")
+            exceptions.log_exception(data, "Duplicate event record")
         else:
             events.add_event(
                 stripe_id=data["id"],

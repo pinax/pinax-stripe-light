@@ -1,12 +1,9 @@
 from .. import proxies
+from ..webhooks import registry
 
 
 def dupe_event_exists(stripe_id):
     return proxies.EventProxy.objects.filter(stripe_id=stripe_id).exists()
-
-
-def log_exception(data, exception, event=None):
-    proxies.EventProcessingExceptionProxy.log(data, exception, event)
 
 
 def add_event(stripe_id, kind, livemode, message, api_version="", request_id="", pending_webhooks=0):
@@ -19,5 +16,7 @@ def add_event(stripe_id, kind, livemode, message, api_version="", request_id="",
         request=request_id,
         pending_webhooks=pending_webhooks
     )
-    event.validate()
-    event.process()
+    WebhookClass = registry.get(kind)
+    if WebhookClass is not None:
+        webhook = WebhookClass(event)
+        webhook.process()

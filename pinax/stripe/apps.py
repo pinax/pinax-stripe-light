@@ -11,4 +11,4 @@ class AppConfig(BaseAppConfig):
     verbose_name = _("Pinax Stripe")
 
     def ready(self):
-        importlib.import_module("pinax.stripe.receivers")
+        importlib.import_module("pinax.stripe.webhooks")

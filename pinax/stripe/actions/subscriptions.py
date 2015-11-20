@@ -4,12 +4,17 @@ from . import syncs
 from ..conf import settings
 from .. import hooks
 from .. import proxies
-from .. import signals
 
 
 def current_subscription(customer):
     # @@@ hack until views are rewritten
     return next(iter(proxies.SubscriptionProxy.objects.filter(customer=customer)), None)
+
+
+def delete(stripe_id):
+    sub = next(iter(proxies.SubscriptionProxy.objects.filter(stripe_id=stripe_id)), None)
+    if sub is not None:
+        sub.delete()
 
 
 def cancel(subscription, at_period_end=True):
@@ -49,5 +54,4 @@ def create(customer, plan, quantity=None, trial_days=None, charge_immediately=Tr
 
     if charge_immediately:
         customer.send_invoice()
-    signals.subscription_made.send(sender=customer, plan=plan, stripe_response=resp)
     return resp

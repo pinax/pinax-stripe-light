@@ -4,7 +4,6 @@ import stripe
 
 from . import syncs
 from .. import utils
-from .. import signals
 
 
 def create(amount, source=None, customer=None, currency="usd", description=None, send_receipt=True, capture=True):
@@ -42,4 +41,3 @@ def capture(charge, amount):
         )
     )
     syncs.sync_charge_from_stripe_data(ch)
-    signals.charge_captured.send(sender=capture, charge_proxy=charge)

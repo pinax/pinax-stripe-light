@@ -1,6 +1,6 @@
 import stripe
 
-from .. import signals
+from . import syncs
 from .. import utils
 
 
@@ -12,4 +12,4 @@ def create(charge, amount=None):
             charge=charge.stripe_id,
             amount=utils.convert_amount_for_api(charge.calculate_refund_amount(amount=amount), charge.currency)
         )
-    signals.charge_refunded.send(sender=charge, charge_proxy=charge)
+    syncs.sync_charge_from_stripe_data(charge.stripe_charge)

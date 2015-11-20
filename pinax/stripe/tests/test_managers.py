@@ -6,8 +6,11 @@ from django.utils import timezone
 
 from django.contrib.auth import get_user_model
 
+from mock import patch
+
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_CREATED_TEST_DATA2
 from ..proxies import EventProxy, TransferProxy, CustomerProxy, SubscriptionProxy, ChargeProxy
+from ..webhooks import registry
 
 
 class CustomerManagerTest(TestCase):
@@ -123,7 +126,10 @@ class CustomerManagerTest(TestCase):
 
 class TransferManagerTest(TestCase):
 
-    def test_transfer_summary(self):
+    @patch("stripe.Event.retrieve")
+    def test_transfer_summary(self, EventMock):
+        ev = EventMock()
+        ev.to_dict.return_value = TRANSFER_CREATED_TEST_DATA
         event = EventProxy.objects.create(
             stripe_id=TRANSFER_CREATED_TEST_DATA["id"],
             kind="transfer.created",
@@ -132,7 +138,8 @@ class TransferManagerTest(TestCase):
             validated_message=TRANSFER_CREATED_TEST_DATA,
             valid=True
         )
-        event.process()
+        registry.get(event.kind)(event).process()
+        ev.to_dict.return_value = TRANSFER_CREATED_TEST_DATA2
         event = EventProxy.objects.create(
             stripe_id=TRANSFER_CREATED_TEST_DATA2["id"],
             kind="transfer.created",
@@ -141,7 +148,7 @@ class TransferManagerTest(TestCase):
             validated_message=TRANSFER_CREATED_TEST_DATA2,
             valid=True
         )
-        event.process()
+        registry.get(event.kind)(event).process()
         self.assertEquals(TransferProxy.during(2012, 9).count(), 2)
         totals = TransferProxy.paid_totals_for(2012, 9)
         self.assertEquals(

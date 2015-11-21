@@ -18,6 +18,16 @@ class StripeObject(models.Model):
         abstract = True
 
 
+class Plan(StripeObject):
+    amount = models.DecimalField(decimal_places=2, max_digits=9)
+    currency = models.CharField(max_length=15)
+    interval = models.CharField(max_length=15)
+    interval_count = models.IntegerField()
+    name = models.CharField(max_length=150)
+    statement_descriptor = models.TextField(blank=True)
+    trial_period_days = models.IntegerField(null=True)
+
+
 @python_2_unicode_compatible
 class EventProcessingException(models.Model):
 
@@ -196,11 +206,11 @@ class InvoiceItem(StripeObject):
     proration = models.BooleanField(default=False)
     line_type = models.CharField(max_length=50)
     description = models.CharField(max_length=200, blank=True)
-    plan = models.CharField(max_length=100, blank=True)
+    plan = models.ForeignKey(Plan, null=True)
     quantity = models.IntegerField(null=True)
 
     def plan_display(self):
-        return settings.PINAX_STRIPE_PLANS[self.plan]["name"]
+        return self.plan.name if self.plan else ""
 
 
 class Charge(StripeObject):

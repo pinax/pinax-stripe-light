@@ -32,7 +32,6 @@ class PinaxStripeAppConf(AppConf):
     SECRET_KEY = None
     API_VERSION = "2015-10-16"
     INVOICE_FROM_EMAIL = "billing@example.com"
-    PLANS = {}
     DEFAULT_PLAN = None
     HOOKSET = "pinax.stripe.hooks.DefaultHookSet"
     SEND_EMAIL_RECEIPTS = True

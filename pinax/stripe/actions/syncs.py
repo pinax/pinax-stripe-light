@@ -5,6 +5,27 @@ from .. import utils
 from .. import proxies
 
 
+def sync_plans():
+    for plan in stripe.Plan.all().data:
+        defaults = dict(
+            amount=utils.convert_amount_for_db(plan.amount, plan.currency),
+            currency=plan.currency or "",
+            interval=plan.interval,
+            interval_count=plan.interval_count,
+            name=plan.name,
+            statement_descriptor=plan.statement_descriptor or "",
+            trial_period_days=plan.trial_period_days
+        )
+        obj, created = proxies.PlanProxy.objects.get_or_create(
+            stripe_id=plan.id,
+            defaults=defaults
+        )
+        if not created:
+            for key in defaults:
+                setattr(obj, key, defaults[key])
+            obj.save()
+
+
 def sync_payment_source_from_stripe_data(customer, source):
     if source.id.startswith("card_"):
         defaults = dict(
@@ -74,7 +95,7 @@ def sync_subscription_from_stripe_data(customer, subscription):
         current_period_start=utils.convert_tstamp(subscription.current_period_start),
         current_period_end=utils.convert_tstamp(subscription.current_period_end),
         ended_at=utils.convert_tstamp(subscription.ended_at),
-        plan=utils.plan_from_stripe_id(subscription.plan.id),
+        plan=proxies.PlanProxy.objects.get(stripe_id=subscription.plan.id),
         quantity=subscription.quantity,
         start=utils.convert_tstamp(subscription.start),
         status=subscription.status,
@@ -190,9 +211,9 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         period_start = utils.convert_tstamp(item["period"], "start")
 
         if item.get("plan"):
-            plan = utils.plan_from_stripe_id(item["plan"]["id"])
+            plan = proxies.PlanProxy.objects.get(item["plan"]["id"])
         else:
-            plan = ""
+            plan = None
 
         inv_item, inv_item_created = invoice.items.get_or_create(
             stripe_id=item["id"],

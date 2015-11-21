@@ -6,6 +6,12 @@ import stripe
 from .. import models
 
 
+class PlanProxy(models.Plan):
+
+    class Meta:
+        proxy = True
+
+
 class SubscriptionProxy(models.Subscription):
 
     class Meta:
@@ -20,7 +26,7 @@ class SubscriptionProxy(models.Subscription):
         return self.amount * self.quantity
 
     def plan_display(self):
-        return settings.PINAX_STRIPE_PLANS[self.plan]["name"]
+        return self.plan.name
 
     def status_display(self):
         return self.status.replace("_", " ").title()

@@ -47,7 +47,7 @@ def create(customer, plan, quantity=None, trial_days=None, charge_immediately=Tr
     if token:
         subscription_params["source"] = token
 
-    subscription_params["plan"] = settings.PINAX_STRIPE_PLANS[plan]["stripe_plan_id"]
+    subscription_params["plan"] = plan
     subscription_params["quantity"] = quantity
     subscription_params["coupon"] = coupon
     resp = cu.subscriptions.create(**subscription_params)

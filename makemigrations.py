@@ -35,35 +35,6 @@ DEFAULT_SETTINGS = dict(
     SITE_ID=1,
     PINAX_STRIPE_PUBLIC_KEY="",
     PINAX_STRIPE_SECRET_KEY="",
-    PINAX_STRIPE_PLANS={
-        "free": {
-            "name": "Free Plan"
-        },
-        "entry": {
-            "stripe_plan_id": "entry-monthly",
-            "name": "Entry ($9.54/month)",
-            "description": "The entry-level monthly subscription",
-            "price": 9.54,
-            "interval": "month",
-            "currency": "usd"
-        },
-        "pro": {
-            "stripe_plan_id": "pro-monthly",
-            "name": "Pro ($19.99/month)",
-            "description": "The pro-level monthly subscription",
-            "price": 19.99,
-            "interval": "month",
-            "currency": "usd"
-        },
-        "premium": {
-            "stripe_plan_id": "premium-monthly",
-            "name": "Gold ($59.99/month)",
-            "description": "The premium-level monthly subscription",
-            "price": decimal.Decimal("59.99"),
-            "interval": "month",
-            "currency": "usd"
-        }
-    },
     PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS=["pinax_stripe_subscribe"],
     PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT="pinax_stripe_subscribe",
     PINAX_STRIPE_HOOKSET="pinax.stripe.tests.hooks.TestHookSet"

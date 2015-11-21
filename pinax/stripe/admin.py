@@ -181,12 +181,15 @@ admin.site.register(
     list_display=[
         "stripe_id",
         "user",
-        "card_kind",
-        "card_last_4",
-        subscription_status
+        "account_balance",
+        "currency",
+        "delinquent",
+        "default_source",
+        subscription_status,
+        "date_purged"
     ],
     list_filter=[
-        "card_kind",
+        "delinquent",
         CustomerHasCardListFilter,
         CustomerSubscriptionStatusListFilter
     ],
@@ -240,7 +243,7 @@ admin.site.register(
         "paid",
         "closed",
         "attempted",
-        "attempts",
+        "attempt_count",
         "created_at",
         "date",
         "period_end",

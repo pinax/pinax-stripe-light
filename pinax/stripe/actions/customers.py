@@ -18,20 +18,13 @@ def set_default_source(customer, source):
     syncs.sync_customer(customer, cu=cu)
 
 
-def create(user, card=None, plan=None, charge_immediately=True):
-    if card and plan:
-        plan = settings.PINAX_STRIPE_PLANS[plan]["stripe_plan_id"]
-    elif settings.PINAX_STRIPE_DEFAULT_PLAN:
-        plan = settings.PINAX_STRIPE_PLANS[settings.PINAX_STRIPE_DEFAULT_PLAN]["stripe_plan_id"]
-    else:
-        plan = None
-
+def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True):
     trial_end = hooks.hookset.trial_period(user, plan)
 
     stripe_customer = stripe.Customer.create(
         email=user.email,
         source=card,
-        plan=plan or settings.PINAX_STRIPE_DEFAULT_PLAN,
+        plan=plan,
         trial_end=trial_end
     )
     cus = proxies.CustomerProxy.objects.create(

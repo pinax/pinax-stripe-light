@@ -31,14 +31,8 @@ ZERO_DECIMAL_CURRENCIES = [
 
 
 def convert_amount_for_db(amount, currency="usd"):
-    return (amount / decimal.Decimal("100")) if currency.lower() not in ZERO_DECIMAL_CURRENCIES else decimal.Decimal(amount)
+    return (amount / decimal.Decimal("100")) if currency and currency.lower() not in ZERO_DECIMAL_CURRENCIES else decimal.Decimal(amount)
 
 
 def convert_amount_for_api(amount, currency="usd"):
-    return int(amount * 100) if currency.lower() not in ZERO_DECIMAL_CURRENCIES else int(amount)
-
-
-def plan_from_stripe_id(stripe_id):
-    for key in settings.PINAX_STRIPE_PLANS.keys():
-        if settings.PINAX_STRIPE_PLANS[key].get("stripe_plan_id") == stripe_id:
-            return key
+    return int(amount * 100) if currency and currency.lower() not in ZERO_DECIMAL_CURRENCIES else int(amount)

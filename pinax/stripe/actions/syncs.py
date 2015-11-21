@@ -95,9 +95,9 @@ def sync_customer(customer, cu=None):
     if cu is None:
         cu = customer.stripe_customer
     customer.account_balance = utils.convert_amount_for_db(cu.account_balance, cu.currency)
-    customer.currency = cu.currency
+    customer.currency = cu.currency or ""
     customer.delinquent = cu.delinquent
-    customer.default_source = cu.default_source
+    customer.default_source = cu.default_source or ""
     customer.save()
     for source in cu.sources.data:
         sync_payment_source_from_stripe_data(customer, source)

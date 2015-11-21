@@ -254,6 +254,9 @@ class CustomerUpdatedWebhook(Webhook):
     name = "customer.updated"
     description = "Occurs whenever any property of a customer changes."
 
+    def process_webhook(self):
+        syncs.sync_customer(self.event_proxy.customer)
+
 
 class CustomerDiscountCreatedWebhook(Webhook):
     name = "customer.discount.created"

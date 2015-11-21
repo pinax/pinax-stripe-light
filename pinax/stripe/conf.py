@@ -30,7 +30,7 @@ class PinaxStripeAppConf(AppConf):
 
     PUBLIC_KEY = None
     SECRET_KEY = None
-    API_VERSION = "2012-11-07"
+    API_VERSION = "2015-10-16"
     INVOICE_FROM_EMAIL = "billing@example.com"
     PLANS = {}
     DEFAULT_PLAN = None

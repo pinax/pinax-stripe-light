@@ -3,7 +3,7 @@ import datetime
 from django.test import TestCase
 from django.utils import timezone
 
-from ..utils import convert_tstamp, plan_from_stripe_id
+from ..utils import convert_tstamp
 
 
 class TestTimestampConversion(TestCase):
@@ -35,15 +35,3 @@ class TestTimestampConversion(TestCase):
             stamp,
             None
         )
-
-
-class TestPlanFromStripeId(TestCase):
-
-    def test_plan_from_stripe_id_valid(self):
-        self.assertEquals(
-            plan_from_stripe_id("pro-monthly"),
-            "pro"
-        )
-
-    def test_plan_from_stripe_id_invalid(self):
-        self.assertIsNone(plan_from_stripe_id("invalide"))

@@ -20,7 +20,7 @@ class CustomerProxy(models.Customer):
 
     @classmethod
     def get_for_user(cls, user):
-        return cls.objects.get(user=user)
+        return next(iter(cls.objects.filter(user=user)), None)
 
     def purge(self):
         try:

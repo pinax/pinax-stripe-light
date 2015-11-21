@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from mock import patch, PropertyMock, Mock
 
 from ..actions import refunds, customers, syncs, charges
-from ..proxies import CustomerProxy, ChargeProxy, SubscriptionProxy
+from ..proxies import CustomerProxy, ChargeProxy, SubscriptionProxy, PlanProxy
 
 
 class TestCustomer(TestCase):
@@ -56,6 +56,14 @@ class TestCustomer(TestCase):
     @patch("stripe.Customer.create")
     def test_customer_create_user_with_plan(self, CreateMock, RetrieveMock, InvoiceMock):
         self.customer.delete()
+        PlanProxy.objects.create(
+            stripe_id="pro-monthly",
+            name="Pro ($19.99/month)",
+            amount=19.99,
+            interval="monthly",
+            interval_count=1,
+            currency="usd"
+        )
         type(InvoiceMock()).amount_due = PropertyMock(return_value=3)
         cu = CreateMock()
         cu.account_balance = 0
@@ -88,7 +96,7 @@ class TestCustomer(TestCase):
         rm.currency = "usd"
         rm.subscription.plan.id = "pro-monthly"
         rm.subscriptions.data = [subscription]
-        customer = customers.create(self.user, card="token232323", plan="pro")
+        customer = customers.create(self.user, card="token232323", plan="pro-monthly")
         self.assertEqual(customer.user, self.user)
         self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
         _, kwargs = CreateMock.call_args

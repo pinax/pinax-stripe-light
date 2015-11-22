@@ -166,6 +166,49 @@ def fetch_and_sync_invoice(stripe_id, send_receipt=settings.PINAX_STRIPE_SEND_EM
     sync_invoice_from_stripe_data(stripe.Invoice.retrieve(stripe_id), send_receipt=send_receipt)
 
 
+def _sync_invoice_items(invoice_proxy, items):
+    for item in items:
+        period_end = utils.convert_tstamp(item["period"], "end")
+        period_start = utils.convert_tstamp(item["period"], "start")
+
+        if item.get("plan"):
+            plan = proxies.PlanProxy.objects.get(stripe_id=item["plan"]["id"])
+        else:
+            plan = None
+
+        if item["type"] == "subscription":
+            if invoice_proxy.subscription and invoice_proxy.subscription.stripe_id == item["id"]:
+                item_subscription = invoice_proxy.subscription
+            else:
+                item_subscription = sync_subscription_from_stripe_data(
+                    invoice_proxy.customer,
+                    invoice_proxy.customer.stripe_customer.subscriptions.retrieve(item["id"])
+                )
+        else:
+            item_subscription = None
+
+        defaults = dict(
+            amount=utils.convert_amount_for_db(item["amount"], item["currency"]),
+            currency=item["currency"],
+            proration=item["proration"],
+            description=item.get("description") or "",
+            line_type=item["type"],
+            plan=plan,
+            period_start=period_start,
+            period_end=period_end,
+            quantity=item.get("quantity"),
+            subscription=item_subscription
+        )
+        inv_item, inv_item_created = invoice_proxy.items.get_or_create(
+            stripe_id=item["id"],
+            defaults=defaults
+        )
+        if not inv_item_created:
+            for key in defaults:
+                setattr(inv_item, key, defaults[key])
+            inv_item.save()
+
+
 def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
     c = proxies.CustomerProxy.objects.get(stripe_id=stripe_invoice["customer"])
     period_end = utils.convert_tstamp(stripe_invoice, "period_end")
@@ -210,32 +253,6 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
             setattr(invoice, key, defaults[key])
         invoice.save()
 
-    for item in stripe_invoice["lines"].get("data", []):
-        period_end = utils.convert_tstamp(item["period"], "end")
-        period_start = utils.convert_tstamp(item["period"], "start")
+    _sync_invoice_items(invoice, stripe_invoice["lines"].get("data", []))
 
-        if item.get("plan"):
-            plan = proxies.PlanProxy.objects.get(stripe_id=item["plan"]["id"])
-        else:
-            plan = None
-
-        defaults = dict(
-            amount=utils.convert_amount_for_db(item["amount"], item["currency"]),
-            currency=item["currency"],
-            proration=item["proration"],
-            description=item.get("description") or "",
-            line_type=item["type"],
-            plan=plan,
-            period_start=period_start,
-            period_end=period_end,
-            quantity=item.get("quantity")
-        )
-        inv_item, inv_item_created = invoice.items.get_or_create(
-            stripe_id=item["id"],
-            defaults=defaults
-        )
-        if not inv_item_created:
-            for key in defaults:
-                setattr(inv_item, key, defaults[key])
-            inv_item.save()
     return invoice

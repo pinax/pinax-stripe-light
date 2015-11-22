@@ -46,7 +46,7 @@ def create_and_pay(customer):
 
 def retry_unpaid(customer):
     syncs.sync_invoices_for_customer(customer)
-    for inv in proxies.InvoiceProxy.filter(customer=customer, paid=False, closed=False):
+    for inv in proxies.InvoiceProxy.objects.filter(customer=customer, paid=False, closed=False):
         try:
             inv.retry()  # Always retry unpaid invoices
         except stripe.InvalidRequestError as error:

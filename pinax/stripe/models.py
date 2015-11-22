@@ -167,7 +167,7 @@ class Subscription(StripeObject):
     current_period_end = models.DateTimeField(blank=True, null=True)
     current_period_start = models.DateTimeField(blank=True, null=True)
     ended_at = models.DateTimeField(blank=True, null=True)
-    plan = models.CharField(max_length=100)
+    plan = models.ForeignKey(Plan)
     quantity = models.IntegerField()
     start = models.DateTimeField()
     status = models.CharField(max_length=25)  # trialing, active, past_due, canceled, or unpaid

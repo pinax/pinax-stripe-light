@@ -163,7 +163,7 @@ def sync_charge_from_stripe_data(data):
 
 
 def fetch_and_sync_invoice(stripe_id, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
-    sync_invoice_from_stripe_data(stripe.Invoice.retrieve(stripe_id))
+    sync_invoice_from_stripe_data(stripe.Invoice.retrieve(stripe_id), send_receipt=send_receipt)
 
 
 def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):

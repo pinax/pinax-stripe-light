@@ -1,5 +1,3 @@
-import decimal
-
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.utils import timezone
@@ -10,7 +8,7 @@ from mock import Mock
 
 from ..conf import settings
 from ..middleware import ActiveSubscriptionMiddleware
-from ..models import Customer, CurrentSubscription
+from ..proxies import CustomerProxy, SubscriptionProxy, PlanProxy
 
 
 class DummySession(dict):
@@ -66,13 +64,13 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         self.assertIsNone(response)
 
     def test_authed_user_with_no_active_subscription_passes_with_exempt_url(self):
-        Customer.objects.create(stripe_id="cus_1", user=self.request.user)
+        CustomerProxy.objects.create(stripe_id="cus_1", user=self.request.user)
         self.request.path = "/accounts/signup/"
         response = self.middleware.process_request(self.request)
         self.assertIsNone(response)
 
     def test_authed_user_with_no_active_subscription_redirects_on_non_exempt_url(self):
-        Customer.objects.create(stripe_id="cus_1", user=self.request.user)
+        CustomerProxy.objects.create(stripe_id="cus_1", user=self.request.user)
         self.request.path = "/the/app/"
         response = self.middleware.process_request(self.request)
         self.assertEqual(response.status_code, 302)
@@ -82,19 +80,24 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         )
 
     def test_authed_user_with_active_subscription_redirects_on_non_exempt_url(self):
-        customer = Customer.objects.create(
+        customer = CustomerProxy.objects.create(
             stripe_id="cus_1",
             user=self.request.user
         )
-        CurrentSubscription.objects.create(
+        plan = PlanProxy.objects.create(
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
+        SubscriptionProxy.objects.create(
             customer=customer,
-            plan="pro",
+            plan=plan,
             quantity=1,
             start=timezone.now(),
             status="active",
-            cancel_at_period_end=False,
-            amount=decimal.Decimal("19.99"),
-            currency="usd"
+            cancel_at_period_end=False
         )
         self.request.path = "/the/app/"
         response = self.middleware.process_request(self.request)

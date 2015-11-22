@@ -2,8 +2,10 @@ from datetime import timedelta
 
 from django.utils import timezone
 
+from ..hooks import DefaultHookSet
 
-class TestHookSet(object):
+
+class TestHookSet(DefaultHookSet):
 
     def adjust_subscription_quantity(self, customer, plan, quantity):
         """

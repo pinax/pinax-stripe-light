@@ -1,10 +1,6 @@
-import decimal
-import json
-
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.utils import timezone
-from django.utils.encoding import smart_str
 
 from django.contrib.auth import get_user_model
 
@@ -12,27 +8,18 @@ import stripe
 
 from mock import patch
 
-from ..models import Customer, CurrentSubscription
-from ..views import SubscribeView
+from ..proxies import CardProxy, CustomerProxy, InvoiceProxy, PlanProxy, SubscriptionProxy
+from ..views import PaymentMethodCreateView
 
 
 class PaymentsContextMixinTests(TestCase):
 
     def test_payments_context_mixin_get_context_data(self):
-        data = SubscribeView().get_context_data()
-        self.assertTrue("STRIPE_PUBLIC_KEY" in data)
-        self.assertTrue("PLAN_CHOICES" in data)
-        self.assertTrue("PAYMENT_PLANS" in data)
+        data = PaymentMethodCreateView().get_context_data()
+        self.assertTrue("PINAX_STRIPE_PUBLIC_KEY" in data)
 
 
-class SubscribeViewTests(TestCase):
-
-    def test_payments_context_mixin_get_context_data(self):
-        data = SubscribeView().get_context_data()
-        self.assertTrue("form" in data)
-
-
-class AjaxViewsTests(TestCase):
+class InvoiceListViewTests(TestCase):
 
     def setUp(self):
         self.password = "eldarion"
@@ -41,200 +28,428 @@ class AjaxViewsTests(TestCase):
             password=self.password
         )
         self.user.save()
-        customer = Customer.objects.create(
+        customer = CustomerProxy.objects.create(
             stripe_id="cus_1",
             user=self.user
         )
-        CurrentSubscription.objects.create(
+        InvoiceProxy.objects.create(
+            stripe_id="inv_001",
             customer=customer,
-            plan="pro",
+            amount_due=100,
+            period_end=timezone.now(),
+            period_start=timezone.now(),
+            subtotal=100,
+            total=100,
+            date=timezone.now()
+        )
+        InvoiceProxy.objects.create(
+            stripe_id="inv_002",
+            customer=customer,
+            amount_due=50,
+            period_end=timezone.now(),
+            period_start=timezone.now(),
+            subtotal=50,
+            total=50,
+            date=timezone.now()
+        )
+
+    def test_context(self):
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.get(
+            reverse("pinax_stripe_invoice_list")
+        )
+        self.assertTrue("invoice_list" in response.context_data)
+        self.assertEquals(response.context_data["invoice_list"].count(), 2)
+        self.assertEquals(response.context_data["invoice_list"][0].total, 100)
+        self.assertEquals(response.context_data["invoice_list"][1].total, 50)
+
+
+class PaymentMethodListViewTests(TestCase):
+
+    def setUp(self):
+        self.password = "eldarion"
+        self.user = get_user_model().objects.create_user(
+            username="patrick",
+            password=self.password
+        )
+        self.user.save()
+        customer = CustomerProxy.objects.create(
+            stripe_id="cus_1",
+            user=self.user
+        )
+        CardProxy.objects.create(
+            stripe_id="card_001",
+            customer=customer,
+            address_line_1_check="nothing",
+            address_zip_check="nothing",
+            country="US",
+            cvc_check="passed",
+            exp_month=1,
+            exp_year=2020,
+            funding="yes",
+            fingerprint="abc"
+        )
+
+    def test_context(self):
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.get(
+            reverse("pinax_stripe_payment_method_list")
+        )
+        self.assertTrue("payment_method_list" in response.context_data)
+        self.assertEquals(response.context_data["payment_method_list"].count(), 1)
+        self.assertEquals(response.context_data["payment_method_list"][0].stripe_id, "card_001")
+
+
+class PaymentMethodCreateViewTests(TestCase):
+
+    def setUp(self):
+        self.password = "eldarion"
+        self.user = get_user_model().objects.create_user(
+            username="patrick",
+            password=self.password
+        )
+        self.user.save()
+        CustomerProxy.objects.create(
+            stripe_id="cus_1",
+            user=self.user
+        )
+
+    @patch("pinax.stripe.actions.sources.create_card")
+    def test_post(self, CreateMock):
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.post(
+            reverse("pinax_stripe_payment_method_create"),
+            {}
+        )
+        self.assertEquals(response.status_code, 302)
+        self.assertRedirects(response, reverse("pinax_stripe_payment_method_list"))
+
+    @patch("pinax.stripe.actions.sources.create_card")
+    def test_post_on_error(self, CreateMock):
+        CreateMock.side_effect = stripe.CardError("Bad card", "Param", "CODE")
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.post(
+            reverse("pinax_stripe_payment_method_create"),
+            {}
+        )
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue("errors" in response.context_data)
+
+
+class PaymentMethodDeleteViewTests(TestCase):
+
+    def setUp(self):
+        self.password = "eldarion"
+        self.user = get_user_model().objects.create_user(
+            username="patrick",
+            password=self.password
+        )
+        self.user.save()
+        customer = CustomerProxy.objects.create(
+            stripe_id="cus_1",
+            user=self.user
+        )
+        self.card = CardProxy.objects.create(
+            stripe_id="card_001",
+            customer=customer,
+            address_line_1_check="nothing",
+            address_zip_check="nothing",
+            country="US",
+            cvc_check="passed",
+            exp_month=1,
+            exp_year=2020,
+            funding="yes",
+            fingerprint="abc"
+        )
+
+    @patch("pinax.stripe.actions.sources.delete_card")
+    def test_post(self, CreateMock):
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.post(
+            reverse("pinax_stripe_payment_method_delete", args=[self.card.pk]),
+            {}
+        )
+        self.assertEquals(response.status_code, 302)
+        self.assertRedirects(response, reverse("pinax_stripe_payment_method_list"))
+
+    @patch("pinax.stripe.actions.sources.delete_card")
+    def test_post_on_error(self, CreateMock):
+        CreateMock.side_effect = stripe.CardError("Bad card", "Param", "CODE")
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.post(
+            reverse("pinax_stripe_payment_method_delete", args=[self.card.pk]),
+            {}
+        )
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue("errors" in response.context_data)
+
+
+class PaymentMethodUpdateViewTests(TestCase):
+
+    def setUp(self):
+        self.password = "eldarion"
+        self.user = get_user_model().objects.create_user(
+            username="patrick",
+            password=self.password
+        )
+        self.user.save()
+        customer = CustomerProxy.objects.create(
+            stripe_id="cus_1",
+            user=self.user
+        )
+        self.card = CardProxy.objects.create(
+            stripe_id="card_001",
+            customer=customer,
+            address_line_1_check="nothing",
+            address_zip_check="nothing",
+            country="US",
+            cvc_check="passed",
+            exp_month=1,
+            exp_year=2020,
+            funding="yes",
+            fingerprint="abc"
+        )
+
+    @patch("pinax.stripe.actions.invoices.retry_unpaid")
+    @patch("pinax.stripe.actions.sources.update_card")
+    def test_post(self, CreateMock, RetryMock):
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.post(
+            reverse("pinax_stripe_payment_method_update", args=[self.card.pk]),
+            {}
+        )
+        self.assertEquals(response.status_code, 302)
+        self.assertRedirects(response, reverse("pinax_stripe_payment_method_list"))
+
+    @patch("pinax.stripe.actions.invoices.retry_unpaid")
+    @patch("pinax.stripe.actions.sources.update_card")
+    def test_post_on_error(self, CreateMock, RetryMock):
+        CreateMock.side_effect = stripe.CardError("Bad card", "Param", "CODE")
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.post(
+            reverse("pinax_stripe_payment_method_update", args=[self.card.pk]),
+            {
+                "expMonth": 1,
+                "expYear": 2018
+            }
+        )
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue("errors" in response.context_data)
+
+
+class SubscriptionListViewTests(TestCase):
+
+    def setUp(self):
+        self.password = "eldarion"
+        self.user = get_user_model().objects.create_user(
+            username="patrick",
+            password=self.password
+        )
+        self.user.save()
+        customer = CustomerProxy.objects.create(
+            stripe_id="cus_1",
+            user=self.user
+        )
+        plan = PlanProxy.objects.create(
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
+        SubscriptionProxy.objects.create(
+            stripe_id="sub_001",
+            customer=customer,
+            plan=plan,
             quantity=1,
             start=timezone.now(),
-            status="active",
-            cancel_at_period_end=False,
-            amount=decimal.Decimal("19.99")
+            status="active"
         )
 
-    @patch("pinax.stripe.models.Customer.update_card")
-    @patch("pinax.stripe.models.Customer.send_invoice")
-    @patch("pinax.stripe.models.Customer.retry_unpaid_invoices")
-    def test_change_card(self, retry_mock, send_mock, update_mock):
+    def test_context(self):
         self.client.login(username=self.user.username, password=self.password)
-        response = self.client.post(
-            reverse("pinax_stripe_ajax_change_card"),
-            {"stripe_token": "XXXXX"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        response = self.client.get(
+            reverse("pinax_stripe_subscription_list")
         )
-        self.assertEqual(update_mock.call_count, 1)
-        self.assertEqual(send_mock.call_count, 1)
-        self.assertEqual(retry_mock.call_count, 1)
-        self.assertEqual(response.status_code, 200)
+        self.assertTrue("subscription_list" in response.context_data)
+        self.assertEquals(response.context_data["subscription_list"].count(), 1)
+        self.assertEquals(response.context_data["subscription_list"][0].stripe_id, "sub_001")
 
-    @patch("pinax.stripe.models.Customer.update_card")
-    @patch("pinax.stripe.models.Customer.send_invoice")
-    @patch("pinax.stripe.models.Customer.retry_unpaid_invoices")
-    def test_change_card_error(self, retry_mock, send_mock, update_mock):
-        update_mock.side_effect = stripe.CardError("Bad card", "Param", "CODE")
-        self.client.login(username=self.user.username, password=self.password)
-        response = self.client.post(
-            reverse("pinax_stripe_ajax_change_card"),
-            {"stripe_token": "XXXXX"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+
+class SubscriptionCreateViewTests(TestCase):
+
+    def setUp(self):
+        self.password = "eldarion"
+        self.user = get_user_model().objects.create_user(
+            username="patrick",
+            password=self.password
         )
-        self.assertEqual(update_mock.call_count, 1)
-        self.assertEqual(send_mock.call_count, 0)
-        self.assertEqual(retry_mock.call_count, 0)
-        self.assertEqual(response.status_code, 200)
-
-    @patch("pinax.stripe.models.Customer.update_card")
-    @patch("pinax.stripe.models.Customer.send_invoice")
-    @patch("pinax.stripe.models.Customer.retry_unpaid_invoices")
-    def test_change_card_no_invoice(self, retry_mock, send_mock, update_mock):
-        self.user.customer.card_fingerprint = "XXXXXX"
-        self.user.customer.save()
-        self.client.login(username=self.user.username, password=self.password)
-        response = self.client.post(
-            reverse("pinax_stripe_ajax_change_card"),
-            {"stripe_token": "XXXXX"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+        self.user.save()
+        self.plan = PlanProxy.objects.create(
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
         )
-        self.assertEqual(update_mock.call_count, 1)
-        self.assertEqual(send_mock.call_count, 0)
-        self.assertEqual(retry_mock.call_count, 1)
-        self.assertEqual(response.status_code, 200)
 
-    @patch("pinax.stripe.models.Customer.subscribe")
-    def test_change_plan_with_subscription(self, subscribe_mock):
-        self.client.login(username=self.user.username, password=self.password)
-        response = self.client.post(
-            reverse("pinax_stripe_ajax_change_plan"),
-            {"plan": "premium"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
-        )
-        self.assertEqual(subscribe_mock.call_count, 1)
-        self.assertEqual(response.status_code, 200)
-
-    @patch("pinax.stripe.models.Customer.subscribe")
-    def test_change_plan_no_subscription(self, subscribe_mock):
-        self.user.customer.current_subscription.delete()
-        self.client.login(username=self.user.username, password=self.password)
-        response = self.client.post(
-            reverse("pinax_stripe_ajax_change_plan"),
-            {"plan": "premium"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
-        )
-        self.assertEqual(subscribe_mock.call_count, 1)
-        self.assertEqual(response.status_code, 200)
-
-    @patch("pinax.stripe.models.Customer.subscribe")
-    def test_change_plan_invalid_form(self, subscribe_mock):
-        self.client.login(username=self.user.username, password=self.password)
-        response = self.client.post(
-            reverse("pinax_stripe_ajax_change_plan"),
-            {"plan": "not-valid"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
-        )
-        self.assertEqual(subscribe_mock.call_count, 0)
-        self.assertEqual(response.status_code, 200)
-
-    @patch("pinax.stripe.models.Customer.subscribe")
-    def test_change_plan_stripe_error(self, subscribe_mock):
-        subscribe_mock.side_effect = stripe.StripeError(
-            "Bad card",
-            "Param",
-            "CODE"
+    @patch("pinax.stripe.actions.subscriptions.create")
+    def test_post(self, CreateMock):
+        CustomerProxy.objects.create(
+            stripe_id="cus_1",
+            user=self.user
         )
         self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(
-            reverse("pinax_stripe_ajax_change_plan"),
-            {"plan": "premium"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+            reverse("pinax_stripe_subscription_create"),
+            {
+                "plan": self.plan.id
+            }
         )
-        self.assertEqual(subscribe_mock.call_count, 1)
-        self.assertEqual(response.status_code, 200)
+        self.assertEquals(response.status_code, 302)
+        self.assertRedirects(response, reverse("pinax_stripe_subscription_list"))
 
-    @patch("pinax.stripe.models.Customer.subscribe")
-    @patch("pinax.stripe.models.Customer.update_card")
-    @patch("pinax.stripe.models.Customer.create")
-    def test_subscribe(self, create_cus_mock, upd_card_mock, subscribe_mock):
+    @patch("pinax.stripe.actions.customers.create")
+    @patch("pinax.stripe.actions.subscriptions.create")
+    def test_post_no_prior_customer(self, CreateMock, CustomerCreateMock):
         self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(
-            reverse("pinax_stripe_ajax_subscribe"),
-            {"plan": "premium", "stripe_token": "XXXXX"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+            reverse("pinax_stripe_subscription_create"),
+            {
+                "plan": self.plan.id
+            }
         )
-        self.assertEqual(create_cus_mock.call_count, 0)
-        self.assertEqual(upd_card_mock.call_count, 1)
-        self.assertEqual(subscribe_mock.call_count, 1)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            json.loads(smart_str(response.content))["location"],
-            reverse("pinax_stripe_history")
-        )
+        self.assertEquals(response.status_code, 302)
+        self.assertRedirects(response, reverse("pinax_stripe_subscription_list"))
 
-    @patch("pinax.stripe.models.Customer.subscribe")
-    @patch("pinax.stripe.models.Customer.update_card")
-    @patch("pinax.stripe.models.Customer.create")
-    def test_subscribe_no_customer(self, create_cus_mock, upd_card_mock, subscribe_mock):
-        self.client.login(username=self.user.username, password=self.password)
-        Customer.objects.all().delete()
-        response = self.client.post(
-            reverse("pinax_stripe_ajax_subscribe"),
-            {"plan": "premium", "stripe_token": "XXXXX"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+    @patch("pinax.stripe.actions.sources.create_card")
+    def test_post_on_error(self, CreateMock):
+        CustomerProxy.objects.create(
+            stripe_id="cus_1",
+            user=self.user
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(create_cus_mock.call_count, 1)
-        self.assertEqual(
-            json.loads(smart_str(response.content))["location"],
-            reverse("pinax_stripe_history")
-        )
-
-    @patch("pinax.stripe.models.Customer.subscribe")
-    @patch("pinax.stripe.models.Customer.update_card")
-    @patch("pinax.stripe.models.Customer.create")
-    def test_subscribe_error(self, create_cus_mock, upd_card_mock, subscribe_mock):
-        self.client.login(username=self.user.username, password=self.password)
-        upd_card_mock.side_effect = stripe.StripeError("foo")
-        response = self.client.post(
-            reverse("pinax_stripe_ajax_subscribe"),
-            {"plan": "premium", "stripe_token": "XXXXX"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
-        )
-        self.assertEqual(create_cus_mock.call_count, 0)
-        self.assertEqual(upd_card_mock.call_count, 1)
-        self.assertEqual(subscribe_mock.call_count, 0)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['error'], 'foo')
-
-    def test_subscribe_invalid_form_data(self):
+        CreateMock.side_effect = stripe.StripeError("Bad Mojo", "Param", "CODE")
         self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(
-            reverse("pinax_stripe_ajax_subscribe"),
-            {},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+            reverse("pinax_stripe_subscription_create"),
+            {
+                "plan": self.plan.id
+            }
         )
-        self.assertEqual(response.context['error'],
-                         {'plan': ['This field is required.']})
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue("errors" in response.context_data)
 
-    @patch("pinax.stripe.models.Customer.cancel")
-    def test_cancel(self, cancel_mock):
-        self.client.login(username=self.user.username, password=self.password)
-        self.client.post(
-            reverse("pinax_stripe_ajax_cancel"),
-            {},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+
+class SubscriptionDeleteViewTests(TestCase):
+
+    def setUp(self):
+        self.password = "eldarion"
+        self.user = get_user_model().objects.create_user(
+            username="patrick",
+            password=self.password
         )
-        self.assertEqual(cancel_mock.call_count, 1)
+        self.user.save()
+        customer = CustomerProxy.objects.create(
+            stripe_id="cus_1",
+            user=self.user
+        )
+        plan = PlanProxy.objects.create(
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
+        self.subscription = SubscriptionProxy.objects.create(
+            stripe_id="sub_001",
+            customer=customer,
+            plan=plan,
+            quantity=1,
+            start=timezone.now(),
+            status="active"
+        )
 
-    @patch("pinax.stripe.models.Customer.cancel")
-    def test_cancel_error(self, cancel_mock):
-        cancel_mock.side_effect = stripe.StripeError("foo")
+    @patch("pinax.stripe.actions.subscriptions.cancel")
+    def test_post(self, CancelMock):
         self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(
-            reverse("pinax_stripe_ajax_cancel"),
-            {},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest"
+            reverse("pinax_stripe_subscription_delete", args=[self.subscription.pk]),
+            {}
         )
-        self.assertEqual(cancel_mock.call_count, 1)
-        self.assertEqual(response.context['error'], 'foo')
+        self.assertEquals(response.status_code, 302)
+        self.assertRedirects(response, reverse("pinax_stripe_subscription_list"))
+
+    @patch("pinax.stripe.actions.subscriptions.cancel")
+    def test_post_on_error(self, CancelMock):
+        CancelMock.side_effect = stripe.StripeError("Bad Foo", "Param", "CODE")
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.post(
+            reverse("pinax_stripe_subscription_delete", args=[self.subscription.pk]),
+            {}
+        )
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue("errors" in response.context_data)
+
+
+class SubscriptionUpdateViewTests(TestCase):
+
+    def setUp(self):
+        self.password = "eldarion"
+        self.user = get_user_model().objects.create_user(
+            username="patrick",
+            password=self.password
+        )
+        self.user.save()
+        customer = CustomerProxy.objects.create(
+            stripe_id="cus_1",
+            user=self.user
+        )
+        plan = PlanProxy.objects.create(
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
+        self.subscription = SubscriptionProxy.objects.create(
+            stripe_id="sub_001",
+            customer=customer,
+            plan=plan,
+            quantity=1,
+            start=timezone.now(),
+            status="active"
+        )
+
+    def test_get(self):
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.get(
+            reverse("pinax_stripe_subscription_update", args=[self.subscription.pk])
+        )
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue("form" in response.context_data)
+        self.assertTrue(response.context_data["form"].initial["plan"], self.subscription.plan)
+
+    @patch("pinax.stripe.actions.subscriptions.update")
+    def test_post(self, UpdateMock):
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.post(
+            reverse("pinax_stripe_subscription_update", args=[self.subscription.pk]),
+            {
+                "plan": self.subscription.plan.id
+            }
+        )
+        self.assertEquals(response.status_code, 302)
+        self.assertRedirects(response, reverse("pinax_stripe_subscription_list"))
+
+    @patch("pinax.stripe.actions.subscriptions.update")
+    def test_post_on_error(self, UpdateMock):
+        UpdateMock.side_effect = stripe.StripeError("Bad Foo", "Param", "CODE")
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.post(
+            reverse("pinax_stripe_subscription_update", args=[self.subscription.pk]),
+            {
+                "plan": self.subscription.plan.id
+            }
+        )
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue("errors" in response.context_data)

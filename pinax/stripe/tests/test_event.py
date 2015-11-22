@@ -5,8 +5,9 @@ from django.contrib.auth import get_user_model
 
 from mock import patch, Mock
 
-from ..models import Customer, Event, CurrentSubscription
+from ..proxies import CustomerProxy, EventProxy, SubscriptionProxy, PlanProxy
 from ..signals import WEBHOOK_SIGNALS
+from ..webhooks import registry, CustomerSubscriptionDeletedWebhook
 
 
 class TestEventMethods(TestCase):
@@ -14,7 +15,7 @@ class TestEventMethods(TestCase):
         User = get_user_model()
         self.user = User.objects.create_user(username="testuser")
         self.user.save()
-        self.customer = Customer.objects.create(
+        self.customer = CustomerProxy.objects.create(
             stripe_id="cus_xxxxxxxxxxxxxxx",
             user=self.user
         )
@@ -43,7 +44,7 @@ class TestEventMethods(TestCase):
             "pending_webhooks": 1,
             "type": "customer.created"
         }
-        event = Event.objects.create(
+        event = EventProxy.objects.create(
             stripe_id=msg["id"],
             kind="customer.created",
             livemode=True,
@@ -98,7 +99,7 @@ class TestEventMethods(TestCase):
             "pending_webhooks": 1,
             "type": "customer.updated"
         }
-        event = Event.objects.create(
+        event = EventProxy.objects.create(
             stripe_id=msg["id"],
             kind="customer.updated",
             livemode=True,
@@ -132,7 +133,7 @@ class TestEventMethods(TestCase):
             "pending_webhooks": 1,
             "type": "customer.deleted"
         }
-        event = Event.objects.create(
+        event = EventProxy.objects.create(
             stripe_id=msg["id"],
             kind="customer.deleted",
             livemode=True,
@@ -142,8 +143,10 @@ class TestEventMethods(TestCase):
         event.link_customer()
         self.assertEquals(event.customer, self.customer)
 
+    @patch("stripe.Event.retrieve")
     @patch("stripe.Customer.retrieve")
-    def test_process_customer_deleted(self, CustomerMock):
+    def test_process_customer_deleted(self, CustomerMock, EventMock):
+        ev = EventMock()
         msg = {
             "created": 1348286560,
             "data": {
@@ -167,7 +170,8 @@ class TestEventMethods(TestCase):
             "pending_webhooks": 1,
             "type": "customer.deleted"
         }
-        event = Event.objects.create(
+        ev.to_dict.return_value = msg
+        event = EventProxy.objects.create(
             stripe_id=msg["id"],
             kind="customer.deleted",
             livemode=True,
@@ -175,15 +179,15 @@ class TestEventMethods(TestCase):
             validated_message=msg,
             valid=True
         )
-        event.process()
+        registry.get(event.kind)(event).process()
         self.assertEquals(event.customer, self.customer)
         self.assertEquals(event.customer.user, None)
 
     @staticmethod
     def send_signal(customer, kind):
-        event = Event(customer=customer, kind=kind)
+        event = EventProxy(customer=customer, kind=kind)
         signal = WEBHOOK_SIGNALS.get(kind)
-        signal.send(sender=Event, event=event)
+        signal.send(sender=EventProxy, event=event)
 
     @staticmethod
     def connect_webhook_signal(kind, func, **kwargs):
@@ -195,22 +199,37 @@ class TestEventMethods(TestCase):
         signal = WEBHOOK_SIGNALS.get(kind)
         signal.disconnect(func, **kwargs)
 
+    @patch("stripe.Event.retrieve")
     @patch("stripe.Customer.retrieve")
-    def test_customer_subscription_deleted(self, CustomerMock):
+    def test_customer_subscription_deleted(self, CustomerMock, EventMock):
         """
-        Tests to make sure downstream signal handlers do not see stale CurrentSubscription object properties
+        Tests to make sure downstream signal handlers do not see stale Subscription object properties
         after a customer.subscription.deleted event occurs.  While the delete method is called
-        on the affected CurrentSubscription object's properties are still accessible (unless the
+        on the affected Subscription object's properties are still accessible (unless the
         Customer object for the event gets refreshed before sending the complimentary signal)
         """
+        ev = EventMock()
+        cm = CustomerMock()
+        cm.currency = "usd"
+        cm.delinquent = False
+        cm.default_source = ""
+        cm.account_balance = 0
         kind = "customer.subscription.deleted"
-        cs = CurrentSubscription(customer=self.customer, quantity=1, start=timezone.now(), amount=0)
+        plan = PlanProxy.objects.create(
+            stripe_id="p1",
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
+        cs = SubscriptionProxy(stripe_id="su_2ZDdGxJ3EQQc7Q", customer=self.customer, quantity=1, start=timezone.now(), plan=plan)
         cs.save()
-        customer = Customer.objects.get(pk=self.customer.pk)
+        customer = CustomerProxy.objects.get(pk=self.customer.pk)
 
         # Stripe objects will not have this attribute so we must delete it from the mocked object
         del customer.stripe_customer.subscription
-        self.assertIsNotNone(customer.current_subscription)
+        self.assertIsNotNone(customer.subscription_set.all()[0])
 
         # This is the expected format of a customer.subscription.delete message
         msg = {
@@ -251,9 +270,10 @@ class TestEventMethods(TestCase):
             "pending_webhooks": 1,
             "request": "iar_2eRjQZmn0i3G9M"
         }
+        ev.to_dict.return_value = msg
 
         # Create a test event for the message
-        test_event = Event.objects.create(
+        test_event = EventProxy.objects.create(
             stripe_id=msg["id"],
             kind=kind,
             livemode=msg["livemode"],
@@ -265,26 +285,20 @@ class TestEventMethods(TestCase):
 
         def signal_handler(sender, event, **kwargs):
             # Illustrate and test what signal handlers would experience
-            self.assertFalse(event.customer.current_subscription.is_valid())
-            self.assertIsNone(event.customer.current_subscription.plan)
-            self.assertIsNone(event.customer.current_subscription.status)
-            self.assertIsNone(event.customer.current_subscription.id)
+            self.assertIsNone(next(iter(event.customer.subscription_set.all()), None))
 
         signal_handler_mock = Mock()
         # Let's make the side effect call our real function, the mock is a proxy so we can assert it was called
         signal_handler_mock.side_effect = signal_handler
-        TestEventMethods.connect_webhook_signal(kind, signal_handler_mock, weak=False, sender=Event)
+        TestEventMethods.connect_webhook_signal(kind, signal_handler_mock, weak=False, sender=CustomerSubscriptionDeletedWebhook)
         signal_handler_mock.reset_mock()
 
         # Now process the event - at the end of this the signal should get sent
-        test_event.process()
+        registry.get(test_event.kind)(test_event).process()
 
-        self.assertFalse(test_event.customer.current_subscription.is_valid())
-        self.assertIsNone(test_event.customer.current_subscription.plan)
-        self.assertIsNone(test_event.customer.current_subscription.status)
-        self.assertIsNone(test_event.customer.current_subscription.id)
+        self.assertIsNone(next(iter(test_event.customer.subscription_set.all()), None))
 
         # Verify our signal handler was called
         self.assertTrue(signal_handler_mock.called)
 
-        TestEventMethods.disconnect_webhook_signal(kind, signal_handler_mock, weak=False, sender=Event)
+        TestEventMethods.disconnect_webhook_signal(kind, signal_handler_mock, weak=False, sender=EventProxy)

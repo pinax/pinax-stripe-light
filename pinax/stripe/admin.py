@@ -3,9 +3,9 @@ from django.db.models.fields import FieldDoesNotExist
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 
-from .models import (
+from .models import (  # @@@ make all these read-only
     Charge,
-    CurrentSubscription,
+    Subscription,
     Customer,
     Event,
     EventProcessingException,
@@ -76,7 +76,7 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
     def lookups(self, request, model_admin):
         statuses = [
             [x, x.replace("_", " ").title()]
-            for x in CurrentSubscription.objects.all().values_list(
+            for x in Subscription.objects.all().values_list(
                 "status",
                 flat=True
             ).distinct()
@@ -88,7 +88,7 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
         if self.value() is None:
             return queryset.all()
         else:
-            return queryset.filter(current_subscription__status=self.value())
+            return queryset.filter(subscription_set__status=self.value())
 
 
 admin.site.register(
@@ -101,21 +101,18 @@ admin.site.register(
         "paid",
         "disputed",
         "refunded",
-        "fee",
         "receipt_sent",
         "created_at"
     ],
     search_fields=[
         "stripe_id",
         "customer__stripe_id",
-        "card_last_4",
         "invoice__stripe_id"
     ] + customer_search_fields(),
     list_filter=[
         "paid",
         "disputed",
         "refunded",
-        "card_kind",
         "created_at"
     ],
     raw_id_fields=[
@@ -166,12 +163,12 @@ admin.site.register(
 )
 
 
-class CurrentSubscriptionInline(admin.TabularInline):
-    model = CurrentSubscription
+class SubscriptionInline(admin.TabularInline):
+    model = Subscription
 
 
 def subscription_status(obj):
-    return obj.current_subscription.status
+    return ", ".join([subscription.status for subscription in obj.subscription_set.all()])
 subscription_status.short_description = "Subscription Status"
 
 
@@ -181,19 +178,22 @@ admin.site.register(
     list_display=[
         "stripe_id",
         "user",
-        "card_kind",
-        "card_last_4",
-        subscription_status
+        "account_balance",
+        "currency",
+        "delinquent",
+        "default_source",
+        subscription_status,
+        "date_purged"
     ],
     list_filter=[
-        "card_kind",
+        "delinquent",
         CustomerHasCardListFilter,
         CustomerSubscriptionStatusListFilter
     ],
     search_fields=[
         "stripe_id",
     ] + user_search_fields(),
-    inlines=[CurrentSubscriptionInline]
+    inlines=[SubscriptionInline]
 )
 
 
@@ -240,7 +240,7 @@ admin.site.register(
         "paid",
         "closed",
         "attempted",
-        "attempts",
+        "attempt_count",
         "created_at",
         "date",
         "period_end",

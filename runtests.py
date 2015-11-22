@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import decimal
 import os
 import sys
 
@@ -35,38 +34,31 @@ DEFAULT_SETTINGS = dict(
     SITE_ID=1,
     PINAX_STRIPE_PUBLIC_KEY="",
     PINAX_STRIPE_SECRET_KEY="",
-    PINAX_STRIPE_PLANS={
-        "free": {
-            "name": "Free Plan"
+    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS=["pinax_stripe_subscription_create"],
+    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT="pinax_stripe_subscription_create",
+    PINAX_STRIPE_HOOKSET="pinax.stripe.tests.hooks.TestHookSet",
+    TEMPLATE_DIRS=[
+        "pinax/stripe/tests/templates"
+    ],
+    TEMPLATES=[{
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [
+            "pinax/stripe/tests/templates"
+        ],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "debug": True,
+            "context_processors": [
+                "django.contrib.auth.context_processors.auth",
+                "django.core.context_processors.debug",
+                "django.core.context_processors.i18n",
+                "django.core.context_processors.media",
+                "django.core.context_processors.static",
+                "django.core.context_processors.tz",
+                "django.core.context_processors.request"
+            ],
         },
-        "entry": {
-            "stripe_plan_id": "entry-monthly",
-            "name": "Entry ($9.54/month)",
-            "description": "The entry-level monthly subscription",
-            "price": 9.54,
-            "interval": "month",
-            "currency": "usd"
-        },
-        "pro": {
-            "stripe_plan_id": "pro-monthly",
-            "name": "Pro ($19.99/month)",
-            "description": "The pro-level monthly subscription",
-            "price": 19.99,
-            "interval": "month",
-            "currency": "usd"
-        },
-        "premium": {
-            "stripe_plan_id": "premium-monthly",
-            "name": "Gold ($59.99/month)",
-            "description": "The premium-level monthly subscription",
-            "price": decimal.Decimal("59.99"),
-            "interval": "month",
-            "currency": "usd"
-        }
-    },
-    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS=["pinax_stripe_subscribe"],
-    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT="pinax_stripe_subscribe",
-    PINAX_STRIPE_HOOKSET="pinax.stripe.tests.hooks.TestHookSet"
+    }]
 )
 
 
@@ -82,7 +74,8 @@ def runtests(*test_args):
     try:
         from django.test.runner import DiscoverRunner
         runner_class = DiscoverRunner
-        test_args = ["pinax.stripe.tests"]
+        if not test_args:
+            test_args = ["pinax.stripe.tests"]
     except ImportError:
         from django.test.simple import DjangoTestSuiteRunner
         runner_class = DjangoTestSuiteRunner

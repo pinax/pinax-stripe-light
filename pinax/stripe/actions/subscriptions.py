@@ -19,7 +19,7 @@ def delete(stripe_id):
 
 def cancel(subscription, at_period_end=True):
     sub = subscription.stripe_subscription.delete(at_period_end=at_period_end)
-    syncs.sync_subscription_from_stripe_data(sub)
+    syncs.sync_subscription_from_stripe_data(subscription.customer, sub)
 
 
 def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, charge_immediately=False):

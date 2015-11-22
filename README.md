@@ -22,7 +22,7 @@ code complete.  The only remaining tasks are:
 
 * [ ] writing documentation - lots has changes, drastically, time to throw out the current docs and write a comprehensive set from scratch
 * [ ] review current test coverage and improve on it if the gaps that are open look critical
-* [ ] package up the templates I've been testing with in a new release of [pianx-theme-bootstrap](http://github.com/pinax/pinax-theme-bootstrap) (see [PTB Issue #104](https://github.com/pinax/pinax-theme-bootstrap/issues/104)
+* [ ] package up the templates I've been testing with in a new release of [pianx-theme-bootstrap](http://github.com/pinax/pinax-theme-bootstrap) (see [PTB Issue #104](https://github.com/pinax/pinax-theme-bootstrap/issues/104))
 * [ ] put together a demo starter project (this one i might hold off until after 2.0 ships)
 
 

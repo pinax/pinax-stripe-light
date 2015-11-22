@@ -110,6 +110,7 @@ def sync_subscription_from_stripe_data(customer, subscription):
         for key in defaults:
             setattr(sub, key, defaults[key])
         sub.save()
+    return sub
 
 
 def sync_customer(customer, cu=None):
@@ -170,6 +171,7 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
     period_end = utils.convert_tstamp(stripe_invoice, "period_end")
     period_start = utils.convert_tstamp(stripe_invoice, "period_start")
     date = utils.convert_tstamp(stripe_invoice, "date")
+    sub_id = stripe_invoice.get("subscription")
 
     if stripe_invoice.get("charge"):
         charge = sync_charge_from_stripe_data(stripe.Charge.retrieve(stripe_invoice["charge"]))
@@ -178,6 +180,8 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
             charge.send_receipt()
     else:
         charge = None
+
+    subscription = sync_subscription_from_stripe_data(c, c.stripe_customer.subscriptions.retrieve(sub_id)) if sub_id else None
 
     defaults = dict(
         customer=c,
@@ -192,7 +196,8 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         total=utils.convert_amount_for_db(stripe_invoice["total"], stripe_invoice["currency"]),
         currency=stripe_invoice["currency"],
         date=date,
-        charge=charge
+        charge=charge,
+        subscription=subscription
     )
     invoice, created = proxies.InvoiceProxy.objects.get_or_create(
         stripe_id=stripe_invoice["id"],

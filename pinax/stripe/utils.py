@@ -11,7 +11,7 @@ def convert_tstamp(response, field_name=None):
                 response[field_name],
                 timezone.utc
             )
-        if not field_name:
+        if response is not None and not field_name:
             return datetime.datetime.fromtimestamp(
                 response,
                 timezone.utc

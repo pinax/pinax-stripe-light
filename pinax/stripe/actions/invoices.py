@@ -10,28 +10,12 @@ def create(customer):
     return stripe.Invoice.create(customer=customer.stripe_id)
 
 
-def update():
-    pass
-
-
 def pay(invoice, send_receipt=True):
     if not invoice.paid and not invoice.closed:
         stripe_invoice = invoice.stripe_invoice.pay()
         syncs.sync_invoice_from_stripe_data(stripe_invoice, send_receipt=send_receipt)
         return True
     return False
-
-
-def add_line():
-    pass
-
-
-def update_line():
-    pass
-
-
-def delete_line():
-    pass
 
 
 def create_and_pay(customer):

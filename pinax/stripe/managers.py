@@ -69,6 +69,5 @@ class ChargeManager(models.Manager):
             paid=True
         ).aggregate(
             total_amount=models.Sum("amount"),
-            total_fee=models.Sum("fee"),
             total_refunded=models.Sum("amount_refunded")
         )

@@ -101,21 +101,18 @@ admin.site.register(
         "paid",
         "disputed",
         "refunded",
-        "fee",
         "receipt_sent",
         "created_at"
     ],
     search_fields=[
         "stripe_id",
         "customer__stripe_id",
-        "card_last_4",
         "invoice__stripe_id"
     ] + customer_search_fields(),
     list_filter=[
         "paid",
         "disputed",
         "refunded",
-        "card_kind",
         "created_at"
     ],
     raw_id_fields=[

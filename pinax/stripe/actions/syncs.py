@@ -175,7 +175,6 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
 
     if stripe_invoice.get("charge"):
         charge = sync_charge_from_stripe_data(stripe.Charge.retrieve(stripe_invoice["charge"]))
-        charge.save()
         if send_receipt:
             charge.send_receipt()
     else:

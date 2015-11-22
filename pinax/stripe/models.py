@@ -197,8 +197,10 @@ class Invoice(StripeObject):
     webhooks_delivered_at = models.DateTimeField(null=True)
 
 
-class InvoiceItem(StripeObject):
+class InvoiceItem(models.Model):
 
+    stripe_id = models.CharField(max_length=255)
+    created_at = models.DateTimeField(default=timezone.now)
     invoice = models.ForeignKey(Invoice, related_name="items")
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=10, default="usd")

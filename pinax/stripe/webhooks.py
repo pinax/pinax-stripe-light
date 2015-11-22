@@ -334,8 +334,8 @@ class CustomerSubscriptionUpdatedWebhook(CustomerSubscriptionWebhook):
 class InvoiceWebhook(Webhook):
 
     def process_webhook(self):
-        syncs.fetch_and_sync_invoice(
-            self.event_proxy.message["data"]["object"]["id"],
+        syncs.sync_invoice_from_stripe_data(
+            self.event_proxy.validated_message["data"]["object"],
             send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS
         )
 

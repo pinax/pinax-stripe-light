@@ -211,40 +211,27 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         period_start = utils.convert_tstamp(item["period"], "start")
 
         if item.get("plan"):
-            plan = proxies.PlanProxy.objects.get(item["plan"]["id"])
+            plan = proxies.PlanProxy.objects.get(stripe_id=item["plan"]["id"])
         else:
             plan = None
 
+        defaults = dict(
+            amount=utils.convert_amount_for_db(item["amount"], item["currency"]),
+            currency=item["currency"],
+            proration=item["proration"],
+            description=item.get("description") or "",
+            line_type=item["type"],
+            plan=plan,
+            period_start=period_start,
+            period_end=period_end,
+            quantity=item.get("quantity")
+        )
         inv_item, inv_item_created = invoice.items.get_or_create(
             stripe_id=item["id"],
-            defaults=dict(
-                amount=utils.convert_amount_for_db(item["amount"], item["currency"]),
-                currency=item["currency"],
-                proration=item["proration"],
-                description=item.get("description") or "",
-                line_type=item["type"],
-                plan=plan,
-                period_start=period_start,
-                period_end=period_end,
-                quantity=item.get("quantity")
-            )
+            defaults=defaults
         )
         if not inv_item_created:
-            inv_item.amount = utils.convert_amount_for_db(item["amount"], item["currency"])
-            inv_item.currency = item["currency"]
-            inv_item.proration = item["proration"]
-            inv_item.description = item.get("description") or ""
-            inv_item.line_type = item["type"]
-            inv_item.plan = plan
-            inv_item.period_start = period_start
-            inv_item.period_end = period_end
-            inv_item.quantity = item.get("quantity")
+            for key in defaults:
+                setattr(inv_item, key, defaults[key])
             inv_item.save()
-
-    if stripe_invoice.get("charge"):
-        obj = sync_charge_from_stripe_data(stripe.Charge.retrieve(stripe_invoice["charge"]))
-        obj.invoice = invoice
-        obj.save()
-        if send_receipt:
-            obj.send_receipt()
     return invoice

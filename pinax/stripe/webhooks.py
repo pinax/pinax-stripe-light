@@ -168,7 +168,7 @@ class ChargeWebhook(Webhook):
 
     def process_webhook(self):
         syncs.sync_charge_from_stripe_data(
-            stripe.Charge.retrieve(self.event_proxy.message["data"]["objects"]["id"])
+            stripe.Charge.retrieve(self.event_proxy.message["data"]["object"]["id"])
         )
 
 

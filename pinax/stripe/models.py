@@ -236,6 +236,5 @@ class Charge(StripeObject):
     disputed = models.NullBooleanField(null=True)
     refunded = models.NullBooleanField(null=True)
     captured = models.NullBooleanField(null=True)
-    fee = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     receipt_sent = models.BooleanField(default=False)
     charge_created = models.DateTimeField(null=True, blank=True)

@@ -37,7 +37,7 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
     syncs.sync_subscription_from_stripe_data(customer, sub)
 
 
-def create(customer, plan, quantity=None, trial_days=None, charge_immediately=True, token=None, coupon=None):
+def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=None):
     quantity = hooks.hookset.adjust_subscription_quantity(customer=customer, plan=plan, quantity=quantity)
     cu = customer.stripe_customer
 
@@ -52,6 +52,4 @@ def create(customer, plan, quantity=None, trial_days=None, charge_immediately=Tr
     subscription_params["coupon"] = coupon
     resp = cu.subscriptions.create(**subscription_params)
 
-    if charge_immediately:
-        customer.send_invoice()
     return resp

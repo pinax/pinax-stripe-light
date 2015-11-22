@@ -171,35 +171,39 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
     period_start = utils.convert_tstamp(stripe_invoice, "period_start")
     date = utils.convert_tstamp(stripe_invoice, "date")
 
+    if stripe_invoice.get("charge"):
+        charge = sync_charge_from_stripe_data(stripe.Charge.retrieve(stripe_invoice["charge"]))
+        charge.save()
+        if send_receipt:
+            charge.send_receipt()
+    else:
+        charge = None
+
+    defaults = dict(
+        customer=c,
+        attempted=stripe_invoice["attempted"],
+        attempt_count=stripe_invoice["attempt_count"],
+        amount_due=utils.convert_amount_for_db(stripe_invoice["amount_due"], stripe_invoice["currency"]),
+        closed=stripe_invoice["closed"],
+        paid=stripe_invoice["paid"],
+        period_end=period_end,
+        period_start=period_start,
+        subtotal=utils.convert_amount_for_db(stripe_invoice["subtotal"], stripe_invoice["currency"]),
+        total=utils.convert_amount_for_db(stripe_invoice["total"], stripe_invoice["currency"]),
+        currency=stripe_invoice["currency"],
+        date=date,
+        charge=charge
+    )
     invoice, created = proxies.InvoiceProxy.objects.get_or_create(
         stripe_id=stripe_invoice["id"],
-        defaults=dict(
-            customer=c,
-            attempted=stripe_invoice["attempted"],
-            attempts=stripe_invoice["attempt_count"],
-            closed=stripe_invoice["closed"],
-            paid=stripe_invoice["paid"],
-            period_end=period_end,
-            period_start=period_start,
-            subtotal=utils.convert_amount_for_db(stripe_invoice["subtotal"], stripe_invoice["currency"]),
-            total=utils.convert_amount_for_db(stripe_invoice["total"], stripe_invoice["currency"]),
-            currency=stripe_invoice["currency"],
-            date=date,
-            charge=stripe_invoice.get("charge") or ""
-        )
+        defaults=defaults
     )
+    if charge is not None:
+        charge.invoice = invoice
+        charge.save()
     if not created:
-        invoice.attempted = stripe_invoice["attempted"]
-        invoice.attempts = stripe_invoice["attempt_count"]
-        invoice.closed = stripe_invoice["closed"]
-        invoice.paid = stripe_invoice["paid"]
-        invoice.period_end = period_end
-        invoice.period_start = period_start
-        invoice.subtotal = utils.convert_amount_for_db(stripe_invoice["subtotal"], stripe_invoice["currency"])
-        invoice.total = utils.convert_amount_for_db(stripe_invoice["total"], stripe_invoice["currency"])
-        invoice.currency = stripe_invoice["currency"]
-        invoice.date = date
-        invoice.charge = stripe_invoice.get("charge") or ""
+        for key in defaults:
+            setattr(invoice, key, defaults[key])
         invoice.save()
 
     for item in stripe_invoice["lines"].get("data", []):

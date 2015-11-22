@@ -1,7 +1,6 @@
 import datetime
 
 from . import syncs
-from ..conf import settings
 from .. import hooks
 from .. import proxies
 

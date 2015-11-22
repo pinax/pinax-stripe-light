@@ -2,9 +2,7 @@ from . import syncs
 
 
 def create_card(customer, token):
-    source = customer.stripe_customer.sources.create(
-        source=token
-    )
+    source = customer.stripe_customer.sources.create(source=token)
     syncs.sync_payment_source_from_stripe_data(customer, source)
 
 

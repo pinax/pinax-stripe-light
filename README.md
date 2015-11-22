@@ -13,9 +13,22 @@ avoid namespace collisions and to have more consistency with Pinax.
 
 ---
 
-## :warning: Refactor and Update Plans
+## Refactor and Update Plans
 
-***November 12, 2015***–A long time ago we started a [2.0 Milestone](https://github.com/pinax/django-stripe-payments/issues?q=is%3Aopen+is%3Aissue+milestone%3A2.0) then when
+***November 22, 2015***
+
+Phew! 10 days and almost 100 commits later and milestone is as far as I know
+code complete.  The only remaining tasks are:
+
+* [ ] writing documentation - lots has changes, drastically, time to throw out the current docs and write a comprehensive set from scratch
+* [ ] review current test coverage and improve on it if the gaps that are open look critical
+* [ ] package up the templates I've been testing with in a new release of [pianx-theme-bootstrap](http://github.com/pinax/pinax-theme-bootstrap)
+* [ ] put together a demo starter project (this one i might hold off until after 2.0 ships)
+
+
+***November 12, 2015***
+
+A long time ago we started a [2.0 Milestone](https://github.com/pinax/django-stripe-payments/issues?q=is%3Aopen+is%3Aissue+milestone%3A2.0) then when
 got really busy with other areas of Pinax, our day jobs, and life. Today, we
 getting back into the swing of things starting with merging of the  `long-overdue-updates`
 branch.
@@ -32,8 +45,6 @@ These items will be made into issues in the [2.0 Milestone](https://github.com/p
 * [x] add migrations - [Issue #164](https://github.com/pinax/django-stripe-payments/issues/164)
 * [x] update for latest / greatest API compatibility - [Issue #178](https://github.com/pinax/django-stripe-payments/issues/178)
 * [x] add new webhooks - [Issue #182](https://github.com/pinax/django-stripe-payments/issues/182)
-* [ ] better handling of one-off charges - [Issue #43](https://github.com/pinax/django-stripe-payments/issues/43)
-
 
 Subsequent (shorter) milestones involve adding support for the following Stripe services:
 

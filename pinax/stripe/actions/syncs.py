@@ -142,15 +142,13 @@ def sync_charge_from_stripe_data(data):
         customer=customer,
         stripe_id=data["id"]
     )
-    obj.card_last_4 = data["card"]["last4"]
-    obj.card_kind = data["card"]["type"]
+    obj.source = data["source"]["id"]
     obj.currency = data["currency"]
     obj.invoice = next(iter(proxies.InvoiceProxy.objects.filter(stripe_id=data["invoice"])), None)
     obj.amount = utils.convert_amount_for_db(data["amount"], obj.currency)
     obj.paid = data["paid"]
     obj.refunded = data["refunded"]
     obj.captured = data["captured"]
-    obj.fee = utils.convert_amount_for_db(data["fee"])  # assume in usd only
     obj.disputed = data["dispute"] is not None
     obj.charge_created = utils.convert_tstamp(data, "created")
     if data.get("description"):

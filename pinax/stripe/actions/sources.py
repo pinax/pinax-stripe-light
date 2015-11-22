@@ -1,4 +1,5 @@
 from . import syncs
+from .. import proxies
 
 
 def create_card(customer, token):
@@ -20,4 +21,10 @@ def update_card(customer, source, name=None, exp_month=None, exp_year=None):
 
 def delete_card(customer, source):
     customer.stripe_customer.sources.retrieve(source).delete()
+    delete_card_object(source)
     syncs.sync_customer(customer)
+
+
+def delete_card_object(source):
+    if source.startswith("card_"):
+        proxies.CardProxy.objects.filter(stripe_id=source).delete()

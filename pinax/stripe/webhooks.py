@@ -6,7 +6,7 @@ import stripe
 
 from six import with_metaclass
 
-from .actions import syncs, exceptions, subscriptions, transfers
+from .actions import syncs, exceptions, subscriptions, transfers, sources
 from .conf import settings
 
 
@@ -273,17 +273,29 @@ class CustomerDiscountUpdatedWebhook(Webhook):
     description = "Occurs whenever a customer is switched from one coupon to another."
 
 
-class CustomerSourceCreatedWebhook(Webhook):
+class CustomerSourceWebhook(Webhook):
+
+    def process_webhook(self):
+        syncs.sync_payment_source_from_stripe_data(
+            self.event_proxy.customer,
+            self.event_proxy.validated_message["data"]["object"]
+        )
+
+
+class CustomerSourceCreatedWebhook(CustomerSourceWebhook):
     name = "customer.source.created"
     description = "Occurs whenever a new source is created for the customer."
 
 
-class CustomerSourceDeletedWebhook(Webhook):
+class CustomerSourceDeletedWebhook(CustomerSourceWebhook):
     name = "customer.source.deleted"
     description = "Occurs whenever a source is removed from a customer."
 
+    def process_webhook(self):
+        sources.delete_card_object(self.event_proxy.validated_message["data"]["object"]["id"])
 
-class CustomerSourceUpdatedWebhook(Webhook):
+
+class CustomerSourceUpdatedWebhook(CustomerSourceWebhook):
     name = "customer.source.updated"
     description = "Occurs whenever a source's details are changed."
 

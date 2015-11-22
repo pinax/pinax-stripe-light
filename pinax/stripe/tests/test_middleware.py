@@ -8,7 +8,7 @@ from mock import Mock
 
 from ..conf import settings
 from ..middleware import ActiveSubscriptionMiddleware
-from ..proxies import CustomerProxy, SubscriptionProxy
+from ..proxies import CustomerProxy, SubscriptionProxy, PlanProxy
 
 
 class DummySession(dict):
@@ -84,9 +84,16 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
             stripe_id="cus_1",
             user=self.request.user
         )
+        plan = PlanProxy.objects.create(
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
         SubscriptionProxy.objects.create(
             customer=customer,
-            plan="pro",
+            plan=plan,
             quantity=1,
             start=timezone.now(),
             status="active",

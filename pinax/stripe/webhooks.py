@@ -88,7 +88,6 @@ class Webhook(with_metaclass(Registerable, object)):
             return
         try:
             self.event_proxy.link_customer()
-            print("\n****** {} *******\n".format(self.event_proxy.kind))
             self.process_webhook()
             self.send_signal()
             self.event_proxy.processed = True

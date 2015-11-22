@@ -34,9 +34,31 @@ DEFAULT_SETTINGS = dict(
     SITE_ID=1,
     PINAX_STRIPE_PUBLIC_KEY="",
     PINAX_STRIPE_SECRET_KEY="",
-    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS=["pinax_stripe_subscribe"],
-    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT="pinax_stripe_subscribe",
-    PINAX_STRIPE_HOOKSET="pinax.stripe.tests.hooks.TestHookSet"
+    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS=["pinax_stripe_subscription_create"],
+    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT="pinax_stripe_subscription_create",
+    PINAX_STRIPE_HOOKSET="pinax.stripe.tests.hooks.TestHookSet",
+    TEMPLATE_DIRS=[
+        "pinax/stripe/tests/templates"
+    ],
+    TEMPLATES=[{
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [
+            "pinax/stripe/tests/templates"
+        ],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "debug": True,
+            "context_processors": [
+                "django.contrib.auth.context_processors.auth",
+                "django.core.context_processors.debug",
+                "django.core.context_processors.i18n",
+                "django.core.context_processors.media",
+                "django.core.context_processors.static",
+                "django.core.context_processors.tz",
+                "django.core.context_processors.request"
+            ],
+        },
+    }]
 )
 
 

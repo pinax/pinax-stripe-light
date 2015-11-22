@@ -34,8 +34,8 @@ DEFAULT_SETTINGS = dict(
     SITE_ID=1,
     PINAX_STRIPE_PUBLIC_KEY="",
     PINAX_STRIPE_SECRET_KEY="",
-    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS=["pinax_stripe_subscribe"],
-    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT="pinax_stripe_subscribe",
+    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS=["pinax_stripe_subscription_create"],
+    PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT="pinax_stripe_subscription_create",
     PINAX_STRIPE_HOOKSET="pinax.stripe.tests.hooks.TestHookSet"
 )
 

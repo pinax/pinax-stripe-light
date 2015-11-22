@@ -52,7 +52,6 @@ class SubscriptionProxy(models.Subscription):
         signal is triggered after a subscription has been deleted)
         """
         super(SubscriptionProxy, self).delete(using=using)
-        self.plan = None
         self.status = None
         self.quantity = 0
         self.amount = 0

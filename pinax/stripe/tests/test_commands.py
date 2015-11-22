@@ -39,6 +39,7 @@ class CommandTests(TestCase):
         plan_mock.currency = None
         plan_mock.statement_descriptor = None
         plan_mock.trial_period_days = None
+        plan_mock.name = "Pro"
         PlanAllMock().data = [
             plan_mock
         ]

@@ -1,53 +1,34 @@
 from django.conf.urls import url
 
-try:
-    from account.decorators import login_required
-except ImportError:
-    from django.contrib.auth.decorators import login_required
-
 from .views import (
-    CancelView,
-    ChangeCardView,
-    ChangePlanView,
-    HistoryView,
-    SubscribeView,
+    InvoiceListView,
+
+    PaymentMethodListView,
+    PaymentMethodCreateView,
+    PaymentMethodDeleteView,
+    PaymentMethodUpdateView,
+
+    SubscriptionListView,
+    SubscriptionCreateView,
+    SubscriptionDeleteView,
+    SubscriptionUpdateView,
+
     Webhook,
-    AjaxSubscribe,
-    AjaxChangeCard,
-    AjaxChangePlan,
-    AjaxCancelSubscription
 )
 
 
 urlpatterns = [
+    url(r"^subscriptions/$", SubscriptionListView.as_view(), name="pinax_stripe_subscription_list"),
+    url(r"^subscriptions/create/$", SubscriptionCreateView.as_view(), name="pinax_stripe_subscription_create"),
+    url(r"^subscriptions/(?P<pk>\d+)/delete/$", SubscriptionDeleteView.as_view(), name="pinax_stripe_subscription_delete"),
+    url(r"^subscriptions/(?P<pk>\d+)/update/$", SubscriptionUpdateView.as_view(), name="pinax_stripe_subscription_update"),
+
+    url(r"^payment-methods/$", PaymentMethodListView.as_view(), name="pinax_stripe_payment_method_list"),
+    url(r"^payment-methods/create/$", PaymentMethodCreateView.as_view(), name="pinax_stripe_payment_method_create"),
+    url(r"^payment-methods/(?P<pk>\d+)/delete/$", PaymentMethodDeleteView.as_view(), name="pinax_stripe_payment_method_delete"),
+    url(r"^payment-methods/(?P<pk>\d+)/update/$", PaymentMethodUpdateView.as_view(), name="pinax_stripe_payment_method_update"),
+
+    url(r"^invoices/$", InvoiceListView.as_view(), name="pinax_stripe_invoice_list"),
+
     url(r"^webhook/$", Webhook.as_view(), name="pinax_stripe_webhook"),
-    url(r"^a/subscribe/$", login_required(AjaxSubscribe.as_view()), name="pinax_stripe_ajax_subscribe"),
-    url(r"^a/change/card/$", login_required(AjaxChangeCard.as_view()), name="pinax_stripe_ajax_change_card"),
-    url(r"^a/change/plan/$", login_required(AjaxChangePlan.as_view()), name="pinax_stripe_ajax_change_plan"),
-    url(r"^a/cancel/$", login_required(AjaxCancelSubscription.as_view()), name="pinax_stripe_ajax_cancel"),
-    url(
-        r"^subscribe/$",
-        login_required(SubscribeView.as_view()),
-        name="pinax_stripe_subscribe"
-    ),
-    url(
-        r"^change/card/$",
-        login_required(ChangeCardView.as_view()),
-        name="pinax_stripe_change_card"
-    ),
-    url(
-        r"^change/plan/$",
-        login_required(ChangePlanView.as_view()),
-        name="pinax_stripe_change_plan"
-    ),
-    url(
-        r"^cancel/$",
-        login_required(CancelView.as_view()),
-        name="pinax_stripe_cancel"
-    ),
-    url(
-        r"^history/$",
-        login_required(HistoryView.as_view()),
-        name="pinax_stripe_history"
-    ),
 ]

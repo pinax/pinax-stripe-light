@@ -27,16 +27,15 @@ class EmailReceiptTest(TestCase):
         ChargeMock.return_value.id = "ch_XXXXX"
         RetrieveMock.return_value = {
             "id": "ch_XXXXXX",
-            "card": {
-                "last4": "4323",
-                "type": "Visa"
+            "source": {
+                "id": "card_01"
             },
             "amount": 40000,
             "currency": "usd",
             "paid": True,
             "refunded": False,
+            "invoice": None,
             "captured": True,
-            "fee": 499,
             "dispute": None,
             "created": 1363911708,
             "customer": "cus_xxxxxxxxxxxxxxx"
@@ -53,16 +52,15 @@ class EmailReceiptTest(TestCase):
         ChargeMock.return_value.id = "ch_XXXXX"
         RetrieveMock.return_value = {
             "id": "ch_XXXXXX",
-            "card": {
-                "last4": "4323",
-                "type": "Visa"
+            "source": {
+                "id": "card_01"
             },
             "amount": 40000,
             "currency": "jpy",
             "paid": True,
             "refunded": False,
+            "invoice": None,
             "captured": True,
-            "fee": 499,
             "dispute": None,
             "created": 1363911708,
             "customer": "cus_xxxxxxxxxxxxxxx"

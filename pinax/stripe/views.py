@@ -1,164 +1,103 @@
 import json
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.urlresolvers import reverse
 from django.http import HttpResponse
-from django.template import RequestContext
-from django.template.loader import render_to_string
+from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.utils.encoding import smart_str
-from django.views.generic import TemplateView, View
+from django.views.generic import TemplateView, DetailView, View, FormView, ListView
+from django.views.generic.edit import FormMixin
 from django.views.decorators.csrf import csrf_exempt
 
 import stripe
 
-from eldarion.ajax.views import EldarionAjaxResponseMixin
-
 from .actions import events, exceptions, customers, subscriptions, invoices, sources
-from .conf import settings
-from .forms import PlanForm, PLAN_CHOICES
+from .forms import PlanForm
+from .mixins import LoginRequiredMixin, CustomerMixin, PaymentsContextMixin
+from .proxies import InvoiceProxy, CardProxy, SubscriptionProxy
 
 
-class PaymentsContextMixin(object):
+class InvoiceListView(LoginRequiredMixin, CustomerMixin, ListView):
+    model = InvoiceProxy
+    context_object_name = "invoice_list"
+    template_name = "pinax/stripe/invoice_list.html"
 
-    def get_context_data(self, **kwargs):
-        context = super(PaymentsContextMixin, self).get_context_data(**kwargs)
-        context.update({
-            "STRIPE_PUBLIC_KEY": settings.PINAX_STRIPE_PUBLIC_KEY,
-            "PLAN_CHOICES": PLAN_CHOICES,
-            "PAYMENT_PLANS": settings.PINAX_STRIPE_PLANS
-        })
-        return context
+    def get_queryset(self):
+        return super(InvoiceListView, self).get_queryset().order_by("date")
 
 
-def _ajax_response(request, template, **kwargs):
-    response = {
-        "html": render_to_string(
-            template,
-            RequestContext(request, kwargs)
-        )
-    }
-    if "location" in kwargs:
-        response.update({"location": kwargs["location"]})
-    return HttpResponse(json.dumps(response), content_type="application/json")
+class PaymentMethodListView(LoginRequiredMixin, CustomerMixin, ListView):
+    model = CardProxy
+    context_object_name = "payment_method_list"
+    template_name = "pinax/stripe/paymentmethod_list.html"
+
+    def get_queryset(self):
+        return super(PaymentMethodListView, self).get_queryset().order_by("created_at")
 
 
-class SubscribeView(PaymentsContextMixin, TemplateView):
-    template_name = "pinax/stripe/subscribe.html"
+class PaymentMethodCreateView(LoginRequiredMixin, CustomerMixin, PaymentsContextMixin, TemplateView):
+    model = CardProxy
+    template_name = "pinax/stripe/paymentmethod_create.html"
 
-    def get_context_data(self, **kwargs):
-        context = super(SubscribeView, self).get_context_data(**kwargs)
-        context.update({
-            "form": PlanForm
-        })
-        return context
+    def create_card(self, stripe_token):
+        sources.create_card(self.customer, token=stripe_token)
 
-
-class ChangeCardView(PaymentsContextMixin, TemplateView):
-    template_name = "pinax/stripe/change_card.html"
-
-
-class CancelView(PaymentsContextMixin, TemplateView):
-    template_name = "pinax/stripe/cancel.html"
+    def post(self, request, *args, **kwargs):
+        try:
+            self.create_card(request.POST.get("stripeToken"))
+            return redirect("pinax_stripe_payment_method_list")
+        except stripe.CardError as e:
+            return self.render_to_response(self.get_context_data(errors=smart_str(e)))
 
 
-class ChangePlanView(SubscribeView):
-    template_name = "pinax/stripe/change_plan.html"
+class PaymentMethodDeleteView(LoginRequiredMixin, CustomerMixin, DetailView):
+    model = CardProxy
+    template_name = "pinax/stripe/paymentmethod_delete.html"
+
+    def delete_card(self, stripe_id):
+        sources.delete_card(self.customer, stripe_id)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        try:
+            self.delete_card(self.object.stripe_id)
+            return redirect("pinax_stripe_payment_method_list")
+        except stripe.CardError as e:
+            return self.render_to_response(self.get_context_data(errors=smart_str(e)))
 
 
-class HistoryView(PaymentsContextMixin, TemplateView):
-    template_name = "pinax/stripe/history.html"
+class PaymentMethodUpdateView(LoginRequiredMixin, CustomerMixin, PaymentsContextMixin, DetailView):
+    model = CardProxy
+    template_name = "pinax/stripe/paymentmethod_update.html"
 
-
-class CustomerMixin(object):
-
-    @property
-    def customer(self):
-        if not hasattr(self, "_customer"):
-            self._customer = customers.get_customer_for_user(self.request.user)
-        return self._customer
-
-
-class AjaxChangeCard(EldarionAjaxResponseMixin, CustomerMixin, View):
-
-    template_fragment = "pinax/stripe/_change_card_form.html"
-
-    def send_invoice(self):
-        invoices.create_and_pay(self.customer)
-
-    def update_card(self, stripe_token):
-        sources.update_card(self.customer, source=stripe_token)
+    def update_card(self, exp_month, exp_year):
+        sources.update_card(self.customer, self.object.stripe_id, exp_month=exp_month, exp_year=exp_year)
 
     def retry_unpaid_invoices(self):
         invoices.retry_unpaid(self.customer)
 
     def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
         try:
-            self.update_card(request.POST.get("stripe_token"))
-            self.send_invoice()
+            self.update_card(request.POST.get("expMonth"), request.POST.get("expYear"))
             self.retry_unpaid_invoices()
-            data = {}
+            return redirect("pinax_stripe_payment_method_list")
         except stripe.CardError as e:
-            data = {"error": smart_str(e)}
-        return self.render_to_response(data)
+            return self.render_to_response(self.get_context_data(errors=smart_str(e)))
 
 
-class AjaxChangePlan(EldarionAjaxResponseMixin, CustomerMixin, View):
-    # @@@ rewrite // can't assume only a single subscription anymore
+class SubscriptionListView(LoginRequiredMixin, CustomerMixin, ListView):
+    model = SubscriptionProxy
+    context_object_name = "subscription_list"
+    template_name = "pinax/stripe/subscription_list.html"
+
+    def get_queryset(self):
+        return super(SubscriptionListView, self).get_queryset().order_by("created_at")
+
+
+class SubscriptionCreateView(LoginRequiredMixin, PaymentsContextMixin, CustomerMixin, FormView):
+    template_name = "pinax/stripe/subscription_create.html"
     form_class = PlanForm
-    template_fragment = "pinax/stripe/_change_plan_form.html"
-
-    @property
-    def current_plan(self):
-        if not hasattr(self, "_current_plan"):
-            sub = subscriptions.current_subscription(self.customer)
-            if sub:
-                self._current_plan = sub.plan
-        return self._current_plan
-
-    def subscribe(self, plan):
-        try:
-            subscriptions.update(subscriptions.current_subscription(self.customer), plan)
-            data = {
-                "form": PlanForm(initial={"plan": plan})
-            }
-        except stripe.StripeError as e:
-            data = {
-                "form": PlanForm(initial={"plan": self.current_plan}),
-                "error": smart_str(e)
-            }
-        return data
-
-    def form_valid(self, form):
-        data = self.subscribe(plan=form.cleaned_data["plan"])
-        return self.render_to_response(data)
-
-    def form_invalid(self, form):
-        data = {"form": form}
-        return self.render_to_response(data)
-
-    def post(self, request, *args, **kwargs):
-        form = PlanForm(request.POST)
-        if form.is_valid():
-            return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
-
-
-class AjaxSubscribe(EldarionAjaxResponseMixin, CustomerMixin, View):
-
-    form_class = PlanForm
-    template_fragment = "pinax/stripe/_subscribe_form.html"
-
-    def redirect(self):
-        return self.response_class(
-            data=self.render_location(self.get_success_url()),
-            encoder=self.encoder_class,
-            safe=self.safe
-        )
-
-    def get_success_url(self):
-        return reverse("pinax_stripe_history")
 
     def set_customer(self):
         try:
@@ -166,48 +105,76 @@ class AjaxSubscribe(EldarionAjaxResponseMixin, CustomerMixin, View):
         except ObjectDoesNotExist:
             self._customer = customers.create(self.request.user)
 
-    def update_card(self, token):
-        customers.set_default_source(self.customer, token)
+    def subscribe(self, customer, plan, token):
+        subscriptions.create(customer, plan, token=token)
 
     def form_valid(self, form):
-        data = {"plans": settings.PINAX_STRIPE_PLANS}
         self.set_customer()
         try:
-            if self.request.POST.get("stripe_token"):
-                self.update_card(self.request.POST.get("stripe_token"))
-            subscriptions.create(self.customer, plan=form.cleaned_data["plan"])
-            return self.redirect()
+            self.subscribe(self.customer, plan=form.cleaned_data["plan"], token=self.request.POST.get("stripeToken"))
+            return redirect("pinax_stripe_subscription_list")
         except stripe.StripeError as e:
-            data["form"] = form
-            data["error"] = smart_str(e) or "Unknown error"
-        return self.render_to_response(data)
+            return self.render_to_response(self.get_context_data(form=form, errors=smart_str(e)))
 
-    def form_invalid(self, form):
-        data = {
-            "error": form.errors,
-            "form": form
-        }
-        return self.render_to_response(data)
+
+class SubscriptionDeleteView(LoginRequiredMixin, CustomerMixin, DetailView):
+    model = SubscriptionProxy
+    template_name = "pinax/stripe/subscription_delete.html"
+
+    def cancel(self):
+        subscriptions.cancel(self.object)
 
     def post(self, request, *args, **kwargs):
-        form = PlanForm(request.POST)
+        self.object = self.get_object()
+        try:
+            self.cancel()
+            return redirect("pinax_stripe_subscription_list")
+        except stripe.StripeError as e:
+            return self.render_to_response(self.get_context_data(errors=smart_str(e)))
+
+
+class SubscriptionUpdateView(LoginRequiredMixin, CustomerMixin, FormMixin, DetailView):
+    model = SubscriptionProxy
+    form_class = PlanForm
+    template_name = "pinax/stripe/subscription_update.html"
+
+    @property
+    def current_plan(self):
+        if not hasattr(self, "_current_plan"):
+            self._current_plan = self.object.plan
+        return self._current_plan
+
+    def get_context_data(self, **kwargs):
+        context = super(SubscriptionUpdateView, self).get_context_data(**kwargs)
+        context.update({
+            "form": self.get_form(form_class=self.form_class)
+        })
+        return context
+
+    def update_subscription(self, plan_id):
+        subscriptions.update(self.object, plan_id)
+
+    def get_initial(self):
+        initial = super(SubscriptionUpdateView, self).get_initial()
+        initial.update({
+            "plan": self.current_plan
+        })
+        return initial
+
+    def form_valid(self, form):
+        try:
+            self.update_subscription(form.cleaned_data["plan"])
+            return redirect("pinax_stripe_subscription_list")
+        except stripe.StripeError as e:
+            return self.render_to_response(self.get_context_data(form=form, errors=smart_str(e)))
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form(form_class=self.form_class)
         if form.is_valid():
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
-
-
-class AjaxCancelSubscription(EldarionAjaxResponseMixin, CustomerMixin, View):
-    # @@@ rewrite // can't assume only a single subscription anymore // need to select a subscription object
-    template_fragment = "pinax/stripe/_cancel_form.html"
-
-    def post(self, request, *args, **kwargs):
-        try:
-            subscriptions.cancel(subscriptions.current_subscription(self.customer))
-            data = {}
-        except stripe.StripeError as e:
-            data = {"error": smart_str(e)}
-        return self.render_to_response(data)
 
 
 class Webhook(View):

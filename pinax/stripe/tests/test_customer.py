@@ -21,9 +21,17 @@ class TestCustomer(TestCase):
             user=self.user,
             stripe_id="cus_xxxxxxxxxxxxxxx"
         )
+        self.plan = PlanProxy.objects.create(
+            stripe_id="p1",
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
         self.subscription = SubscriptionProxy.objects.create(
             customer=self.customer,
-            plan="foo",
+            plan=self.plan,
             stripe_id="su_123",
             quantity=1,
             start="2015-01-01"
@@ -96,13 +104,13 @@ class TestCustomer(TestCase):
         rm.currency = "usd"
         rm.subscription.plan.id = "pro-monthly"
         rm.subscriptions.data = [subscription]
-        customer = customers.create(self.user, card="token232323", plan="pro-monthly")
+        customer = customers.create(self.user, card="token232323", plan=self.plan)
         self.assertEqual(customer.user, self.user)
         self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
         _, kwargs = CreateMock.call_args
         self.assertEqual(kwargs["email"], self.user.email)
         self.assertEqual(kwargs["source"], "token232323")
-        self.assertEqual(kwargs["plan"], "pro-monthly")
+        self.assertEqual(kwargs["plan"], self.plan)
         self.assertIsNotNone(kwargs["trial_end"])
         self.assertTrue(InvoiceMock.called)
         self.assertTrue(customer.subscription_set.all()[0].plan, "pro")
@@ -183,31 +191,35 @@ class TestCustomer(TestCase):
         cu.delinquent = False
         cu.default_source = "card_178Zqj2eZvKYlo2Cr2fUZZz7"
         cu.currency = "usd"
-        source = Mock()
-        source.id = "card_178Zqj2eZvKYlo2Cr2fUZZz7"
-        source.object = "card"
-        source.address_city = None
-        source.address_country = None
-        source.address_line1 = None
-        source.address_line1_check = None
-        source.address_line2 = None
-        source.address_state = None
-        source.address_zip = None
-        source.address_zip_check = None
-        source.brand = "Visa"
-        source.country = "US"
-        source.customer = "cus_7NKVEhB90BjhvB"
-        source.cvc_check = "pass"
-        source.dynamic_last4 = None
-        source.exp_month = 4
-        source.exp_year = 2040
-        source.funding = "credit"
-        source.fingerprint = ""
-        source.last4 = "4242"
-        source.metadata = {}
-        source.name = None
-        source.tokenization_method = None
 
+        class SourceMock(dict):
+            def __init__(self):
+                self.update(dict(
+                    id="card_178Zqj2eZvKYlo2Cr2fUZZz7",
+                    object="card",
+                    address_city=None,
+                    address_country=None,
+                    address_line1=None,
+                    address_line1_check=None,
+                    address_line2=None,
+                    address_state=None,
+                    address_zip=None,
+                    address_zip_check=None,
+                    brand="Visa",
+                    country="US",
+                    customer="cus_7NKVEhB90BjhvB",
+                    cvc_check="pass",
+                    dynamic_last4=None,
+                    exp_month=4,
+                    exp_year=2040,
+                    funding="credit",
+                    fingerprint="",
+                    last4="4242",
+                    metadata={},
+                    name=None,
+                    tokenization_method=None
+                ))
+        source = SourceMock()
         cu.sources.data = [source]
         customer = CustomerProxy.objects.get(stripe_id=self.customer.stripe_id)
 
@@ -238,13 +250,11 @@ class TestCustomer(TestCase):
         charge = ChargeProxy.objects.create(
             stripe_id="ch_XXXXXX",
             customer=self.customer,
-            card_last_4="4323",
-            card_kind="Visa",
+            source="card_01",
             amount=decimal.Decimal("10.00"),
             currency="usd",
             paid=True,
             refunded=False,
-            fee=decimal.Decimal("4.99"),
             disputed=False
         )
 
@@ -252,17 +262,16 @@ class TestCustomer(TestCase):
             def __init__(self):
                 self.update({
                     "id": "ch_XXXXXX",
-                    "card": {
-                        "last4": "4323",
-                        "type": "Visa"
+                    "source": {
+                        "id": "card_01"
                     },
                     "amount": 1000,
                     "currency": "usd",
                     "paid": True,
                     "refunded": True,
                     "captured": True,
+                    "invoice": None,
                     "amount_refunded": 1000,
-                    "fee": 499,
                     "dispute": None,
                     "created": 1363911708,
                     "customer": "cus_xxxxxxxxxxxxxxx"
@@ -320,16 +329,15 @@ class TestCustomer(TestCase):
         ChargeMock.return_value.id = "ch_XXXXX"
         RetrieveMock.return_value = {
             "id": "ch_XXXXXX",
-            "card": {
-                "last4": "4323",
-                "type": "Visa"
+            "source": {
+                "id": "card_01"
             },
             "amount": 1000,
             "currency": "usd",
             "paid": True,
             "refunded": False,
             "captured": True,
-            "fee": 499,
+            "invoice": None,
             "dispute": None,
             "created": 1363911708,
             "customer": "cus_xxxxxxxxxxxxxxx"
@@ -341,16 +349,15 @@ class TestCustomer(TestCase):
     def test_record_charge_in_jpy_with(self):
         data = {
             "id": "ch_XXXXXX",
-            "card": {
-                "last4": "4323",
-                "type": "Visa"
+            "source": {
+                "id": "card_01"
             },
             "amount": 1000,
             "currency": "jpy",
             "paid": True,
             "refunded": False,
             "captured": True,
-            "fee": 499,
+            "invoice": None,
             "dispute": None,
             "created": 1363911708,
             "customer": "cus_xxxxxxxxxxxxxxx"
@@ -369,14 +376,12 @@ class TestCustomer(TestCase):
         charge = ChargeProxy.objects.create(
             stripe_id="ch_XXXXXX",
             customer=self.customer,
-            card_last_4="4323",
-            card_kind="Visa",
+            source="card_01",
             amount=decimal.Decimal("1000.00"),
             currency="jpy",
             paid=True,
             refunded=False,
             captured=True,
-            fee=decimal.Decimal("4.99"),
             disputed=False
         )
 
@@ -384,16 +389,15 @@ class TestCustomer(TestCase):
             def __init__(self):
                 self.update({
                     "id": "ch_XXXXXX",
-                    "card": {
-                        "last4": "4323",
-                        "type": "Visa"
+                    "source": {
+                        "id": "card_01"
                     },
                     "amount": 1000,
                     "currency": "jpy",
                     "paid": True,
                     "refunded": True,
+                    "invoice": None,
                     "amount_refunded": 1000,
-                    "fee": 499,
                     "captured": True,
                     "dispute": None,
                     "created": 1363911708,
@@ -451,15 +455,15 @@ class TestCustomer(TestCase):
         ChargeMock.return_value.id = "ch_XXXXX"
         RetrieveMock.return_value = {
             "id": "ch_XXXXXX",
-            "card": {
-                "last4": "4323",
-                "type": "Visa"
+            "source": {
+                "id": "card_01"
             },
             "amount": 1000,
             "currency": "jpy",
             "paid": True,
             "refunded": False,
             "captured": True,
+            "invoice": None,
             "fee": 499,
             "dispute": None,
             "created": 1363911708,

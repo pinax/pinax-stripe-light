@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 
 from mock import patch, Mock
 
-from ..proxies import CustomerProxy, EventProxy, SubscriptionProxy
+from ..proxies import CustomerProxy, EventProxy, SubscriptionProxy, PlanProxy
 from ..signals import WEBHOOK_SIGNALS
 from ..webhooks import registry, CustomerSubscriptionDeletedWebhook
 
@@ -215,7 +215,15 @@ class TestEventMethods(TestCase):
         cm.default_source = ""
         cm.account_balance = 0
         kind = "customer.subscription.deleted"
-        cs = SubscriptionProxy(stripe_id="su_2ZDdGxJ3EQQc7Q", customer=self.customer, quantity=1, start=timezone.now())
+        plan = PlanProxy.objects.create(
+            stripe_id="p1",
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
+        cs = SubscriptionProxy(stripe_id="su_2ZDdGxJ3EQQc7Q", customer=self.customer, quantity=1, start=timezone.now(), plan=plan)
         cs.save()
         customer = CustomerProxy.objects.get(pk=self.customer.pk)
 

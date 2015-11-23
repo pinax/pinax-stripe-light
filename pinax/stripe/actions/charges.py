@@ -37,7 +37,7 @@ def capture(charge, amount):
     stripe_charge = charge.stripe_charge.capture(
         amount=utils.convert_amount_for_api(
             amount,
-            amount.currency
+            charge.currency
         )
     )
     syncs.sync_charge_from_stripe_data(stripe_charge)

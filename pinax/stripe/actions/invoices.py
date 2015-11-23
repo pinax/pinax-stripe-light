@@ -1,9 +1,6 @@
-from django.utils.encoding import smart_str
-
 import stripe
 
 from . import syncs
-from .. import proxies
 
 
 def create(customer):
@@ -26,13 +23,3 @@ def create_and_pay(customer):
         return True
     except stripe.InvalidRequestError:
         return False  # There was nothing to Invoice
-
-
-def retry_unpaid(customer):
-    syncs.sync_invoices_for_customer(customer)
-    for inv in proxies.InvoiceProxy.objects.filter(customer=customer, paid=False, closed=False):
-        try:
-            inv.retry()  # Always retry unpaid invoices
-        except stripe.InvalidRequestError as error:
-            if smart_str(error) != "Invoice is already paid":
-                raise error

@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 import stripe
 
-from .actions import events, exceptions, customers, subscriptions, invoices, sources
+from .actions import events, exceptions, customers, subscriptions, sources
 from .forms import PlanForm
 from .mixins import LoginRequiredMixin, CustomerMixin, PaymentsContextMixin
 from .proxies import InvoiceProxy, CardProxy, SubscriptionProxy
@@ -73,14 +73,10 @@ class PaymentMethodUpdateView(LoginRequiredMixin, CustomerMixin, PaymentsContext
     def update_card(self, exp_month, exp_year):
         sources.update_card(self.customer, self.object.stripe_id, exp_month=exp_month, exp_year=exp_year)
 
-    def retry_unpaid_invoices(self):
-        invoices.retry_unpaid(self.customer)
-
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         try:
             self.update_card(request.POST.get("expMonth"), request.POST.get("expYear"))
-            self.retry_unpaid_invoices()
             return redirect("pinax_stripe_payment_method_list")
         except stripe.CardError as e:
             return self.render_to_response(self.get_context_data(errors=smart_str(e)))

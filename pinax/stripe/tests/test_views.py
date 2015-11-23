@@ -210,9 +210,8 @@ class PaymentMethodUpdateViewTests(TestCase):
             fingerprint="abc"
         )
 
-    @patch("pinax.stripe.actions.invoices.retry_unpaid")
     @patch("pinax.stripe.actions.sources.update_card")
-    def test_post(self, CreateMock, RetryMock):
+    def test_post(self, CreateMock):
         self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(
             reverse("pinax_stripe_payment_method_update", args=[self.card.pk]),
@@ -221,9 +220,8 @@ class PaymentMethodUpdateViewTests(TestCase):
         self.assertEquals(response.status_code, 302)
         self.assertRedirects(response, reverse("pinax_stripe_payment_method_list"))
 
-    @patch("pinax.stripe.actions.invoices.retry_unpaid")
     @patch("pinax.stripe.actions.sources.update_card")
-    def test_post_on_error(self, CreateMock, RetryMock):
+    def test_post_on_error(self, CreateMock):
         CreateMock.side_effect = stripe.CardError("Bad card", "Param", "CODE")
         self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(

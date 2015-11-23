@@ -4,9 +4,11 @@ from django.test import TestCase
 
 from django.contrib.auth import get_user_model
 
-from mock import patch
+import stripe
 
-from ..actions import charges, customers, events
+from mock import patch, Mock
+
+from ..actions import charges, customers, events, invoices
 from ..proxies import CustomerProxy, ChargeProxy, PlanProxy, EventProxy
 
 
@@ -153,3 +155,56 @@ class EventsTests(TestCase):
         event = EventProxy.objects.get(stripe_id="evt_002")
         self.assertEquals(event.processed, False)
         self.assertIsNone(event.validated_message)
+
+
+class InvoicesTests(TestCase):
+
+    @patch("stripe.Invoice.create")
+    def test_create(self, CreateMock):
+        invoices.create(Mock())
+        self.assertTrue(CreateMock.called)
+
+    @patch("pinax.stripe.actions.syncs.sync_invoice_from_stripe_data")
+    def test_pay(self, SyncMock):
+        invoice = Mock()
+        invoice.paid = False
+        invoice.closed = False
+        self.assertTrue(invoices.pay(invoice))
+        self.assertTrue(invoice.stripe_invoice.pay.called)
+        self.assertTrue(SyncMock.called)
+
+    def test_pay_invoice_paid(self):
+        invoice = Mock()
+        invoice.paid = True
+        invoice.closed = False
+        self.assertFalse(invoices.pay(invoice))
+        self.assertFalse(invoice.stripe_invoice.pay.called)
+
+    def test_pay_invoice_closed(self):
+        invoice = Mock()
+        invoice.paid = False
+        invoice.closed = True
+        self.assertFalse(invoices.pay(invoice))
+        self.assertFalse(invoice.stripe_invoice.pay.called)
+
+    @patch("stripe.Invoice.create")
+    def test_create_and_pay(self, CreateMock):
+        invoice = CreateMock()
+        invoice.amount_due = 100
+        self.assertTrue(invoices.create_and_pay(Mock()))
+        self.assertTrue(invoice.pay.called)
+
+    @patch("stripe.Invoice.create")
+    def test_create_and_pay_amount_due_0(self, CreateMock):
+        invoice = CreateMock()
+        invoice.amount_due = 0
+        self.assertTrue(invoices.create_and_pay(Mock()))
+        self.assertFalse(invoice.pay.called)
+
+    @patch("stripe.Invoice.create")
+    def test_create_and_pay_invalid_request_error(self, CreateMock):
+        invoice = CreateMock()
+        invoice.amount_due = 100
+        invoice.pay.side_effect = stripe.InvalidRequestError("Bad", "error")
+        self.assertFalse(invoices.create_and_pay(Mock()))
+        self.assertTrue(invoice.pay.called)

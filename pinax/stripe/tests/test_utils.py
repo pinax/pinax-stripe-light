@@ -1,9 +1,10 @@
 import datetime
+import decimal
 
 from django.test import TestCase
 from django.utils import timezone
 
-from ..utils import convert_tstamp
+from ..utils import convert_tstamp, convert_amount_for_api
 
 
 class TestTimestampConversion(TestCase):
@@ -35,3 +36,13 @@ class TestTimestampConversion(TestCase):
             stamp,
             None
         )
+
+    def test_jpy_amount_not_converted_to_cents(self):
+        expected = 1000
+        actual = convert_amount_for_api(decimal.Decimal("1000"), "jpy")
+        self.assertEquals(expected, actual)
+
+    def test_usd_amount_converted_to_cents(self):
+        expected = 1000
+        actual = convert_amount_for_api(decimal.Decimal("10.00"), "usd")
+        self.assertEquals(expected, actual)

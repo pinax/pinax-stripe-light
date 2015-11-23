@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 
 from mock import patch, PropertyMock, Mock
 
-from ..actions import refunds, customers, syncs, charges
+from ..actions import refunds, customers, syncs
 from ..proxies import CustomerProxy, ChargeProxy, SubscriptionProxy, PlanProxy
 
 
@@ -240,10 +240,6 @@ class TestCustomer(TestCase):
         self.customer.delete()
         self.assertFalse(self.customer.can_charge())
 
-    def test_charge_accepts_only_decimals(self):
-        with self.assertRaises(ValueError):
-            charges.create(customer=self.customer, amount=10)
-
     @patch("stripe.Refund.create")
     @patch("stripe.Charge.retrieve")
     def test_refund_charge(self, RetrieveMock, RefundMock):
@@ -322,29 +318,6 @@ class TestCustomer(TestCase):
             charge.calculate_refund_amount(amount=decimal.Decimal("600.00")),
             500
         )
-
-    @patch("stripe.Charge.retrieve")
-    @patch("stripe.Charge.create")
-    def test_charge_converts_dollars_into_cents(self, ChargeMock, RetrieveMock):
-        ChargeMock.return_value.id = "ch_XXXXX"
-        RetrieveMock.return_value = {
-            "id": "ch_XXXXXX",
-            "source": {
-                "id": "card_01"
-            },
-            "amount": 1000,
-            "currency": "usd",
-            "paid": True,
-            "refunded": False,
-            "captured": True,
-            "invoice": None,
-            "dispute": None,
-            "created": 1363911708,
-            "customer": "cus_xxxxxxxxxxxxxxx"
-        }
-        charges.create(customer=self.customer, amount=decimal.Decimal("10.00"), currency="usd")
-        _, kwargs = ChargeMock.call_args
-        self.assertEquals(kwargs["amount"], 1000)
 
     def test_record_charge_in_jpy_with(self):
         data = {
@@ -448,27 +421,3 @@ class TestCustomer(TestCase):
             charge.calculate_refund_amount(amount=decimal.Decimal("600.00")),
             500
         )
-
-    @patch("stripe.Charge.retrieve")
-    @patch("stripe.Charge.create")
-    def test_charge_do_not_converts_dollars_in_jpy(self, ChargeMock, RetrieveMock):
-        ChargeMock.return_value.id = "ch_XXXXX"
-        RetrieveMock.return_value = {
-            "id": "ch_XXXXXX",
-            "source": {
-                "id": "card_01"
-            },
-            "amount": 1000,
-            "currency": "jpy",
-            "paid": True,
-            "refunded": False,
-            "captured": True,
-            "invoice": None,
-            "fee": 499,
-            "dispute": None,
-            "created": 1363911708,
-            "customer": "cus_xxxxxxxxxxxxxxx"
-        }
-        charges.create(customer=self.customer, amount=decimal.Decimal("1000.00"), currency="jpy")
-        _, kwargs = ChargeMock.call_args
-        self.assertEquals(kwargs["amount"], 1000)

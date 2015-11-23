@@ -20,24 +20,24 @@ def create(amount, source=None, customer=None, currency="usd", description=None,
         raise ValueError(
             "You must supply either a source or customer to create the charge for"
         )
-    resp = stripe.Charge.create(
+    stripe_charge = stripe.Charge.create(
         amount=utils.convert_amount_for_api(amount, currency),  # find the final amount
         currency=currency,
         source=source,
         description=description,
         capture=capture,
     )
-    obj = syncs.sync_charge_from_stripe_data(stripe.Charge.retrieve(resp["id"]))
+    charge = syncs.sync_charge_from_stripe_data(stripe_charge)
     if send_receipt:
-        obj.send_receipt()
-    return obj
+        charge.send_receipt()
+    return charge
 
 
 def capture(charge, amount):
-    ch = charge.stripe_charge.capture(
+    stripe_charge = charge.stripe_charge.capture(
         amount=utils.convert_amount_for_api(
             amount,
             amount.currency
         )
     )
-    syncs.sync_charge_from_stripe_data(ch)
+    syncs.sync_charge_from_stripe_data(stripe_charge)

@@ -8,7 +8,7 @@ import stripe
 
 from mock import patch, Mock
 
-from ..actions import charges, customers, events, invoices
+from ..actions import charges, customers, events, invoices, refunds
 from ..proxies import CustomerProxy, ChargeProxy, PlanProxy, EventProxy
 
 
@@ -208,3 +208,27 @@ class InvoicesTests(TestCase):
         invoice.pay.side_effect = stripe.InvalidRequestError("Bad", "error")
         self.assertFalse(invoices.create_and_pay(Mock()))
         self.assertTrue(invoice.pay.called)
+
+
+class RefundsTests(TestCase):
+
+    @patch("pinax.stripe.actions.syncs.sync_charge_from_stripe_data")
+    @patch("stripe.Refund.create")
+    def test_create_amount_none(self, RefundMock, SyncMock):
+        refunds.create(Mock())
+        self.assertTrue(RefundMock.called)
+        _, kwargs = RefundMock.call_args
+        self.assertFalse("amount" in kwargs)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.syncs.sync_charge_from_stripe_data")
+    @patch("stripe.Refund.create")
+    def test_create_with_amount(self, RefundMock, SyncMock):
+        ChargeMock = Mock()
+        ChargeMock.calculate_refund_amount.return_value = decimal.Decimal("10")
+        refunds.create(ChargeMock, amount=decimal.Decimal("10"))
+        self.assertTrue(RefundMock.called)
+        _, kwargs = RefundMock.call_args
+        self.assertTrue("amount" in kwargs)
+        self.assertEquals(kwargs["amount"], 1000)
+        self.assertTrue(SyncMock.called)

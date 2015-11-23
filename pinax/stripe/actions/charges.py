@@ -33,10 +33,10 @@ def create(amount, source=None, customer=None, currency="usd", description=None,
     return charge
 
 
-def capture(charge, amount):
+def capture(charge, amount=None):
     stripe_charge = charge.stripe_charge.capture(
         amount=utils.convert_amount_for_api(
-            amount,
+            amount if amount else charge.amount,
             charge.currency
         )
     )

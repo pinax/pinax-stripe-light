@@ -47,9 +47,9 @@ class CustomerHasCardListFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == "yes":
-            return queryset.exclude(card_fingerprint="")
+            return queryset.exclude(card__fingerprint="")
         if self.value() == "no":
-            return queryset.filter(card_fingerprint="")
+            return queryset.filter(card__fingerprint="")
 
 
 class InvoiceCustomerHasCardListFilter(admin.SimpleListFilter):
@@ -64,9 +64,9 @@ class InvoiceCustomerHasCardListFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == "yes":
-            return queryset.exclude(customer__card_fingerprint="")
+            return queryset.exclude(customer__card__fingerprint="")
         if self.value() == "no":
-            return queryset.filter(customer__card_fingerprint="")
+            return queryset.filter(customer__card__fingerprint="")
 
 
 class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
@@ -202,7 +202,7 @@ class InvoiceItemInline(admin.TabularInline):
 
 
 def customer_has_card(obj):
-    return obj.customer.card_fingerprint != ""
+    return obj.customer.card_set.exclude(fingerprint='').exists()
 customer_has_card.short_description = "Customer Has Card"
 
 

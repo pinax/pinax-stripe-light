@@ -8,8 +8,8 @@ import stripe
 
 from mock import patch, Mock
 
-from ..actions import charges, customers, events, invoices, refunds
-from ..proxies import CustomerProxy, ChargeProxy, PlanProxy, EventProxy
+from ..actions import charges, customers, events, invoices, refunds, sources
+from ..proxies import CustomerProxy, ChargeProxy, CardProxy, PlanProxy, EventProxy
 
 
 class ChargesTests(TestCase):
@@ -232,3 +232,113 @@ class RefundsTests(TestCase):
         self.assertTrue("amount" in kwargs)
         self.assertEquals(kwargs["amount"], 1000)
         self.assertTrue(SyncMock.called)
+
+
+class SourcesTests(TestCase):
+
+    @patch("pinax.stripe.actions.syncs.sync_payment_source_from_stripe_data")
+    def test_create_card(self, SyncMock):
+        CustomerMock = Mock()
+        sources.create_card(CustomerMock, token="token")
+        self.assertTrue(CustomerMock.stripe_customer.sources.create.called)
+        _, kwargs = CustomerMock.stripe_customer.sources.create.call_args
+        self.assertEquals(kwargs["source"], "token")
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.syncs.sync_payment_source_from_stripe_data")
+    def test_update_card(self, SyncMock):
+        CustomerMock = Mock()
+        SourceMock = CustomerMock.stripe_customer.sources.retrieve()
+        sources.update_card(CustomerMock, "")
+        self.assertTrue(CustomerMock.stripe_customer.sources.retrieve.called)
+        self.assertTrue(SourceMock.save.called)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.syncs.sync_payment_source_from_stripe_data")
+    def test_update_card_name_not_none(self, SyncMock):
+        CustomerMock = Mock()
+        SourceMock = CustomerMock.stripe_customer.sources.retrieve()
+        sources.update_card(CustomerMock, "", name="My Visa")
+        self.assertTrue(CustomerMock.stripe_customer.sources.retrieve.called)
+        self.assertTrue(SourceMock.save.called)
+        self.assertEquals(SourceMock.name, "My Visa")
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.syncs.sync_payment_source_from_stripe_data")
+    def test_update_card_exp_month_not_none(self, SyncMock):
+        CustomerMock = Mock()
+        SourceMock = CustomerMock.stripe_customer.sources.retrieve()
+        sources.update_card(CustomerMock, "", exp_month="My Visa")
+        self.assertTrue(CustomerMock.stripe_customer.sources.retrieve.called)
+        self.assertTrue(SourceMock.save.called)
+        self.assertEquals(SourceMock.exp_month, "My Visa")
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.syncs.sync_payment_source_from_stripe_data")
+    def test_update_card_exp_year_not_none(self, SyncMock):
+        CustomerMock = Mock()
+        SourceMock = CustomerMock.stripe_customer.sources.retrieve()
+        sources.update_card(CustomerMock, "", exp_year="My Visa")
+        self.assertTrue(CustomerMock.stripe_customer.sources.retrieve.called)
+        self.assertTrue(SourceMock.save.called)
+        self.assertEquals(SourceMock.exp_year, "My Visa")
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.syncs.sync_customer")
+    def test_delete_card(self, SyncMock):
+        CustomerMock = Mock()
+        sources.delete_card(CustomerMock, source="token")
+        self.assertTrue(CustomerMock.stripe_customer.sources.retrieve().delete.called)
+        self.assertTrue(SyncMock.called)
+
+    def test_delete_card_object(self):
+        User = get_user_model()
+        user = User.objects.create_user(
+            username="patrick",
+            email="paltman@eldarion.com"
+        )
+        customer = CustomerProxy.objects.create(
+            user=user,
+            stripe_id="cus_xxxxxxxxxxxxxxx"
+        )
+        card = CardProxy.objects.create(
+            customer=customer,
+            stripe_id="card_stripe",
+            address_line_1_check="check",
+            address_zip_check="check",
+            country="us",
+            cvc_check="check",
+            exp_month=1,
+            exp_year=2000,
+            funding="funding",
+            fingerprint="fingerprint"
+        )
+        pk = card.pk
+        sources.delete_card_object("card_stripe")
+        self.assertFalse(CardProxy.objects.filter(pk=pk).exists())
+
+    def test_delete_card_object_not_card(self):
+        User = get_user_model()
+        user = User.objects.create_user(
+            username="patrick",
+            email="paltman@eldarion.com"
+        )
+        customer = CustomerProxy.objects.create(
+            user=user,
+            stripe_id="cus_xxxxxxxxxxxxxxx"
+        )
+        card = CardProxy.objects.create(
+            customer=customer,
+            stripe_id="bitcoin_stripe",
+            address_line_1_check="check",
+            address_zip_check="check",
+            country="us",
+            cvc_check="check",
+            exp_month=1,
+            exp_year=2000,
+            funding="funding",
+            fingerprint="fingerprint"
+        )
+        pk = card.pk
+        sources.delete_card_object("bitcoin_stripe")
+        self.assertTrue(CardProxy.objects.filter(pk=pk).exists())

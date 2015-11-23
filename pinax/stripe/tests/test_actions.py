@@ -6,8 +6,8 @@ from django.contrib.auth import get_user_model
 
 from mock import patch
 
-from ..actions import charges, customers
-from ..proxies import CustomerProxy, ChargeProxy, PlanProxy
+from ..actions import charges, customers, events
+from ..proxies import CustomerProxy, ChargeProxy, PlanProxy, EventProxy
 
 
 class ChargesTests(TestCase):
@@ -133,3 +133,23 @@ class CustomersTests(TestCase):
         self.assertIsNotNone(kwargs["trial_end"])
         self.assertTrue(SyncMock.called)
         self.assertTrue(CreateAndPayMock.called)
+
+
+class EventsTests(TestCase):
+
+    def test_dupe_event_exists(self):
+        EventProxy.objects.create(stripe_id="evt_003", kind="foo", livemode=True, webhook_message="{}", api_version="", request="", pending_webhooks=0)
+        self.assertTrue(events.dupe_event_exists("evt_003"))
+
+    @patch("pinax.stripe.webhooks.AccountUpdatedWebhook.process")
+    def test_add_event(self, ProcessMock):
+        events.add_event(stripe_id="evt_001", kind="account.updated", livemode=True, message={})
+        event = EventProxy.objects.get(stripe_id="evt_001")
+        self.assertEquals(event.kind, "account.updated")
+        self.assertTrue(ProcessMock.called)
+
+    def test_add_event_new_webhook_kind(self):
+        events.add_event(stripe_id="evt_002", kind="patrick.got.coffee", livemode=True, message={})
+        event = EventProxy.objects.get(stripe_id="evt_002")
+        self.assertEquals(event.processed, False)
+        self.assertIsNone(event.validated_message)

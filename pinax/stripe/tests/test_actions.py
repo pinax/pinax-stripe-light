@@ -4,7 +4,7 @@ from django.test import TestCase
 
 from django.contrib.auth import get_user_model
 
-from mock import patch, PropertyMock, Mock
+from mock import patch
 
 from ..actions import charges, customers
 from ..proxies import CustomerProxy, ChargeProxy, PlanProxy
@@ -81,14 +81,23 @@ class CustomersTests(TestCase):
             name="Pro"
         )
 
+    def test_get_customer_for_user(self):
+        expected = CustomerProxy.objects.create(stripe_id="x", user=self.user)
+        actual = customers.get_customer_for_user(self.user)
+        self.assertEquals(expected, actual)
+
+    @patch("pinax.stripe.actions.syncs.sync_customer")
     @patch("stripe.Customer.retrieve")
+    def test_set_default_source(self, RetrieveMock, SyncMock):
+        customers.set_default_source(CustomerProxy(), "the source")
+        self.assertEquals(RetrieveMock().default_source, "the source")
+        self.assertTrue(RetrieveMock().save.called)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.syncs.sync_customer")
     @patch("stripe.Customer.create")
-    def test_customer_create_user_only(self, CreateMock, RetrieveMock):
+    def test_customer_create_user_only(self, CreateMock, SyncMock):
         cu = CreateMock()
-        cu.account_balance = 0
-        cu.delinquent = False
-        cu.default_source = "card_178Zqj2eZvKYlo2Cr2fUZZz7"
-        cu.currency = "usd"
         cu.id = "cus_XXXXX"
         customer = customers.create(self.user)
         self.assertEqual(customer.user, self.user)
@@ -98,11 +107,12 @@ class CustomersTests(TestCase):
         self.assertIsNone(kwargs["source"])
         self.assertIsNone(kwargs["plan"])
         self.assertIsNone(kwargs["trial_end"])
+        self.assertTrue(SyncMock.called)
 
-    @patch("stripe.Invoice.create")
-    @patch("stripe.Customer.retrieve")
+    @patch("pinax.stripe.actions.invoices.create_and_pay")
+    @patch("pinax.stripe.actions.syncs.sync_customer")
     @patch("stripe.Customer.create")
-    def test_customer_create_user_with_plan(self, CreateMock, RetrieveMock, InvoiceMock):
+    def test_customer_create_user_with_plan(self, CreateMock, SyncMock, CreateAndPayMock):
         PlanProxy.objects.create(
             stripe_id="pro-monthly",
             name="Pro ($19.99/month)",
@@ -111,38 +121,8 @@ class CustomersTests(TestCase):
             interval_count=1,
             currency="usd"
         )
-        type(InvoiceMock()).amount_due = PropertyMock(return_value=3)
         cu = CreateMock()
-        cu.account_balance = 0
-        cu.delinquent = False
-        cu.default_source = "card_178Zqj2eZvKYlo2Cr2fUZZz7"
-        cu.currency = "usd"
         cu.id = "cus_YYYYYYYYYYYYY"
-        subscription = Mock()
-        subscription.plan.id = "pro-monthly"
-        subscription.current_period_start = 1348876800
-        subscription.current_period_end = 1349876800
-        subscription.canceled_at = 1349876800
-        subscription.ended_at = 1349876800
-        subscription.application_fee_percent = 0
-        subscription.plan.amount = 9999
-        subscription.plan.currency = "usd"
-        subscription.status = "active"
-        subscription.cancel_at_period_end = False
-        subscription.start = 1348876800
-        subscription.quantity = 1
-        subscription.trial_start = 1348876800
-        subscription.trial_end = 1349876800
-        subscription.id = "su_YYYYYYYYYYYYY"
-        cu.subscriptions.data = [subscription]
-        rm = RetrieveMock()
-        rm.id = "cus_YYYYYYYYYYYYY"
-        rm.account_balance = 0
-        rm.delinquent = False
-        rm.default_source = "card_178Zqj2eZvKYlo2Cr2fUZZz7"
-        rm.currency = "usd"
-        rm.subscription.plan.id = "pro-monthly"
-        rm.subscriptions.data = [subscription]
         customer = customers.create(self.user, card="token232323", plan=self.plan)
         self.assertEqual(customer.user, self.user)
         self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
@@ -151,5 +131,5 @@ class CustomersTests(TestCase):
         self.assertEqual(kwargs["source"], "token232323")
         self.assertEqual(kwargs["plan"], self.plan)
         self.assertIsNotNone(kwargs["trial_end"])
-        self.assertTrue(InvoiceMock.called)
-        self.assertTrue(customer.subscription_set.all()[0].plan, "pro")
+        self.assertTrue(SyncMock.called)
+        self.assertTrue(CreateAndPayMock.called)

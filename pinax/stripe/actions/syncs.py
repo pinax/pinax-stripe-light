@@ -214,6 +214,7 @@ def _sync_invoice_items(invoice_proxy, items):
                 setattr(inv_item, key, defaults[key])
             inv_item.save()
 
+
 def _retrieve_stripe_subscription(customer, sub_id):
     if sub_id:
         try:
@@ -226,6 +227,7 @@ def _retrieve_stripe_subscription(customer, sub_id):
             else:
                 # The exception was raised for another reason, re-raise it
                 raise
+
 
 def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
     c = proxies.CustomerProxy.objects.get(stripe_id=stripe_invoice["customer"])

@@ -1,3 +1,5 @@
+from django.utils.encoding import smart_str
+
 import stripe
 
 from ..conf import settings
@@ -180,10 +182,14 @@ def _sync_invoice_items(invoice_proxy, items):
             if invoice_proxy.subscription and invoice_proxy.subscription.stripe_id == item["id"]:
                 item_subscription = invoice_proxy.subscription
             else:
+                stripe_subscription = _retrieve_stripe_subscription(
+                    invoice_proxy.customer,
+                    item["id"]
+                )
                 item_subscription = sync_subscription_from_stripe_data(
                     invoice_proxy.customer,
-                    invoice_proxy.customer.stripe_customer.subscriptions.retrieve(item["id"])
-                )
+                    stripe_subscription
+                ) if stripe_subscription else None
         else:
             item_subscription = None
 
@@ -209,6 +215,20 @@ def _sync_invoice_items(invoice_proxy, items):
             inv_item.save()
 
 
+def _retrieve_stripe_subscription(customer, sub_id):
+    if sub_id:
+        try:
+            return customer.stripe_customer.subscriptions.retrieve(sub_id)
+        except stripe.InvalidRequestError as e:
+            if smart_str(e).find("does not have a subscription with ID") != -1:
+                # The exception was thrown because the customer has deleted the
+                # subscription we're attempting to sync, ignore the exception
+                pass
+            else:
+                # The exception was raised for another reason, re-raise it
+                raise
+
+
 def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
     c = proxies.CustomerProxy.objects.get(stripe_id=stripe_invoice["customer"])
     period_end = utils.convert_tstamp(stripe_invoice, "period_end")
@@ -223,7 +243,9 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
     else:
         charge = None
 
-    subscription = sync_subscription_from_stripe_data(c, c.stripe_customer.subscriptions.retrieve(sub_id)) if sub_id else None
+    stripe_subscription = _retrieve_stripe_subscription(c, sub_id)
+    subscription = sync_subscription_from_stripe_data(
+        c, stripe_subscription) if stripe_subscription else None
 
     defaults = dict(
         customer=c,

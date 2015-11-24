@@ -182,10 +182,14 @@ def _sync_invoice_items(invoice_proxy, items):
             if invoice_proxy.subscription and invoice_proxy.subscription.stripe_id == item["id"]:
                 item_subscription = invoice_proxy.subscription
             else:
+                stripe_subscription = _retrieve_stripe_subscription(
+                    invoice_proxy.customer,
+                    item["id"]
+                )
                 item_subscription = sync_subscription_from_stripe_data(
                     invoice_proxy.customer,
-                    invoice_proxy.customer.stripe_customer.subscriptions.retrieve(item["id"])
-                )
+                    stripe_subscription
+                ) if stripe_subscription else None
         else:
             item_subscription = None
 

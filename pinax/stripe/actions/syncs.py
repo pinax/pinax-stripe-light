@@ -210,6 +210,25 @@ def _sync_invoice_items(invoice_proxy, items):
                 setattr(inv_item, key, defaults[key])
             inv_item.save()
 
+def _retrieve_subscription(customer, sub_id):
+    if sub_id:
+        try:
+            stripe_subscription = customer.stripe_customer.subscriptions\
+                                                          .retrieve(sub_id)
+            subscription = sync_subscription_from_stripe_data(
+                customer, stripe_subscription)
+        except stripe.InvalidRequestError as e:
+            if smart_str(e).find("does not have a subscription with ID") != -1:
+                # The exception was thrown because the customer has deleted the
+                # subscription we're attempting to sync, ignore the exception
+                subscription = None
+            else:
+                # The exception was raised for another reason, re-raise it
+                raise
+    else:
+        subscription = None
+
+    return subscription
 
 def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
     c = proxies.CustomerProxy.objects.get(stripe_id=stripe_invoice["customer"])
@@ -225,22 +244,8 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
     else:
         charge = None
 
-    if sub_id:
-        try:
-            stripe_subscription = c.stripe_customer.subscriptions\
-                                                   .retrieve(sub_id)
-            subscription = sync_subscription_from_stripe_data(
-                c, stripe_subscription)
-        except stripe.InvalidRequestError as e:
-            if smart_str(e).find("does not have a subscription with ID") != -1:
-                # The exception was thrown because the customer has deleted the
-                # subscription we're attempting to sync, ignore the exception
-                subscription = None
-            else:
-                # The exception was raised for another reason, re-raise it
-                raise
-    else:
-        subscription = None
+    subscription = sync_subscription_from_stripe_data(
+        c, _retrieve_subscription(c, sub_id)) if sub_id else None
 
     defaults = dict(
         customer=c,

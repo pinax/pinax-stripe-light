@@ -3,11 +3,11 @@ from django.utils import timezone
 
 from django.contrib.auth import get_user_model
 
-from mock import patch, Mock
+from mock import patch
 
 from ..proxies import CustomerProxy, EventProxy, SubscriptionProxy, PlanProxy
 from ..signals import WEBHOOK_SIGNALS
-from ..webhooks import registry, CustomerSubscriptionDeletedWebhook
+from ..webhooks import registry
 
 
 class TestEventMethods(TestCase):

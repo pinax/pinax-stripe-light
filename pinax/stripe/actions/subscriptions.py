@@ -15,6 +15,7 @@ def has_active_subscription(customer):
         Q(ended_at__isnull=True) | Q(ended_at__gt=timezone.now())
     ).exists()
 
+
 def cancel(subscription, at_period_end=True):
     sub = subscription.stripe_subscription.delete(at_period_end=at_period_end)
     syncs.sync_subscription_from_stripe_data(subscription.customer, sub)

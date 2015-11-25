@@ -1,15 +1,19 @@
 import datetime
 
+from django.db.models import Q
+from django.utils import timezone
+
 from . import syncs
 from .. import hooks
 from .. import proxies
 
 
-def current_subscription(customer):
-    # @@@ hack until views are rewritten
-    return next(iter(proxies.SubscriptionProxy.objects.filter(customer=customer)), None)
-
-
+def has_active_subscription(customer):
+    return proxies.SubscriptionProxy.objects.filter(
+        customer=customer
+    ).filter(
+        Q(ended_at__isnull=True) | Q(ended_at__gt=timezone.now())
+    ).exists()
 
 def cancel(subscription, at_period_end=True):
     sub = subscription.stripe_subscription.delete(at_period_end=at_period_end)

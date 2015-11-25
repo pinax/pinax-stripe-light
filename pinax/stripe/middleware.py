@@ -14,7 +14,7 @@ class ActiveSubscriptionMiddleware(object):
             if url_name not in settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS:
                 try:
                     customer = customers.get_customer_for_user(request.user)
-                    if subscriptions.current_subscription(customer) is None:
+                    if not subscriptions.has_active_subscription(customer):
                         return redirect(
                             settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT
                         )

@@ -1,6 +1,8 @@
+import datetime
 import decimal
 
 from django.test import TestCase
+from django.utils import timezone
 
 from django.contrib.auth import get_user_model
 
@@ -8,8 +10,8 @@ import stripe
 
 from mock import patch, Mock
 
-from ..actions import charges, customers, events, invoices, refunds, sources
-from ..proxies import CustomerProxy, ChargeProxy, CardProxy, PlanProxy, EventProxy
+from ..actions import charges, customers, events, invoices, refunds, sources, subscriptions
+from ..proxies import CustomerProxy, ChargeProxy, CardProxy, PlanProxy, EventProxy, SubscriptionProxy
 
 
 class ChargesTests(TestCase):
@@ -342,3 +344,148 @@ class SourcesTests(TestCase):
         pk = card.pk
         sources.delete_card_object("bitcoin_stripe")
         self.assertTrue(CardProxy.objects.filter(pk=pk).exists())
+
+
+class SubscriptionsTests(TestCase):
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            username="patrick",
+            email="paltman@eldarion.com"
+        )
+        self.customer = CustomerProxy.objects.create(
+            user=self.user,
+            stripe_id="cus_xxxxxxxxxxxxxxx"
+        )
+
+    def test_has_active_subscription(self):
+        plan = PlanProxy.objects.create(
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
+        SubscriptionProxy.objects.create(
+            customer=self.customer,
+            plan=plan,
+            quantity=1,
+            start=timezone.now(),
+            status="active",
+            cancel_at_period_end=False
+        )
+        self.assertTrue(subscriptions.has_active_subscription(self.customer))
+
+    def test_has_active_subscription_false_no_subscription(self):
+        self.assertFalse(subscriptions.has_active_subscription(self.customer))
+
+    def test_has_active_subscription_false_expired(self):
+        plan = PlanProxy.objects.create(
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
+        SubscriptionProxy.objects.create(
+            customer=self.customer,
+            plan=plan,
+            quantity=1,
+            start=timezone.now(),
+            status="active",
+            cancel_at_period_end=False,
+            ended_at=timezone.now() - datetime.timedelta(days=3)
+        )
+        self.assertFalse(subscriptions.has_active_subscription(self.customer))
+
+    def test_has_active_subscription_ended_but_not_expired(self):
+        plan = PlanProxy.objects.create(
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
+        SubscriptionProxy.objects.create(
+            customer=self.customer,
+            plan=plan,
+            quantity=1,
+            start=timezone.now(),
+            status="active",
+            cancel_at_period_end=False,
+            ended_at=timezone.now() + datetime.timedelta(days=3)
+        )
+        self.assertTrue(subscriptions.has_active_subscription(self.customer))
+
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
+    def test_cancel_subscription(self, SyncMock):
+        SubMock = Mock()
+        subscriptions.cancel(SubMock)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
+    def test_update(self, SyncMock):
+        SubMock = Mock()
+        SubMock.customer = self.customer
+        subscriptions.update(SubMock)
+        self.assertTrue(SubMock.stripe_subscription.save.called)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
+    def test_update_plan(self, SyncMock):
+        SubMock = Mock()
+        SubMock.customer = self.customer
+        subscriptions.update(SubMock, plan="test_value")
+        self.assertEquals(SubMock.stripe_subscription.plan, "test_value")
+        self.assertTrue(SubMock.stripe_subscription.save.called)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
+    def test_update_plan_quantity(self, SyncMock):
+        SubMock = Mock()
+        SubMock.customer = self.customer
+        subscriptions.update(SubMock, quantity="test_value")
+        self.assertEquals(SubMock.stripe_subscription.quantity, "test_value")
+        self.assertTrue(SubMock.stripe_subscription.save.called)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
+    def test_update_plan_prorate(self, SyncMock):
+        SubMock = Mock()
+        SubMock.customer = self.customer
+        subscriptions.update(SubMock, prorate=False)
+        self.assertEquals(SubMock.stripe_subscription.prorate, False)
+        self.assertTrue(SubMock.stripe_subscription.save.called)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
+    def test_update_plan_coupon(self, SyncMock):
+        SubMock = Mock()
+        SubMock.customer = self.customer
+        subscriptions.update(SubMock, coupon="test_value")
+        self.assertEquals(SubMock.stripe_subscription.coupon, "test_value")
+        self.assertTrue(SubMock.stripe_subscription.save.called)
+        self.assertTrue(SyncMock.called)
+
+    @patch("stripe.Customer.retrieve")
+    def test_subscription_create(self, CustomerMock):
+        subscriptions.create(self.customer, "the-plan")
+        sub_create = CustomerMock().subscriptions.create
+        self.assertTrue(sub_create.called)
+
+    @patch("stripe.Customer.retrieve")
+    def test_subscription_create_with_trial(self, CustomerMock):
+        subscriptions.create(self.customer, "the-plan", trial_days=3)
+        sub_create = CustomerMock().subscriptions.create
+        self.assertTrue(sub_create.called)
+        _, kwargs = sub_create.call_args
+        self.assertEquals(kwargs["trial_end"].date(), (datetime.datetime.utcnow() + datetime.timedelta(days=3)).date())
+
+    @patch("stripe.Customer.retrieve")
+    def test_subscription_create_token(self, CustomerMock):
+        sub_create = CustomerMock().subscriptions.create
+        subscriptions.create(self.customer, "the-plan", token="token")
+        self.assertTrue(sub_create.called)
+        _, kwargs = sub_create.call_args
+        self.assertEquals(kwargs["source"], "token")

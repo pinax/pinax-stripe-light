@@ -10,11 +10,6 @@ def current_subscription(customer):
     return next(iter(proxies.SubscriptionProxy.objects.filter(customer=customer)), None)
 
 
-def delete(stripe_id):
-    sub = next(iter(proxies.SubscriptionProxy.objects.filter(stripe_id=stripe_id)), None)
-    if sub is not None:
-        sub.delete()
-
 
 def cancel(subscription, at_period_end=True):
     sub = subscription.stripe_subscription.delete(at_period_end=at_period_end)

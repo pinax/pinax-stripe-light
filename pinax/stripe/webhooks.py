@@ -6,7 +6,7 @@ import stripe
 
 from six import with_metaclass
 
-from .actions import syncs, exceptions, subscriptions, transfers, sources
+from .actions import syncs, exceptions, transfers, sources
 from .conf import settings
 
 
@@ -315,10 +315,6 @@ class CustomerSubscriptionCreatedWebhook(CustomerSubscriptionWebhook):
 class CustomerSubscriptionDeletedWebhook(CustomerSubscriptionWebhook):
     name = "customer.subscription.deleted"
     description = "Occurs whenever a customer ends their subscription."
-
-    def process_webhook(self):
-        subscriptions.delete(self.event_proxy.validated_message["data"]["object"]["id"])
-        super(CustomerSubscriptionDeletedWebhook, self).process_webhook()
 
 
 class CustomerSubscriptionTrialWillEndWebhook(CustomerSubscriptionWebhook):

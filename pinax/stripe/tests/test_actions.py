@@ -1464,22 +1464,467 @@ class SyncsTests(TestCase):
         self.assertTrue(invoice.items.all().count(), 2)
         self.assertEquals(invoice.items.all()[1].description, "This is your second subscription")
 
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
+    @patch("stripe.Charge.retrieve")
+    @patch("pinax.stripe.actions.syncs.sync_charge_from_stripe_data")
     @patch("pinax.stripe.actions.syncs._sync_invoice_items")
     @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
-    def test_sync_invoice_from_stripe_data(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock):
-        pass
+    def test_sync_invoice_from_stripe_data(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock, SyncChargeMock, ChargeFetchMock, SyncSubscriptionMock):
+        plan = PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
+        subscription = SubscriptionProxy.objects.create(
+            stripe_id="sub_7Q4BX0HMfqTpN8",
+            customer=self.customer,
+            plan=plan,
+            quantity=1,
+            status="active",
+            start=timezone.now()
+        )
+        charge = ChargeProxy.objects.create(
+            stripe_id="ch_XXXXXX",
+            customer=self.customer,
+            source="card_01",
+            amount=decimal.Decimal("10.00"),
+            currency="usd",
+            paid=True,
+            refunded=False,
+            disputed=False
+        )
+        charge.send_receipt = Mock()
+        SyncChargeMock.return_value = charge
+        SyncSubscriptionMock.return_value = subscription
+        data = {
+            "id": "in_17B6e8I10iPhvocMGtYd4hDD",
+            "object": "invoice",
+            "amount_due": 1999,
+            "application_fee": None,
+            "attempt_count": 0,
+            "attempted": False,
+            "charge": charge.stripe_id,
+            "closed": False,
+            "currency": "usd",
+            "customer": self.customer.stripe_id,
+            "date": 1448470892,
+            "description": None,
+            "discount": None,
+            "ending_balance": None,
+            "forgiven": False,
+            "lines": {
+                "data": [{
+                    "id": subscription.stripe_id,
+                    "object": "line_item",
+                    "amount": 0,
+                    "currency": "usd",
+                    "description": None,
+                    "discountable": True,
+                    "livemode": True,
+                    "metadata": {
+                    },
+                    "period": {
+                        "start": 1448499344,
+                        "end": 1448758544
+                    },
+                    "plan": {
+                        "id": "pro2",
+                        "object": "plan",
+                        "amount": 1999,
+                        "created": 1448121054,
+                        "currency": "usd",
+                        "interval": "month",
+                        "interval_count": 1,
+                        "livemode": False,
+                        "metadata": {
+                        },
+                        "name": "The Pro Plan",
+                        "statement_descriptor": "ALTMAN",
+                        "trial_period_days": 3
+                    },
+                    "proration": False,
+                    "quantity": 1,
+                    "subscription": None,
+                    "type": "subscription"
+                }],
+                "total_count": 1,
+                "object": "list",
+                "url": "/v1/invoices/in_17B6e8I10iPhvocMGtYd4hDD/lines"
+            },
+            "livemode": False,
+            "metadata": {
+            },
+            "next_payment_attempt": 1448474492,
+            "paid": False,
+            "period_end": 1448470739,
+            "period_start": 1448211539,
+            "receipt_number": None,
+            "starting_balance": 0,
+            "statement_descriptor": None,
+            "subscription": subscription.stripe_id,
+            "subtotal": 1999,
+            "tax": None,
+            "tax_percent": None,
+            "total": 1999,
+            "webhooks_delivered_at": None
+        }
+        syncs.sync_invoice_from_stripe_data(data)
+        self.assertTrue(SyncInvoiceItemsMock.called)
+        self.assertEquals(InvoiceProxy.objects.filter(customer=self.customer).count(), 1)
+        self.assertTrue(ChargeFetchMock.called)
+        self.assertTrue(SyncChargeMock.called)
+        self.assertTrue(SyncChargeMock().send_receipt.called)
 
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
+    @patch("stripe.Charge.retrieve")
+    @patch("pinax.stripe.actions.syncs.sync_charge_from_stripe_data")
     @patch("pinax.stripe.actions.syncs._sync_invoice_items")
     @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
-    def test_sync_invoice_from_stripe_data_no_charge(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock):
-        pass
+    def test_sync_invoice_from_stripe_data_no_send_receipt(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock, SyncChargeMock, ChargeFetchMock, SyncSubscriptionMock):
+        plan = PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
+        subscription = SubscriptionProxy.objects.create(
+            stripe_id="sub_7Q4BX0HMfqTpN8",
+            customer=self.customer,
+            plan=plan,
+            quantity=1,
+            status="active",
+            start=timezone.now()
+        )
+        charge = ChargeProxy.objects.create(
+            stripe_id="ch_XXXXXX",
+            customer=self.customer,
+            source="card_01",
+            amount=decimal.Decimal("10.00"),
+            currency="usd",
+            paid=True,
+            refunded=False,
+            disputed=False
+        )
+        charge.send_receipt = Mock()
+        SyncChargeMock.return_value = charge
+        SyncSubscriptionMock.return_value = subscription
+        data = {
+            "id": "in_17B6e8I10iPhvocMGtYd4hDD",
+            "object": "invoice",
+            "amount_due": 1999,
+            "application_fee": None,
+            "attempt_count": 0,
+            "attempted": False,
+            "charge": charge.stripe_id,
+            "closed": False,
+            "currency": "usd",
+            "customer": self.customer.stripe_id,
+            "date": 1448470892,
+            "description": None,
+            "discount": None,
+            "ending_balance": None,
+            "forgiven": False,
+            "lines": {
+                "data": [{
+                    "id": subscription.stripe_id,
+                    "object": "line_item",
+                    "amount": 0,
+                    "currency": "usd",
+                    "description": None,
+                    "discountable": True,
+                    "livemode": True,
+                    "metadata": {
+                    },
+                    "period": {
+                        "start": 1448499344,
+                        "end": 1448758544
+                    },
+                    "plan": {
+                        "id": "pro2",
+                        "object": "plan",
+                        "amount": 1999,
+                        "created": 1448121054,
+                        "currency": "usd",
+                        "interval": "month",
+                        "interval_count": 1,
+                        "livemode": False,
+                        "metadata": {
+                        },
+                        "name": "The Pro Plan",
+                        "statement_descriptor": "ALTMAN",
+                        "trial_period_days": 3
+                    },
+                    "proration": False,
+                    "quantity": 1,
+                    "subscription": None,
+                    "type": "subscription"
+                }],
+                "total_count": 1,
+                "object": "list",
+                "url": "/v1/invoices/in_17B6e8I10iPhvocMGtYd4hDD/lines"
+            },
+            "livemode": False,
+            "metadata": {
+            },
+            "next_payment_attempt": 1448474492,
+            "paid": False,
+            "period_end": 1448470739,
+            "period_start": 1448211539,
+            "receipt_number": None,
+            "starting_balance": 0,
+            "statement_descriptor": None,
+            "subscription": subscription.stripe_id,
+            "subtotal": 1999,
+            "tax": None,
+            "tax_percent": None,
+            "total": 1999,
+            "webhooks_delivered_at": None
+        }
+        syncs.sync_invoice_from_stripe_data(data, send_receipt=False)
+        self.assertTrue(SyncInvoiceItemsMock.called)
+        self.assertEquals(InvoiceProxy.objects.filter(customer=self.customer).count(), 1)
+        self.assertTrue(ChargeFetchMock.called)
+        self.assertTrue(SyncChargeMock.called)
+        self.assertFalse(SyncChargeMock().send_receipt.called)
 
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
     @patch("pinax.stripe.actions.syncs._sync_invoice_items")
     @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
-    def test_sync_invoice_from_stripe_data_no_subscription(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock):
-        pass
+    def test_sync_invoice_from_stripe_data_no_charge(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock, SyncSubscriptionMock):
+        plan = PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
+        subscription = SubscriptionProxy.objects.create(
+            stripe_id="sub_7Q4BX0HMfqTpN8",
+            customer=self.customer,
+            plan=plan,
+            quantity=1,
+            status="active",
+            start=timezone.now()
+        )
+        SyncSubscriptionMock.return_value = subscription
+        data = {
+            "id": "in_17B6e8I10iPhvocMGtYd4hDD",
+            "object": "invoice",
+            "amount_due": 1999,
+            "application_fee": None,
+            "attempt_count": 0,
+            "attempted": False,
+            "charge": None,
+            "closed": False,
+            "currency": "usd",
+            "customer": self.customer.stripe_id,
+            "date": 1448470892,
+            "description": None,
+            "discount": None,
+            "ending_balance": None,
+            "forgiven": False,
+            "lines": {
+                "data": [{
+                    "id": subscription.stripe_id,
+                    "object": "line_item",
+                    "amount": 0,
+                    "currency": "usd",
+                    "description": None,
+                    "discountable": True,
+                    "livemode": True,
+                    "metadata": {
+                    },
+                    "period": {
+                        "start": 1448499344,
+                        "end": 1448758544
+                    },
+                    "plan": {
+                        "id": "pro2",
+                        "object": "plan",
+                        "amount": 1999,
+                        "created": 1448121054,
+                        "currency": "usd",
+                        "interval": "month",
+                        "interval_count": 1,
+                        "livemode": False,
+                        "metadata": {
+                        },
+                        "name": "The Pro Plan",
+                        "statement_descriptor": "ALTMAN",
+                        "trial_period_days": 3
+                    },
+                    "proration": False,
+                    "quantity": 1,
+                    "subscription": None,
+                    "type": "subscription"
+                }],
+                "total_count": 1,
+                "object": "list",
+                "url": "/v1/invoices/in_17B6e8I10iPhvocMGtYd4hDD/lines"
+            },
+            "livemode": False,
+            "metadata": {
+            },
+            "next_payment_attempt": 1448474492,
+            "paid": False,
+            "period_end": 1448470739,
+            "period_start": 1448211539,
+            "receipt_number": None,
+            "starting_balance": 0,
+            "statement_descriptor": None,
+            "subscription": subscription.stripe_id,
+            "subtotal": 1999,
+            "tax": None,
+            "tax_percent": None,
+            "total": 1999,
+            "webhooks_delivered_at": None
+        }
+        syncs.sync_invoice_from_stripe_data(data)
+        self.assertTrue(SyncInvoiceItemsMock.called)
+        self.assertEquals(InvoiceProxy.objects.filter(customer=self.customer).count(), 1)
 
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
     @patch("pinax.stripe.actions.syncs._sync_invoice_items")
     @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
-    def test_sync_invoice_from_stripe_data_updated(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock):
-        pass
+    def test_sync_invoice_from_stripe_data_no_subscription(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock, SyncSubscriptionMock):
+        SyncSubscriptionMock.return_value = None
+        data = {
+            "id": "in_17B6e8I10iPhvocMGtYd4hDD",
+            "object": "invoice",
+            "amount_due": 1999,
+            "application_fee": None,
+            "attempt_count": 0,
+            "attempted": False,
+            "charge": None,
+            "closed": False,
+            "currency": "usd",
+            "customer": self.customer.stripe_id,
+            "date": 1448470892,
+            "description": None,
+            "discount": None,
+            "ending_balance": None,
+            "forgiven": False,
+            "lines": {
+                "data": [{
+                    "id": "ii_2342342",
+                    "object": "line_item",
+                    "amount": 2000,
+                    "currency": "usd",
+                    "description": None,
+                    "discountable": True,
+                    "livemode": True,
+                    "metadata": {
+                    },
+                    "period": {
+                        "start": 1448499344,
+                        "end": 1448758544
+                    },
+                    "proration": False,
+                    "quantity": 1,
+                    "subscription": None,
+                    "type": "line_item"
+                }],
+                "total_count": 1,
+                "object": "list",
+                "url": "/v1/invoices/in_17B6e8I10iPhvocMGtYd4hDD/lines"
+            },
+            "livemode": False,
+            "metadata": {
+            },
+            "next_payment_attempt": 1448474492,
+            "paid": False,
+            "period_end": 1448470739,
+            "period_start": 1448211539,
+            "receipt_number": None,
+            "starting_balance": 0,
+            "statement_descriptor": None,
+            "subscription": "",
+            "subtotal": 2000,
+            "tax": None,
+            "tax_percent": None,
+            "total": 2000,
+            "webhooks_delivered_at": None
+        }
+        syncs.sync_invoice_from_stripe_data(data)
+        self.assertTrue(SyncInvoiceItemsMock.called)
+        self.assertEquals(InvoiceProxy.objects.filter(customer=self.customer).count(), 1)
+        self.assertIsNone(InvoiceProxy.objects.filter(customer=self.customer)[0].subscription)
+
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
+    @patch("pinax.stripe.actions.syncs._sync_invoice_items")
+    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    def test_sync_invoice_from_stripe_data_updated(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock, SyncSubscriptionMock):
+        plan = PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
+        subscription = SubscriptionProxy.objects.create(
+            stripe_id="sub_7Q4BX0HMfqTpN8",
+            customer=self.customer,
+            plan=plan,
+            quantity=1,
+            status="active",
+            start=timezone.now()
+        )
+        SyncSubscriptionMock.return_value = subscription
+        data = {
+            "id": "in_17B6e8I10iPhvocMGtYd4hDD",
+            "object": "invoice",
+            "amount_due": 1999,
+            "application_fee": None,
+            "attempt_count": 0,
+            "attempted": False,
+            "charge": None,
+            "closed": False,
+            "currency": "usd",
+            "customer": self.customer.stripe_id,
+            "date": 1448470892,
+            "description": None,
+            "discount": None,
+            "ending_balance": None,
+            "forgiven": False,
+            "lines": {
+                "data": [{
+                    "id": subscription.stripe_id,
+                    "object": "line_item",
+                    "amount": 0,
+                    "currency": "usd",
+                    "description": None,
+                    "discountable": True,
+                    "livemode": True,
+                    "metadata": {
+                    },
+                    "period": {
+                        "start": 1448499344,
+                        "end": 1448758544
+                    },
+                    "plan": {
+                        "id": "pro2",
+                        "object": "plan",
+                        "amount": 1999,
+                        "created": 1448121054,
+                        "currency": "usd",
+                        "interval": "month",
+                        "interval_count": 1,
+                        "livemode": False,
+                        "metadata": {
+                        },
+                        "name": "The Pro Plan",
+                        "statement_descriptor": "ALTMAN",
+                        "trial_period_days": 3
+                    },
+                    "proration": False,
+                    "quantity": 1,
+                    "subscription": None,
+                    "type": "subscription"
+                }],
+                "total_count": 1,
+                "object": "list",
+                "url": "/v1/invoices/in_17B6e8I10iPhvocMGtYd4hDD/lines"
+            },
+            "livemode": False,
+            "metadata": {
+            },
+            "next_payment_attempt": 1448474492,
+            "paid": False,
+            "period_end": 1448470739,
+            "period_start": 1448211539,
+            "receipt_number": None,
+            "starting_balance": 0,
+            "statement_descriptor": None,
+            "subscription": subscription.stripe_id,
+            "subtotal": 1999,
+            "tax": None,
+            "tax_percent": None,
+            "total": 1999,
+            "webhooks_delivered_at": None
+        }
+        syncs.sync_invoice_from_stripe_data(data)
+        self.assertTrue(SyncInvoiceItemsMock.called)
+        self.assertEquals(InvoiceProxy.objects.filter(customer=self.customer).count(), 1)
+        data.update({"paid": True})
+        syncs.sync_invoice_from_stripe_data(data)
+        self.assertEquals(InvoiceProxy.objects.filter(customer=self.customer).count(), 1)
+        self.assertEquals(InvoiceProxy.objects.filter(customer=self.customer)[0].paid, True)

@@ -9,7 +9,7 @@ import stripe
 
 from mock import patch
 
-from ..proxies import ChargeProxy, CustomerProxy, EventProxy, EventProcessingExceptionProxy
+from ..proxies import ChargeProxy, CustomerProxy, EventProxy, EventProcessingExceptionProxy, InvoiceProxy
 
 
 class ChargeProxyTests(TestCase):
@@ -190,3 +190,17 @@ class EventProcessingExceptionProxyTests(TestCase):
             exception=Exception("This is an error")
         )
         self.assertEquals(EventProcessingExceptionProxy.objects.all().count(), 1)
+
+
+class InvoiceProxyTests(TestCase):
+
+    @patch("stripe.Invoice.retrieve")
+    def test_stripe_invoice(self, RetrieveMock):
+        InvoiceProxy().stripe_invoice
+        self.assertTrue(RetrieveMock.called)
+
+    def test_status(self):
+        self.assertEquals(InvoiceProxy(paid=True).status(), "Paid")
+
+    def test_status_not_paid(self):
+        self.assertEquals(InvoiceProxy(paid=False).status(), "Open")

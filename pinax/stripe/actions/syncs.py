@@ -249,8 +249,7 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         charge = None
 
     stripe_subscription = _retrieve_stripe_subscription(c, sub_id)
-    subscription = sync_subscription_from_stripe_data(
-        c, stripe_subscription) if stripe_subscription else None
+    subscription = sync_subscription_from_stripe_data(c, stripe_subscription) if stripe_subscription else None
 
     defaults = dict(
         customer=c,

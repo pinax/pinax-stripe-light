@@ -1,0 +1,67 @@
+import decimal
+
+from django.test import TestCase
+
+from django.contrib.auth import get_user_model
+
+from mock import patch
+
+from ..hooks import DefaultHookSet
+from ..proxies import ChargeProxy, CustomerProxy
+
+
+class HooksTestCase(TestCase):
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            username="patrick",
+            email="paltman@eldarion.com"
+        )
+        self.customer = CustomerProxy.objects.create(
+            user=self.user,
+            stripe_id="cus_xxxxxxxxxxxxxxx"
+        )
+        self.hookset = DefaultHookSet()
+
+    def test_adjust_subscription_quantity(self):
+        new_qty = self.hookset.adjust_subscription_quantity(customer=None, plan=None, quantity=3)
+        self.assertEquals(new_qty, 3)
+
+    def test_adjust_subscription_quantity_none(self):
+        new_qty = self.hookset.adjust_subscription_quantity(customer=None, plan=None, quantity=None)
+        self.assertEquals(new_qty, 1)
+
+    def test_trial_period(self):
+        period = self.hookset.trial_period(self.user, "some plan")
+        self.assertIsNone(period)
+
+    def test_send_receipt(self):
+        charge = ChargeProxy.objects.create(
+            stripe_id="ch_XXXXXX",
+            customer=self.customer,
+            source="card_01",
+            amount=decimal.Decimal("10.00"),
+            currency="usd",
+            paid=True,
+            refunded=False,
+            disputed=False,
+            receipt_sent=False
+        )
+        self.hookset.send_receipt(charge)
+        self.assertTrue(ChargeProxy.objects.get(pk=charge.pk).receipt_sent)
+
+    def test_send_receipt_already_sent(self):
+        charge = ChargeProxy.objects.create(
+            stripe_id="ch_XXXXXX",
+            customer=self.customer,
+            source="card_01",
+            amount=decimal.Decimal("10.00"),
+            currency="usd",
+            paid=True,
+            refunded=False,
+            disputed=False,
+            receipt_sent=True
+        )
+        self.hookset.send_receipt(charge)
+        self.assertTrue(ChargeProxy.objects.get(pk=charge.pk).receipt_sent)

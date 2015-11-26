@@ -10,16 +10,16 @@ from .. import proxies
 def sync_plans():
     for plan in stripe.Plan.all().data:
         defaults = dict(
-            amount=utils.convert_amount_for_db(plan.amount, plan.currency),
-            currency=plan.currency or "",
-            interval=plan.interval,
-            interval_count=plan.interval_count,
-            name=plan.name,
-            statement_descriptor=plan.statement_descriptor or "",
-            trial_period_days=plan.trial_period_days
+            amount=utils.convert_amount_for_db(plan["amount"], plan["currency"]),
+            currency=plan["currency"] or "",
+            interval=plan["interval"],
+            interval_count=plan["interval_count"],
+            name=plan["name"],
+            statement_descriptor=plan["statement_descriptor"] or "",
+            trial_period_days=plan["trial_period_days"]
         )
         obj, created = proxies.PlanProxy.objects.get_or_create(
-            stripe_id=plan.id,
+            stripe_id=plan["id"],
             defaults=defaults
         )
         if not created:
@@ -63,8 +63,8 @@ def sync_payment_source_from_stripe_data(customer, source):
         defaults = dict(
             customer=customer,
             active=source["active"],
-            amount=utils.conver_amount_for_db(source["amount"], source.currency),
-            amount_received=utils.convert_amount_for_db(source["amount_received"], source.currency),
+            amount=utils.convert_amount_for_db(source["amount"], source["currency"]),
+            amount_received=utils.convert_amount_for_db(source["amount_received"], source["currency"]),
             bitcoin_amount=source["bitcoin_amount"],
             bitcoin_amount_received=source["bitcoin_amount_received"],
             bitcoin_uri=source["bitcoin_uri"],
@@ -73,8 +73,8 @@ def sync_payment_source_from_stripe_data(customer, source):
             email=source["email"],
             filled=source["filled"],
             inbound_address=source["inbound_address"],
-            payment=source["payment"],
-            refund_address=source["refund_address"],
+            payment=source["payment"] if "payment" in source else "",
+            refund_address=source["refund_address"] or "",
             uncaptured_funds=source["uncaptured_funds"],
             used_for_payment=source["used_for_payment"]
         )
@@ -162,10 +162,6 @@ def sync_charge_from_stripe_data(data):
         obj.amount_refunded = obj.amount
     obj.save()
     return obj
-
-
-def fetch_and_sync_invoice(stripe_id, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
-    sync_invoice_from_stripe_data(stripe.Invoice.retrieve(stripe_id), send_receipt=send_receipt)
 
 
 def _sync_invoice_items(invoice_proxy, items):

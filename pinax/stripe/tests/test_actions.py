@@ -10,8 +10,8 @@ import stripe
 
 from mock import patch, Mock
 
-from ..actions import charges, customers, events, invoices, refunds, sources, subscriptions
-from ..proxies import CustomerProxy, ChargeProxy, CardProxy, PlanProxy, EventProxy, SubscriptionProxy
+from ..actions import charges, customers, events, invoices, refunds, sources, subscriptions, syncs
+from ..proxies import BitcoinRecieverProxy, CustomerProxy, ChargeProxy, CardProxy, PlanProxy, EventProxy, SubscriptionProxy
 
 
 class ChargesTests(TestCase):
@@ -489,3 +489,302 @@ class SubscriptionsTests(TestCase):
         self.assertTrue(sub_create.called)
         _, kwargs = sub_create.call_args
         self.assertEquals(kwargs["source"], "token")
+
+
+class SyncsTests(TestCase):
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            username="patrick",
+            email="paltman@eldarion.com"
+        )
+        self.customer = CustomerProxy.objects.create(
+            user=self.user,
+            stripe_id="cus_xxxxxxxxxxxxxxx"
+        )
+
+    @patch("stripe.Plan.all")
+    def test_sync_plans(self, PlanAllMock):
+        PlanAllMock().data = [
+            {
+                "id": "pro2",
+                "object": "plan",
+                "amount": 1999,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {},
+                "name": "The Pro Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3
+            },
+            {
+                "id": "simple1",
+                "object": "plan",
+                "amount": 999,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {},
+                "name": "The Simple Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3
+            },
+        ]
+        syncs.sync_plans()
+        self.assertTrue(PlanProxy.objects.all().count(), 2)
+        self.assertEquals(PlanProxy.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
+
+    @patch("stripe.Plan.all")
+    def test_sync_plans_update(self, PlanAllMock):
+        PlanAllMock().data = [
+            {
+                "id": "pro2",
+                "object": "plan",
+                "amount": 1999,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {},
+                "name": "The Pro Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3
+            },
+            {
+                "id": "simple1",
+                "object": "plan",
+                "amount": 999,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {},
+                "name": "The Simple Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3
+            },
+        ]
+        syncs.sync_plans()
+        self.assertTrue(PlanProxy.objects.all().count(), 2)
+        self.assertEquals(PlanProxy.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
+        PlanAllMock().data[1].update({"amount": 499})
+        syncs.sync_plans()
+        self.assertEquals(PlanProxy.objects.get(stripe_id="simple1").amount, decimal.Decimal("4.99"))
+
+    def test_sync_payment_source_from_stripe_data_card(self):
+        source = {
+            "id": "card_17AMEBI10iPhvocM1LnJ0dBc",
+            "object": "card",
+            "address_city": None,
+            "address_country": None,
+            "address_line1": None,
+            "address_line1_check": None,
+            "address_line2": None,
+            "address_state": None,
+            "address_zip": None,
+            "address_zip_check": None,
+            "brand": "MasterCard",
+            "country": "US",
+            "customer": "cus_7PAYYALEwPuDJE",
+            "cvc_check": "pass",
+            "dynamic_last4": None,
+            "exp_month": 10,
+            "exp_year": 2018,
+            "funding": "credit",
+            "last4": "4444",
+            "metadata": {
+            },
+            "name": None,
+            "tokenization_method": None,
+            "fingerprint": "xyz"
+        }
+        syncs.sync_payment_source_from_stripe_data(self.customer, source)
+        self.assertEquals(CardProxy.objects.get(stripe_id=source["id"]).exp_year, 2018)
+
+    def test_sync_payment_source_from_stripe_data_card_updated(self):
+        source = {
+            "id": "card_17AMEBI10iPhvocM1LnJ0dBc",
+            "object": "card",
+            "address_city": None,
+            "address_country": None,
+            "address_line1": None,
+            "address_line1_check": None,
+            "address_line2": None,
+            "address_state": None,
+            "address_zip": None,
+            "address_zip_check": None,
+            "brand": "MasterCard",
+            "country": "US",
+            "customer": "cus_7PAYYALEwPuDJE",
+            "cvc_check": "pass",
+            "dynamic_last4": None,
+            "exp_month": 10,
+            "exp_year": 2018,
+            "funding": "credit",
+            "last4": "4444",
+            "metadata": {
+            },
+            "name": None,
+            "tokenization_method": None,
+            "fingerprint": "xyz"
+        }
+        syncs.sync_payment_source_from_stripe_data(self.customer, source)
+        self.assertEquals(CardProxy.objects.get(stripe_id=source["id"]).exp_year, 2018)
+        source.update({"exp_year": 2022})
+        syncs.sync_payment_source_from_stripe_data(self.customer, source)
+        self.assertEquals(CardProxy.objects.get(stripe_id=source["id"]).exp_year, 2022)
+
+    def test_sync_payment_source_from_stripe_data_bitcoin(self):
+        source = {
+            "id": "btcrcv_17BE32I10iPhvocMqViUU1w4",
+            "object": "bitcoin_receiver",
+            "active": False,
+            "amount": 100,
+            "amount_received": 0,
+            "bitcoin_amount": 1757908,
+            "bitcoin_amount_received": 0,
+            "bitcoin_uri": "bitcoin:test_7i9Fo4b5wXcUAuoVBFrc7nc9HDxD1?amount=0.01757908",
+            "created": 1448499344,
+            "currency": "usd",
+            "description": "Receiver for John Doe",
+            "email": "test@example.com",
+            "filled": False,
+            "inbound_address": "test_7i9Fo4b5wXcUAuoVBFrc7nc9HDxD1",
+            "livemode": False,
+            "metadata": {
+            },
+            "refund_address": None,
+            "uncaptured_funds": False,
+            "used_for_payment": False
+        }
+        syncs.sync_payment_source_from_stripe_data(self.customer, source)
+        self.assertEquals(BitcoinRecieverProxy.objects.get(stripe_id=source["id"]).bitcoin_amount, 1757908)
+
+    def test_sync_payment_source_from_stripe_data_bitcoin_updated(self):
+        source = {
+            "id": "btcrcv_17BE32I10iPhvocMqViUU1w4",
+            "object": "bitcoin_receiver",
+            "active": False,
+            "amount": 100,
+            "amount_received": 0,
+            "bitcoin_amount": 1757908,
+            "bitcoin_amount_received": 0,
+            "bitcoin_uri": "bitcoin:test_7i9Fo4b5wXcUAuoVBFrc7nc9HDxD1?amount=0.01757908",
+            "created": 1448499344,
+            "currency": "usd",
+            "description": "Receiver for John Doe",
+            "email": "test@example.com",
+            "filled": False,
+            "inbound_address": "test_7i9Fo4b5wXcUAuoVBFrc7nc9HDxD1",
+            "livemode": False,
+            "metadata": {
+            },
+            "refund_address": None,
+            "uncaptured_funds": False,
+            "used_for_payment": False
+        }
+        syncs.sync_payment_source_from_stripe_data(self.customer, source)
+        self.assertEquals(BitcoinRecieverProxy.objects.get(stripe_id=source["id"]).bitcoin_amount, 1757908)
+        source.update({"bitcoin_amount": 1886800})
+        syncs.sync_payment_source_from_stripe_data(self.customer, source)
+        self.assertEquals(BitcoinRecieverProxy.objects.get(stripe_id=source["id"]).bitcoin_amount, 1886800)
+
+    def test_sync_subscription_from_stripe_data(self):
+        pass
+
+    def test_sync_subscription_from_stripe_data_updated(self):
+        pass
+
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
+    @patch("pinax.stripe.actions.syncs.sync_payment_source_from_stripe_data")
+    @patch("stripe.Customer.retrieve")
+    def test_sync_customer(self, RetreiveMock, SyncPaymentSourceMock, SyncSubscriptionMock):
+        pass
+
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
+    @patch("pinax.stripe.actions.syncs.sync_payment_source_from_stripe_data")
+    @patch("stripe.Customer.retrieve")
+    def test_sync_customer_no_cu_provided(self, RetreiveMock, SyncPaymentSourceMock, SyncSubscriptionMock):
+        pass
+
+    @patch("pinax.stripe.actions.syncs.sync_invoices_for_customer")
+    @patch("stripe.Customer.retrieve")
+    def test_sync_invoices_for_customer(self, RetreiveMock, SyncMock):
+        pass
+
+    @patch("pinax.stripe.actions.syncs.sync_charge_from_stripe_data")
+    @patch("stripe.Customer.retrieve")
+    def test_sync_charges_for_customer(self, RetreiveMock, SyncMock):
+        pass
+
+    def test_sync_charge_from_stripe_data(self):
+        pass
+
+    def test_sync_charge_from_stripe_data_description(self):
+        pass
+
+    def test_sync_charge_from_stripe_data_amount_refunded(self):
+        pass
+
+    def test_sync_charge_from_stripe_data_refunded(self):
+        pass
+
+    @patch("stripe.Customer.retrieve")
+    def test_retrieve_stripe_subscription(self, CustomerMock):
+        pass
+
+    def test_retrieve_stripe_subscription_no_sub_id(self):
+        pass
+
+    @patch("stripe.Customer.retrieve")
+    def test_retrieve_stripe_subscription_missing_subscription(self, CustomerMock):
+        pass
+
+    @patch("stripe.Customer.retrieve")
+    def test_retrieve_stripe_subscription_invalid_request(self, CustomerMock):
+        pass
+
+    def test_sync_invoice_items(self):
+        pass
+
+    def test_sync_invoice_items_no_plan(self):
+        pass
+
+    def test_sync_invoice_items_type_not_subscription(self):
+        pass
+
+    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
+    def test_sync_invoice_items_different_stripe_id_than_invoice(self, SyncMock, RetrieveSubscriptionMock):  # two subscriptions on invoice?
+        pass
+
+    def test_sync_invoice_items_updating(self):
+        pass
+
+    @patch("pinax.stripe.actions.syncs._sync_invoice_items")
+    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    def test_sync_invoice_from_stripe_data(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock):
+        pass
+
+    @patch("pinax.stripe.actions.syncs._sync_invoice_items")
+    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    def test_sync_invoice_from_stripe_data_no_charge(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock):
+        pass
+
+    @patch("pinax.stripe.actions.syncs._sync_invoice_items")
+    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    def test_sync_invoice_from_stripe_data_no_subscription(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock):
+        pass
+
+    @patch("pinax.stripe.actions.syncs._sync_invoice_items")
+    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    def test_sync_invoice_from_stripe_data_updated(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock):
+        pass

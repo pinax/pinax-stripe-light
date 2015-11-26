@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from django.contrib.auth import get_user_model
 
-from mock import patch, Mock
+from mock import patch
 
 from ..proxies import CustomerProxy, PlanProxy
 
@@ -31,18 +31,16 @@ class CommandTests(TestCase):
 
     @patch("stripe.Plan.all")
     def test_plans_create(self, PlanAllMock):
-        plan_mock = Mock()
-        plan_mock.id = "entry-monthly"
-        plan_mock.amount = 954
-        plan_mock.interval = "monthly"
-        plan_mock.interval_count = 1
-        plan_mock.currency = None
-        plan_mock.statement_descriptor = None
-        plan_mock.trial_period_days = None
-        plan_mock.name = "Pro"
-        PlanAllMock().data = [
-            plan_mock
-        ]
+        PlanAllMock().data = [{
+            "id": "entry-monthly",
+            "amount": 954,
+            "interval": "monthly",
+            "interval_count": 1,
+            "currency": None,
+            "statement_descriptor": None,
+            "trial_period_days": None,
+            "name": "Pro"
+        }]
         management.call_command("sync_plans")
         self.assertEquals(PlanProxy.objects.count(), 1)
         self.assertEquals(PlanProxy.objects.all()[0].stripe_id, "entry-monthly")

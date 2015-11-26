@@ -96,9 +96,7 @@ class SubscriptionCreateView(LoginRequiredMixin, PaymentsContextMixin, CustomerM
     form_class = PlanForm
 
     def set_customer(self):
-        try:
-            self.customer
-        except ObjectDoesNotExist:
+        if self.customer is None:
             self._customer = customers.create(self.request.user)
 
     def subscribe(self, customer, plan, token):

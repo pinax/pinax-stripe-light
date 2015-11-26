@@ -319,6 +319,7 @@ class SubscriptionCreateViewTests(TestCase):
         )
         self.assertEquals(response.status_code, 302)
         self.assertRedirects(response, reverse("pinax_stripe_subscription_list"))
+        self.assertTrue(CustomerCreateMock.called)
 
     @patch("pinax.stripe.actions.sources.create_card")
     def test_post_on_error(self, CreateMock):
@@ -438,6 +439,18 @@ class SubscriptionUpdateViewTests(TestCase):
         )
         self.assertEquals(response.status_code, 302)
         self.assertRedirects(response, reverse("pinax_stripe_subscription_list"))
+
+    @patch("pinax.stripe.actions.subscriptions.update")
+    def test_post_invalid(self, UpdateMock):
+        self.client.login(username=self.user.username, password=self.password)
+        response = self.client.post(
+            reverse("pinax_stripe_subscription_update", args=[self.subscription.pk]),
+            {
+                "plan": "not a real plan"
+            }
+        )
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue(len(response.context_data["form"].errors) > 0)
 
     @patch("pinax.stripe.actions.subscriptions.update")
     def test_post_on_error(self, UpdateMock):

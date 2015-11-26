@@ -9,7 +9,7 @@ import stripe
 
 from mock import patch
 
-from ..proxies import ChargeProxy, CustomerProxy
+from ..proxies import ChargeProxy, CustomerProxy, EventProxy
 
 
 class ChargeProxyTests(TestCase):
@@ -146,3 +146,37 @@ class CustomerProxyTests(TestCase):
 
     def test_model_table_name(self):
         self.assertEquals(CustomerProxy()._meta.db_table, "pinax_stripe_customer")
+
+
+class EventProxyTests(TestCase):
+
+    def test_message(self):
+        event = EventProxy(validated_message={"foo": 1})
+        self.assertEquals(event.validated_message, event.message)
+
+    def test_link_customer(self):
+        CustomerProxy.objects.create(stripe_id="cu_123")
+        message = dict(data=dict(object=dict(id="cu_123")))
+        event = EventProxy.objects.create(validated_message=message, kind="customer.created")
+        event.link_customer()
+        self.assertEquals(event.customer.stripe_id, "cu_123")
+
+    def test_link_customer_non_customer_event(self):
+        CustomerProxy.objects.create(stripe_id="cu_123")
+        message = dict(data=dict(object=dict(customer="cu_123")))
+        event = EventProxy.objects.create(validated_message=message, kind="invoice.created")
+        event.link_customer()
+        self.assertEquals(event.customer.stripe_id, "cu_123")
+
+    def test_link_customer_no_customer(self):
+        CustomerProxy.objects.create(stripe_id="cu_123")
+        message = dict(data=dict(object=dict()))
+        event = EventProxy.objects.create(validated_message=message, kind="transfer.created")
+        event.link_customer()
+        self.assertIsNone(event.customer, "cu_123")
+
+    def test_link_customer_does_not_exist(self):
+        message = dict(data=dict(object=dict(id="cu_123")))
+        event = EventProxy.objects.create(validated_message=message, kind="customer.created")
+        event.link_customer()
+        self.assertIsNone(event.customer)

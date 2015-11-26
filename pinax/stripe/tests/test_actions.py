@@ -819,15 +819,19 @@ class SyncsTests(TestCase):
         self.assertTrue(SyncPaymentSourceMock.called)
         self.assertTrue(SyncSubscriptionMock.called)
 
-    @patch("pinax.stripe.actions.syncs.sync_invoices_for_customer")
+    @patch("pinax.stripe.actions.syncs.sync_invoice_from_stripe_data")
     @patch("stripe.Customer.retrieve")
     def test_sync_invoices_for_customer(self, RetreiveMock, SyncMock):
-        pass
+        RetreiveMock().invoices().data = [Mock()]
+        syncs.sync_invoices_for_customer(self.customer)
+        self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.syncs.sync_charge_from_stripe_data")
     @patch("stripe.Customer.retrieve")
     def test_sync_charges_for_customer(self, RetreiveMock, SyncMock):
-        pass
+        RetreiveMock().charges().data = [Mock()]
+        syncs.sync_charges_for_customer(self.customer)
+        self.assertTrue(SyncMock.called)
 
     def test_sync_charge_from_stripe_data(self):
         pass

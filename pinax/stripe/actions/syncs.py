@@ -91,21 +91,21 @@ def sync_payment_source_from_stripe_data(customer, source):
 def sync_subscription_from_stripe_data(customer, subscription):
     defaults = dict(
         customer=customer,
-        application_fee_percent=subscription.application_fee_percent,
-        cancel_at_period_end=subscription.cancel_at_period_end,
-        canceled_at=utils.convert_tstamp(subscription.canceled_at),
-        current_period_start=utils.convert_tstamp(subscription.current_period_start),
-        current_period_end=utils.convert_tstamp(subscription.current_period_end),
-        ended_at=utils.convert_tstamp(subscription.ended_at),
-        plan=proxies.PlanProxy.objects.get(stripe_id=subscription.plan.id),
-        quantity=subscription.quantity,
-        start=utils.convert_tstamp(subscription.start),
-        status=subscription.status,
-        trial_start=utils.convert_tstamp(subscription.trial_start) if subscription.trial_start else None,
-        trial_end=utils.convert_tstamp(subscription.trial_end) if subscription.trial_end else None
+        application_fee_percent=subscription["application_fee_percent"],
+        cancel_at_period_end=subscription["cancel_at_period_end"],
+        canceled_at=utils.convert_tstamp(subscription["canceled_at"]),
+        current_period_start=utils.convert_tstamp(subscription["current_period_start"]),
+        current_period_end=utils.convert_tstamp(subscription["current_period_end"]),
+        ended_at=utils.convert_tstamp(subscription["ended_at"]),
+        plan=proxies.PlanProxy.objects.get(stripe_id=subscription["plan"]["id"]),
+        quantity=subscription["quantity"],
+        start=utils.convert_tstamp(subscription["start"]),
+        status=subscription["status"],
+        trial_start=utils.convert_tstamp(subscription["trial_start"]) if subscription["trial_start"] else None,
+        trial_end=utils.convert_tstamp(subscription["trial_end"]) if subscription["trial_end"] else None
     )
     sub, created = proxies.SubscriptionProxy.objects.get_or_create(
-        stripe_id=subscription.id,
+        stripe_id=subscription["id"],
         defaults=defaults
     )
     if not created:

@@ -698,10 +698,87 @@ class SyncsTests(TestCase):
         self.assertEquals(BitcoinRecieverProxy.objects.get(stripe_id=source["id"]).bitcoin_amount, 1886800)
 
     def test_sync_subscription_from_stripe_data(self):
-        pass
+        PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
+        subscription = {
+            "id": "sub_7Q4BX0HMfqTpN8",
+            "object": "subscription",
+            "application_fee_percent": None,
+            "cancel_at_period_end": False,
+            "canceled_at": None,
+            "current_period_end": 1448758544,
+            "current_period_start": 1448499344,
+            "customer": self.customer.stripe_id,
+            "discount": None,
+            "ended_at": None,
+            "metadata": {
+            },
+            "plan": {
+                "id": "pro2",
+                "object": "plan",
+                "amount": 1999,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {
+                },
+                "name": "The Pro Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3
+            },
+            "quantity": 1,
+            "start": 1448499344,
+            "status": "trialing",
+            "tax_percent": None,
+            "trial_end": 1448758544,
+            "trial_start": 1448499344
+        }
+        syncs.sync_subscription_from_stripe_data(self.customer, subscription)
+        self.assertEquals(SubscriptionProxy.objects.get(stripe_id=subscription["id"]).status, "trialing")
 
     def test_sync_subscription_from_stripe_data_updated(self):
-        pass
+        PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
+        subscription = {
+            "id": "sub_7Q4BX0HMfqTpN8",
+            "object": "subscription",
+            "application_fee_percent": None,
+            "cancel_at_period_end": False,
+            "canceled_at": None,
+            "current_period_end": 1448758544,
+            "current_period_start": 1448499344,
+            "customer": self.customer.stripe_id,
+            "discount": None,
+            "ended_at": None,
+            "metadata": {
+            },
+            "plan": {
+                "id": "pro2",
+                "object": "plan",
+                "amount": 1999,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {
+                },
+                "name": "The Pro Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3
+            },
+            "quantity": 1,
+            "start": 1448499344,
+            "status": "trialing",
+            "tax_percent": None,
+            "trial_end": 1448758544,
+            "trial_start": 1448499344
+        }
+        syncs.sync_subscription_from_stripe_data(self.customer, subscription)
+        self.assertEquals(SubscriptionProxy.objects.get(stripe_id=subscription["id"]).status, "trialing")
+        subscription.update({"status": "active"})
+        syncs.sync_subscription_from_stripe_data(self.customer, subscription)
+        self.assertEquals(SubscriptionProxy.objects.get(stripe_id=subscription["id"]).status, "active")
 
     @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
     @patch("pinax.stripe.actions.syncs.sync_payment_source_from_stripe_data")

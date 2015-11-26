@@ -101,8 +101,7 @@ class CustomersTests(TestCase):
     @patch("pinax.stripe.actions.syncs.sync_customer")
     @patch("stripe.Customer.create")
     def test_customer_create_user_only(self, CreateMock, SyncMock):
-        cu = CreateMock()
-        cu.id = "cus_XXXXX"
+        CreateMock.return_value = dict(id="cus_XXXXX")
         customer = customers.create(self.user)
         self.assertEqual(customer.user, self.user)
         self.assertEqual(customer.stripe_id, "cus_XXXXX")
@@ -125,8 +124,7 @@ class CustomersTests(TestCase):
             interval_count=1,
             currency="usd"
         )
-        cu = CreateMock()
-        cu.id = "cus_YYYYYYYYYYYYY"
+        CreateMock.return_value = dict(id="cus_YYYYYYYYYYYYY")
         customer = customers.create(self.user, card="token232323", plan=self.plan)
         self.assertEqual(customer.user, self.user)
         self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
@@ -784,13 +782,42 @@ class SyncsTests(TestCase):
     @patch("pinax.stripe.actions.syncs.sync_payment_source_from_stripe_data")
     @patch("stripe.Customer.retrieve")
     def test_sync_customer(self, RetreiveMock, SyncPaymentSourceMock, SyncSubscriptionMock):
-        pass
+        RetreiveMock.return_value = dict(
+            account_balance=1999,
+            currency="usd",
+            delinquent=False,
+            default_source=None,
+            sources=dict(data=[Mock()]),
+            subscriptions=dict(data=[Mock()])
+        )
+        syncs.sync_customer(self.customer)
+        customer = CustomerProxy.objects.get(user=self.user)
+        self.assertEquals(customer.account_balance, decimal.Decimal("19.99"))
+        self.assertEquals(customer.currency, "usd")
+        self.assertEquals(customer.delinquent, False)
+        self.assertEquals(customer.default_source, "")
+        self.assertTrue(SyncPaymentSourceMock.called)
+        self.assertTrue(SyncSubscriptionMock.called)
 
     @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
     @patch("pinax.stripe.actions.syncs.sync_payment_source_from_stripe_data")
-    @patch("stripe.Customer.retrieve")
-    def test_sync_customer_no_cu_provided(self, RetreiveMock, SyncPaymentSourceMock, SyncSubscriptionMock):
-        pass
+    def test_sync_customer_no_cu_provided(self, SyncPaymentSourceMock, SyncSubscriptionMock):
+        cu = dict(
+            account_balance=1999,
+            currency="usd",
+            delinquent=False,
+            default_source=None,
+            sources=dict(data=[Mock()]),
+            subscriptions=dict(data=[Mock()])
+        )
+        syncs.sync_customer(self.customer, cu=cu)
+        customer = CustomerProxy.objects.get(user=self.user)
+        self.assertEquals(customer.account_balance, decimal.Decimal("19.99"))
+        self.assertEquals(customer.currency, "usd")
+        self.assertEquals(customer.delinquent, False)
+        self.assertEquals(customer.default_source, "")
+        self.assertTrue(SyncPaymentSourceMock.called)
+        self.assertTrue(SyncSubscriptionMock.called)
 
     @patch("pinax.stripe.actions.syncs.sync_invoices_for_customer")
     @patch("stripe.Customer.retrieve")

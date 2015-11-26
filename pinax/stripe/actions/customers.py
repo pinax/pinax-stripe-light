@@ -29,7 +29,7 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
     )
     cus = proxies.CustomerProxy.objects.create(
         user=user,
-        stripe_id=stripe_customer.id
+        stripe_id=stripe_customer["id"]
     )
     syncs.sync_customer(cus, stripe_customer)
 

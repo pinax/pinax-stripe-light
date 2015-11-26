@@ -107,57 +107,6 @@ class TestCustomer(TestCase):
         self.assertTrue(customer.user is None)
         self.assertTrue(self.User.objects.filter(pk=self.user.pk).exists())
 
-    @patch("stripe.Customer.retrieve")
-    def test_customer_sync_updates_credit_card(self, StripeCustomerRetrieveMock):
-        """
-        Test to make sure Customer.sync will update a credit card when there is a new card
-        """
-        cu = StripeCustomerRetrieveMock()
-        cu.account_balance = 0
-        cu.delinquent = False
-        cu.default_source = "card_178Zqj2eZvKYlo2Cr2fUZZz7"
-        cu.currency = "usd"
-
-        class SourceMock(dict):
-            def __init__(self):
-                self.update(dict(
-                    id="card_178Zqj2eZvKYlo2Cr2fUZZz7",
-                    object="card",
-                    address_city=None,
-                    address_country=None,
-                    address_line1=None,
-                    address_line1_check=None,
-                    address_line2=None,
-                    address_state=None,
-                    address_zip=None,
-                    address_zip_check=None,
-                    brand="Visa",
-                    country="US",
-                    customer="cus_7NKVEhB90BjhvB",
-                    cvc_check="pass",
-                    dynamic_last4=None,
-                    exp_month=4,
-                    exp_year=2040,
-                    funding="credit",
-                    fingerprint="",
-                    last4="4242",
-                    metadata={},
-                    name=None,
-                    tokenization_method=None
-                ))
-        source = SourceMock()
-        cu.sources.data = [source]
-        customer = CustomerProxy.objects.get(stripe_id=self.customer.stripe_id)
-
-        self.assertNotEqual(customer.card_set.count(), 1)
-
-        syncs.sync_customer(customer)
-
-        # Reload saved customer
-        customer = CustomerProxy.objects.get(stripe_id=self.customer.stripe_id)
-
-        self.assertEquals(customer.card_set.count(), 1)
-
     def test_change_charge(self):
         self.assertTrue(self.customer.can_charge())
 

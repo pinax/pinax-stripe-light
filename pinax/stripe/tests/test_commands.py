@@ -19,12 +19,15 @@ class CommandTests(TestCase):
     @patch("stripe.Customer.retrieve")
     @patch("stripe.Customer.create")
     def test_init_customer_creates_customer(self, CreateMock, RetrieveMock):
-        cu = CreateMock()
-        cu.account_balance = 0
-        cu.delinquent = False
-        cu.default_source = "card_178Zqj2eZvKYlo2Cr2fUZZz7"
-        cu.currency = "usd"
-        cu.id = "cus_XXXXX"
+        CreateMock.return_value = dict(
+            account_balance=0,
+            delinquent=False,
+            default_source="card_178Zqj2eZvKYlo2Cr2fUZZz7",
+            currency="usd",
+            id="cus_XXXXX",
+            sources=dict(data=[]),
+            subscriptions=dict(data=[]),
+        )
         management.call_command("init_customers")
         customer = CustomerProxy.get_for_user(self.user)
         self.assertEquals(customer.stripe_id, "cus_XXXXX")

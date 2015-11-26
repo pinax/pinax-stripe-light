@@ -1,7 +1,7 @@
 [run]
 source = pinax
-omit = pinax/stripe/tests/*,pinax/stripe/admin.py,pinax/stripe/migrations/*
+omit = pinax/stripe/conf.py,pinax/stripe/tests/*,pinax/stripe/admin.py,pinax/stripe/migrations/*
 branch = true
 
 [report]
-omit = pinax/stripe/tests/*,pinax/stripe/admin.py,pinax/stripe/migrations/*
+omit = pinax/stripe/conf.py,pinax/stripe/tests/*,pinax/stripe/admin.py,pinax/stripe/migrations/*

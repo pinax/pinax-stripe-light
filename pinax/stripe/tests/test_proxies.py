@@ -9,7 +9,7 @@ import stripe
 
 from mock import patch
 
-from ..proxies import ChargeProxy, CustomerProxy, EventProxy
+from ..proxies import ChargeProxy, CustomerProxy, EventProxy, EventProcessingExceptionProxy
 
 
 class ChargeProxyTests(TestCase):
@@ -180,3 +180,13 @@ class EventProxyTests(TestCase):
         event = EventProxy.objects.create(validated_message=message, kind="customer.created")
         event.link_customer()
         self.assertIsNone(event.customer)
+
+
+class EventProcessingExceptionProxyTests(TestCase):
+
+    def test_log(self):
+        EventProcessingExceptionProxy.log(
+            data="foo",
+            exception=Exception("This is an error")
+        )
+        self.assertEquals(EventProcessingExceptionProxy.objects.all().count(), 1)

@@ -1,3 +1,4 @@
+import datetime
 import decimal
 
 from django.test import TestCase
@@ -9,7 +10,15 @@ import stripe
 
 from mock import patch
 
-from ..proxies import ChargeProxy, CustomerProxy, EventProxy, EventProcessingExceptionProxy, InvoiceProxy
+from ..proxies import (
+    ChargeProxy,
+    CustomerProxy,
+    EventProxy,
+    EventProcessingExceptionProxy,
+    InvoiceProxy,
+    PlanProxy,
+    SubscriptionProxy
+)
 
 
 class ChargeProxyTests(TestCase):
@@ -204,3 +213,60 @@ class InvoiceProxyTests(TestCase):
 
     def test_status_not_paid(self):
         self.assertEquals(InvoiceProxy(paid=False).status(), "Open")
+
+
+class SubscriptionProxyTests(TestCase):
+
+    @patch("stripe.Customer.retrieve")
+    def test_stripe_subscription(self, RetrieveMock):
+        SubscriptionProxy(customer=CustomerProxy(stripe_id="foo")).stripe_subscription
+        self.assertTrue(RetrieveMock().subscriptions.retrieve.called)
+
+    def test_total_amount(self):
+        sub = SubscriptionProxy(plan=PlanProxy(name="Pro Plan", amount=decimal.Decimal("100")), quantity=2)
+        self.assertEquals(sub.total_amount, decimal.Decimal("200"))
+
+    def test_plan_display(self):
+        sub = SubscriptionProxy(plan=PlanProxy(name="Pro Plan"))
+        self.assertEquals(sub.plan_display(), "Pro Plan")
+
+    def test_status_display(self):
+        sub = SubscriptionProxy(status="overly_active")
+        self.assertEquals(sub.status_display(), "Overly Active")
+
+    def test_is_period_current(self):
+        sub = SubscriptionProxy(current_period_end=(timezone.now() + datetime.timedelta(days=2)))
+        self.assertTrue(sub.is_period_current())
+
+    def test_is_period_current_false(self):
+        sub = SubscriptionProxy(current_period_end=(timezone.now() - datetime.timedelta(days=2)))
+        self.assertFalse(sub.is_period_current())
+
+    def test_is_status_current(self):
+        sub = SubscriptionProxy(status="trialing")
+        self.assertTrue(sub.is_status_current())
+
+    def test_is_status_current_false(self):
+        sub = SubscriptionProxy(status="canceled")
+        self.assertFalse(sub.is_status_current())
+
+    def test_is_valid(self):
+        sub = SubscriptionProxy(status="trialing")
+        self.assertTrue(sub.is_valid())
+
+    def test_is_valid_false(self):
+        sub = SubscriptionProxy(status="canceled")
+        self.assertFalse(sub.is_valid())
+
+    def test_is_valid_false_canceled(self):
+        sub = SubscriptionProxy(status="trialing", cancel_at_period_end=True, current_period_end=(timezone.now() - datetime.timedelta(days=2)))
+        self.assertFalse(sub.is_valid())
+
+    def test_delete(self):
+        plan = PlanProxy.objects.create(stripe_id="pro2", amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
+        customer = CustomerProxy.objects.create(stripe_id="foo")
+        sub = SubscriptionProxy.objects.create(customer=customer, status="trialing", start=timezone.now(), plan=plan, quantity=1, cancel_at_period_end=True, current_period_end=(timezone.now() - datetime.timedelta(days=2)))
+        sub.delete()
+        self.assertIsNone(sub.status)
+        self.assertEquals(sub.quantity, 0)
+        self.assertEquals(sub.amount, 0)

@@ -22,7 +22,7 @@ class SubscriptionProxy(models.Subscription):
 
     @property
     def total_amount(self):
-        return self.amount * self.quantity
+        return self.plan.amount * self.quantity
 
     def plan_display(self):
         return self.plan.name

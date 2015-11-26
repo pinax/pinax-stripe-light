@@ -60,7 +60,7 @@ class Event(StripeObject):
     api_version = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
-        return "%s - %s".format(self.kind, self.stripe_id)
+        return "{} - {}".format(self.kind, self.stripe_id)
 
 
 class Transfer(StripeObject):

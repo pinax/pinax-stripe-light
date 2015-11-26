@@ -70,20 +70,6 @@ class Transfer(StripeObject):
     status = models.CharField(max_length=25)
     date = models.DateTimeField()
     description = models.TextField(null=True, blank=True)
-    adjustment_count = models.IntegerField(null=True)
-    adjustment_fees = models.DecimalField(decimal_places=2, max_digits=9, null=True)
-    adjustment_gross = models.DecimalField(decimal_places=2, max_digits=9, null=True)
-    charge_count = models.IntegerField(null=True)
-    charge_fees = models.DecimalField(decimal_places=2, max_digits=9, null=True)
-    charge_gross = models.DecimalField(decimal_places=2, max_digits=9, null=True)
-    collected_fee_count = models.IntegerField(null=True)
-    collected_fee_gross = models.DecimalField(decimal_places=2, max_digits=9, null=True)
-    net = models.DecimalField(decimal_places=2, max_digits=9, null=True)
-    refund_count = models.IntegerField(null=True)
-    refund_fees = models.DecimalField(decimal_places=2, max_digits=9, null=True)
-    refund_gross = models.DecimalField(decimal_places=2, max_digits=9, null=True)
-    validation_count = models.IntegerField(null=True)
-    validation_fees = models.DecimalField(decimal_places=2, max_digits=9, null=True)
 
 
 class TransferChargeFee(models.Model):

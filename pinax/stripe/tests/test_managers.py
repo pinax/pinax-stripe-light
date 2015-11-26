@@ -166,25 +166,6 @@ class TransferManagerTest(TestCase):
         )
         registry.get(event.kind)(event).process()
         self.assertEquals(TransferProxy.during(2012, 9).count(), 2)
-        totals = TransferProxy.paid_totals_for(2012, 9)
-        self.assertEquals(
-            totals["total_amount"], decimal.Decimal("19.10")
-        )
-        self.assertEquals(
-            totals["total_net"], decimal.Decimal("19.10")
-        )
-        self.assertEquals(
-            totals["total_charge_fees"], decimal.Decimal("0.90")
-        )
-        self.assertEquals(
-            totals["total_adjustment_fees"], decimal.Decimal("0")
-        )
-        self.assertEquals(
-            totals["total_refund_fees"], decimal.Decimal("0")
-        )
-        self.assertEquals(
-            totals["total_validation_fees"], decimal.Decimal("0")
-        )
 
 
 class ChargeManagerTests(TestCase):

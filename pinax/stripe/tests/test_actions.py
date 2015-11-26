@@ -10,8 +10,8 @@ import stripe
 
 from mock import patch, Mock
 
-from ..actions import charges, customers, events, invoices, refunds, sources, subscriptions, syncs
-from ..proxies import BitcoinRecieverProxy, CustomerProxy, ChargeProxy, CardProxy, PlanProxy, EventProxy, InvoiceProxy, SubscriptionProxy
+from ..actions import charges, customers, events, invoices, refunds, sources, subscriptions, syncs, transfers
+from ..proxies import BitcoinRecieverProxy, CustomerProxy, ChargeProxy, CardProxy, PlanProxy, EventProxy, InvoiceProxy, SubscriptionProxy, TransferProxy
 
 
 class ChargesTests(TestCase):
@@ -1928,3 +1928,64 @@ class SyncsTests(TestCase):
         syncs.sync_invoice_from_stripe_data(data)
         self.assertEquals(InvoiceProxy.objects.filter(customer=self.customer).count(), 1)
         self.assertEquals(InvoiceProxy.objects.filter(customer=self.customer)[0].paid, True)
+
+
+class TransfersTests(TestCase):
+
+    def setUp(self):
+        data = {
+            "id": "tr_17BE31I10iPhvocMDwiBi4Pk",
+            "object": "transfer",
+            "amount": 1100,
+            "amount_reversed": 0,
+            "application_fee": None,
+            "balance_transaction": "txn_179l3zI10iPhvocMhvKxAer7",
+            "created": 1448499343,
+            "currency": "usd",
+            "date": 1448499343,
+            "description": "Transfer to test@example.com",
+            "destination": "ba_17BE31I10iPhvocMOUp6E9If",
+            "failure_code": None,
+            "failure_message": None,
+            "livemode": False,
+            "metadata": {
+            },
+            "recipient": "rp_17BE31I10iPhvocM14ZKPFfR",
+            "reversals": {
+                "object": "list",
+                "data": [
+
+                ],
+                "has_more": False,
+                "total_count": 0,
+                "url": "/v1/transfers/tr_17BE31I10iPhvocMDwiBi4Pk/reversals"
+            },
+            "reversed": False,
+            "source_transaction": None,
+            "statement_descriptor": None,
+            "status": "in_transit",
+            "type": "bank_account"
+        }
+        self.event = EventProxy.objects.create(
+            kind="transfer.paid",
+            webhook_message={"data": {"object": data}},
+            validated_message={"data": {"object": data}},
+            valid=True,
+            processed=False
+        )
+
+    def test_process_transfer_event(self):
+        transfers.process_transfer_event(self.event)
+        qs = TransferProxy.objects.filter(stripe_id=self.event.message["data"]["object"]["id"])
+        self.assertEquals(qs.count(), 1)
+        self.assertEquals(qs[0].event, self.event)
+
+    def test_process_transfer_event_update(self):
+        transfers.process_transfer_event(self.event)
+        qs = TransferProxy.objects.filter(stripe_id=self.event.message["data"]["object"]["id"])
+        self.assertEquals(qs.count(), 1)
+        self.assertEquals(qs[0].event, self.event)
+        self.event.validated_message["data"]["object"]["status"] = "paid"
+        transfers.process_transfer_event(self.event)
+        qs = TransferProxy.objects.filter(stripe_id=self.event.message["data"]["object"]["id"])
+        self.assertEquals(qs[0].status, "paid")

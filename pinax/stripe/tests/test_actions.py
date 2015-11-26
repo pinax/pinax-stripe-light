@@ -1114,18 +1114,25 @@ class SyncsTests(TestCase):
 
     @patch("stripe.Customer.retrieve")
     def test_retrieve_stripe_subscription(self, CustomerMock):
-        pass
+        CustomerMock().subscriptions.retrieve.return_value = "subscription"
+        value = syncs._retrieve_stripe_subscription(self.customer, "sub id")
+        self.assertEquals(value, "subscription")
 
     def test_retrieve_stripe_subscription_no_sub_id(self):
-        pass
+        value = syncs._retrieve_stripe_subscription(self.customer, None)
+        self.assertIsNone(value)
 
     @patch("stripe.Customer.retrieve")
     def test_retrieve_stripe_subscription_missing_subscription(self, CustomerMock):
-        pass
+        CustomerMock().subscriptions.retrieve.side_effect = stripe.InvalidRequestError("does not have a subscription with ID", "error")
+        value = syncs._retrieve_stripe_subscription(self.customer, "sub id")
+        self.assertIsNone(value)
 
     @patch("stripe.Customer.retrieve")
     def test_retrieve_stripe_subscription_invalid_request(self, CustomerMock):
-        pass
+        CustomerMock().subscriptions.retrieve.side_effect = stripe.InvalidRequestError("Bad", "error")
+        with self.assertRaises(stripe.InvalidRequestError):
+            syncs._retrieve_stripe_subscription(self.customer, "sub id")
 
     def test_sync_invoice_items(self):
         pass

@@ -4,7 +4,7 @@ import decimal
 from django.test import TestCase
 from django.utils import timezone
 
-from ..utils import convert_tstamp, convert_amount_for_api
+from ..utils import convert_tstamp, convert_amount_for_api, convert_amount_for_db
 
 
 class TestTimestampConversion(TestCase):
@@ -37,12 +37,38 @@ class TestTimestampConversion(TestCase):
             None
         )
 
-    def test_jpy_amount_not_converted_to_cents(self):
-        expected = 1000
-        actual = convert_amount_for_api(decimal.Decimal("1000"), "jpy")
+
+class ConvertAmountForDBTests(TestCase):
+
+    def test_convert_amount_for_db(self):
+        expected = decimal.Decimal("9.99")
+        actual = convert_amount_for_db(999)
         self.assertEquals(expected, actual)
 
-    def test_usd_amount_converted_to_cents(self):
-        expected = 1000
-        actual = convert_amount_for_api(decimal.Decimal("10.00"), "usd")
+    def test_convert_amount_for_db_zero_currency(self):
+        expected = decimal.Decimal("999")
+        actual = convert_amount_for_db(999, currency="jpy")
+        self.assertEquals(expected, actual)
+
+    def test_convert_amount_for_db_none_currency(self):
+        expected = decimal.Decimal("9.99")
+        actual = convert_amount_for_db(999, currency=None)
+        self.assertEquals(expected, actual)
+
+
+class ConvertAmountForApiTests(TestCase):
+
+    def test_convert_amount_for_api(self):
+        expected = 999
+        actual = convert_amount_for_api(decimal.Decimal("9.99"))
+        self.assertEquals(expected, actual)
+
+    def test_convert_amount_for_api_zero_currency(self):
+        expected = 999
+        actual = convert_amount_for_api(decimal.Decimal("999"), currency="jpy")
+        self.assertEquals(expected, actual)
+
+    def test_convert_amount_for_api_none_currency(self):
+        expected = 999
+        actual = convert_amount_for_api(decimal.Decimal("9.99"), currency=None)
         self.assertEquals(expected, actual)

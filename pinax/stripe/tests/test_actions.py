@@ -11,7 +11,7 @@ import stripe
 from mock import patch, Mock
 
 from ..actions import charges, customers, events, invoices, refunds, sources, subscriptions, syncs
-from ..proxies import BitcoinRecieverProxy, CustomerProxy, ChargeProxy, CardProxy, PlanProxy, EventProxy, SubscriptionProxy
+from ..proxies import BitcoinRecieverProxy, CustomerProxy, ChargeProxy, CardProxy, PlanProxy, EventProxy, InvoiceProxy, SubscriptionProxy
 
 
 class ChargesTests(TestCase):
@@ -1135,21 +1135,334 @@ class SyncsTests(TestCase):
             syncs._retrieve_stripe_subscription(self.customer, "sub id")
 
     def test_sync_invoice_items(self):
-        pass
+        plan = PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
+        subscription = SubscriptionProxy.objects.create(
+            stripe_id="sub_7Q4BX0HMfqTpN8",
+            customer=self.customer,
+            plan=plan,
+            quantity=1,
+            status="active",
+            start=timezone.now()
+        )
+        invoice = InvoiceProxy.objects.create(
+            stripe_id="inv_001",
+            customer=self.customer,
+            amount_due=100,
+            period_end=timezone.now(),
+            period_start=timezone.now(),
+            subtotal=100,
+            total=100,
+            date=timezone.now(),
+            subscription=subscription
+        )
+        items = [{
+            "id": subscription.stripe_id,
+            "object": "line_item",
+            "amount": 0,
+            "currency": "usd",
+            "description": None,
+            "discountable": True,
+            "livemode": True,
+            "metadata": {
+            },
+            "period": {
+                "start": 1448499344,
+                "end": 1448758544
+            },
+            "plan": {
+                "id": "pro2",
+                "object": "plan",
+                "amount": 1999,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {
+                },
+                "name": "The Pro Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3
+            },
+            "proration": False,
+            "quantity": 1,
+            "subscription": None,
+            "type": "subscription"
+        }]
+        syncs._sync_invoice_items(invoice, items)
+        self.assertTrue(invoice.items.all().count(), 1)
 
     def test_sync_invoice_items_no_plan(self):
-        pass
+        plan = PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
+        subscription = SubscriptionProxy.objects.create(
+            stripe_id="sub_7Q4BX0HMfqTpN8",
+            customer=self.customer,
+            plan=plan,
+            quantity=1,
+            status="active",
+            start=timezone.now()
+        )
+        invoice = InvoiceProxy.objects.create(
+            stripe_id="inv_001",
+            customer=self.customer,
+            amount_due=100,
+            period_end=timezone.now(),
+            period_start=timezone.now(),
+            subtotal=100,
+            total=100,
+            date=timezone.now(),
+            subscription=subscription
+        )
+        items = [{
+            "id": subscription.stripe_id,
+            "object": "line_item",
+            "amount": 0,
+            "currency": "usd",
+            "description": None,
+            "discountable": True,
+            "livemode": True,
+            "metadata": {
+            },
+            "period": {
+                "start": 1448499344,
+                "end": 1448758544
+            },
+            "proration": False,
+            "quantity": 1,
+            "subscription": None,
+            "type": "subscription"
+        }]
+        syncs._sync_invoice_items(invoice, items)
+        self.assertTrue(invoice.items.all().count(), 1)
+        self.assertEquals(invoice.items.all()[0].plan, plan)
 
     def test_sync_invoice_items_type_not_subscription(self):
-        pass
+        invoice = InvoiceProxy.objects.create(
+            stripe_id="inv_001",
+            customer=self.customer,
+            amount_due=100,
+            period_end=timezone.now(),
+            period_start=timezone.now(),
+            subtotal=100,
+            total=100,
+            date=timezone.now()
+        )
+        items = [{
+            "id": "ii_23lkj2lkj",
+            "object": "line_item",
+            "amount": 2000,
+            "currency": "usd",
+            "description": "Something random",
+            "discountable": True,
+            "livemode": True,
+            "metadata": {
+            },
+            "period": {
+                "start": 1448499344,
+                "end": 1448758544
+            },
+            "proration": False,
+            "quantity": 1,
+            "subscription": None,
+            "type": "line_item"
+        }]
+        syncs._sync_invoice_items(invoice, items)
+        self.assertTrue(invoice.items.all().count(), 1)
+        self.assertEquals(invoice.items.all()[0].description, "Something random")
+        self.assertEquals(invoice.items.all()[0].amount, decimal.Decimal("20"))
 
     @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
     @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
     def test_sync_invoice_items_different_stripe_id_than_invoice(self, SyncMock, RetrieveSubscriptionMock):  # two subscriptions on invoice?
-        pass
+        PlanProxy.objects.create(stripe_id="simple", interval="month", interval_count=1, amount=decimal.Decimal("9.99"))
+        plan = PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
+        subscription = SubscriptionProxy.objects.create(
+            stripe_id="sub_7Q4BX0HMfqTpN8",
+            customer=self.customer,
+            plan=plan,
+            quantity=1,
+            status="active",
+            start=timezone.now()
+        )
+        invoice = InvoiceProxy.objects.create(
+            stripe_id="inv_001",
+            customer=self.customer,
+            amount_due=100,
+            period_end=timezone.now(),
+            period_start=timezone.now(),
+            subtotal=100,
+            total=100,
+            date=timezone.now(),
+            subscription=subscription
+        )
+        SyncMock.return_value = subscription
+        items = [{
+            "id": subscription.stripe_id,
+            "object": "line_item",
+            "amount": 0,
+            "currency": "usd",
+            "description": None,
+            "discountable": True,
+            "livemode": True,
+            "metadata": {
+            },
+            "period": {
+                "start": 1448499344,
+                "end": 1448758544
+            },
+            "plan": {
+                "id": "pro2",
+                "object": "plan",
+                "amount": 1999,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {
+                },
+                "name": "The Pro Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3
+            },
+            "proration": False,
+            "quantity": 1,
+            "subscription": None,
+            "type": "subscription"
+        }, {
+            "id": "sub_7Q4BX0HMfqTpN9",
+            "object": "line_item",
+            "amount": 0,
+            "currency": "usd",
+            "description": None,
+            "discountable": True,
+            "livemode": True,
+            "metadata": {
+            },
+            "period": {
+                "start": 1448499344,
+                "end": 1448758544
+            },
+            "plan": {
+                "id": "simple",
+                "object": "plan",
+                "amount": 999,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {
+                },
+                "name": "The Simple Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3
+            },
+            "proration": False,
+            "quantity": 1,
+            "subscription": None,
+            "type": "subscription"
+        }]
+        syncs._sync_invoice_items(invoice, items)
+        self.assertTrue(invoice.items.all().count(), 2)
 
-    def test_sync_invoice_items_updating(self):
-        pass
+    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    def test_sync_invoice_items_updating(self, RetrieveSubscriptionMock):
+        RetrieveSubscriptionMock.return_value = None
+        PlanProxy.objects.create(stripe_id="simple", interval="month", interval_count=1, amount=decimal.Decimal("9.99"))
+        plan = PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
+        subscription = SubscriptionProxy.objects.create(
+            stripe_id="sub_7Q4BX0HMfqTpN8",
+            customer=self.customer,
+            plan=plan,
+            quantity=1,
+            status="active",
+            start=timezone.now()
+        )
+        invoice = InvoiceProxy.objects.create(
+            stripe_id="inv_001",
+            customer=self.customer,
+            amount_due=100,
+            period_end=timezone.now(),
+            period_start=timezone.now(),
+            subtotal=100,
+            total=100,
+            date=timezone.now(),
+            subscription=subscription
+        )
+        items = [{
+            "id": subscription.stripe_id,
+            "object": "line_item",
+            "amount": 0,
+            "currency": "usd",
+            "description": None,
+            "discountable": True,
+            "livemode": True,
+            "metadata": {
+            },
+            "period": {
+                "start": 1448499344,
+                "end": 1448758544
+            },
+            "plan": {
+                "id": "pro2",
+                "object": "plan",
+                "amount": 1999,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {
+                },
+                "name": "The Pro Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3
+            },
+            "proration": False,
+            "quantity": 1,
+            "subscription": None,
+            "type": "subscription"
+        }, {
+            "id": "sub_7Q4BX0HMfqTpN9",
+            "object": "line_item",
+            "amount": 0,
+            "currency": "usd",
+            "description": None,
+            "discountable": True,
+            "livemode": True,
+            "metadata": {
+            },
+            "period": {
+                "start": 1448499344,
+                "end": 1448758544
+            },
+            "plan": {
+                "id": "simple",
+                "object": "plan",
+                "amount": 999,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {
+                },
+                "name": "The Simple Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3
+            },
+            "proration": False,
+            "quantity": 1,
+            "subscription": None,
+            "type": "subscription"
+        }]
+        syncs._sync_invoice_items(invoice, items)
+        self.assertTrue(invoice.items.all().count(), 2)
+        items[1].update({"description": "This is your second subscription"})
+        syncs._sync_invoice_items(invoice, items)
+        self.assertTrue(invoice.items.all().count(), 2)
+        self.assertEquals(invoice.items.all()[1].description, "This is your second subscription")
 
     @patch("pinax.stripe.actions.syncs._sync_invoice_items")
     @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")

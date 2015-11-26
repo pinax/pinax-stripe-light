@@ -165,6 +165,14 @@ def sync_charge_from_stripe_data(data):
 
 
 def _sync_invoice_items(invoice_proxy, items):
+    """
+    This assumes line items from a Stripe invoice.lines property and not through
+    the invoicesitems resource calls. At least according to the documentation
+    the data for an invoice item is slightly different between the two calls.
+
+    For example, going through the invoiceitems resource you don't get a "type"
+    field on the object.
+    """
     for item in items:
         period_end = utils.convert_tstamp(item["period"], "end")
         period_start = utils.convert_tstamp(item["period"], "start")
@@ -186,6 +194,7 @@ def _sync_invoice_items(invoice_proxy, items):
                     invoice_proxy.customer,
                     stripe_subscription
                 ) if stripe_subscription else None
+            plan = item_subscription.plan if item_subscription is not None and plan is None else None
         else:
             item_subscription = None
 

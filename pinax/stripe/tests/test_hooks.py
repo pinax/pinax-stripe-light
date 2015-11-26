@@ -4,8 +4,6 @@ from django.test import TestCase
 
 from django.contrib.auth import get_user_model
 
-from mock import patch
-
 from ..hooks import DefaultHookSet
 from ..proxies import ChargeProxy, CustomerProxy
 

@@ -42,4 +42,8 @@ class CustomerProxy(models.Customer):
         self.purge()
 
     def can_charge(self):
-        return self.default_source is not None and self.date_purged is None
+        if self.date_purged is not None:
+            return False
+        if self.default_source:
+            return True
+        return False

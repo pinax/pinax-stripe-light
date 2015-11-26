@@ -17,7 +17,8 @@ from ..proxies import (
     EventProcessingExceptionProxy,
     InvoiceProxy,
     PlanProxy,
-    SubscriptionProxy
+    SubscriptionProxy,
+    TransferProxy
 )
 
 
@@ -270,3 +271,28 @@ class SubscriptionProxyTests(TestCase):
         self.assertIsNone(sub.status)
         self.assertEquals(sub.quantity, 0)
         self.assertEquals(sub.amount, 0)
+
+
+class TransferProxyTests(TestCase):
+
+    def test_during(self):
+        TransferProxy.objects.create(
+            event=EventProxy.objects.create(kind="transfer.created", webhook_message={}),
+            amount=decimal.Decimal("100"),
+            status="pending",
+            date=timezone.now().replace(year=2015, month=1)
+        )
+        qs = TransferProxy.during(2015, 1)
+        self.assertEquals(qs.count(), 1)
+
+    @patch("stripe.Transfer.retrieve")
+    def test_update_status(self, RetrieveMock):
+        RetrieveMock().status = "complete"
+        transfer = TransferProxy.objects.create(
+            event=EventProxy.objects.create(kind="transfer.created", webhook_message={}),
+            amount=decimal.Decimal("100"),
+            status="pending",
+            date=timezone.now().replace(year=2015, month=1)
+        )
+        transfer.update_status()
+        self.assertEquals(transfer.status, "complete")

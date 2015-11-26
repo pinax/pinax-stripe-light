@@ -37,7 +37,7 @@ class ChargesTests(TestCase):
 
     @patch("pinax.stripe.actions.syncs.sync_charge_from_stripe_data")
     @patch("stripe.Charge.create")
-    def test_create_send_receipt_false_skips_sending_receipt(self, CreateMock, SyncMock):
+    def test_create_send_receipt_False_skips_sending_receipt(self, CreateMock, SyncMock):
         ChargeMock = charges.create(amount=decimal.Decimal("10"), customer=self.customer, send_receipt=False)
         self.assertTrue(CreateMock.called)
         self.assertTrue(SyncMock.called)
@@ -375,10 +375,10 @@ class SubscriptionsTests(TestCase):
         )
         self.assertTrue(subscriptions.has_active_subscription(self.customer))
 
-    def test_has_active_subscription_false_no_subscription(self):
+    def test_has_active_subscription_False_no_subscription(self):
         self.assertFalse(subscriptions.has_active_subscription(self.customer))
 
-    def test_has_active_subscription_false_expired(self):
+    def test_has_active_subscription_False_expired(self):
         plan = PlanProxy.objects.create(
             amount=10,
             currency="usd",
@@ -834,16 +834,283 @@ class SyncsTests(TestCase):
         self.assertTrue(SyncMock.called)
 
     def test_sync_charge_from_stripe_data(self):
-        pass
+        data = {
+            "id": "ch_17A1dUI10iPhvocMOecpvQlI",
+            "object": "charge",
+            "amount": 200,
+            "amount_refunded": 0,
+            "application_fee": None,
+            "balance_transaction": "txn_179l3zI10iPhvocMhvKxAer7",
+            "captured": True,
+            "created": 1448213304,
+            "currency": "usd",
+            "customer": self.customer.stripe_id,
+            "description": None,
+            "destination": None,
+            "dispute": None,
+            "failure_code": None,
+            "failure_message": None,
+            "fraud_details": {
+            },
+            "invoice": "in_17A1dUI10iPhvocMSGtIfUDF",
+            "livemode": False,
+            "metadata": {
+            },
+            "paid": True,
+            "receipt_email": None,
+            "receipt_number": None,
+            "refunded": False,
+            "refunds": {
+                "object": "list",
+                "data": [
+
+                ],
+                "has_more": False,
+                "total_count": 0,
+                "url": "/v1/charges/ch_17A1dUI10iPhvocMOecpvQlI/refunds"
+            },
+            "shipping": None,
+            "source": {
+                "id": "card_179o0lI10iPhvocMZgdPiR5M",
+                "object": "card",
+                "address_city": None,
+                "address_country": None,
+                "address_line1": None,
+                "address_line1_check": None,
+                "address_line2": None,
+                "address_state": None,
+                "address_zip": None,
+                "address_zip_check": None,
+                "brand": "Visa",
+                "country": "US",
+                "customer": "cus_7ObCqsp1NGVT6o",
+                "cvc_check": None,
+                "dynamic_last4": None,
+                "exp_month": 10,
+                "exp_year": 2019,
+                "funding": "credit",
+                "last4": "4242",
+                "metadata": {
+                },
+                "name": None,
+                "tokenization_method": None
+            },
+            "statement_descriptor": "A descriptor",
+            "status": "succeeded"
+        }
+        syncs.sync_charge_from_stripe_data(data)
+        charge = ChargeProxy.objects.get(customer=self.customer, stripe_id=data["id"])
+        self.assertEquals(charge.amount, decimal.Decimal("2"))
 
     def test_sync_charge_from_stripe_data_description(self):
-        pass
+        data = {
+            "id": "ch_17A1dUI10iPhvocMOecpvQlI",
+            "object": "charge",
+            "amount": 200,
+            "amount_refunded": 0,
+            "application_fee": None,
+            "balance_transaction": "txn_179l3zI10iPhvocMhvKxAer7",
+            "captured": True,
+            "created": 1448213304,
+            "currency": "usd",
+            "customer": self.customer.stripe_id,
+            "description": "This was a charge for awesome.",
+            "destination": None,
+            "dispute": None,
+            "failure_code": None,
+            "failure_message": None,
+            "fraud_details": {
+            },
+            "invoice": "in_17A1dUI10iPhvocMSGtIfUDF",
+            "livemode": False,
+            "metadata": {
+            },
+            "paid": True,
+            "receipt_email": None,
+            "receipt_number": None,
+            "refunded": False,
+            "refunds": {
+                "object": "list",
+                "data": [
+
+                ],
+                "has_more": False,
+                "total_count": 0,
+                "url": "/v1/charges/ch_17A1dUI10iPhvocMOecpvQlI/refunds"
+            },
+            "shipping": None,
+            "source": {
+                "id": "card_179o0lI10iPhvocMZgdPiR5M",
+                "object": "card",
+                "address_city": None,
+                "address_country": None,
+                "address_line1": None,
+                "address_line1_check": None,
+                "address_line2": None,
+                "address_state": None,
+                "address_zip": None,
+                "address_zip_check": None,
+                "brand": "Visa",
+                "country": "US",
+                "customer": "cus_7ObCqsp1NGVT6o",
+                "cvc_check": None,
+                "dynamic_last4": None,
+                "exp_month": 10,
+                "exp_year": 2019,
+                "funding": "credit",
+                "last4": "4242",
+                "metadata": {
+                },
+                "name": None,
+                "tokenization_method": None
+            },
+            "statement_descriptor": "A descriptor",
+            "status": "succeeded"
+        }
+        syncs.sync_charge_from_stripe_data(data)
+        charge = ChargeProxy.objects.get(customer=self.customer, stripe_id=data["id"])
+        self.assertEquals(charge.amount, decimal.Decimal("2"))
+        self.assertEquals(charge.description, "This was a charge for awesome.")
 
     def test_sync_charge_from_stripe_data_amount_refunded(self):
-        pass
+        data = {
+            "id": "ch_17A1dUI10iPhvocMOecpvQlI",
+            "object": "charge",
+            "amount": 200,
+            "amount_refunded": 10000,
+            "application_fee": None,
+            "balance_transaction": "txn_179l3zI10iPhvocMhvKxAer7",
+            "captured": True,
+            "created": 1448213304,
+            "currency": "usd",
+            "customer": self.customer.stripe_id,
+            "description": None,
+            "destination": None,
+            "dispute": None,
+            "failure_code": None,
+            "failure_message": None,
+            "fraud_details": {
+            },
+            "invoice": "in_17A1dUI10iPhvocMSGtIfUDF",
+            "livemode": False,
+            "metadata": {
+            },
+            "paid": True,
+            "receipt_email": None,
+            "receipt_number": None,
+            "refunded": False,
+            "refunds": {
+                "object": "list",
+                "data": [
+
+                ],
+                "has_more": False,
+                "total_count": 0,
+                "url": "/v1/charges/ch_17A1dUI10iPhvocMOecpvQlI/refunds"
+            },
+            "shipping": None,
+            "source": {
+                "id": "card_179o0lI10iPhvocMZgdPiR5M",
+                "object": "card",
+                "address_city": None,
+                "address_country": None,
+                "address_line1": None,
+                "address_line1_check": None,
+                "address_line2": None,
+                "address_state": None,
+                "address_zip": None,
+                "address_zip_check": None,
+                "brand": "Visa",
+                "country": "US",
+                "customer": "cus_7ObCqsp1NGVT6o",
+                "cvc_check": None,
+                "dynamic_last4": None,
+                "exp_month": 10,
+                "exp_year": 2019,
+                "funding": "credit",
+                "last4": "4242",
+                "metadata": {
+                },
+                "name": None,
+                "tokenization_method": None
+            },
+            "statement_descriptor": "A descriptor",
+            "status": "succeeded"
+        }
+        syncs.sync_charge_from_stripe_data(data)
+        charge = ChargeProxy.objects.get(customer=self.customer, stripe_id=data["id"])
+        self.assertEquals(charge.amount, decimal.Decimal("2"))
+        self.assertEquals(charge.amount_refunded, decimal.Decimal("100"))
 
     def test_sync_charge_from_stripe_data_refunded(self):
-        pass
+        data = {
+            "id": "ch_17A1dUI10iPhvocMOecpvQlI",
+            "object": "charge",
+            "amount": 200,
+            "amount_refunded": 0,
+            "application_fee": None,
+            "balance_transaction": "txn_179l3zI10iPhvocMhvKxAer7",
+            "captured": True,
+            "created": 1448213304,
+            "currency": "usd",
+            "customer": self.customer.stripe_id,
+            "description": None,
+            "destination": None,
+            "dispute": None,
+            "failure_code": None,
+            "failure_message": None,
+            "fraud_details": {
+            },
+            "invoice": "in_17A1dUI10iPhvocMSGtIfUDF",
+            "livemode": False,
+            "metadata": {
+            },
+            "paid": True,
+            "receipt_email": None,
+            "receipt_number": None,
+            "refunded": True,
+            "refunds": {
+                "object": "list",
+                "data": [
+
+                ],
+                "has_more": False,
+                "total_count": 0,
+                "url": "/v1/charges/ch_17A1dUI10iPhvocMOecpvQlI/refunds"
+            },
+            "shipping": None,
+            "source": {
+                "id": "card_179o0lI10iPhvocMZgdPiR5M",
+                "object": "card",
+                "address_city": None,
+                "address_country": None,
+                "address_line1": None,
+                "address_line1_check": None,
+                "address_line2": None,
+                "address_state": None,
+                "address_zip": None,
+                "address_zip_check": None,
+                "brand": "Visa",
+                "country": "US",
+                "customer": "cus_7ObCqsp1NGVT6o",
+                "cvc_check": None,
+                "dynamic_last4": None,
+                "exp_month": 10,
+                "exp_year": 2019,
+                "funding": "credit",
+                "last4": "4242",
+                "metadata": {
+                },
+                "name": None,
+                "tokenization_method": None
+            },
+            "statement_descriptor": "A descriptor",
+            "status": "succeeded"
+        }
+        syncs.sync_charge_from_stripe_data(data)
+        charge = ChargeProxy.objects.get(customer=self.customer, stripe_id=data["id"])
+        self.assertEquals(charge.amount, decimal.Decimal("2"))
+        self.assertEquals(charge.refunded, True)
 
     @patch("stripe.Customer.retrieve")
     def test_retrieve_stripe_subscription(self, CustomerMock):

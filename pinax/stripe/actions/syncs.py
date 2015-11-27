@@ -24,7 +24,7 @@ def sync_plans():
         utils.update_with_defaults(obj, defaults, created)
 
 
-def _sync_card(customer, source):
+def sync_card(customer, source):
     defaults = dict(
         customer=customer,
         name=source["name"] or "",
@@ -53,7 +53,7 @@ def _sync_card(customer, source):
     utils.update_with_defaults(card, defaults, created)
 
 
-def _sync_bitcoin(customer, source):
+def sync_bitcoin(customer, source):
     defaults = dict(
         customer=customer,
         active=source["active"],
@@ -81,9 +81,9 @@ def _sync_bitcoin(customer, source):
 
 def sync_payment_source_from_stripe_data(customer, source):
     if source["id"].startswith("card_"):
-        _sync_card(customer, source)
+        sync_card(customer, source)
     else:
-        _sync_bitcoin(customer, source)
+        sync_bitcoin(customer, source)
 
 
 def sync_subscription_from_stripe_data(customer, subscription):
@@ -159,7 +159,7 @@ def sync_charge_from_stripe_data(data):
     return obj
 
 
-def _sync_invoice_items(invoice_proxy, items):
+def sync_invoice_items(invoice_proxy, items):
     """
     This assumes line items from a Stripe invoice.lines property and not through
     the invoicesitems resource calls. At least according to the documentation
@@ -254,6 +254,6 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         charge.save()
 
     invoice = utils.update_with_defaults(invoice, defaults, created)
-    _sync_invoice_items(invoice, stripe_invoice["lines"].get("data", []))
+    sync_invoice_items(invoice, stripe_invoice["lines"].get("data", []))
 
     return invoice

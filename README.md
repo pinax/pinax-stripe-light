@@ -178,7 +178,6 @@ use only and provide a clean separation from the actual models.
 
 ## Documentation
 
-Documentation for django-stripe-payments can be found at http://django-stripe-payments.readthedocs.org
 The Pinax documentation is available at http://pinaxproject.com/pinax/.
 
 

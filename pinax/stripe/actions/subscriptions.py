@@ -2,6 +2,9 @@ import datetime
 
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.encoding import smart_str
+
+import stripe
 
 from . import syncs
 from .. import hooks
@@ -52,3 +55,18 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
     resp = cu.subscriptions.create(**subscription_params)
 
     return resp
+
+
+def retrieve(customer, sub_id):
+    """
+    Stripe throws an exception if a subscription has been deleted that we are
+    attempting to sync. In this case we want to just silently ignore that
+    exception but pass on any other.
+    """
+    if not sub_id:
+        return
+    try:
+        return customer.stripe_customer.subscriptions.retrieve(sub_id)
+    except stripe.InvalidRequestError as e:
+        if smart_str(e).find("does not have a subscription with ID") == -1:
+            raise

@@ -1115,24 +1115,24 @@ class SyncsTests(TestCase):
     @patch("stripe.Customer.retrieve")
     def test_retrieve_stripe_subscription(self, CustomerMock):
         CustomerMock().subscriptions.retrieve.return_value = "subscription"
-        value = syncs._retrieve_stripe_subscription(self.customer, "sub id")
+        value = subscriptions.retrieve(self.customer, "sub id")
         self.assertEquals(value, "subscription")
 
     def test_retrieve_stripe_subscription_no_sub_id(self):
-        value = syncs._retrieve_stripe_subscription(self.customer, None)
+        value = subscriptions.retrieve(self.customer, None)
         self.assertIsNone(value)
 
     @patch("stripe.Customer.retrieve")
     def test_retrieve_stripe_subscription_missing_subscription(self, CustomerMock):
         CustomerMock().subscriptions.retrieve.side_effect = stripe.InvalidRequestError("does not have a subscription with ID", "error")
-        value = syncs._retrieve_stripe_subscription(self.customer, "sub id")
+        value = subscriptions.retrieve(self.customer, "sub id")
         self.assertIsNone(value)
 
     @patch("stripe.Customer.retrieve")
     def test_retrieve_stripe_subscription_invalid_request(self, CustomerMock):
         CustomerMock().subscriptions.retrieve.side_effect = stripe.InvalidRequestError("Bad", "error")
         with self.assertRaises(stripe.InvalidRequestError):
-            syncs._retrieve_stripe_subscription(self.customer, "sub id")
+            subscriptions.retrieve(self.customer, "sub id")
 
     def test_sync_invoice_items(self):
         plan = PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
@@ -1271,7 +1271,7 @@ class SyncsTests(TestCase):
         self.assertEquals(invoice.items.all()[0].description, "Something random")
         self.assertEquals(invoice.items.all()[0].amount, decimal.Decimal("20"))
 
-    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    @patch("pinax.stripe.actions.subscriptions.retrieve")
     @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
     def test_sync_invoice_items_different_stripe_id_than_invoice(self, SyncMock, RetrieveSubscriptionMock):  # two subscriptions on invoice?
         PlanProxy.objects.create(stripe_id="simple", interval="month", interval_count=1, amount=decimal.Decimal("9.99"))
@@ -1366,7 +1366,7 @@ class SyncsTests(TestCase):
         syncs._sync_invoice_items(invoice, items)
         self.assertTrue(invoice.items.all().count(), 2)
 
-    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    @patch("pinax.stripe.actions.subscriptions.retrieve")
     def test_sync_invoice_items_updating(self, RetrieveSubscriptionMock):
         RetrieveSubscriptionMock.return_value = None
         PlanProxy.objects.create(stripe_id="simple", interval="month", interval_count=1, amount=decimal.Decimal("9.99"))
@@ -1468,7 +1468,7 @@ class SyncsTests(TestCase):
     @patch("stripe.Charge.retrieve")
     @patch("pinax.stripe.actions.syncs.sync_charge_from_stripe_data")
     @patch("pinax.stripe.actions.syncs._sync_invoice_items")
-    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    @patch("pinax.stripe.actions.subscriptions.retrieve")
     def test_sync_invoice_from_stripe_data(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock, SyncChargeMock, ChargeFetchMock, SyncSubscriptionMock):
         plan = PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
         subscription = SubscriptionProxy.objects.create(
@@ -1575,7 +1575,7 @@ class SyncsTests(TestCase):
     @patch("stripe.Charge.retrieve")
     @patch("pinax.stripe.actions.syncs.sync_charge_from_stripe_data")
     @patch("pinax.stripe.actions.syncs._sync_invoice_items")
-    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    @patch("pinax.stripe.actions.subscriptions.retrieve")
     def test_sync_invoice_from_stripe_data_no_send_receipt(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock, SyncChargeMock, ChargeFetchMock, SyncSubscriptionMock):
         plan = PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
         subscription = SubscriptionProxy.objects.create(
@@ -1680,7 +1680,7 @@ class SyncsTests(TestCase):
 
     @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
     @patch("pinax.stripe.actions.syncs._sync_invoice_items")
-    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    @patch("pinax.stripe.actions.subscriptions.retrieve")
     def test_sync_invoice_from_stripe_data_no_charge(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock, SyncSubscriptionMock):
         plan = PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
         subscription = SubscriptionProxy.objects.create(
@@ -1770,7 +1770,7 @@ class SyncsTests(TestCase):
 
     @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
     @patch("pinax.stripe.actions.syncs._sync_invoice_items")
-    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    @patch("pinax.stripe.actions.subscriptions.retrieve")
     def test_sync_invoice_from_stripe_data_no_subscription(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock, SyncSubscriptionMock):
         SyncSubscriptionMock.return_value = None
         data = {
@@ -1837,7 +1837,7 @@ class SyncsTests(TestCase):
 
     @patch("pinax.stripe.actions.syncs.sync_subscription_from_stripe_data")
     @patch("pinax.stripe.actions.syncs._sync_invoice_items")
-    @patch("pinax.stripe.actions.syncs._retrieve_stripe_subscription")
+    @patch("pinax.stripe.actions.subscriptions.retrieve")
     def test_sync_invoice_from_stripe_data_updated(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock, SyncSubscriptionMock):
         plan = PlanProxy.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
         subscription = SubscriptionProxy.objects.create(

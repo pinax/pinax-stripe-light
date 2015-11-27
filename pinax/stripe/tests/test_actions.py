@@ -31,8 +31,8 @@ class ChargesTests(TestCase):
         with self.assertRaises(ValueError):
             charges.create(customer=self.customer, amount=10)
 
-    def test_create_source_and_customer_both_none_raises_error(self):
-        with self.assertRaises(ValueError):
+    def test_create_no_customer_raises_error(self):
+        with self.assertRaises(TypeError):
             charges.create(amount=decimal.Decimal("10"))
 
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")

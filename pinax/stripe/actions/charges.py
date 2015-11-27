@@ -6,7 +6,7 @@ from .. import proxies
 from .. import utils
 
 
-def create(amount, source=None, customer=None, currency="usd", description=None, send_receipt=True, capture=True):
+def create(amount, customer, source=None, currency="usd", description=None, send_receipt=True, capture=True):
     """
     This method expects `amount` to be a Decimal type representing a
     dollar amount. It will be converted to cents so any decimals beyond
@@ -16,14 +16,11 @@ def create(amount, source=None, customer=None, currency="usd", description=None,
         raise ValueError(
             "You must supply a decimal value representing dollars."
         )
-    if source is None and customer is None:
-        raise ValueError(
-            "You must supply either a source or customer to create the charge for"
-        )
     stripe_charge = stripe.Charge.create(
         amount=utils.convert_amount_for_api(amount, currency),  # find the final amount
         currency=currency,
         source=source,
+        customer=customer,
         description=description,
         capture=capture,
     )

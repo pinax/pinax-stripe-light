@@ -67,18 +67,7 @@ setup(
         "pinax.stripe": [
             "templates/pinax/stripe/email/body_base.txt",
             "templates/pinax/stripe/email/body.txt",
-            "templates/pinax/stripe/email/subject.txt",
-            "templates/pinax/stripe/_cancel_form.html",
-            "templates/pinax/stripe/_change_card_form.html",
-            "templates/pinax/stripe/_change_plan_form.html",
-            "templates/pinax/stripe/_subscribe_form.html",
-            "templates/pinax/stripe/_subscription_status.html",
-            "templates/pinax/stripe/base.html",
-            "templates/pinax/stripe/cancel.html",
-            "templates/pinax/stripe/change_card.html",
-            "templates/pinax/stripe/change_plan.html",
-            "templates/pinax/stripe/history.html",
-            "templates/pinax/stripe/subscribe.html",
+            "templates/pinax/stripe/email/subject.txt"
         ]
     },
     classifiers=[

@@ -28,64 +28,73 @@ def sync_plans():
             obj.save()
 
 
+def _update(obj, defaults, created):
+    if not created:
+        for key in defaults:
+            setattr(obj, key, defaults[key])
+        obj.save()
+
+
+def _sync_card(customer, source):
+    defaults = dict(
+        customer=customer,
+        name=source["name"] or "",
+        address_line_1=source["address_line1"] or "",
+        address_line_1_check=source["address_line1_check"] or "",
+        address_line_2=source["address_line2"] or "",
+        address_city=source["address_city"] or "",
+        address_state=source["address_state"] or "",
+        address_country=source["address_country"] or "",
+        address_zip=source["address_zip"] or "",
+        address_zip_check=source["address_zip_check"] or "",
+        brand=source["brand"],
+        country=source["country"],
+        cvc_check=source["cvc_check"],
+        dynamic_last4=source["dynamic_last4"] or "",
+        exp_month=source["exp_month"],
+        exp_year=source["exp_year"],
+        funding=source["funding"] or "",
+        last4=source["last4"] or "",
+        fingerprint=source["fingerprint"] or ""
+    )
+    card, created = proxies.CardProxy.objects.get_or_create(
+        stripe_id=source["id"],
+        defaults=defaults
+    )
+    _update(card, defaults, created)
+
+
+def _sync_bitcoin(customer, source):
+    defaults = dict(
+        customer=customer,
+        active=source["active"],
+        amount=utils.convert_amount_for_db(source["amount"], source["currency"]),
+        amount_received=utils.convert_amount_for_db(source["amount_received"], source["currency"]),
+        bitcoin_amount=source["bitcoin_amount"],
+        bitcoin_amount_received=source["bitcoin_amount_received"],
+        bitcoin_uri=source["bitcoin_uri"],
+        currency=source["currency"],
+        description=source["description"],
+        email=source["email"],
+        filled=source["filled"],
+        inbound_address=source["inbound_address"],
+        payment=source["payment"] if "payment" in source else "",
+        refund_address=source["refund_address"] or "",
+        uncaptured_funds=source["uncaptured_funds"],
+        used_for_payment=source["used_for_payment"]
+    )
+    receiver, created = proxies.BitcoinRecieverProxy.objects.get_or_create(
+        stripe_id=source["id"],
+        defaults=defaults
+    )
+    _update(receiver, defaults, created)
+
+
 def sync_payment_source_from_stripe_data(customer, source):
     if source["id"].startswith("card_"):
-        defaults = dict(
-            customer=customer,
-            name=source["name"] or "",
-            address_line_1=source["address_line1"] or "",
-            address_line_1_check=source["address_line1_check"] or "",
-            address_line_2=source["address_line2"] or "",
-            address_city=source["address_city"] or "",
-            address_state=source["address_state"] or "",
-            address_country=source["address_country"] or "",
-            address_zip=source["address_zip"] or "",
-            address_zip_check=source["address_zip_check"] or "",
-            brand=source["brand"],
-            country=source["country"],
-            cvc_check=source["cvc_check"],
-            dynamic_last4=source["dynamic_last4"] or "",
-            exp_month=source["exp_month"],
-            exp_year=source["exp_year"],
-            funding=source["funding"] or "",
-            last4=source["last4"] or "",
-            fingerprint=source["fingerprint"] or ""
-        )
-        card, created = proxies.CardProxy.objects.get_or_create(
-            stripe_id=source["id"],
-            defaults=defaults
-        )
-        if not created:
-            for key in defaults:
-                setattr(card, key, defaults[key])
-            card.save()
+        _sync_card(customer, source)
     else:
-        defaults = dict(
-            customer=customer,
-            active=source["active"],
-            amount=utils.convert_amount_for_db(source["amount"], source["currency"]),
-            amount_received=utils.convert_amount_for_db(source["amount_received"], source["currency"]),
-            bitcoin_amount=source["bitcoin_amount"],
-            bitcoin_amount_received=source["bitcoin_amount_received"],
-            bitcoin_uri=source["bitcoin_uri"],
-            currency=source["currency"],
-            description=source["description"],
-            email=source["email"],
-            filled=source["filled"],
-            inbound_address=source["inbound_address"],
-            payment=source["payment"] if "payment" in source else "",
-            refund_address=source["refund_address"] or "",
-            uncaptured_funds=source["uncaptured_funds"],
-            used_for_payment=source["used_for_payment"]
-        )
-        receiver, created = proxies.BitcoinRecieverProxy.objects.get_or_create(
-            stripe_id=source["id"],
-            defaults=defaults
-        )
-        if not created:
-            for key in defaults:
-                setattr(receiver, key, defaults[key])
-            receiver.save()
+        _sync_bitcoin(customer, source)
 
 
 def sync_subscription_from_stripe_data(customer, subscription):
@@ -214,10 +223,7 @@ def _sync_invoice_items(invoice_proxy, items):
             stripe_id=item["id"],
             defaults=defaults
         )
-        if not inv_item_created:
-            for key in defaults:
-                setattr(inv_item, key, defaults[key])
-            inv_item.save()
+        _update(inv_item, defaults, inv_item_created)
 
 
 def _retrieve_stripe_subscription(customer, sub_id):

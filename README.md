@@ -15,15 +15,30 @@ avoid namespace collisions and to have more consistency with Pinax.
 
 ## Refactor and Update Plans
 
+***November 27, 2015***
+
+Hope everyone had a great Thanksgiving!  Yesterday marks this project hitting
+100% test coverage. This is a marker that we should now keep. In fact, I'm
+thinking we should make that a standard for pull request acceptance. It's
+strongly encourage that all new code be accompanied by tests that prove that
+it works, but in the very least, coverage should not go down.  We'll give it
+some more thought before formalizing in our contribution guidelines but that's
+where I'm headed currently.
+
+Remaining issues:
+
+* [ ] api review - [#198](https://github.com/pinax/pinax-stripe/issues/198)
+* [ ] writing documentation - lots has changes, drastically, time to throw out the current docs and write a comprehensive set from scratch
+
+
 ***November 22, 2015***
 
 Phew! 10 days and almost 100 commits later and milestone is as far as I know
 code complete.  The only remaining tasks are:
 
-* [ ] writing documentation - lots has changes, drastically, time to throw out the current docs and write a comprehensive set from scratch
-* [ ] review current test coverage and improve on it if the gaps that are open look critical
-* [ ] package up the templates I've been testing with in a new release of [pianx-theme-bootstrap](http://github.com/pinax/pinax-theme-bootstrap) (see [PTB Issue #104](https://github.com/pinax/pinax-theme-bootstrap/issues/104))
-* [ ] put together a demo starter project (this one i might hold off until after 2.0 ships)
+* [x] review current test coverage and improve on it if the gaps that are open look critical - now 100%!
+* [x] package up the templates I've been testing with in a new release of [pianx-theme-bootstrap](http://github.com/pinax/pinax-theme-bootstrap) (see [PTB Issue #104](https://github.com/pinax/pinax-theme-bootstrap/issues/104)) - [7.2.0 released](https://pypi.python.org/pypi/pinax-theme-bootstrap)
+* [x] put together a demo starter project. [pinax-projects-stripe](https://github.com/pinax/pinax-starter-projects/tree/stripe) is now in beta
 
 
 ***November 12, 2015***

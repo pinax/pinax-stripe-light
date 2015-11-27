@@ -22,17 +22,7 @@ def sync_plans():
             stripe_id=plan["id"],
             defaults=defaults
         )
-        if not created:
-            for key in defaults:
-                setattr(obj, key, defaults[key])
-            obj.save()
-
-
-def _update(obj, defaults, created):
-    if not created:
-        for key in defaults:
-            setattr(obj, key, defaults[key])
-        obj.save()
+        utils.update_with_defaults(obj, defaults, created)
 
 
 def _sync_card(customer, source):
@@ -61,7 +51,7 @@ def _sync_card(customer, source):
         stripe_id=source["id"],
         defaults=defaults
     )
-    _update(card, defaults, created)
+    utils.update_with_defaults(card, defaults, created)
 
 
 def _sync_bitcoin(customer, source):
@@ -87,7 +77,7 @@ def _sync_bitcoin(customer, source):
         stripe_id=source["id"],
         defaults=defaults
     )
-    _update(receiver, defaults, created)
+    utils.update_with_defaults(receiver, defaults, created)
 
 
 def sync_payment_source_from_stripe_data(customer, source):
@@ -117,10 +107,7 @@ def sync_subscription_from_stripe_data(customer, subscription):
         stripe_id=subscription["id"],
         defaults=defaults
     )
-    if not created:
-        for key in defaults:
-            setattr(sub, key, defaults[key])
-        sub.save()
+    sub = utils.update_with_defaults(sub, defaults, created)
     return sub
 
 
@@ -223,7 +210,7 @@ def _sync_invoice_items(invoice_proxy, items):
             stripe_id=item["id"],
             defaults=defaults
         )
-        _update(inv_item, defaults, inv_item_created)
+        utils.update_with_defaults(inv_item, defaults, inv_item_created)
 
 
 def _retrieve_stripe_subscription(customer, sub_id):
@@ -280,11 +267,8 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
     if charge is not None:
         charge.invoice = invoice
         charge.save()
-    if not created:
-        for key in defaults:
-            setattr(invoice, key, defaults[key])
-        invoice.save()
 
+    invoice = utils.update_with_defaults(invoice, defaults, created)
     _sync_invoice_items(invoice, stripe_invoice["lines"].get("data", []))
 
     return invoice

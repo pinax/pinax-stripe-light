@@ -2,7 +2,7 @@ import decimal
 
 import stripe
 
-from . import syncs
+from .. import proxies
 from .. import utils
 
 
@@ -27,7 +27,7 @@ def create(amount, source=None, customer=None, currency="usd", description=None,
         description=description,
         capture=capture,
     )
-    charge = syncs.sync_charge_from_stripe_data(stripe_charge)
+    charge = sync_charge_from_stripe_data(stripe_charge)
     if send_receipt:
         charge.send_receipt()
     return charge
@@ -40,4 +40,34 @@ def capture(charge, amount=None):
             charge.currency
         )
     )
-    syncs.sync_charge_from_stripe_data(stripe_charge)
+    sync_charge_from_stripe_data(stripe_charge)
+
+
+def sync_charges_for_customer(customer):
+    for charge in customer.stripe_customer.charges().data:
+        sync_charge_from_stripe_data(charge)
+
+
+def sync_charge_from_stripe_data(data):
+    customer = proxies.CustomerProxy.objects.get(stripe_id=data["customer"])
+    obj, _ = proxies.ChargeProxy.objects.get_or_create(
+        customer=customer,
+        stripe_id=data["id"]
+    )
+    obj.source = data["source"]["id"]
+    obj.currency = data["currency"]
+    obj.invoice = next(iter(proxies.InvoiceProxy.objects.filter(stripe_id=data["invoice"])), None)
+    obj.amount = utils.convert_amount_for_db(data["amount"], obj.currency)
+    obj.paid = data["paid"]
+    obj.refunded = data["refunded"]
+    obj.captured = data["captured"]
+    obj.disputed = data["dispute"] is not None
+    obj.charge_created = utils.convert_tstamp(data, "created")
+    if data.get("description"):
+        obj.description = data["description"]
+    if data.get("amount_refunded"):
+        obj.amount_refunded = utils.convert_amount_for_db(data["amount_refunded"], obj.currency)
+    if data["refunded"]:
+        obj.amount_refunded = obj.amount
+    obj.save()
+    return obj

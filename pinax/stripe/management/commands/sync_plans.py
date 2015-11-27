@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from ...actions import syncs
+from ...actions import plans
 
 
 class Command(BaseCommand):
@@ -8,4 +8,4 @@ class Command(BaseCommand):
     help = "Make sure your Stripe account has the plans"
 
     def handle(self, *args, **options):
-        syncs.sync_plans()
+        plans.sync_plans()

@@ -199,7 +199,7 @@ class TestEventMethods(TestCase):
         signal = WEBHOOK_SIGNALS.get(kind)
         signal.disconnect(func, **kwargs)
 
-    @patch("pinax.stripe.actions.syncs.sync_customer")
+    @patch("pinax.stripe.actions.customers.sync_customer")
     @patch("stripe.Event.retrieve")
     @patch("stripe.Customer.retrieve")
     def test_customer_subscription_deleted(self, CustomerMock, EventMock, SyncMock):

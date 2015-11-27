@@ -141,7 +141,7 @@ class WebhookTests(TestCase):
 class ChargeWebhookTest(TestCase):
 
     @patch("stripe.Charge.retrieve")
-    @patch("pinax.stripe.actions.syncs.sync_charge_from_stripe_data")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
     def test_process_webhook(self, SyncMock, RetrieveMock):
         event = EventProxy.objects.create(kind=ChargeCapturedWebhook.name, webhook_message={}, valid=True, processed=False)
         event.validated_message = dict(data=dict(object=dict(id=1)))
@@ -151,7 +151,7 @@ class ChargeWebhookTest(TestCase):
 
 class CustomerUpdatedWebhookTest(TestCase):
 
-    @patch("pinax.stripe.actions.syncs.sync_customer")
+    @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook(self, SyncMock):
         event = EventProxy.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
         CustomerUpdatedWebhook(event).process_webhook()
@@ -160,7 +160,7 @@ class CustomerUpdatedWebhookTest(TestCase):
 
 class CustomerSourceCreatedWebhookTest(TestCase):
 
-    @patch("pinax.stripe.actions.syncs.sync_payment_source_from_stripe_data")
+    @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")
     def test_process_webhook(self, SyncMock):
         event = EventProxy.objects.create(kind=CustomerSourceCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
         event.validated_message = dict(data=dict(object=dict()))
@@ -181,13 +181,13 @@ class CustomerSourceDeletedWebhookTest(TestCase):
 class CustomerSubscriptionCreatedWebhookTest(TestCase):
 
     @patch("stripe.Customer.retrieve")
-    @patch("pinax.stripe.actions.syncs.sync_customer")
+    @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook(self, SyncMock, RetrieveMock):
         event = EventProxy.objects.create(kind=CustomerSubscriptionCreatedWebhook.name, customer=CustomerProxy.objects.create(), webhook_message={}, valid=True, processed=False)
         CustomerSubscriptionCreatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
 
-    @patch("pinax.stripe.actions.syncs.sync_customer")
+    @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook_no_customer(self, SyncMock):
         event = EventProxy.objects.create(kind=CustomerSubscriptionCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
         CustomerSubscriptionCreatedWebhook(event).process_webhook()
@@ -196,7 +196,7 @@ class CustomerSubscriptionCreatedWebhookTest(TestCase):
 
 class InvoiceCreatedWebhookTest(TestCase):
 
-    @patch("pinax.stripe.actions.syncs.sync_invoice_from_stripe_data")
+    @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
     def test_process_webhook(self, SyncMock):
         event = EventProxy.objects.create(kind=InvoiceCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
         event.validated_message = dict(data=dict(object=dict(id=1)))

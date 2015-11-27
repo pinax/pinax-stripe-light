@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 
 from django.contrib.auth import get_user_model
 
-from ...actions import syncs, customers
+from ...actions import customers, charges, invoices
 
 
 class Command(BaseCommand):
@@ -22,6 +22,6 @@ class Command(BaseCommand):
                 count, total, perc, username, user.pk
             ))
             customer = customers.get_customer_for_user(user)
-            syncs.sync_customer(customer)
-            syncs.sync_invoices_for_customer(customer)
-            syncs.sync_charges_for_customer(customer)
+            customers.sync_customer(customer)
+            invoices.sync_invoices_for_customer(customer)
+            charges.sync_charges_for_customer(customer)

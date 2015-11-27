@@ -6,7 +6,7 @@ import stripe
 
 from six import with_metaclass
 
-from .actions import syncs, exceptions, transfers, sources
+from .actions import charges, customers, exceptions, invoices, transfers, sources
 from .conf import settings
 
 
@@ -167,7 +167,7 @@ class BitcoinReceiverTransactionCreatedWebhook(Webhook):
 class ChargeWebhook(Webhook):
 
     def process_webhook(self):
-        syncs.sync_charge_from_stripe_data(
+        charges.sync_charge_from_stripe_data(
             stripe.Charge.retrieve(self.event_proxy.message["data"]["object"]["id"])
         )
 
@@ -255,7 +255,7 @@ class CustomerUpdatedWebhook(Webhook):
     description = "Occurs whenever any property of a customer changes."
 
     def process_webhook(self):
-        syncs.sync_customer(self.event_proxy.customer)
+        customers.sync_customer(self.event_proxy.customer)
 
 
 class CustomerDiscountCreatedWebhook(Webhook):
@@ -276,7 +276,7 @@ class CustomerDiscountUpdatedWebhook(Webhook):
 class CustomerSourceWebhook(Webhook):
 
     def process_webhook(self):
-        syncs.sync_payment_source_from_stripe_data(
+        sources.sync_payment_source_from_stripe_data(
             self.event_proxy.customer,
             self.event_proxy.validated_message["data"]["object"]
         )
@@ -304,7 +304,7 @@ class CustomerSubscriptionWebhook(Webhook):
 
     def process_webhook(self):
         if self.event_proxy.customer:
-            syncs.sync_customer(self.event_proxy.customer, self.event_proxy.customer.stripe_customer)
+            customers.sync_customer(self.event_proxy.customer, self.event_proxy.customer.stripe_customer)
 
 
 class CustomerSubscriptionCreatedWebhook(CustomerSubscriptionWebhook):
@@ -330,7 +330,7 @@ class CustomerSubscriptionUpdatedWebhook(CustomerSubscriptionWebhook):
 class InvoiceWebhook(Webhook):
 
     def process_webhook(self):
-        syncs.sync_invoice_from_stripe_data(
+        invoices.sync_invoice_from_stripe_data(
             self.event_proxy.validated_message["data"]["object"],
             send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS
         )

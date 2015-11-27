@@ -50,9 +50,9 @@ class CommandTests(TestCase):
         self.assertEquals(PlanProxy.objects.all()[0].amount, decimal.Decimal("9.54"))
 
     @patch("stripe.Customer.retrieve")
-    @patch("pinax.stripe.actions.syncs.sync_customer")
-    @patch("pinax.stripe.actions.syncs.sync_invoices_for_customer")
-    @patch("pinax.stripe.actions.syncs.sync_charges_for_customer")
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    @patch("pinax.stripe.actions.invoices.sync_invoices_for_customer")
+    @patch("pinax.stripe.actions.charges.sync_charges_for_customer")
     def test_sync_customers(self, SyncChargesMock, SyncInvoicesMock, SyncMock, RetrieveMock):
         user2 = get_user_model().objects.create_user(username="thomas")
         get_user_model().objects.create_user(username="altman")

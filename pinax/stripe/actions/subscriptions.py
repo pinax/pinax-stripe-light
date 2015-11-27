@@ -6,9 +6,9 @@ from django.utils.encoding import smart_str
 
 import stripe
 
-from . import syncs
 from .. import hooks
 from .. import proxies
+from .. import utils
 
 
 def has_active_subscription(customer):
@@ -21,7 +21,7 @@ def has_active_subscription(customer):
 
 def cancel(subscription, at_period_end=True):
     sub = subscription.stripe_subscription.delete(at_period_end=at_period_end)
-    syncs.sync_subscription_from_stripe_data(subscription.customer, sub)
+    sync_subscription_from_stripe_data(subscription.customer, sub)
 
 
 def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, charge_immediately=False):
@@ -36,7 +36,7 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
         stripe_subscription.coupon = coupon
     sub = stripe_subscription.save()
     customer = proxies.CustomerProxy.objects.get(pk=subscription.customer.pk)
-    syncs.sync_subscription_from_stripe_data(customer, sub)
+    sync_subscription_from_stripe_data(customer, sub)
 
 
 def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=None):
@@ -70,3 +70,27 @@ def retrieve(customer, sub_id):
     except stripe.InvalidRequestError as e:
         if smart_str(e).find("does not have a subscription with ID") == -1:
             raise
+
+
+def sync_subscription_from_stripe_data(customer, subscription):
+    defaults = dict(
+        customer=customer,
+        application_fee_percent=subscription["application_fee_percent"],
+        cancel_at_period_end=subscription["cancel_at_period_end"],
+        canceled_at=utils.convert_tstamp(subscription["canceled_at"]),
+        current_period_start=utils.convert_tstamp(subscription["current_period_start"]),
+        current_period_end=utils.convert_tstamp(subscription["current_period_end"]),
+        ended_at=utils.convert_tstamp(subscription["ended_at"]),
+        plan=proxies.PlanProxy.objects.get(stripe_id=subscription["plan"]["id"]),
+        quantity=subscription["quantity"],
+        start=utils.convert_tstamp(subscription["start"]),
+        status=subscription["status"],
+        trial_start=utils.convert_tstamp(subscription["trial_start"]) if subscription["trial_start"] else None,
+        trial_end=utils.convert_tstamp(subscription["trial_end"]) if subscription["trial_end"] else None
+    )
+    sub, created = proxies.SubscriptionProxy.objects.get_or_create(
+        stripe_id=subscription["id"],
+        defaults=defaults
+    )
+    sub = utils.update_with_defaults(sub, defaults, created)
+    return sub

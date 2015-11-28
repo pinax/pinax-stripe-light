@@ -1931,7 +1931,7 @@ class SyncsTests(TestCase):
 class TransfersTests(TestCase):
 
     def setUp(self):
-        data = {
+        self.data = {
             "id": "tr_17BE31I10iPhvocMDwiBi4Pk",
             "object": "transfer",
             "amount": 1100,
@@ -1966,24 +1966,24 @@ class TransfersTests(TestCase):
         }
         self.event = EventProxy.objects.create(
             kind="transfer.paid",
-            webhook_message={"data": {"object": data}},
-            validated_message={"data": {"object": data}},
+            webhook_message={"data": {"object": self.data}},
+            validated_message={"data": {"object": self.data}},
             valid=True,
             processed=False
         )
 
-    def test_process_transfer_event(self):
-        transfers.process_transfer_event(self.event)
+    def test_sync_transfer(self):
+        transfers.sync_transfer(self.data, self.event)
         qs = TransferProxy.objects.filter(stripe_id=self.event.message["data"]["object"]["id"])
         self.assertEquals(qs.count(), 1)
         self.assertEquals(qs[0].event, self.event)
 
-    def test_process_transfer_event_update(self):
-        transfers.process_transfer_event(self.event)
+    def test_sync_transfer_update(self):
+        transfers.sync_transfer(self.data, self.event)
         qs = TransferProxy.objects.filter(stripe_id=self.event.message["data"]["object"]["id"])
         self.assertEquals(qs.count(), 1)
         self.assertEquals(qs[0].event, self.event)
         self.event.validated_message["data"]["object"]["status"] = "paid"
-        transfers.process_transfer_event(self.event)
+        transfers.sync_transfer(self.event.message["data"]["object"], self.event)
         qs = TransferProxy.objects.filter(stripe_id=self.event.message["data"]["object"]["id"])
         self.assertEquals(qs[0].status, "paid")

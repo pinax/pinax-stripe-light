@@ -444,7 +444,7 @@ class SKUUpdatedWebhook(Webhook):
 class TransferWebhook(Webhook):
 
     def process_webhook(self):
-        transfers.process_transfer_event(self.event_proxy)
+        transfers.sync_transfer(self.event_proxy.message["data"]["object"], self.event_proxy)
 
 
 class TransferCreatedWebhook(TransferWebhook):

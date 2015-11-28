@@ -5,6 +5,14 @@ from .. import utils
 
 
 def create(charge, amount=None):
+    """
+    Creates a refund for a particular charge
+
+    Args:
+        charge: the charge against which to create the refund
+        amount: how much should the refund be, defaults to None, in which case
+                the full amount of the charge will be refunded
+    """
     if amount is None:
         stripe.Refund.create(charge=charge.stripe_id)
     else:

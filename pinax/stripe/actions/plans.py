@@ -5,6 +5,9 @@ from .. import proxies
 
 
 def sync_plans():
+    """
+    Syncronizes all plans from the Stripe API
+    """
     for plan in stripe.Plan.all().data:
         defaults = dict(
             amount=utils.convert_amount_for_db(plan["amount"], plan["currency"]),

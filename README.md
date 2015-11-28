@@ -153,6 +153,10 @@ use only and provide a clean separation from the actual models.
 
 ### Charges
 
+* `capture(charge, amount=None)` - Capture the payment of an existing, uncaptured, charge.
+* `create(amount, customer, source=None, currency="usd", description=None, send_receipt=True, capture=True)` - Creates a charge for the given customer.
+* `sync_charges_for_customer(customer)` - Populate database with all the charges for a customer.
+* `sync_charge_from_stripe_data(data)` - Create or update the charge represented by the data from a Stripe API query.
 
 ### Customers
 
@@ -172,7 +176,7 @@ use only and provide a clean separation from the actual models.
 ### Subscriptions
 
 
-### Syncs
+### Transfers
 
 
 

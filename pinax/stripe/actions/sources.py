@@ -3,33 +3,48 @@ from .. import utils
 
 
 def create_card(customer, token):
+    """
+    Creates a new card for a customer
+
+    Args:
+        customer: the customer to create the card for
+        token: the token created from Stripe.js
+    """
     source = customer.stripe_customer.sources.create(source=token)
     sync_payment_source_from_stripe_data(customer, source)
 
 
-def update_card(customer, source, name=None, exp_month=None, exp_year=None):
-    stripe_source = customer.stripe_customer.sources.retrieve(source)
-    if name is not None:
-        stripe_source.name = name
-    if exp_month is not None:
-        stripe_source.exp_month = exp_month
-    if exp_year is not None:
-        stripe_source.exp_year = exp_year
-    s = stripe_source.save()
-    sync_payment_source_from_stripe_data(customer, s)
-
-
 def delete_card(customer, source):
+    """
+    Deletes a card from a customer
+
+    Args:
+        customer: the customer to delete the card from
+        source: the Stripe ID of the payment source to delete
+    """
     customer.stripe_customer.sources.retrieve(source).delete()
     delete_card_object(source)
 
 
 def delete_card_object(source):
+    """
+    Deletes the local card object (CardProxy)
+
+    Args:
+        source: the Stripe ID of the card
+    """
     if source.startswith("card_"):
         proxies.CardProxy.objects.filter(stripe_id=source).delete()
 
 
 def sync_card(customer, source):
+    """
+    Syncronizes the data for a card locally for a given customer
+
+    Args:
+        customer: the customer to create or update a card for
+        source: data reprenting the card from the Stripe API
+    """
     defaults = dict(
         customer=customer,
         name=source["name"] or "",
@@ -59,6 +74,13 @@ def sync_card(customer, source):
 
 
 def sync_bitcoin(customer, source):
+    """
+    Syncronizes the data for a Bitcoin receiver locally for a given customer
+
+    Args:
+        customer: the customer to create or update a Bitcoin receiver for
+        source: data reprenting the Bitcoin receiver from the Stripe API
+    """
     defaults = dict(
         customer=customer,
         active=source["active"],
@@ -85,7 +107,36 @@ def sync_bitcoin(customer, source):
 
 
 def sync_payment_source_from_stripe_data(customer, source):
+    """
+    Syncronizes the data for a payment source locally for a given customer
+
+    Args:
+        customer: the customer to create or update a Bitcoin receiver for
+        source: data reprenting the payment source from the Stripe API
+    """
     if source["id"].startswith("card_"):
         sync_card(customer, source)
     else:
         sync_bitcoin(customer, source)
+
+
+def update_card(customer, source, name=None, exp_month=None, exp_year=None):
+    """
+    Updates a card for a given customer
+
+    Args:
+        customer: the customer for whom to update the card
+        source: the Stripe ID of the card to update
+        name: optionally, a name to give the card
+        exp_month: optionally, the expiration month for the card
+        exp_year: optionally, the expiration year for the card
+    """
+    stripe_source = customer.stripe_customer.sources.retrieve(source)
+    if name is not None:
+        stripe_source.name = name
+    if exp_month is not None:
+        stripe_source.exp_month = exp_month
+    if exp_year is not None:
+        stripe_source.exp_year = exp_year
+    s = stripe_source.save()
+    sync_payment_source_from_stripe_data(customer, s)

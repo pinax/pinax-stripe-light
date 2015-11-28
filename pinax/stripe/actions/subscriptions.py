@@ -11,35 +11,36 @@ from .. import proxies
 from .. import utils
 
 
-def has_active_subscription(customer):
-    return proxies.SubscriptionProxy.objects.filter(
-        customer=customer
-    ).filter(
-        Q(ended_at__isnull=True) | Q(ended_at__gt=timezone.now())
-    ).exists()
-
-
 def cancel(subscription, at_period_end=True):
+    """
+    Cancels a subscription
+
+    Args:
+        subscription: the subscription to cancel
+        at_period_end: True, to cancel at the end, otherwise immediately cancel
+    """
     sub = subscription.stripe_subscription.delete(at_period_end=at_period_end)
     sync_subscription_from_stripe_data(subscription.customer, sub)
 
 
-def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, charge_immediately=False):
-    stripe_subscription = subscription.stripe_subscription
-    if plan:
-        stripe_subscription.plan = plan
-    if quantity:
-        stripe_subscription.quantity = quantity
-    if not prorate:
-        stripe_subscription.prorate = False
-    if coupon:
-        stripe_subscription.coupon = coupon
-    sub = stripe_subscription.save()
-    customer = proxies.CustomerProxy.objects.get(pk=subscription.customer.pk)
-    sync_subscription_from_stripe_data(customer, sub)
-
-
 def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=None):
+    """
+    Creates a subscription for the given customer
+
+    Args:
+        customer: the customer to create the subscription for
+        plan: the plan to subscribe to
+        quantity: if provided, the number to subscribe to
+        trial_days: if provided, the number of days to trial before starting
+        token: if provided, a token from Stripe.js that will be used as the
+               payment source for the subscription and set as the default
+               source for the customer, otherwise the current default source
+               will be used
+        coupon: if provided, a coupon to apply towards the subscription
+
+    Returns:
+        the data representing the subscription object that was created
+    """
     quantity = hooks.hookset.adjust_subscription_quantity(customer=customer, plan=plan, quantity=quantity)
     cu = customer.stripe_customer
 
@@ -57,11 +58,37 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
     return resp
 
 
+def has_active_subscription(customer):
+    """
+    Checks if the given customer has an active subscription
+
+    Args:
+        customer: the customer to check
+
+    Returns:
+        True, if there is an active subscription, otherwise False
+    """
+    return proxies.SubscriptionProxy.objects.filter(
+        customer=customer
+    ).filter(
+        Q(ended_at__isnull=True) | Q(ended_at__gt=timezone.now())
+    ).exists()
+
+
 def retrieve(customer, sub_id):
     """
+    Retrieve a subscription object from Stripe's API
+
     Stripe throws an exception if a subscription has been deleted that we are
     attempting to sync. In this case we want to just silently ignore that
     exception but pass on any other.
+
+    Args:
+        customer: the customer who's subscription you are trying to retrieve
+        sub_id: the Stripe ID of the subscription you are fetching
+
+    Returns:
+        the data for a subscription object from the Stripe API
     """
     if not sub_id:
         return
@@ -73,6 +100,16 @@ def retrieve(customer, sub_id):
 
 
 def sync_subscription_from_stripe_data(customer, subscription):
+    """
+    Syncronizes data from the Stripe API for a subscription
+
+    Args:
+        customer: the customer who's subscription you are syncronizing
+        subscription: data from the Stripe API representing a subscription
+
+    Returns:
+        the pinax.stripe.proxies.SubscriptionProxy object created or updated
+    """
     defaults = dict(
         customer=customer,
         application_fee_percent=subscription["application_fee_percent"],
@@ -94,3 +131,29 @@ def sync_subscription_from_stripe_data(customer, subscription):
     )
     sub = utils.update_with_defaults(sub, defaults, created)
     return sub
+
+
+def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, charge_immediately=False):
+    """
+    Updates a subscription
+
+    Args:
+        subscription: the subscription to update
+        plan: optionally, the plan to change the subscription to
+        quantity: optionally, the quantiy of the subscription to change
+        prorate: optionally, if the subscription should be prorated or not
+        coupon: optionally, a coupon to apply to the subscription
+        charge_immediately: optionally, whether or not to charge immediately
+    """
+    stripe_subscription = subscription.stripe_subscription
+    if plan:
+        stripe_subscription.plan = plan
+    if quantity:
+        stripe_subscription.quantity = quantity
+    if not prorate:
+        stripe_subscription.prorate = False
+    if coupon:
+        stripe_subscription.coupon = coupon
+    sub = stripe_subscription.save()
+    customer = proxies.CustomerProxy.objects.get(pk=subscription.customer.pk)
+    sync_subscription_from_stripe_data(customer, sub)

@@ -8,18 +8,34 @@ from .. import utils
 
 
 def create(customer):
+    """
+    Creates a Stripe invoice
+
+    Args:
+        customer: the customer to create the invoice for (CustomerProxy)
+
+    Returns:
+        the data from the Stripe API that represents the invoice object that
+        was created
+
+    TODO:
+        We should go ahead and sync the data so the InvoiceProxy object does
+        not have to wait on the webhook to be received and processed for the
+        data to be available locally.
+    """
     return stripe.Invoice.create(customer=customer.stripe_id)
 
 
-def pay(invoice, send_receipt=True):
-    if not invoice.paid and not invoice.closed:
-        stripe_invoice = invoice.stripe_invoice.pay()
-        sync_invoice_from_stripe_data(stripe_invoice, send_receipt=send_receipt)
-        return True
-    return False
-
-
 def create_and_pay(customer):
+    """
+    Creates and and immediately pays an invoice for a customer
+
+    Args:
+        customer: the customer to create the invoice for (CustomerProxy)
+
+    Returns:
+        True, if invoice was created, False if there was an error
+    """
     invoice = create(customer)
     try:
         if invoice.amount_due > 0:
@@ -29,65 +45,35 @@ def create_and_pay(customer):
         return False  # There was nothing to Invoice
 
 
-def sync_invoices_for_customer(customer):
-    for invoice in customer.stripe_customer.invoices().data:
-        sync_invoice_from_stripe_data(invoice, send_receipt=False)
-
-
-def sync_invoice_items(invoice_proxy, items):
+def pay(invoice, send_receipt=True):
     """
-    This assumes line items from a Stripe invoice.lines property and not through
-    the invoicesitems resource calls. At least according to the documentation
-    the data for an invoice item is slightly different between the two calls.
+    Cause an invoice to be paid
 
-    For example, going through the invoiceitems resource you don't get a "type"
-    field on the object.
+    Args:
+        invoice: the invoice object to have paid
+        send_receipt: if True, send the receipt as a result of paying
+
+    Returns:
+        True if the invoice was paid, False if it was unable to be paid
     """
-    for item in items:
-        period_end = utils.convert_tstamp(item["period"], "end")
-        period_start = utils.convert_tstamp(item["period"], "start")
-
-        if item.get("plan"):
-            plan = proxies.PlanProxy.objects.get(stripe_id=item["plan"]["id"])
-        else:
-            plan = None
-
-        if item["type"] == "subscription":
-            if invoice_proxy.subscription and invoice_proxy.subscription.stripe_id == item["id"]:
-                item_subscription = invoice_proxy.subscription
-            else:
-                stripe_subscription = subscriptions.retrieve(
-                    invoice_proxy.customer,
-                    item["id"]
-                )
-                item_subscription = subscriptions.sync_subscription_from_stripe_data(
-                    invoice_proxy.customer,
-                    stripe_subscription
-                ) if stripe_subscription else None
-            plan = item_subscription.plan if item_subscription is not None and plan is None else None
-        else:
-            item_subscription = None
-
-        defaults = dict(
-            amount=utils.convert_amount_for_db(item["amount"], item["currency"]),
-            currency=item["currency"],
-            proration=item["proration"],
-            description=item.get("description") or "",
-            line_type=item["type"],
-            plan=plan,
-            period_start=period_start,
-            period_end=period_end,
-            quantity=item.get("quantity"),
-            subscription=item_subscription
-        )
-        inv_item, inv_item_created = invoice_proxy.items.get_or_create(
-            stripe_id=item["id"],
-            defaults=defaults
-        )
-        utils.update_with_defaults(inv_item, defaults, inv_item_created)
+    if not invoice.paid and not invoice.closed:
+        stripe_invoice = invoice.stripe_invoice.pay()
+        sync_invoice_from_stripe_data(stripe_invoice, send_receipt=send_receipt)
+        return True
+    return False
 
 
 def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
+    """
+    Syncronizes a local invoice with data from the Stripe API
+
+    Args:
+        stripe_invoice: data that represents the invoice from the Stripe API
+        send_receipt: if True, send the receipt as a result of paying
+
+    Returns:
+        the pinax.stripe.proxies.InvoiceProxy that was created or updated
+    """
     c = proxies.CustomerProxy.objects.get(stripe_id=stripe_invoice["customer"])
     period_end = utils.convert_tstamp(stripe_invoice, "period_end")
     period_start = utils.convert_tstamp(stripe_invoice, "period_start")
@@ -132,3 +118,73 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
     sync_invoice_items(invoice, stripe_invoice["lines"].get("data", []))
 
     return invoice
+
+
+def sync_invoices_for_customer(customer):
+    """
+    Syncronizes all invoices for a customer
+
+    Args:
+        customer: the customer for whom to syncronize all invoices
+    """
+    for invoice in customer.stripe_customer.invoices().data:
+        sync_invoice_from_stripe_data(invoice, send_receipt=False)
+
+
+def sync_invoice_items(invoice_proxy, items):
+    """
+    Syncronizes all invoice line items for a particular invoice
+
+    This assumes line items from a Stripe invoice.lines property and not through
+    the invoicesitems resource calls. At least according to the documentation
+    the data for an invoice item is slightly different between the two calls.
+
+    For example, going through the invoiceitems resource you don't get a "type"
+    field on the object.
+
+    Args:
+        invoice_proxy: the invoice objects to syncronize
+        items: the data from the Stripe API representing the line items
+    """
+    for item in items:
+        period_end = utils.convert_tstamp(item["period"], "end")
+        period_start = utils.convert_tstamp(item["period"], "start")
+
+        if item.get("plan"):
+            plan = proxies.PlanProxy.objects.get(stripe_id=item["plan"]["id"])
+        else:
+            plan = None
+
+        if item["type"] == "subscription":
+            if invoice_proxy.subscription and invoice_proxy.subscription.stripe_id == item["id"]:
+                item_subscription = invoice_proxy.subscription
+            else:
+                stripe_subscription = subscriptions.retrieve(
+                    invoice_proxy.customer,
+                    item["id"]
+                )
+                item_subscription = subscriptions.sync_subscription_from_stripe_data(
+                    invoice_proxy.customer,
+                    stripe_subscription
+                ) if stripe_subscription else None
+            plan = item_subscription.plan if item_subscription is not None and plan is None else None
+        else:
+            item_subscription = None
+
+        defaults = dict(
+            amount=utils.convert_amount_for_db(item["amount"], item["currency"]),
+            currency=item["currency"],
+            proration=item["proration"],
+            description=item.get("description") or "",
+            line_type=item["type"],
+            plan=plan,
+            period_start=period_start,
+            period_end=period_end,
+            quantity=item.get("quantity"),
+            subscription=item_subscription
+        )
+        inv_item, inv_item_created = invoice_proxy.items.get_or_create(
+            stripe_id=item["id"],
+            defaults=defaults
+        )
+        utils.update_with_defaults(inv_item, defaults, inv_item_created)

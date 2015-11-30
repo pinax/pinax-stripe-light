@@ -1,6 +1,11 @@
 from datetime import timedelta
 
+from django.conf import settings
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
 from django.utils import timezone
+
+from django.contrib.sites.models import Site
 
 from ..hooks import DefaultHookSet
 
@@ -26,3 +31,24 @@ class TestHookSet(DefaultHookSet):
         """
         if plan is not None:
             return timezone.now() + timedelta(days=3)
+
+    def send_receipt(self, charge):
+        if not charge.receipt_sent:
+            site = Site.objects.get_current()
+            protocol = getattr(settings, "DEFAULT_HTTP_PROTOCOL", "http")
+            ctx = {
+                "charge": charge,
+                "site": site,
+                "protocol": protocol,
+            }
+            subject = render_to_string("pinax/stripe/email/subject.txt", ctx)
+            subject = subject.strip()
+            message = render_to_string("pinax/stripe/email/body.txt", ctx)
+            num_sent = EmailMessage(
+                subject,
+                message,
+                to=[charge.customer.user.email],
+                from_email=settings.PINAX_STRIPE_INVOICE_FROM_EMAIL
+            ).send()
+            charge.receipt_sent = num_sent > 0
+            charge.save()

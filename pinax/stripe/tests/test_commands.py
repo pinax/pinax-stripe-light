@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 
 from mock import patch
 
-from ..proxies import CustomerProxy, PlanProxy
+from ..models import Customer, Plan
 
 
 class CommandTests(TestCase):
@@ -29,7 +29,7 @@ class CommandTests(TestCase):
             subscriptions=dict(data=[]),
         )
         management.call_command("init_customers")
-        customer = CustomerProxy.get_for_user(self.user)
+        customer = Customer.objects.get(user=self.user)
         self.assertEquals(customer.stripe_id, "cus_XXXXX")
 
     @patch("stripe.Plan.all")
@@ -45,9 +45,9 @@ class CommandTests(TestCase):
             "name": "Pro"
         }]
         management.call_command("sync_plans")
-        self.assertEquals(PlanProxy.objects.count(), 1)
-        self.assertEquals(PlanProxy.objects.all()[0].stripe_id, "entry-monthly")
-        self.assertEquals(PlanProxy.objects.all()[0].amount, decimal.Decimal("9.54"))
+        self.assertEquals(Plan.objects.count(), 1)
+        self.assertEquals(Plan.objects.all()[0].stripe_id, "entry-monthly")
+        self.assertEquals(Plan.objects.all()[0].amount, decimal.Decimal("9.54"))
 
     @patch("stripe.Customer.retrieve")
     @patch("pinax.stripe.actions.customers.sync_customer")
@@ -56,8 +56,8 @@ class CommandTests(TestCase):
     def test_sync_customers(self, SyncChargesMock, SyncInvoicesMock, SyncMock, RetrieveMock):
         user2 = get_user_model().objects.create_user(username="thomas")
         get_user_model().objects.create_user(username="altman")
-        CustomerProxy.objects.create(stripe_id="cus_XXXXX", user=self.user)
-        CustomerProxy.objects.create(stripe_id="cus_YYYYY", user=user2)
+        Customer.objects.create(stripe_id="cus_XXXXX", user=self.user)
+        Customer.objects.create(stripe_id="cus_YYYYY", user=user2)
         management.call_command("sync_customers")
         self.assertEqual(SyncChargesMock.call_count, 2)
         self.assertEqual(SyncInvoicesMock.call_count, 2)

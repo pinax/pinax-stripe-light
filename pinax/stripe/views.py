@@ -13,11 +13,11 @@ import stripe
 from .actions import events, exceptions, customers, subscriptions, sources
 from .forms import PlanForm
 from .mixins import LoginRequiredMixin, CustomerMixin, PaymentsContextMixin
-from .proxies import InvoiceProxy, CardProxy, SubscriptionProxy
+from .models import Invoice, Card, Subscription
 
 
 class InvoiceListView(LoginRequiredMixin, CustomerMixin, ListView):
-    model = InvoiceProxy
+    model = Invoice
     context_object_name = "invoice_list"
     template_name = "pinax/stripe/invoice_list.html"
 
@@ -26,7 +26,7 @@ class InvoiceListView(LoginRequiredMixin, CustomerMixin, ListView):
 
 
 class PaymentMethodListView(LoginRequiredMixin, CustomerMixin, ListView):
-    model = CardProxy
+    model = Card
     context_object_name = "payment_method_list"
     template_name = "pinax/stripe/paymentmethod_list.html"
 
@@ -35,7 +35,7 @@ class PaymentMethodListView(LoginRequiredMixin, CustomerMixin, ListView):
 
 
 class PaymentMethodCreateView(LoginRequiredMixin, CustomerMixin, PaymentsContextMixin, TemplateView):
-    model = CardProxy
+    model = Card
     template_name = "pinax/stripe/paymentmethod_create.html"
 
     def create_card(self, stripe_token):
@@ -50,7 +50,7 @@ class PaymentMethodCreateView(LoginRequiredMixin, CustomerMixin, PaymentsContext
 
 
 class PaymentMethodDeleteView(LoginRequiredMixin, CustomerMixin, DetailView):
-    model = CardProxy
+    model = Card
     template_name = "pinax/stripe/paymentmethod_delete.html"
 
     def delete_card(self, stripe_id):
@@ -66,7 +66,7 @@ class PaymentMethodDeleteView(LoginRequiredMixin, CustomerMixin, DetailView):
 
 
 class PaymentMethodUpdateView(LoginRequiredMixin, CustomerMixin, PaymentsContextMixin, DetailView):
-    model = CardProxy
+    model = Card
     template_name = "pinax/stripe/paymentmethod_update.html"
 
     def update_card(self, exp_month, exp_year):
@@ -82,7 +82,7 @@ class PaymentMethodUpdateView(LoginRequiredMixin, CustomerMixin, PaymentsContext
 
 
 class SubscriptionListView(LoginRequiredMixin, CustomerMixin, ListView):
-    model = SubscriptionProxy
+    model = Subscription
     context_object_name = "subscription_list"
     template_name = "pinax/stripe/subscription_list.html"
 
@@ -111,7 +111,7 @@ class SubscriptionCreateView(LoginRequiredMixin, PaymentsContextMixin, CustomerM
 
 
 class SubscriptionDeleteView(LoginRequiredMixin, CustomerMixin, DetailView):
-    model = SubscriptionProxy
+    model = Subscription
     template_name = "pinax/stripe/subscription_delete.html"
 
     def cancel(self):
@@ -127,7 +127,7 @@ class SubscriptionDeleteView(LoginRequiredMixin, CustomerMixin, DetailView):
 
 
 class SubscriptionUpdateView(LoginRequiredMixin, CustomerMixin, FormMixin, DetailView):
-    model = SubscriptionProxy
+    model = Subscription
     form_class = PlanForm
     template_name = "pinax/stripe/subscription_update.html"
 

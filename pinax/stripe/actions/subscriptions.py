@@ -7,7 +7,7 @@ from django.utils.encoding import smart_str
 import stripe
 
 from .. import hooks
-from .. import proxies
+from .. import models
 from .. import utils
 
 
@@ -68,11 +68,29 @@ def has_active_subscription(customer):
     Returns:
         True, if there is an active subscription, otherwise False
     """
-    return proxies.SubscriptionProxy.objects.filter(
+    return models.Subscription.objects.filter(
         customer=customer
     ).filter(
         Q(ended_at__isnull=True) | Q(ended_at__gt=timezone.now())
     ).exists()
+
+
+def is_period_current(subscription):
+    return subscription.current_period_end > timezone.now()
+
+
+def is_status_current(subscription):
+    return subscription.status in ["trialing", "active"]
+
+
+def is_valid(subscription):
+    if not is_status_current(subscription):
+        return False
+
+    if subscription.cancel_at_period_end and not is_period_current(subscription):
+        return False
+
+    return True
 
 
 def retrieve(customer, sub_id):
@@ -108,7 +126,7 @@ def sync_subscription_from_stripe_data(customer, subscription):
         subscription: data from the Stripe API representing a subscription
 
     Returns:
-        the pinax.stripe.proxies.SubscriptionProxy object created or updated
+        the pinax.stripe.models.Subscription object created or updated
     """
     defaults = dict(
         customer=customer,
@@ -118,14 +136,14 @@ def sync_subscription_from_stripe_data(customer, subscription):
         current_period_start=utils.convert_tstamp(subscription["current_period_start"]),
         current_period_end=utils.convert_tstamp(subscription["current_period_end"]),
         ended_at=utils.convert_tstamp(subscription["ended_at"]),
-        plan=proxies.PlanProxy.objects.get(stripe_id=subscription["plan"]["id"]),
+        plan=models.Plan.objects.get(stripe_id=subscription["plan"]["id"]),
         quantity=subscription["quantity"],
         start=utils.convert_tstamp(subscription["start"]),
         status=subscription["status"],
         trial_start=utils.convert_tstamp(subscription["trial_start"]) if subscription["trial_start"] else None,
         trial_end=utils.convert_tstamp(subscription["trial_end"]) if subscription["trial_end"] else None
     )
-    sub, created = proxies.SubscriptionProxy.objects.get_or_create(
+    sub, created = models.Subscription.objects.get_or_create(
         stripe_id=subscription["id"],
         defaults=defaults
     )
@@ -155,5 +173,5 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
     if coupon:
         stripe_subscription.coupon = coupon
     sub = stripe_subscription.save()
-    customer = proxies.CustomerProxy.objects.get(pk=subscription.customer.pk)
+    customer = models.Customer.objects.get(pk=subscription.customer.pk)
     sync_subscription_from_stripe_data(customer, sub)

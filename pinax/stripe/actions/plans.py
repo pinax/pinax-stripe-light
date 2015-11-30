@@ -1,7 +1,7 @@
 import stripe
 
 from .. import utils
-from .. import proxies
+from .. import models
 
 
 def sync_plans():
@@ -18,7 +18,7 @@ def sync_plans():
             statement_descriptor=plan["statement_descriptor"] or "",
             trial_period_days=plan["trial_period_days"]
         )
-        obj, created = proxies.PlanProxy.objects.get_or_create(
+        obj, created = models.Plan.objects.get_or_create(
             stripe_id=plan["id"],
             defaults=defaults
         )

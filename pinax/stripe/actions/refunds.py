@@ -18,6 +18,6 @@ def create(charge, amount=None):
     else:
         stripe.Refund.create(
             charge=charge.stripe_id,
-            amount=utils.convert_amount_for_api(charge.calculate_refund_amount(amount=amount), charge.currency)
+            amount=utils.convert_amount_for_api(charges.calculate_refund_amount(charge, amount=amount), charge.currency)
         )
     charges.sync_charge_from_stripe_data(charge.stripe_charge)

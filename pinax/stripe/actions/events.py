@@ -1,4 +1,4 @@
-from .. import proxies
+from .. import models
 from ..webhooks import registry
 
 
@@ -15,7 +15,7 @@ def add_event(stripe_id, kind, livemode, message, api_version="", request_id="",
         request_id: the id of the request that initiated the webhook
         pending_webhooks: the number of pending webhooks
     """
-    event = proxies.EventProxy.objects.create(
+    event = models.Event.objects.create(
         stripe_id=stripe_id,
         kind=kind,
         livemode=livemode,
@@ -40,4 +40,4 @@ def dupe_event_exists(stripe_id):
     Returns:
         True, if the event already exists, otherwise, False
     """
-    return proxies.EventProxy.objects.filter(stripe_id=stripe_id).exists()
+    return models.Event.objects.filter(stripe_id=stripe_id).exists()

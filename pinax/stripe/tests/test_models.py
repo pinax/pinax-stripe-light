@@ -1,8 +1,12 @@
+import datetime
 import decimal
 
 from django.test import TestCase
+from django.utils import timezone
 
-from ..models import Plan, EventProcessingException, Event, Customer, InvoiceItem
+from mock import patch
+
+from ..models import Charge, Customer, Event, EventProcessingException, Invoice, InvoiceItem, Plan, Subscription
 
 
 class ModelTests(TestCase):
@@ -28,3 +32,60 @@ class ModelTests(TestCase):
         p.save()
         i = InvoiceItem(plan=p)
         self.assertEquals(i.plan_display(), "My Plan")
+
+    def test_model_table_name(self):
+        self.assertEquals(Customer()._meta.db_table, "pinax_stripe_customer")
+
+    def test_event_message(self):
+        event = Event(validated_message={"foo": 1})
+        self.assertEquals(event.validated_message, event.message)
+
+    def test_invoice_status(self):
+        self.assertEquals(Invoice(paid=True).status, "Paid")
+
+    def test_invoice_status_not_paid(self):
+        self.assertEquals(Invoice(paid=False).status, "Open")
+
+    def test_subscription_total_amount(self):
+        sub = Subscription(plan=Plan(name="Pro Plan", amount=decimal.Decimal("100")), quantity=2)
+        self.assertEquals(sub.total_amount, decimal.Decimal("200"))
+
+    def test_subscription_plan_display(self):
+        sub = Subscription(plan=Plan(name="Pro Plan"))
+        self.assertEquals(sub.plan_display(), "Pro Plan")
+
+    def test_subscription_status_display(self):
+        sub = Subscription(status="overly_active")
+        self.assertEquals(sub.status_display(), "Overly Active")
+
+    def test_subscription_delete(self):
+        plan = Plan.objects.create(stripe_id="pro2", amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
+        customer = Customer.objects.create(stripe_id="foo")
+        sub = Subscription.objects.create(customer=customer, status="trialing", start=timezone.now(), plan=plan, quantity=1, cancel_at_period_end=True, current_period_end=(timezone.now() - datetime.timedelta(days=2)))
+        sub.delete()
+        self.assertIsNone(sub.status)
+        self.assertEquals(sub.quantity, 0)
+        self.assertEquals(sub.amount, 0)
+
+
+class StripeObjectTests(TestCase):
+
+    @patch("stripe.Charge.retrieve")
+    def test_stripe_charge(self, RetrieveMock):
+        Charge().stripe_charge
+        self.assertTrue(RetrieveMock.called)
+
+    @patch("stripe.Customer.retrieve")
+    def test_stripe_customer(self, RetrieveMock):
+        Customer().stripe_customer
+        self.assertTrue(RetrieveMock.called)
+
+    @patch("stripe.Invoice.retrieve")
+    def test_stripe_invoice(self, RetrieveMock):
+        Invoice().stripe_invoice
+        self.assertTrue(RetrieveMock.called)
+
+    @patch("stripe.Customer.retrieve")
+    def test_stripe_subscription(self, RetrieveMock):
+        Subscription(customer=Customer(stripe_id="foo")).stripe_subscription
+        self.assertTrue(RetrieveMock().subscriptions.retrieve.called)

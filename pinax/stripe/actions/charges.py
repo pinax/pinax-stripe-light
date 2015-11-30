@@ -2,8 +2,16 @@ import decimal
 
 import stripe
 
-from .. import proxies
+from .. import hooks
+from .. import models
 from .. import utils
+
+
+def calculate_refund_amount(charge, amount=None):
+    eligible_to_refund = charge.amount - (charge.amount_refunded or 0)
+    if amount:
+        return min(eligible_to_refund, amount)
+    return eligible_to_refund
 
 
 def capture(charge, amount=None):
@@ -11,7 +19,7 @@ def capture(charge, amount=None):
     Capture the payment of an existing, uncaptured, charge.
 
     Args:
-        charge: a pinax.stripe.proxies.ChargeProxy object
+        charge: a pinax.stripe.models.Charge object
         amount: the decimal.Decimal amount of the charge to capture
     """
     stripe_charge = charge.stripe_charge.capture(
@@ -37,7 +45,7 @@ def create(amount, customer, source=None, currency="usd", description=None, send
         capture: immediately capture the charge instead of doing a pre-authorization
 
     Returns:
-        a pinax.stripe.proxies.ChargeProxy object
+        a pinax.stripe.models.Charge object
     """
     if not isinstance(amount, decimal.Decimal):
         raise ValueError(
@@ -53,7 +61,7 @@ def create(amount, customer, source=None, currency="usd", description=None, send
     )
     charge = sync_charge_from_stripe_data(stripe_charge)
     if send_receipt:
-        charge.send_receipt()
+        hooks.hookset.send_receipt(charge)
     return charge
 
 
@@ -62,7 +70,7 @@ def sync_charges_for_customer(customer):
     Populate database with all the charges for a customer.
 
     Args:
-        customer: a pinax.stripe.proxies.CustomerProxy object
+        customer: a pinax.stripe.models.Customer object
     """
     for charge in customer.stripe_customer.charges().data:
         sync_charge_from_stripe_data(charge)
@@ -76,16 +84,16 @@ def sync_charge_from_stripe_data(data):
         data: the data representing a charge object in the Stripe API
 
     Returns:
-        a pinax.stripe.proxies.ChargeProxy object
+        a pinax.stripe.models.Charge object
     """
-    customer = proxies.CustomerProxy.objects.get(stripe_id=data["customer"])
-    obj, _ = proxies.ChargeProxy.objects.get_or_create(
+    customer = models.Customer.objects.get(stripe_id=data["customer"])
+    obj, _ = models.Charge.objects.get_or_create(
         customer=customer,
         stripe_id=data["id"]
     )
     obj.source = data["source"]["id"]
     obj.currency = data["currency"]
-    obj.invoice = next(iter(proxies.InvoiceProxy.objects.filter(stripe_id=data["invoice"])), None)
+    obj.invoice = next(iter(models.Invoice.objects.filter(stripe_id=data["invoice"])), None)
     obj.amount = utils.convert_amount_for_db(data["amount"], obj.currency)
     obj.paid = data["paid"]
     obj.refunded = data["refunded"]

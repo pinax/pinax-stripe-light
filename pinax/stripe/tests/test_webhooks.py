@@ -13,7 +13,7 @@ import stripe
 from mock import patch
 
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_PENDING_TEST_DATA
-from ..proxies import EventProxy, TransferProxy, EventProcessingExceptionProxy, CustomerProxy
+from ..models import Event, Transfer, EventProcessingException, Customer
 from ..webhooks import registry, AccountUpdatedWebhook, ChargeCapturedWebhook, CustomerUpdatedWebhook, CustomerSourceCreatedWebhook, CustomerSourceDeletedWebhook, CustomerSubscriptionCreatedWebhook, InvoiceCreatedWebhook
 
 
@@ -84,11 +84,11 @@ class WebhookTests(TestCase):
             content_type="application/json"
         )
         self.assertEquals(resp.status_code, 200)
-        self.assertTrue(EventProxy.objects.filter(kind="transfer.created").exists())
+        self.assertTrue(Event.objects.filter(kind="transfer.created").exists())
 
     def test_webhook_duplicate_event(self):
         data = {"id": 123}
-        EventProxy.objects.create(stripe_id=123, livemode=True)
+        Event.objects.create(stripe_id=123, livemode=True)
         msg = json.dumps(data)
         resp = Client().post(
             reverse("pinax_stripe_webhook"),
@@ -96,23 +96,23 @@ class WebhookTests(TestCase):
             content_type="application/json"
         )
         self.assertEquals(resp.status_code, 200)
-        self.assertTrue(EventProcessingExceptionProxy.objects.filter(message="Duplicate event record").exists())
+        self.assertTrue(EventProcessingException.objects.filter(message="Duplicate event record").exists())
 
     def test_webhook_event_mismatch(self):
-        event = EventProxy(kind="account.updated")
+        event = Event(kind="account.updated")
         WH = registry.get("account.application.deauthorized")
         with self.assertRaises(Exception):
             WH(event)
 
     @patch("django.dispatch.Signal.send")
     def test_send_signal(self, SignalSendMock):
-        event = EventProxy(kind="account.updated")
+        event = Event(kind="account.updated")
         WH = registry.get("account.updated")
         WH(event).send_signal()
         self.assertTrue(SignalSendMock.called)
 
     def test_send_signal_not_sent(self):
-        event = EventProxy(kind="account.updated")
+        event = Event(kind="account.updated")
         WH = registry.get("account.updated")
 
         def signal_handler(sender, *args, **kwargs):
@@ -122,19 +122,19 @@ class WebhookTests(TestCase):
         webhook.name = "mismatch name"  # Not sure how this ever happens due to the registry
         webhook.send_signal()
 
-    @patch("pinax.stripe.proxies.EventProxy.link_customer")
+    @patch("pinax.stripe.actions.customers.link_customer")
     @patch("pinax.stripe.webhooks.Webhook.validate")
     @patch("pinax.stripe.webhooks.Webhook.process_webhook")
     def test_process_exception_is_logged(self, ProcessWebhookMock, ValidateMock, LinkMock):
-        event = EventProxy.objects.create(kind="account.updated", webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind="account.updated", webhook_message={}, valid=True, processed=False)
         ProcessWebhookMock.side_effect = stripe.StripeError("Message", "error")
         AccountUpdatedWebhook(event).process()
-        self.assertTrue(EventProcessingExceptionProxy.objects.filter(event=event).exists())
+        self.assertTrue(EventProcessingException.objects.filter(event=event).exists())
 
-    @patch("pinax.stripe.proxies.EventProxy.link_customer")
+    @patch("pinax.stripe.actions.customers.link_customer")
     @patch("pinax.stripe.webhooks.Webhook.validate")
     def test_process_return_none(self, ValidateMock, LinkMock):
-        event = EventProxy.objects.create(kind="account.updated", webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind="account.updated", webhook_message={}, valid=True, processed=False)
         self.assertIsNone(AccountUpdatedWebhook(event).process())
 
 
@@ -143,7 +143,7 @@ class ChargeWebhookTest(TestCase):
     @patch("stripe.Charge.retrieve")
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
     def test_process_webhook(self, SyncMock, RetrieveMock):
-        event = EventProxy.objects.create(kind=ChargeCapturedWebhook.name, webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind=ChargeCapturedWebhook.name, webhook_message={}, valid=True, processed=False)
         event.validated_message = dict(data=dict(object=dict(id=1)))
         ChargeCapturedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
@@ -153,7 +153,7 @@ class CustomerUpdatedWebhookTest(TestCase):
 
     @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook(self, SyncMock):
-        event = EventProxy.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
         CustomerUpdatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
 
@@ -162,7 +162,7 @@ class CustomerSourceCreatedWebhookTest(TestCase):
 
     @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")
     def test_process_webhook(self, SyncMock):
-        event = EventProxy.objects.create(kind=CustomerSourceCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind=CustomerSourceCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
         event.validated_message = dict(data=dict(object=dict()))
         CustomerSourceCreatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
@@ -172,7 +172,7 @@ class CustomerSourceDeletedWebhookTest(TestCase):
 
     @patch("pinax.stripe.actions.sources.delete_card_object")
     def test_process_webhook(self, SyncMock):
-        event = EventProxy.objects.create(kind=CustomerSourceDeletedWebhook.name, webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind=CustomerSourceDeletedWebhook.name, webhook_message={}, valid=True, processed=False)
         event.validated_message = dict(data=dict(object=dict(id=1)))
         CustomerSourceDeletedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
@@ -183,13 +183,13 @@ class CustomerSubscriptionCreatedWebhookTest(TestCase):
     @patch("stripe.Customer.retrieve")
     @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook(self, SyncMock, RetrieveMock):
-        event = EventProxy.objects.create(kind=CustomerSubscriptionCreatedWebhook.name, customer=CustomerProxy.objects.create(), webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind=CustomerSubscriptionCreatedWebhook.name, customer=Customer.objects.create(), webhook_message={}, valid=True, processed=False)
         CustomerSubscriptionCreatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook_no_customer(self, SyncMock):
-        event = EventProxy.objects.create(kind=CustomerSubscriptionCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind=CustomerSubscriptionCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
         CustomerSubscriptionCreatedWebhook(event).process_webhook()
         self.assertFalse(SyncMock.called)
 
@@ -198,7 +198,7 @@ class InvoiceCreatedWebhookTest(TestCase):
 
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
     def test_process_webhook(self, SyncMock):
-        event = EventProxy.objects.create(kind=InvoiceCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind=InvoiceCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
         event.validated_message = dict(data=dict(object=dict(id=1)))
         InvoiceCreatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
@@ -210,7 +210,7 @@ class TestTransferWebhooks(TestCase):
     def test_transfer_created(self, EventMock):
         ev = EventMock()
         ev.to_dict.return_value = TRANSFER_CREATED_TEST_DATA
-        event = EventProxy.objects.create(
+        event = Event.objects.create(
             stripe_id=TRANSFER_CREATED_TEST_DATA["id"],
             kind="transfer.created",
             livemode=True,
@@ -219,7 +219,7 @@ class TestTransferWebhooks(TestCase):
             valid=True
         )
         registry.get(event.kind)(event).process()
-        transfer = TransferProxy.objects.get(stripe_id="tr_XXXXXXXXXXXX")
+        transfer = Transfer.objects.get(stripe_id="tr_XXXXXXXXXXXX")
         self.assertEquals(transfer.amount, decimal.Decimal("4.55"))
         self.assertEquals(transfer.status, "paid")
 
@@ -227,7 +227,7 @@ class TestTransferWebhooks(TestCase):
     def test_transfer_pending_create(self, EventMock):
         ev = EventMock()
         ev.to_dict.return_value = TRANSFER_PENDING_TEST_DATA
-        event = EventProxy.objects.create(
+        event = Event.objects.create(
             stripe_id=TRANSFER_PENDING_TEST_DATA["id"],
             kind="transfer.created",
             livemode=True,
@@ -236,7 +236,7 @@ class TestTransferWebhooks(TestCase):
             valid=True
         )
         registry.get(event.kind)(event).process()
-        transfer = TransferProxy.objects.get(stripe_id="tr_adlkj2l3kj23")
+        transfer = Transfer.objects.get(stripe_id="tr_adlkj2l3kj23")
         self.assertEquals(transfer.amount, decimal.Decimal("9.41"))
         self.assertEquals(transfer.status, "pending")
 
@@ -244,7 +244,7 @@ class TestTransferWebhooks(TestCase):
     def test_transfer_paid_updates_existing_record(self, EventMock):
         ev = EventMock()
         ev.to_dict.return_value = TRANSFER_CREATED_TEST_DATA
-        event = EventProxy.objects.create(
+        event = Event.objects.create(
             stripe_id=TRANSFER_CREATED_TEST_DATA["id"],
             kind="transfer.created",
             livemode=True,
@@ -331,7 +331,7 @@ class TestTransferWebhooks(TestCase):
             "pending_webhooks": 1,
             "type": "transfer.paid"
         }
-        paid_event = EventProxy.objects.create(
+        paid_event = Event.objects.create(
             stripe_id=data["id"],
             kind="transfer.paid",
             livemode=True,
@@ -340,5 +340,5 @@ class TestTransferWebhooks(TestCase):
             valid=True
         )
         registry.get(paid_event.kind)(paid_event).process()
-        transfer = TransferProxy.objects.get(stripe_id="tr_XXXXXXXXXXXX")
+        transfer = Transfer.objects.get(stripe_id="tr_XXXXXXXXXXXX")
         self.assertEquals(transfer.status, "paid")

@@ -5,7 +5,8 @@ from django.contrib.auth import get_user_model
 
 from mock import patch
 
-from ..proxies import CustomerProxy, EventProxy, SubscriptionProxy, PlanProxy
+from ..actions import customers
+from ..models import Customer, Event, Subscription, Plan
 from ..signals import WEBHOOK_SIGNALS
 from ..webhooks import registry
 
@@ -15,7 +16,7 @@ class TestEventMethods(TestCase):
         User = get_user_model()
         self.user = User.objects.create_user(username="testuser")
         self.user.save()
-        self.customer = CustomerProxy.objects.create(
+        self.customer = Customer.objects.create(
             stripe_id="cus_xxxxxxxxxxxxxxx",
             user=self.user
         )
@@ -44,14 +45,14 @@ class TestEventMethods(TestCase):
             "pending_webhooks": 1,
             "type": "customer.created"
         }
-        event = EventProxy.objects.create(
+        event = Event.objects.create(
             stripe_id=msg["id"],
             kind="customer.created",
             livemode=True,
             webhook_message=msg,
             validated_message=msg
         )
-        event.link_customer()
+        customers.link_customer(event)
         self.assertEquals(event.customer, self.customer)
 
     def test_link_customer_customer_updated(self):
@@ -99,14 +100,14 @@ class TestEventMethods(TestCase):
             "pending_webhooks": 1,
             "type": "customer.updated"
         }
-        event = EventProxy.objects.create(
+        event = Event.objects.create(
             stripe_id=msg["id"],
             kind="customer.updated",
             livemode=True,
             webhook_message=msg,
             validated_message=msg
         )
-        event.link_customer()
+        customers.link_customer(event)
         self.assertEquals(event.customer, self.customer)
 
     def test_link_customer_customer_deleted(self):
@@ -133,14 +134,14 @@ class TestEventMethods(TestCase):
             "pending_webhooks": 1,
             "type": "customer.deleted"
         }
-        event = EventProxy.objects.create(
+        event = Event.objects.create(
             stripe_id=msg["id"],
             kind="customer.deleted",
             livemode=True,
             webhook_message=msg,
             validated_message=msg
         )
-        event.link_customer()
+        customers.link_customer(event)
         self.assertEquals(event.customer, self.customer)
 
     @patch("stripe.Event.retrieve")
@@ -171,7 +172,7 @@ class TestEventMethods(TestCase):
             "type": "customer.deleted"
         }
         ev.to_dict.return_value = msg
-        event = EventProxy.objects.create(
+        event = Event.objects.create(
             stripe_id=msg["id"],
             kind="customer.deleted",
             livemode=True,
@@ -185,9 +186,9 @@ class TestEventMethods(TestCase):
 
     @staticmethod
     def send_signal(customer, kind):
-        event = EventProxy(customer=customer, kind=kind)
+        event = Event(customer=customer, kind=kind)
         signal = WEBHOOK_SIGNALS.get(kind)
-        signal.send(sender=EventProxy, event=event)
+        signal.send(sender=Event, event=event)
 
     @staticmethod
     def connect_webhook_signal(kind, func, **kwargs):
@@ -216,7 +217,7 @@ class TestEventMethods(TestCase):
         cm.default_source = ""
         cm.account_balance = 0
         kind = "customer.subscription.deleted"
-        plan = PlanProxy.objects.create(
+        plan = Plan.objects.create(
             stripe_id="p1",
             amount=10,
             currency="usd",
@@ -224,9 +225,9 @@ class TestEventMethods(TestCase):
             interval_count=1,
             name="Pro"
         )
-        cs = SubscriptionProxy(stripe_id="su_2ZDdGxJ3EQQc7Q", customer=self.customer, quantity=1, start=timezone.now(), plan=plan)
+        cs = Subscription(stripe_id="su_2ZDdGxJ3EQQc7Q", customer=self.customer, quantity=1, start=timezone.now(), plan=plan)
         cs.save()
-        customer = CustomerProxy.objects.get(pk=self.customer.pk)
+        customer = Customer.objects.get(pk=self.customer.pk)
 
         # Stripe objects will not have this attribute so we must delete it from the mocked object
         del customer.stripe_customer.subscription
@@ -274,7 +275,7 @@ class TestEventMethods(TestCase):
         ev.to_dict.return_value = msg
 
         # Create a test event for the message
-        test_event = EventProxy.objects.create(
+        test_event = Event.objects.create(
             stripe_id=msg["id"],
             kind=kind,
             livemode=msg["livemode"],

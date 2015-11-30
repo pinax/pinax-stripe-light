@@ -1,4 +1,4 @@
-from .. import proxies
+from .. import models
 from .. import utils
 
 
@@ -28,13 +28,13 @@ def delete_card(customer, source):
 
 def delete_card_object(source):
     """
-    Deletes the local card object (CardProxy)
+    Deletes the local card object (Card)
 
     Args:
         source: the Stripe ID of the card
     """
     if source.startswith("card_"):
-        proxies.CardProxy.objects.filter(stripe_id=source).delete()
+        models.Card.objects.filter(stripe_id=source).delete()
 
 
 def sync_card(customer, source):
@@ -66,7 +66,7 @@ def sync_card(customer, source):
         last4=source["last4"] or "",
         fingerprint=source["fingerprint"] or ""
     )
-    card, created = proxies.CardProxy.objects.get_or_create(
+    card, created = models.Card.objects.get_or_create(
         stripe_id=source["id"],
         defaults=defaults
     )
@@ -99,7 +99,7 @@ def sync_bitcoin(customer, source):
         uncaptured_funds=source["uncaptured_funds"],
         used_for_payment=source["used_for_payment"]
     )
-    receiver, created = proxies.BitcoinRecieverProxy.objects.get_or_create(
+    receiver, created = models.BitcoinReceiver.objects.get_or_create(
         stripe_id=source["id"],
         defaults=defaults
     )

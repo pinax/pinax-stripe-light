@@ -147,9 +147,7 @@ model methods into a service layer in `pinax.stripe.actions`.
 Internally, things like views, management commands, and receivers, all flow
 through the public API defined in the `pinax.stripe.actions` modules.  These
 modules interact with both the Stripe API as well as `pinax-stripe`'s internal
-models. To interface with the models, they work through a set of proxy models
-found in `pinax.stripe.proxies`.  Methods on this proxy models are for internal
-use only and provide a clean separation from the actual models.
+models.
 
 ### Charges
 

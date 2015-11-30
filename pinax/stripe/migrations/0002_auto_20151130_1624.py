@@ -16,12 +16,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='BitcoinReceiver',
             fields=[
-                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(verbose_name='ID', auto_created=True, primary_key=True, serialize=False)),
                 ('stripe_id', models.CharField(max_length=255, unique=True)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('active', models.BooleanField(default=False)),
-                ('amount', models.DecimalField(max_digits=9, decimal_places=2)),
-                ('amount_received', models.DecimalField(max_digits=9, default=Decimal('0'), decimal_places=2)),
+                ('amount', models.DecimalField(decimal_places=2, max_digits=9)),
+                ('amount_received', models.DecimalField(decimal_places=2, default=Decimal('0'), max_digits=9)),
                 ('bitcoin_amount', models.PositiveIntegerField()),
                 ('bitcoin_amount_received', models.PositiveIntegerField(default=0)),
                 ('bitcoin_uri', models.TextField(blank=True)),
@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Card',
             fields=[
-                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(verbose_name='ID', auto_created=True, primary_key=True, serialize=False)),
                 ('stripe_id', models.CharField(max_length=255, unique=True)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('name', models.TextField(blank=True)),
@@ -57,12 +57,12 @@ class Migration(migrations.Migration):
                 ('brand', models.TextField(blank=True)),
                 ('country', models.CharField(max_length=2)),
                 ('cvc_check', models.CharField(max_length=15)),
-                ('dynamic_last4', models.CharField(max_length=4, blank=True)),
-                ('tokenization_method', models.CharField(max_length=15, blank=True)),
+                ('dynamic_last4', models.CharField(blank=True, max_length=4)),
+                ('tokenization_method', models.CharField(blank=True, max_length=15)),
                 ('exp_month', models.IntegerField()),
                 ('exp_year', models.IntegerField()),
                 ('funding', models.CharField(max_length=15)),
-                ('last4', models.CharField(max_length=4, blank=True)),
+                ('last4', models.CharField(blank=True, max_length=4)),
                 ('fingerprint', models.TextField()),
             ],
             options={
@@ -72,10 +72,10 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Plan',
             fields=[
-                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(verbose_name='ID', auto_created=True, primary_key=True, serialize=False)),
                 ('stripe_id', models.CharField(max_length=255, unique=True)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('amount', models.DecimalField(max_digits=9, decimal_places=2)),
+                ('amount', models.DecimalField(decimal_places=2, max_digits=9)),
                 ('currency', models.CharField(max_length=15)),
                 ('interval', models.CharField(max_length=15)),
                 ('interval_count', models.IntegerField()),
@@ -90,20 +90,20 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Subscription',
             fields=[
-                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(verbose_name='ID', auto_created=True, primary_key=True, serialize=False)),
                 ('stripe_id', models.CharField(max_length=255, unique=True)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('application_fee_percent', models.DecimalField(max_digits=3, default=None, decimal_places=2, null=True)),
+                ('application_fee_percent', models.DecimalField(decimal_places=2, default=None, max_digits=3, null=True)),
                 ('cancel_at_period_end', models.BooleanField(default=False)),
-                ('canceled_at', models.DateTimeField(null=True, blank=True)),
-                ('current_period_end', models.DateTimeField(null=True, blank=True)),
-                ('current_period_start', models.DateTimeField(null=True, blank=True)),
-                ('ended_at', models.DateTimeField(null=True, blank=True)),
+                ('canceled_at', models.DateTimeField(blank=True, null=True)),
+                ('current_period_end', models.DateTimeField(blank=True, null=True)),
+                ('current_period_start', models.DateTimeField(blank=True, null=True)),
+                ('ended_at', models.DateTimeField(blank=True, null=True)),
                 ('quantity', models.IntegerField()),
                 ('start', models.DateTimeField()),
                 ('status', models.CharField(max_length=25)),
-                ('trial_end', models.DateTimeField(null=True, blank=True)),
-                ('trial_start', models.DateTimeField(null=True, blank=True)),
+                ('trial_end', models.DateTimeField(blank=True, null=True)),
+                ('trial_start', models.DateTimeField(blank=True, null=True)),
             ],
             options={
                 'abstract': False,
@@ -112,61 +112,6 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name='currentsubscription',
             name='customer',
-        ),
-        migrations.CreateModel(
-            name='ChargeProxy',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-            },
-            bases=('pinax_stripe.charge',),
-        ),
-        migrations.CreateModel(
-            name='CustomerProxy',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-            },
-            bases=('pinax_stripe.customer',),
-        ),
-        migrations.CreateModel(
-            name='EventProcessingExceptionProxy',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-            },
-            bases=('pinax_stripe.eventprocessingexception',),
-        ),
-        migrations.CreateModel(
-            name='EventProxy',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-            },
-            bases=('pinax_stripe.event',),
-        ),
-        migrations.CreateModel(
-            name='InvoiceProxy',
-            fields=[
-            ],
-            options={
-                'ordering': ['-date'],
-                'proxy': True,
-            },
-            bases=('pinax_stripe.invoice',),
-        ),
-        migrations.CreateModel(
-            name='TransferProxy',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-            },
-            bases=('pinax_stripe.transfer',),
         ),
         migrations.AlterModelOptions(
             name='invoice',
@@ -201,6 +146,62 @@ class Migration(migrations.Migration):
             model_name='customer',
             name='card_last_4',
         ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='adjustment_count',
+        ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='adjustment_fees',
+        ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='adjustment_gross',
+        ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='charge_count',
+        ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='charge_fees',
+        ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='charge_gross',
+        ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='collected_fee_count',
+        ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='collected_fee_gross',
+        ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='net',
+        ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='refund_count',
+        ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='refund_fees',
+        ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='refund_gross',
+        ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='validation_count',
+        ),
+        migrations.RemoveField(
+            model_name='transfer',
+            name='validation_fees',
+        ),
         migrations.AddField(
             model_name='charge',
             name='source',
@@ -210,12 +211,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='customer',
             name='account_balance',
-            field=models.DecimalField(max_digits=9, null=True, decimal_places=2),
+            field=models.DecimalField(decimal_places=2, max_digits=9, null=True),
         ),
         migrations.AddField(
             model_name='customer',
             name='currency',
-            field=models.CharField(max_length=10, default='usd', blank=True),
+            field=models.CharField(blank=True, default='usd', max_length=10),
         ),
         migrations.AddField(
             model_name='customer',
@@ -230,7 +231,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='event',
             name='api_version',
-            field=models.CharField(max_length=100, blank=True),
+            field=models.CharField(blank=True, max_length=100),
         ),
         migrations.AddField(
             model_name='event',
@@ -240,12 +241,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='event',
             name='request',
-            field=models.CharField(max_length=100, blank=True),
+            field=models.CharField(blank=True, max_length=100),
         ),
         migrations.AddField(
             model_name='invoice',
             name='amount_due',
-            field=models.DecimalField(max_digits=9, default=0, decimal_places=2),
+            field=models.DecimalField(decimal_places=2, default=0, max_digits=9),
             preserve_default=False,
         ),
         migrations.AddField(
@@ -271,7 +272,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='invoiceitem',
             name='kind',
-            field=models.CharField(max_length=25, blank=True),
+            field=models.CharField(blank=True, max_length=25),
         ),
         migrations.AlterField(
             model_name='charge',
@@ -281,7 +282,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='invoice',
             name='charge',
-            field=models.ForeignKey(null=True, related_name='invoices', to='pinax_stripe.Charge'),
+            field=models.ForeignKey(to='pinax_stripe.Charge', null=True, related_name='invoices'),
         ),
         migrations.AlterField(
             model_name='invoice',
@@ -335,42 +336,6 @@ class Migration(migrations.Migration):
             model_name='bitcoinreceiver',
             name='customer',
             field=models.ForeignKey(to='pinax_stripe.Customer'),
-        ),
-        migrations.CreateModel(
-            name='BitcoinRecieverProxy',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-            },
-            bases=('pinax_stripe.bitcoinreceiver',),
-        ),
-        migrations.CreateModel(
-            name='CardProxy',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-            },
-            bases=('pinax_stripe.card',),
-        ),
-        migrations.CreateModel(
-            name='PlanProxy',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-            },
-            bases=('pinax_stripe.plan',),
-        ),
-        migrations.CreateModel(
-            name='SubscriptionProxy',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-            },
-            bases=('pinax_stripe.subscription',),
         ),
         migrations.AddField(
             model_name='invoice',

@@ -4,9 +4,12 @@ from django.db import models
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
 
+import stripe
+
 from jsonfield.fields import JSONField
 
 from .conf import settings
+from .managers import ChargeManager, CustomerManager
 
 
 class StripeObject(models.Model):
@@ -59,6 +62,10 @@ class Event(StripeObject):
     pending_webhooks = models.PositiveIntegerField(default=0)
     api_version = models.CharField(max_length=100, blank=True)
 
+    @property
+    def message(self):
+        return self.validated_message
+
     def __str__(self):
         return "{} - {}".format(self.kind, self.stripe_id)
 
@@ -95,6 +102,12 @@ class Customer(StripeObject):
     delinquent = models.BooleanField(default=False)
     default_source = models.TextField(blank=True)
     date_purged = models.DateTimeField(null=True, editable=False)
+
+    objects = CustomerManager()
+
+    @property
+    def stripe_customer(self):
+        return stripe.Customer.retrieve(self.stripe_id)
 
     def __str__(self):
         return str(self.user)
@@ -160,6 +173,31 @@ class Subscription(StripeObject):
     trial_end = models.DateTimeField(blank=True, null=True)
     trial_start = models.DateTimeField(blank=True, null=True)
 
+    @property
+    def stripe_subscription(self):
+        return stripe.Customer.retrieve(self.customer.stripe_id).subscriptions.retrieve(self.stripe_id)
+
+    @property
+    def total_amount(self):
+        return self.plan.amount * self.quantity
+
+    def plan_display(self):
+        return self.plan.name
+
+    def status_display(self):
+        return self.status.replace("_", " ").title()
+
+    def delete(self, using=None):
+        """
+        Set values to None while deleting the object so that any lingering
+        references will not show previous values (such as when an Event
+        signal is triggered after a subscription has been deleted)
+        """
+        super(Subscription, self).delete(using=using)
+        self.status = None
+        self.quantity = 0
+        self.amount = 0
+
 
 class Invoice(StripeObject):
 
@@ -181,6 +219,14 @@ class Invoice(StripeObject):
     total = models.DecimalField(decimal_places=2, max_digits=9)
     date = models.DateTimeField()
     webhooks_delivered_at = models.DateTimeField(null=True)
+
+    @property
+    def status(self):
+        return "Paid" if self.paid else "Open"
+
+    @property
+    def stripe_invoice(self):
+        return stripe.Invoice.retrieve(self.stripe_id)
 
 
 class InvoiceItem(models.Model):
@@ -224,3 +270,9 @@ class Charge(StripeObject):
     captured = models.NullBooleanField(null=True)
     receipt_sent = models.BooleanField(default=False)
     charge_created = models.DateTimeField(null=True, blank=True)
+
+    objects = ChargeManager()
+
+    @property
+    def stripe_charge(self):
+        return stripe.Charge.retrieve(self.stripe_id)

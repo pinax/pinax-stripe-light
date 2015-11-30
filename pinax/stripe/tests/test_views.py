@@ -8,7 +8,7 @@ import stripe
 
 from mock import patch
 
-from ..proxies import CardProxy, CustomerProxy, InvoiceProxy, PlanProxy, SubscriptionProxy
+from ..models import Card, Customer, Invoice, Plan, Subscription
 from ..views import PaymentMethodCreateView
 
 
@@ -28,11 +28,11 @@ class InvoiceListViewTests(TestCase):
             password=self.password
         )
         self.user.save()
-        customer = CustomerProxy.objects.create(
+        customer = Customer.objects.create(
             stripe_id="cus_1",
             user=self.user
         )
-        InvoiceProxy.objects.create(
+        Invoice.objects.create(
             stripe_id="inv_001",
             customer=customer,
             amount_due=100,
@@ -42,7 +42,7 @@ class InvoiceListViewTests(TestCase):
             total=100,
             date=timezone.now()
         )
-        InvoiceProxy.objects.create(
+        Invoice.objects.create(
             stripe_id="inv_002",
             customer=customer,
             amount_due=50,
@@ -73,11 +73,11 @@ class PaymentMethodListViewTests(TestCase):
             password=self.password
         )
         self.user.save()
-        customer = CustomerProxy.objects.create(
+        customer = Customer.objects.create(
             stripe_id="cus_1",
             user=self.user
         )
-        CardProxy.objects.create(
+        Card.objects.create(
             stripe_id="card_001",
             customer=customer,
             address_line_1_check="nothing",
@@ -109,7 +109,7 @@ class PaymentMethodCreateViewTests(TestCase):
             password=self.password
         )
         self.user.save()
-        CustomerProxy.objects.create(
+        Customer.objects.create(
             stripe_id="cus_1",
             user=self.user
         )
@@ -145,11 +145,11 @@ class PaymentMethodDeleteViewTests(TestCase):
             password=self.password
         )
         self.user.save()
-        customer = CustomerProxy.objects.create(
+        customer = Customer.objects.create(
             stripe_id="cus_1",
             user=self.user
         )
-        self.card = CardProxy.objects.create(
+        self.card = Card.objects.create(
             stripe_id="card_001",
             customer=customer,
             address_line_1_check="nothing",
@@ -193,11 +193,11 @@ class PaymentMethodUpdateViewTests(TestCase):
             password=self.password
         )
         self.user.save()
-        customer = CustomerProxy.objects.create(
+        customer = Customer.objects.create(
             stripe_id="cus_1",
             user=self.user
         )
-        self.card = CardProxy.objects.create(
+        self.card = Card.objects.create(
             stripe_id="card_001",
             customer=customer,
             address_line_1_check="nothing",
@@ -244,18 +244,18 @@ class SubscriptionListViewTests(TestCase):
             password=self.password
         )
         self.user.save()
-        customer = CustomerProxy.objects.create(
+        customer = Customer.objects.create(
             stripe_id="cus_1",
             user=self.user
         )
-        plan = PlanProxy.objects.create(
+        plan = Plan.objects.create(
             amount=10,
             currency="usd",
             interval="monthly",
             interval_count=1,
             name="Pro"
         )
-        SubscriptionProxy.objects.create(
+        Subscription.objects.create(
             stripe_id="sub_001",
             customer=customer,
             plan=plan,
@@ -283,7 +283,7 @@ class SubscriptionCreateViewTests(TestCase):
             password=self.password
         )
         self.user.save()
-        self.plan = PlanProxy.objects.create(
+        self.plan = Plan.objects.create(
             amount=10,
             currency="usd",
             interval="monthly",
@@ -293,7 +293,7 @@ class SubscriptionCreateViewTests(TestCase):
 
     @patch("pinax.stripe.actions.subscriptions.create")
     def test_post(self, CreateMock):
-        CustomerProxy.objects.create(
+        Customer.objects.create(
             stripe_id="cus_1",
             user=self.user
         )
@@ -323,7 +323,7 @@ class SubscriptionCreateViewTests(TestCase):
 
     @patch("pinax.stripe.actions.sources.create_card")
     def test_post_on_error(self, CreateMock):
-        CustomerProxy.objects.create(
+        Customer.objects.create(
             stripe_id="cus_1",
             user=self.user
         )
@@ -348,18 +348,18 @@ class SubscriptionDeleteViewTests(TestCase):
             password=self.password
         )
         self.user.save()
-        customer = CustomerProxy.objects.create(
+        customer = Customer.objects.create(
             stripe_id="cus_1",
             user=self.user
         )
-        plan = PlanProxy.objects.create(
+        plan = Plan.objects.create(
             amount=10,
             currency="usd",
             interval="monthly",
             interval_count=1,
             name="Pro"
         )
-        self.subscription = SubscriptionProxy.objects.create(
+        self.subscription = Subscription.objects.create(
             stripe_id="sub_001",
             customer=customer,
             plan=plan,
@@ -399,18 +399,18 @@ class SubscriptionUpdateViewTests(TestCase):
             password=self.password
         )
         self.user.save()
-        customer = CustomerProxy.objects.create(
+        customer = Customer.objects.create(
             stripe_id="cus_1",
             user=self.user
         )
-        plan = PlanProxy.objects.create(
+        plan = Plan.objects.create(
             amount=10,
             currency="usd",
             interval="monthly",
             interval_count=1,
             name="Pro"
         )
-        self.subscription = SubscriptionProxy.objects.create(
+        self.subscription = Subscription.objects.create(
             stripe_id="sub_001",
             customer=customer,
             plan=plan,

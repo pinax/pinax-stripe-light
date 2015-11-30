@@ -1,5 +1,14 @@
-from .. import proxies
+import stripe
+
+from .. import models
 from .. import utils
+
+
+def during(year, month):
+    return models.Transfer.objects.filter(
+        date__year=year,
+        date__month=month
+    )
 
 
 def sync_transfer(transfer, event=None):
@@ -18,10 +27,15 @@ def sync_transfer(transfer, event=None):
         "description": transfer.get("description", ""),
         "event": event
     }
-    obj, created = proxies.TransferProxy.objects.get_or_create(
+    obj, created = models.Transfer.objects.get_or_create(
         stripe_id=transfer["id"],
         defaults=defaults
     )
     if not created:
         obj.status = transfer["status"]
         obj.save()
+
+
+def update_status(transfer):
+    transfer.status = stripe.Transfer.retrieve(transfer.stripe_id).status
+    transfer.save()

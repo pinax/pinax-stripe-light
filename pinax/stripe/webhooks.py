@@ -60,40 +60,40 @@ class Registerable(type):
 
 class Webhook(with_metaclass(Registerable, object)):
 
-    def __init__(self, event_proxy):
-        if event_proxy.kind != self.name:
-            raise Exception("The Webhook handler ({}) received the wrong type of Event ({})".format(self.name, event_proxy.kind))
-        self.event_proxy = event_proxy
+    def __init__(self, event):
+        if event.kind != self.name:
+            raise Exception("The Webhook handler ({}) received the wrong type of Event ({})".format(self.name, event.kind))
+        self.event = event
 
     def validate(self):
-        evt = stripe.Event.retrieve(self.event_proxy.stripe_id)
-        self.event_proxy.validated_message = json.loads(
+        evt = stripe.Event.retrieve(self.event.stripe_id)
+        self.event.validated_message = json.loads(
             json.dumps(
                 evt.to_dict(),
                 sort_keys=True,
                 cls=stripe.StripeObjectEncoder
             )
         )
-        self.event_proxy.valid = self.event_proxy.webhook_message["data"] == self.event_proxy.validated_message["data"]
-        self.event_proxy.save()
+        self.event.valid = self.event.webhook_message["data"] == self.event.validated_message["data"]
+        self.event.save()
 
     def send_signal(self):
         signal = registry.get_signal(self.name)
         if signal:
-            return signal.send(sender=self.__class__, event=self.event_proxy)
+            return signal.send(sender=self.__class__, event=self.event)
 
     def process(self):
         self.validate()
-        if not self.event_proxy.valid or self.event_proxy.processed:
+        if not self.event.valid or self.event.processed:
             return
         try:
-            self.event_proxy.link_customer()
+            customers.link_customer(self.event)
             self.process_webhook()
             self.send_signal()
-            self.event_proxy.processed = True
-            self.event_proxy.save()
+            self.event.processed = True
+            self.event.save()
         except stripe.StripeError as e:
-            exceptions.log_exception(data=e.http_body, exception=e, event=self.event_proxy)
+            exceptions.log_exception(data=e.http_body, exception=e, event=self.event)
 
     def process_webhook(self):
         return
@@ -168,7 +168,7 @@ class ChargeWebhook(Webhook):
 
     def process_webhook(self):
         charges.sync_charge_from_stripe_data(
-            stripe.Charge.retrieve(self.event_proxy.message["data"]["object"]["id"])
+            stripe.Charge.retrieve(self.event.message["data"]["object"]["id"])
         )
 
 
@@ -247,7 +247,7 @@ class CustomerDeletedWebhook(Webhook):
     description = "Occurs whenever a customer is deleted."
 
     def process_webhook(self):
-        self.event_proxy.customer.purge()
+        customers.purge(self.event.customer)
 
 
 class CustomerUpdatedWebhook(Webhook):
@@ -255,7 +255,7 @@ class CustomerUpdatedWebhook(Webhook):
     description = "Occurs whenever any property of a customer changes."
 
     def process_webhook(self):
-        customers.sync_customer(self.event_proxy.customer)
+        customers.sync_customer(self.event.customer)
 
 
 class CustomerDiscountCreatedWebhook(Webhook):
@@ -277,8 +277,8 @@ class CustomerSourceWebhook(Webhook):
 
     def process_webhook(self):
         sources.sync_payment_source_from_stripe_data(
-            self.event_proxy.customer,
-            self.event_proxy.validated_message["data"]["object"]
+            self.event.customer,
+            self.event.validated_message["data"]["object"]
         )
 
 
@@ -292,7 +292,7 @@ class CustomerSourceDeletedWebhook(CustomerSourceWebhook):
     description = "Occurs whenever a source is removed from a customer."
 
     def process_webhook(self):
-        sources.delete_card_object(self.event_proxy.validated_message["data"]["object"]["id"])
+        sources.delete_card_object(self.event.validated_message["data"]["object"]["id"])
 
 
 class CustomerSourceUpdatedWebhook(CustomerSourceWebhook):
@@ -303,8 +303,8 @@ class CustomerSourceUpdatedWebhook(CustomerSourceWebhook):
 class CustomerSubscriptionWebhook(Webhook):
 
     def process_webhook(self):
-        if self.event_proxy.customer:
-            customers.sync_customer(self.event_proxy.customer, self.event_proxy.customer.stripe_customer)
+        if self.event.customer:
+            customers.sync_customer(self.event.customer, self.event.customer.stripe_customer)
 
 
 class CustomerSubscriptionCreatedWebhook(CustomerSubscriptionWebhook):
@@ -331,7 +331,7 @@ class InvoiceWebhook(Webhook):
 
     def process_webhook(self):
         invoices.sync_invoice_from_stripe_data(
-            self.event_proxy.validated_message["data"]["object"],
+            self.event.validated_message["data"]["object"],
             send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS
         )
 
@@ -444,7 +444,7 @@ class SKUUpdatedWebhook(Webhook):
 class TransferWebhook(Webhook):
 
     def process_webhook(self):
-        transfers.sync_transfer(self.event_proxy.message["data"]["object"], self.event_proxy)
+        transfers.sync_transfer(self.event.message["data"]["object"], self.event)
 
 
 class TransferCreatedWebhook(TransferWebhook):

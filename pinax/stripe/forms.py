@@ -1,7 +1,7 @@
 from django import forms
 
-from .proxies import PlanProxy
+from .models import Plan
 
 
 class PlanForm(forms.Form):
-    plan = forms.ModelChoiceField(queryset=PlanProxy.objects.all())
+    plan = forms.ModelChoiceField(queryset=Plan.objects.all())

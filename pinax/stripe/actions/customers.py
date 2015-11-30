@@ -1,3 +1,6 @@
+from django.utils import timezone
+from django.utils.encoding import smart_str
+
 import stripe
 
 from . import invoices
@@ -5,8 +8,16 @@ from . import sources
 from . import subscriptions
 from ..conf import settings
 from .. import hooks
-from .. import proxies
+from .. import models
 from .. import utils
+
+
+def can_charge(customer):
+    if customer.date_purged is not None:
+        return False
+    if customer.default_source:
+        return True
+    return False
 
 
 def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True):
@@ -21,7 +32,7 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
                             charged for the subscription
 
     Returns:
-        the pinax.stripe.proxies.CustomerProxy object that was created
+        the pinax.stripe.models.Customer object that was created
     """
     trial_end = hooks.hookset.trial_period(user, plan)
 
@@ -31,7 +42,7 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         plan=plan,
         trial_end=trial_end
     )
-    cus = proxies.CustomerProxy.objects.create(
+    cus = models.Customer.objects.create(
         user=user,
         stripe_id=stripe_customer["id"]
     )
@@ -50,9 +61,45 @@ def get_customer_for_user(user):
         user: a user object
 
     Returns:
-        a pinax.stripe.proxies.CustomerProxy object
+        a pinax.stripe.models.Customer object
     """
-    return proxies.CustomerProxy.get_for_user(user)
+    return next(iter(models.Customer.objects.filter(user=user)), None)
+
+
+def purge(customer):
+    try:
+        customer.stripe_customer.delete()
+    except stripe.InvalidRequestError as e:
+        if smart_str(e).startswith("No such customer:"):
+            # The exception was thrown because the customer was already
+            # deleted on the stripe side, ignore the exception
+            pass
+        else:
+            # The exception was raised for another reason, re-raise it
+            raise
+    customer.user = None
+    customer.date_purged = timezone.now()
+    customer.save()
+
+
+def link_customer(event):
+    cus_id = None
+    customer_crud_events = [
+        "customer.created",
+        "customer.updated",
+        "customer.deleted"
+    ]
+    if event.kind in customer_crud_events:
+        cus_id = event.message["data"]["object"]["id"]
+    else:
+        cus_id = event.message["data"]["object"].get("customer", None)
+
+    if cus_id is not None:
+        try:
+            event.customer = models.Customer.objects.get(stripe_id=cus_id)
+            event.save()
+        except models.Customer.DoesNotExist:
+            pass
 
 
 def set_default_source(customer, source):
@@ -60,7 +107,7 @@ def set_default_source(customer, source):
     Sets the default payment source for a customer
 
     Args:
-        customer: a CustomerProxy object
+        customer: a Customer object
         source: the Stripe ID of the payment source
     """
     stripe_customer = customer.stripe_customer
@@ -71,10 +118,10 @@ def set_default_source(customer, source):
 
 def sync_customer(customer, cu=None):
     """
-    Syncronizes a local CustomerProxy object with details from the Stripe API
+    Syncronizes a local Customer object with details from the Stripe API
 
     Args:
-        customer: a CustomerProxy object
+        customer: a Customer object
         cu: optionally, data from the Stripe API representing the customer
     """
     if cu is None:

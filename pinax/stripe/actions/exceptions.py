@@ -1,4 +1,7 @@
-from .. import proxies
+import sys
+import traceback
+
+from .. import models
 
 
 def log_exception(data, exception, event=None):
@@ -10,4 +13,11 @@ def log_exception(data, exception, event=None):
         exception: the exception object itself
         event: optionally, the event object from which the exception occurred
     """
-    proxies.EventProcessingExceptionProxy.log(data, exception, event)
+    info = sys.exc_info()
+    info_formatted = "".join(traceback.format_exception(*info)) if info[1] is not None else ""
+    models.EventProcessingException.objects.create(
+        event=event,
+        data=data or "",
+        message=str(exception),
+        traceback=info_formatted
+    )

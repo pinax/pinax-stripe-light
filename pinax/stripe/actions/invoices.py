@@ -3,7 +3,8 @@ import stripe
 from . import charges
 from . import subscriptions
 from ..conf import settings
-from .. import proxies
+from .. import hooks
+from .. import models
 from .. import utils
 
 
@@ -12,14 +13,14 @@ def create(customer):
     Creates a Stripe invoice
 
     Args:
-        customer: the customer to create the invoice for (CustomerProxy)
+        customer: the customer to create the invoice for (Customer)
 
     Returns:
         the data from the Stripe API that represents the invoice object that
         was created
 
     TODO:
-        We should go ahead and sync the data so the InvoiceProxy object does
+        We should go ahead and sync the data so the Invoice object does
         not have to wait on the webhook to be received and processed for the
         data to be available locally.
     """
@@ -31,7 +32,7 @@ def create_and_pay(customer):
     Creates and and immediately pays an invoice for a customer
 
     Args:
-        customer: the customer to create the invoice for (CustomerProxy)
+        customer: the customer to create the invoice for (Customer)
 
     Returns:
         True, if invoice was created, False if there was an error
@@ -72,9 +73,9 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         send_receipt: if True, send the receipt as a result of paying
 
     Returns:
-        the pinax.stripe.proxies.InvoiceProxy that was created or updated
+        the pinax.stripe.models.Invoice that was created or updated
     """
-    c = proxies.CustomerProxy.objects.get(stripe_id=stripe_invoice["customer"])
+    c = models.Customer.objects.get(stripe_id=stripe_invoice["customer"])
     period_end = utils.convert_tstamp(stripe_invoice, "period_end")
     period_start = utils.convert_tstamp(stripe_invoice, "period_start")
     date = utils.convert_tstamp(stripe_invoice, "date")
@@ -83,7 +84,7 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
     if stripe_invoice.get("charge"):
         charge = charges.sync_charge_from_stripe_data(stripe.Charge.retrieve(stripe_invoice["charge"]))
         if send_receipt:
-            charge.send_receipt()
+            hooks.hookset.send_receipt(charge)
     else:
         charge = None
 
@@ -106,7 +107,7 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         charge=charge,
         subscription=subscription
     )
-    invoice, created = proxies.InvoiceProxy.objects.get_or_create(
+    invoice, created = models.Invoice.objects.get_or_create(
         stripe_id=stripe_invoice["id"],
         defaults=defaults
     )
@@ -131,7 +132,7 @@ def sync_invoices_for_customer(customer):
         sync_invoice_from_stripe_data(invoice, send_receipt=False)
 
 
-def sync_invoice_items(invoice_proxy, items):
+def sync_invoice_items(invoice, items):
     """
     Syncronizes all invoice line items for a particular invoice
 
@@ -143,7 +144,7 @@ def sync_invoice_items(invoice_proxy, items):
     field on the object.
 
     Args:
-        invoice_proxy: the invoice objects to syncronize
+        invoice_: the invoice objects to syncronize
         items: the data from the Stripe API representing the line items
     """
     for item in items:
@@ -151,20 +152,20 @@ def sync_invoice_items(invoice_proxy, items):
         period_start = utils.convert_tstamp(item["period"], "start")
 
         if item.get("plan"):
-            plan = proxies.PlanProxy.objects.get(stripe_id=item["plan"]["id"])
+            plan = models.Plan.objects.get(stripe_id=item["plan"]["id"])
         else:
             plan = None
 
         if item["type"] == "subscription":
-            if invoice_proxy.subscription and invoice_proxy.subscription.stripe_id == item["id"]:
-                item_subscription = invoice_proxy.subscription
+            if invoice.subscription and invoice.subscription.stripe_id == item["id"]:
+                item_subscription = invoice.subscription
             else:
                 stripe_subscription = subscriptions.retrieve(
-                    invoice_proxy.customer,
+                    invoice.customer,
                     item["id"]
                 )
                 item_subscription = subscriptions.sync_subscription_from_stripe_data(
-                    invoice_proxy.customer,
+                    invoice.customer,
                     stripe_subscription
                 ) if stripe_subscription else None
             plan = item_subscription.plan if item_subscription is not None and plan is None else None
@@ -183,7 +184,7 @@ def sync_invoice_items(invoice_proxy, items):
             quantity=item.get("quantity"),
             subscription=item_subscription
         )
-        inv_item, inv_item_created = invoice_proxy.items.get_or_create(
+        inv_item, inv_item_created = invoice.items.get_or_create(
             stripe_id=item["id"],
             defaults=defaults
         )

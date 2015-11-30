@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 
 from ..hooks import DefaultHookSet
-from ..proxies import ChargeProxy, CustomerProxy
+from ..models import Charge, Customer
 
 
 class HooksTestCase(TestCase):
@@ -16,7 +16,7 @@ class HooksTestCase(TestCase):
             username="patrick",
             email="paltman@eldarion.com"
         )
-        self.customer = CustomerProxy.objects.create(
+        self.customer = Customer.objects.create(
             user=self.user,
             stripe_id="cus_xxxxxxxxxxxxxxx"
         )
@@ -35,7 +35,7 @@ class HooksTestCase(TestCase):
         self.assertIsNone(period)
 
     def test_send_receipt(self):
-        charge = ChargeProxy.objects.create(
+        charge = Charge.objects.create(
             stripe_id="ch_XXXXXX",
             customer=self.customer,
             source="card_01",
@@ -47,10 +47,10 @@ class HooksTestCase(TestCase):
             receipt_sent=False
         )
         self.hookset.send_receipt(charge)
-        self.assertTrue(ChargeProxy.objects.get(pk=charge.pk).receipt_sent)
+        self.assertTrue(Charge.objects.get(pk=charge.pk).receipt_sent)
 
     def test_send_receipt_already_sent(self):
-        charge = ChargeProxy.objects.create(
+        charge = Charge.objects.create(
             stripe_id="ch_XXXXXX",
             customer=self.customer,
             source="card_01",
@@ -62,4 +62,4 @@ class HooksTestCase(TestCase):
             receipt_sent=True
         )
         self.hookset.send_receipt(charge)
-        self.assertTrue(ChargeProxy.objects.get(pk=charge.pk).receipt_sent)
+        self.assertTrue(Charge.objects.get(pk=charge.pk).receipt_sent)

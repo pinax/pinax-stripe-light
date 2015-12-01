@@ -13,6 +13,12 @@ from .. import utils
 
 
 def can_charge(customer):
+    """
+    Can the given customer create a charge
+
+    Args:
+        customer: a pinax.stripe.models.Customer object
+    """
     if customer.date_purged is not None:
         return False
     if customer.default_source:
@@ -67,6 +73,13 @@ def get_customer_for_user(user):
 
 
 def purge(customer):
+    """
+    Deletes the Stripe customer data and purges the linking of the transaction
+    data to the Django user.
+
+    Args:
+        customer: the pinax.stripe.models.Customer object to purge
+    """
     try:
         customer.stripe_customer.delete()
     except stripe.InvalidRequestError as e:
@@ -83,6 +96,12 @@ def purge(customer):
 
 
 def link_customer(event):
+    """
+    Links a customer referenced in a webhook event message to the event object
+
+    Args:
+        event: the pinax.stripe.models.Event object to link
+    """
     cus_id = None
     customer_crud_events = [
         "customer.created",

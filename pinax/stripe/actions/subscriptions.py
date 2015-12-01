@@ -76,14 +76,32 @@ def has_active_subscription(customer):
 
 
 def is_period_current(subscription):
+    """
+    Tests if the provided subscription object for the current period
+
+    Args:
+        subscription: a pinax.stripe.models.Subscription object to test
+    """
     return subscription.current_period_end > timezone.now()
 
 
 def is_status_current(subscription):
+    """
+    Tests if the provided subscription object has a status that means current
+
+    Args:
+        subscription: a pinax.stripe.models.Subscription object to test
+    """
     return subscription.status in ["trialing", "active"]
 
 
 def is_valid(subscription):
+    """
+    Tests if the provided subscription object is valid
+
+    Args:
+        subscription: a pinax.stripe.models.Subscription object to test
+    """
     if not is_status_current(subscription):
         return False
 

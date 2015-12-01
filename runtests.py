@@ -6,6 +6,7 @@ import django
 
 from django.conf import settings
 
+old = django.VERSION < (1, 8)
 
 DEFAULT_SETTINGS = dict(
     DEBUG=True,
@@ -50,12 +51,12 @@ DEFAULT_SETTINGS = dict(
             "debug": True,
             "context_processors": [
                 "django.contrib.auth.context_processors.auth",
-                "django.core.context_processors.debug",
-                "django.core.context_processors.i18n",
-                "django.core.context_processors.media",
-                "django.core.context_processors.static",
-                "django.core.context_processors.tz",
-                "django.core.context_processors.request"
+                "django.{}.context_processors.debug".format("core" if old else "template"),
+                "django.{}.context_processors.i18n".format("core" if old else "template"),
+                "django.{}.context_processors.media".format("core" if old else "template"),
+                "django.{}.context_processors.static".format("core" if old else "template"),
+                "django.{}.context_processors.tz".format("core" if old else "template"),
+                "django.{}.context_processors.request".format("core" if old else "template")
             ],
         },
     }]

@@ -8,6 +8,13 @@ from .. import utils
 
 
 def calculate_refund_amount(charge, amount=None):
+    """
+    Calculates the refund amount given a charge and optional amount.
+
+    Args:
+        charge: a pinax.stripe.models.Charge object
+        amount: optionally, the decimal.Decimal amount you wish to refund
+    """
     eligible_to_refund = charge.amount - (charge.amount_refunded or 0)
     if amount:
         return min(eligible_to_refund, amount)

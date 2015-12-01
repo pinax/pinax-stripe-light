@@ -5,6 +5,14 @@ from .. import utils
 
 
 def during(year, month):
+    """
+    Return a queryset of pinax.stripe.models.Transfer objects for the provided
+    year and month.
+
+    Args:
+        year: 4-digit year
+        month: month as a integer, 1=January through 12=December
+    """
     return models.Transfer.objects.filter(
         date__year=year,
         date__month=month
@@ -37,5 +45,11 @@ def sync_transfer(transfer, event=None):
 
 
 def update_status(transfer):
+    """
+    Updates the status of a pinax.stripe.models.Transfer object from Stripe API
+
+    Args:
+        transfer: a pinax.stripe.models.Transfer object to update
+    """
     transfer.status = stripe.Transfer.retrieve(transfer.stripe_id).status
     transfer.save()

@@ -6,7 +6,7 @@
 [![](https://img.shields.io/pypi/dm/pinax-stripe.svg)](https://pypi.python.org/pypi/pinax-stripe/)
 [![](https://img.shields.io/pypi/v/pinax-stripe.svg)](https://pypi.python.org/pypi/pinax-stripe/)
 [![](https://img.shields.io/badge/license-MIT-blue.svg)](https://pypi.python.org/pypi/pinax-stripe/)
-
+[![](https://readthedocs.org/projects/pinax-stripe/badge/?version=latest)](http://pinax-stripe.readthedocs.org/en/latest/?badge=latest)
 
 This app was formerly called `django-stripe-payments` and has been renamed to
 avoid namespace collisions and to have more consistency with Pinax.

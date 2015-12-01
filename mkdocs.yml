@@ -1,0 +1,27 @@
+site_name: Pinax Stripe
+pages:
+- Home: index.md
+- User Guide:
+    - Getting Started: user-guide/getting-started.md
+    - Software as a Service: user-guide/saas.md
+    - eCommerce: user-guide/ecommerce.md
+- Reference:
+    - Actions: reference/actions.md
+    - Management Commands: reference/commands.md
+    - Templates: reference/templates.md
+    - Settings: reference/settings.md
+    - Forms: reference/forms.md
+    - HookSets: reference/hooksets.md
+    - Managers: reference/managers.md
+    - Middleware: reference/middleware.md
+    - Mixins: reference/mixins.md
+    - Signals: reference/signals.md
+    - URLs: reference/urls.md
+    - Utilities: reference/utils.md
+    - Views: reference/views.md
+    - Webhooks: reference/webhooks.md
+- About:
+    - License: about/license.md
+    - History: about/history.md
+    - Release Notes: about/release-notes.md
+theme: readthedocs

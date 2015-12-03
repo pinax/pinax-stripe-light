@@ -5,20 +5,16 @@ from django.utils import timezone
 
 
 def convert_tstamp(response, field_name=None):
-    try:
-        if field_name and response[field_name]:
-            return datetime.datetime.fromtimestamp(
-                response[field_name],
-                timezone.utc
-            )
-        if response is not None and not field_name:
-            return datetime.datetime.fromtimestamp(
-                response,
-                timezone.utc
-            )
-    except KeyError:
-        pass
-    return None
+    if field_name and response.get(field_name):
+        return datetime.datetime.fromtimestamp(
+            response[field_name],
+            timezone.utc
+        )
+    if response is not None and not field_name:
+        return datetime.datetime.fromtimestamp(
+            response,
+            timezone.utc
+        )
 
 
 # currencies those amount=1 means 100 cents

@@ -20,11 +20,8 @@ def user_search_fields():
     fields = [
         "user__{0}".format(User.USERNAME_FIELD)
     ]
-    try:
-        User._meta.get_field_by_name("email")
+    if "email" in [f.name for f in User._meta.fields]:
         fields += ["user__email"]
-    except FieldDoesNotExist:
-        pass
     return fields
 
 

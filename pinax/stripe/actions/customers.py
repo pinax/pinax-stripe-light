@@ -83,12 +83,9 @@ def purge(customer):
     try:
         customer.stripe_customer.delete()
     except stripe.InvalidRequestError as e:
-        if smart_str(e).startswith("No such customer:"):
+        if not smart_str(e).startswith("No such customer:"):
             # The exception was thrown because the customer was already
             # deleted on the stripe side, ignore the exception
-            pass
-        else:
-            # The exception was raised for another reason, re-raise it
             raise
     customer.user = None
     customer.date_purged = timezone.now()
@@ -114,11 +111,10 @@ def link_customer(event):
         cus_id = event.message["data"]["object"].get("customer", None)
 
     if cus_id is not None:
-        try:
-            event.customer = models.Customer.objects.get(stripe_id=cus_id)
+        customer = next(iter(models.Customer.objects.filter(stripe_id=cus_id)), None)
+        if customer is not None:
+            event.customer = customer
             event.save()
-        except models.Customer.DoesNotExist:
-            pass
 
 
 def set_default_source(customer, source):

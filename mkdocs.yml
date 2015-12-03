@@ -25,3 +25,5 @@ pages:
     - History: about/history.md
     - Release Notes: about/release-notes.md
 theme: readthedocs
+markdown_extensions:
+    - admonition

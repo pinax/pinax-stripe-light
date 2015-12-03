@@ -1,23 +1,53 @@
 # Getting Started
 
+Adding Stripe integration to your Django project can be done in 3 painless
+steps, less if you use the Pinax starter project.
+
+!!! tip "Pinax Starter Project for Stripe"
+
+    If you choose this route, then you can skip the rest of the steps in this
+    guide. After running `pip install pinax-cli` just run
+    `pinax start stripe <project name>` and follow the instructions in the
+    README of the project that is created.
+
+
 ## Installation
 
 To install simply run:
 
     pip install pinax-stripe
 
+
 ## Configuration
 
-In your `settings.py` add `pinax.stripe` to your `INSTALLED_APPS` setting:
+### Settings
+
+There are only three required settings, four if setting up subscriptions, you
+need to configure:
+
+* Installed Apps (`INSTALLED_APPS`)
+* Stripe Keys (`PINAX_STRIPE_PUBLIC_KEY` and `PINAX_STRIPE_PRIVATE_KEY`)
+* Default Plan (`PINAX_STRIPE_DEFAULT_PLAN`)
+
+
+#### Installed Apps
 
     # settings.py
     INSTALLED_APPS += ["pinax.stripe"]
 
 
-Then setup your Stripe keys. It's a good idea not to commit your production
-keys to your source repository as a way of limiting access to who can access
-your Stripe account.  One of doing this is just setting environment variables
-where you deploy your code:
+#### Stripe Keys
+
+Your Stripe keys are want authorize the app to integrate with your Stripe
+account.  You can find your keys the Stripe account panel (see screenshots):
+
+![](images/stripe-menu.png)
+
+![](images/stripe-account-panel.png)
+
+It's a good idea not to commit your production keys to your source repository
+as a way of limiting access to who can access your Stripe account.  One way of
+doing this is setting environment variables where you deploy your code:
 
     # settings.py
     PINAX_STRIPE_PUBLIC_KEY = os.environ.get("STRIPE_PUBLIC_KEY", "your test public key")
@@ -25,16 +55,21 @@ where you deploy your code:
 
 
 This will use the environment variables `STRIPE_PUBLIC_KEY` and
-`STRIPE_SECRET_KEY` if they have been set otherwise what you set in the second
-parameter will be used as default.
+`STRIPE_SECRET_KEY` if they have been set. Otherwise what you set in the second
+parameter will be used.
 
-If you are using `pinax-stripe` in drive something like a Software-as-a-Service
-site with subscriptions, then you will want to also set the Stripe ID for on a
-`PINAX_STRIPE_DEFAULT_PLAN` setting and install middleware. We will cover this
-in more detail in the [SaaS Guide](../user-guide/saas.md).
+#### Default Plan
+
+If you are using `pinax-stripe` for something like a Software-as-a-Service
+site with subscriptions, then you will want to also set the Stripe ID for a
+`PINAX_STRIPE_DEFAULT_PLAN` setting and install middleware. See the
+[SaaS Guide](../user-guide/saas.md) for more details about working with
+subscriptions.
+
+### Urls and Views
 
 If you want to use the [default views](../reference/views.md) that ship with
-`pinax-stripe` you will need to hook up the urls:
+`pinax-stripe` you can simple hook up the urls:
 
     # urls.py
     url(r"^payments/", include("pinax.stripe.urls"),
@@ -44,17 +79,29 @@ However you may only want to hook up some of them or customize some and hook up
 each url individually. Please see the [urls](../reference/urls.md) docs for more
 details.
 
-
 ## Syncing Data
 
-The data in `pinax-stripe` is largely a form of a cache of the data you have
-in your Stripe account.  The one exception to this is the `pinax.stripe.models.Customer` model that links a Stripe Customer to a user in
-your site.
+The data in `pinax-stripe` is a cache of the data you have in your Stripe
+account.  The one exception to this is the `pinax.stripe.models.Customer` model
+that links a Stripe Customer to a user in your site.
+
+!!! note
+
+    The reason for this exception is because of the need to link the Stripe
+    data to users in your application. This is done through a one to one
+    relationship (a `Customer` can only belong to a single `User` and a `User`
+    can only have a single `Customer` reference).
 
 ### Syncing Plans
 
 If you are using subscriptions you'll want to setup your plans in your Stripe
-account and then run:
+account:
+
+![](images/stripe-create-plan.png)
+
+![](images/stripe-create-plan-modal.png)
+
+and then run:
 
     ./manage.py sync_plans
 
@@ -76,12 +123,14 @@ existing users:
 
     ./manage.py init_customers
 
+!!! note "Note"
+
+    This is not required and you may choose to only create customers
+    for users that actually become customers in the event you have a mix of users
+    and customers on your site.
+
 
 ### Syncing Customer Data
-
-Note, however, this is not required and you may choose to only create customers
-for users that actually become customers in the event you have a mix of users
-and customers on your site.
 
 In the event, you need to update the local cache of data for your customers,
 you can run:

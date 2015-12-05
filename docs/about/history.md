@@ -16,4 +16,4 @@ maintenance and testability.
 After nearly 200 commits, 13 merged pull requests, and 45 closed issues,
 `pinax-stripe` was to publish on **December 5, 2015**. Though it's a rename,
 we are kept the same semantic versioning from `django-stripe-payments` making
-this release the `2.0.0` release.
+this release the `3.0.0` release.

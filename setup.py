@@ -59,7 +59,7 @@ setup(
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
-    version="2.0.0",
+    version="3.0.0",
     license="MIT",
     url=URL,
     packages=find_packages(),

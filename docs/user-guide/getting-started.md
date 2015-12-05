@@ -29,6 +29,8 @@ need to configure:
 * Stripe Keys (`PINAX_STRIPE_PUBLIC_KEY` and `PINAX_STRIPE_PRIVATE_KEY`)
 * Default Plan (`PINAX_STRIPE_DEFAULT_PLAN`)
 
+See the [settings and configuration](settings.md) docs for more of what's
+available to customize your integration.
 
 #### Installed Apps
 

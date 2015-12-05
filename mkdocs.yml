@@ -3,6 +3,7 @@ pages:
 - Home: index.md
 - User Guide:
     - Getting Started: user-guide/getting-started.md
+    - Settings & Configuration: user-guide/settings.md
     - Software as a Service: user-guide/saas.md
     - eCommerce: user-guide/ecommerce.md
 - Reference:

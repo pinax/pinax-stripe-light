@@ -11,66 +11,6 @@
 This app was formerly called `django-stripe-payments` and has been renamed to
 avoid namespace collisions and to have more consistency with Pinax.
 
----
-
-## Refactor and Update Plans
-
-***November 27, 2015***
-
-Hope everyone had a great Thanksgiving!  Yesterday marks this project hitting
-100% test coverage. This is a marker that we should now keep. In fact, I'm
-thinking we should make that a standard for pull request acceptance. It's
-strongly encourage that all new code be accompanied by tests that prove that
-it works, but in the very least, coverage should not go down.  We'll give it
-some more thought before formalizing in our contribution guidelines but that's
-where I'm headed currently.
-
-Remaining issues:
-
-* [ ] api review - [#198](https://github.com/pinax/pinax-stripe/issues/198)
-* [ ] writing documentation - lots has changes, drastically, time to throw out the current docs and write a comprehensive set from scratch
-
-
-***November 22, 2015***
-
-Phew! 10 days and almost 100 commits later and milestone is as far as I know
-code complete.  The only remaining tasks are:
-
-* [x] review current test coverage and improve on it if the gaps that are open look critical - now 100%!
-* [x] package up the templates I've been testing with in a new release of [pianx-theme-bootstrap](http://github.com/pinax/pinax-theme-bootstrap) (see [PTB Issue #104](https://github.com/pinax/pinax-theme-bootstrap/issues/104)) - [7.2.0 released](https://pypi.python.org/pypi/pinax-theme-bootstrap)
-* [x] put together a demo starter project. [pinax-projects-stripe](https://github.com/pinax/pinax-starter-projects/tree/stripe) is now in beta
-
-
-***November 12, 2015***
-
-A long time ago we started a [2.0 Milestone](https://github.com/pinax/django-stripe-payments/issues?q=is%3Aopen+is%3Aissue+milestone%3A2.0) then when
-got really busy with other areas of Pinax, our day jobs, and life. Today, we
-getting back into the swing of things starting with merging of the  `long-overdue-updates`
-branch.
-
-These items will be made into issues in the [2.0 Milestone](https://github.com/pinax/django-stripe-payments/issues?q=is%3Aopen+is%3Aissue+milestone%3A2.0).
-
-* [x] address namespace issue with `payments` - [Issue #169](https://github.com/pinax/django-stripe-payments/issues/169)
-* [x] full Python 3 compatibility (DSP should support every Python that Django supports) - [Issue #170](https://github.com/pinax/django-stripe-payments/issues/170)
-* [x] make sure custom user model support is fully in place - [Issue #172](https://github.com/pinax/django-stripe-payments/issues/172)
-* [x] support Django 1.7, 1.8, 1.9 (currently ``master``) - [Issue #171](https://github.com/pinax/django-stripe-payments/issues/171)
-* [x] refactor out ``payments/settings.py`` to ``payments/conf.py`` to support django-appconf or do something with ``payments/apps.py`` - [Issue #179](https://github.com/pinax/django-stripe-payments/issues/179)
-* [x] add hooksets for key points of extensibility - [Issue #180](https://github.com/pinax/django-stripe-payments/issues/180)
-* [x] convert ajax views to CBVs - [Issue #181](https://github.com/pinax/django-stripe-payments/issues/181)
-* [x] add migrations - [Issue #164](https://github.com/pinax/django-stripe-payments/issues/164)
-* [x] update for latest / greatest API compatibility - [Issue #178](https://github.com/pinax/django-stripe-payments/issues/178)
-* [x] add new webhooks - [Issue #182](https://github.com/pinax/django-stripe-payments/issues/182)
-
-Subsequent (shorter) milestones involve adding support for the following Stripe services:
-
-* [ ] ACH - [Issue #173](https://github.com/pinax/django-stripe-payments/issues/173)
-* [ ] Connect - [Issue #174](https://github.com/pinax/django-stripe-payments/issues/174)
-* [ ] File Uploads - [Issue #175](https://github.com/pinax/django-stripe-payments/issues/175)
-* [ ] Bitcoin - [Issue #176](https://github.com/pinax/django-stripe-payments/issues/176)
-* [ ] Alipay - [Issue #177](https://github.com/pinax/django-stripe-payments/issues/177)
-
----
-
 ## Pinax
 
 Pinax is an open-source platform built on the Django Web Framework. It is an ecosystem of reusable Django apps, themes, and starter project templates.
@@ -136,46 +76,6 @@ $ detox
 ```
 
 This will execute the testing matrix in parallel as defined in the `tox.ini`.
-
-
-## API
-
-In order to make this app more maintainable and scale with all the services that
-Stripe is offering, we have refactored this internal API away from being just
-model methods into a service layer in `pinax.stripe.actions`.
-
-Internally, things like views, management commands, and receivers, all flow
-through the public API defined in the `pinax.stripe.actions` modules.  These
-modules interact with both the Stripe API as well as `pinax-stripe`'s internal
-models.
-
-### Charges
-
-* `capture(charge, amount=None)` - Capture the payment of an existing, uncaptured, charge.
-* `create(amount, customer, source=None, currency="usd", description=None, send_receipt=True, capture=True)` - Creates a charge for the given customer.
-* `sync_charges_for_customer(customer)` - Populate database with all the charges for a customer.
-* `sync_charge_from_stripe_data(data)` - Create or update the charge represented by the data from a Stripe API query.
-
-### Customers
-
-
-### Events
-
-
-### Invoices
-
-
-### Refunds
-
-
-### Sources
-
-
-### Subscriptions
-
-
-### Transfers
-
 
 
 ## Documentation

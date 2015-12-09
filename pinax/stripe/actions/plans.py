@@ -15,7 +15,7 @@ def sync_plans():
             interval=plan["interval"],
             interval_count=plan["interval_count"],
             name=plan["name"],
-            statement_descriptor=plan["statement_descriptor"] or "",
+            statement_descriptor=plan["statement_descriptor"],
             trial_period_days=plan["trial_period_days"]
         )
         obj, created = models.Plan.objects.get_or_create(

@@ -15,6 +15,10 @@ class ModelTests(TestCase):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
         self.assertTrue(p.name in str(p))
 
+    def test_plan_statement_descriptor(self):
+        p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
+        self.assertTrue(p.statement_descriptor is None)
+
     def test_event_processing_exception_str(self):
         e = EventProcessingException(data="hello", message="hi there", traceback="fake")
         self.assertTrue("Event=" in str(e))

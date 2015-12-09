@@ -23,7 +23,7 @@ class StripeObject(models.Model):
 
 @python_2_unicode_compatible
 class Plan(StripeObject):
-    amount = models.DecimalField(decimal_places=2, max_digits=9)
+    amount = models.PositiveIntegerField(default=0)
     currency = models.CharField(max_length=15)
     interval = models.CharField(max_length=15)
     interval_count = models.IntegerField()
@@ -72,7 +72,7 @@ class Event(StripeObject):
 
 class Transfer(StripeObject):
     event = models.ForeignKey(Event, related_name="transfers")
-    amount = models.DecimalField(decimal_places=2, max_digits=9)
+    amount = models.IntegerField()
     currency = models.CharField(max_length=25, default="usd")
     status = models.CharField(max_length=25)
     date = models.DateTimeField()
@@ -82,7 +82,7 @@ class Transfer(StripeObject):
 class TransferChargeFee(models.Model):
 
     transfer = models.ForeignKey(Transfer, related_name="charge_fee_details")
-    amount = models.DecimalField(decimal_places=2, max_digits=9)
+    amount = models.IntegerField()
     currency = models.CharField(max_length=10, default="usd")
     application = models.TextField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
@@ -138,7 +138,7 @@ class BitcoinReceiver(StripeObject):
 
     customer = models.ForeignKey(Customer)
     active = models.BooleanField(default=False)
-    amount = models.DecimalField(decimal_places=2, max_digits=9)
+    amount = models.PositiveIntegerField()
     amount_received = models.DecimalField(decimal_places=2, max_digits=9, default=decimal.Decimal("0"))
     bitcoin_amount = models.PositiveIntegerField()  # Satoshi (10^8 Satoshi in one bitcoin)
     bitcoin_amount_received = models.PositiveIntegerField(default=0)
@@ -231,7 +231,7 @@ class InvoiceItem(models.Model):
     stripe_id = models.CharField(max_length=255)
     created_at = models.DateTimeField(default=timezone.now)
     invoice = models.ForeignKey(Invoice, related_name="items")
-    amount = models.DecimalField(decimal_places=2, max_digits=9)
+    amount = models.IntegerField()
     currency = models.CharField(max_length=10, default="usd")
     quantity = models.PositiveIntegerField(null=True)
     kind = models.CharField(max_length=25, blank=True)
@@ -254,11 +254,10 @@ class Charge(StripeObject):
     invoice = models.ForeignKey(Invoice, null=True, related_name="charges")
     source = models.CharField(max_length=100)
     currency = models.CharField(max_length=10, default="usd")
-    amount = models.DecimalField(decimal_places=2, max_digits=9, null=True)
-    amount_refunded = models.DecimalField(
-        decimal_places=2,
-        max_digits=9,
-        null=True
+    amount = models.PositiveIntegerField(default=0, null=True)
+    amount_refunded = models.PositiveIntegerField(
+        default=0,
+        null=True,
     )
     description = models.TextField(blank=True)
     paid = models.NullBooleanField(null=True)

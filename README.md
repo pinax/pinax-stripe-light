@@ -80,6 +80,7 @@ This will execute the testing matrix in parallel as defined in the `tox.ini`.
 
 ## Documentation
 
+The pinax-stripe documentation is available at  http://pinax-stripe.readthedocs.org/en/latest/.
 The Pinax documentation is available at http://pinaxproject.com/pinax/.
 
 

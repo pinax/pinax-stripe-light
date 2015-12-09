@@ -26,7 +26,7 @@ This app was developed as part of the Pinax ecosystem but is just a Django app a
 This app allows you to process one off charges as well as signup users for
 recurring subscriptions managed by Stripe.
 
-To bootstrap your project, we recommend you starts with:
+To bootstrap your project, we recommend you start with:
 https://pinax-stripe.readthedocs.org/en/latest/user-guide/getting-started/
 
 ## Development

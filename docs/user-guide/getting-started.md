@@ -22,7 +22,7 @@ To install simply run:
 
 ### Settings
 
-There are only three required settings, four if setting up subscriptions, you
+There are only three required settings (four if setting up subscriptions) you
 need to configure:
 
 * Installed Apps (`INSTALLED_APPS`)
@@ -40,7 +40,7 @@ available to customize your integration.
 
 #### Stripe Keys
 
-Your Stripe keys are want authorize the app to integrate with your Stripe
+Your Stripe keys are what authorize the app to integrate with your Stripe
 account.  You can find your keys the Stripe account panel (see screenshots):
 
 ![](images/stripe-menu.png)

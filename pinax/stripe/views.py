@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 import stripe
 
 from .actions import events, exceptions, customers, subscriptions, sources
-from .forms import PlanForm
+from .forms import PlanForm, PaymentMethodForm
 from .mixins import LoginRequiredMixin, CustomerMixin, PaymentsContextMixin
 from .models import Invoice, Card, Subscription
 
@@ -65,17 +65,18 @@ class PaymentMethodDeleteView(LoginRequiredMixin, CustomerMixin, DetailView):
             return self.render_to_response(self.get_context_data(errors=smart_str(e)))
 
 
-class PaymentMethodUpdateView(LoginRequiredMixin, CustomerMixin, PaymentsContextMixin, DetailView):
+class PaymentMethodUpdateView(LoginRequiredMixin, CustomerMixin, PaymentsContextMixin, FormMixin, DetailView):
     model = Card
+    form_class = PaymentMethodForm
     template_name = "pinax/stripe/paymentmethod_update.html"
 
     def update_card(self, exp_month, exp_year):
         sources.update_card(self.customer, self.object.stripe_id, exp_month=exp_month, exp_year=exp_year)
 
-    def post(self, request, *args, **kwargs):
+    def form_valid(self, form):
         self.object = self.get_object()
         try:
-            self.update_card(request.POST.get("expMonth"), request.POST.get("expYear"))
+            self.update_card(form.cleaned_data["expMonth"], form.cleaned_data["expYear"])
             return redirect("pinax_stripe_payment_method_list")
         except stripe.CardError as e:
             return self.render_to_response(self.get_context_data(errors=smart_str(e)))

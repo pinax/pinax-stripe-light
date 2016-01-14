@@ -215,7 +215,10 @@ class PaymentMethodUpdateViewTests(TestCase):
         self.client.login(username=self.user.username, password=self.password)
         response = self.client.post(
             reverse("pinax_stripe_payment_method_update", args=[self.card.pk]),
-            {}
+            {
+                "expMonth": 1,
+                "expYear": 2018
+            }
         )
         self.assertEquals(response.status_code, 302)
         self.assertRedirects(response, reverse("pinax_stripe_payment_method_list"))

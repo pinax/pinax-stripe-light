@@ -74,12 +74,19 @@ class PaymentMethodUpdateView(LoginRequiredMixin, CustomerMixin, PaymentsContext
         sources.update_card(self.customer, self.object.stripe_id, exp_month=exp_month, exp_year=exp_year)
 
     def form_valid(self, form):
-        self.object = self.get_object()
         try:
             self.update_card(form.cleaned_data["expMonth"], form.cleaned_data["expYear"])
             return redirect("pinax_stripe_payment_method_list")
         except stripe.CardError as e:
             return self.render_to_response(self.get_context_data(errors=smart_str(e)))
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form(form_class=self.form_class)
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
 
 
 class SubscriptionListView(LoginRequiredMixin, CustomerMixin, ListView):

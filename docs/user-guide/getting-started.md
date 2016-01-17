@@ -71,7 +71,7 @@ subscriptions.
 ### Urls and Views
 
 If you want to use the [default views](../reference/views.md) that ship with
-`pinax-stripe` you can simple hook up the urls:
+`pinax-stripe` you can simply hook up the urls:
 
     # urls.py
     url(r"^payments/", include("pinax.stripe.urls")),

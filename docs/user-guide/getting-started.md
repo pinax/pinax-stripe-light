@@ -36,7 +36,12 @@ available to customize your integration.
 
     # settings.py
     INSTALLED_APPS += ["pinax.stripe"]
+    
+#### Creating the `pinax-stripe` database tables
 
+`pinax-stripe` stores a cache of some Stripe data locally, so you need to run the included migrations to set up the new tables. Just run:
+
+    ./manage.py migrate
 
 #### Stripe Keys
 

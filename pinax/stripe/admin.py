@@ -9,6 +9,7 @@ from .models import (  # @@@ make all these read-only
     EventProcessingException,
     Invoice,
     InvoiceItem,
+    Plan,
     Transfer
 )
 
@@ -244,6 +245,36 @@ admin.site.register(
     inlines=[InvoiceItemInline]
 )
 
+admin.site.register(
+    Plan,
+    list_display=[
+        "stripe_id",
+        "name",
+        "amount",
+        "currency",
+        "interval",
+        "interval_count",
+        "trial_period_days",
+    ],
+    search_fields=[
+        "stripe_id",
+        "name",
+    ],
+    list_filter=[
+        "currency",
+    ],
+    readonly_fields=[
+        "stripe_id",
+        "name",
+        "amount",
+        "currency",
+        "interval",
+        "interval_count",
+        "trial_period_days",
+        "statement_descriptor",
+        "created_at",
+    ],
+)
 
 admin.site.register(
     Transfer,

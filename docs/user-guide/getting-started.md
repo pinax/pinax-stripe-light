@@ -74,7 +74,7 @@ If you want to use the [default views](../reference/views.md) that ship with
 `pinax-stripe` you can simple hook up the urls:
 
     # urls.py
-    url(r"^payments/", include("pinax.stripe.urls"),
+    url(r"^payments/", include("pinax.stripe.urls")),
 
 
 However you may only want to hook up some of them or customize some and hook up

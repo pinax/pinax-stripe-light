@@ -1,6 +1,8 @@
 import datetime
 import decimal
+from unittest import skipIf
 
+import django
 from django.test import TestCase
 from django.utils import timezone
 
@@ -339,7 +341,8 @@ class SourcesTests(TestCase):
     @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")
     def test_create_card(self, SyncMock):
         CustomerMock = Mock()
-        sources.create_card(CustomerMock, token="token")
+        result = sources.create_card(CustomerMock, token="token")
+        self.assertTrue(result is not None)
         self.assertTrue(CustomerMock.stripe_customer.sources.create.called)
         _, kwargs = CustomerMock.stripe_customer.sources.create.call_args
         self.assertEquals(kwargs["source"], "token")
@@ -349,7 +352,8 @@ class SourcesTests(TestCase):
     def test_update_card(self, SyncMock):
         CustomerMock = Mock()
         SourceMock = CustomerMock.stripe_customer.sources.retrieve()
-        sources.update_card(CustomerMock, "")
+        result = sources.update_card(CustomerMock, "")
+        self.assertTrue(result is not None)
         self.assertTrue(CustomerMock.stripe_customer.sources.retrieve.called)
         self.assertTrue(SourceMock.save.called)
         self.assertTrue(SyncMock.called)
@@ -384,9 +388,18 @@ class SourcesTests(TestCase):
         self.assertEquals(SourceMock.exp_year, "My Visa")
         self.assertTrue(SyncMock.called)
 
+    @skipIf(django.VERSION < (1, 9), "Only for django 1.9+")
+    def test_delete_card_dj19(self):
+        CustomerMock = Mock()
+        result = sources.delete_card(CustomerMock, source="card_token")
+        self.assertEqual(result, (0, {'pinax_stripe.Card': 0}))
+        self.assertTrue(CustomerMock.stripe_customer.sources.retrieve().delete.called)
+
+    @skipIf(django.VERSION >= (1, 9), "Only for django before 1.9")
     def test_delete_card(self):
         CustomerMock = Mock()
-        sources.delete_card(CustomerMock, source="token")
+        result = sources.delete_card(CustomerMock, source="card_token")
+        self.assertTrue(result is None)
         self.assertTrue(CustomerMock.stripe_customer.sources.retrieve().delete.called)
 
     def test_delete_card_object(self):

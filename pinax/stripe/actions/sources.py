@@ -11,7 +11,7 @@ def create_card(customer, token):
         token: the token created from Stripe.js
     """
     source = customer.stripe_customer.sources.create(source=token)
-    sync_payment_source_from_stripe_data(customer, source)
+    return sync_payment_source_from_stripe_data(customer, source)
 
 
 def delete_card(customer, source):
@@ -23,7 +23,7 @@ def delete_card(customer, source):
         source: the Stripe ID of the payment source to delete
     """
     customer.stripe_customer.sources.retrieve(source).delete()
-    delete_card_object(source)
+    return delete_card_object(source)
 
 
 def delete_card_object(source):
@@ -34,7 +34,7 @@ def delete_card_object(source):
         source: the Stripe ID of the card
     """
     if source.startswith("card_"):
-        models.Card.objects.filter(stripe_id=source).delete()
+        return models.Card.objects.filter(stripe_id=source).delete()
 
 
 def sync_card(customer, source):
@@ -70,7 +70,7 @@ def sync_card(customer, source):
         stripe_id=source["id"],
         defaults=defaults
     )
-    utils.update_with_defaults(card, defaults, created)
+    return utils.update_with_defaults(card, defaults, created)
 
 
 def sync_bitcoin(customer, source):
@@ -103,7 +103,7 @@ def sync_bitcoin(customer, source):
         stripe_id=source["id"],
         defaults=defaults
     )
-    utils.update_with_defaults(receiver, defaults, created)
+    return utils.update_with_defaults(receiver, defaults, created)
 
 
 def sync_payment_source_from_stripe_data(customer, source):
@@ -115,9 +115,9 @@ def sync_payment_source_from_stripe_data(customer, source):
         source: data reprenting the payment source from the Stripe API
     """
     if source["id"].startswith("card_"):
-        sync_card(customer, source)
+        return sync_card(customer, source)
     else:
-        sync_bitcoin(customer, source)
+        return sync_bitcoin(customer, source)
 
 
 def update_card(customer, source, name=None, exp_month=None, exp_year=None):
@@ -139,4 +139,4 @@ def update_card(customer, source, name=None, exp_month=None, exp_year=None):
     if exp_year is not None:
         stripe_source.exp_year = exp_year
     s = stripe_source.save()
-    sync_payment_source_from_stripe_data(customer, s)
+    return sync_payment_source_from_stripe_data(customer, s)

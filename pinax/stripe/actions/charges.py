@@ -1,5 +1,8 @@
 import decimal
 
+
+from django.conf import settings
+
 import stripe
 
 from .. import hooks
@@ -38,7 +41,7 @@ def capture(charge, amount=None):
     sync_charge_from_stripe_data(stripe_charge)
 
 
-def create(amount, customer, source=None, currency="usd", description=None, send_receipt=True, capture=True):
+def create(amount, customer, source=None, currency="usd", description=None, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True):
     """
     Creates a charge for the given customer.
 

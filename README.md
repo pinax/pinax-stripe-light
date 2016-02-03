@@ -75,6 +75,7 @@ This will execute the testing matrix in parallel as defined in the `tox.ini`.
 
 The pinax-stripe documentation is available at  http://pinax-stripe.readthedocs.org/en/latest/.
 The Pinax documentation is available at http://pinaxproject.com/pinax/.
+We recently did a Pinax Hangout on pinax-stripe, you can read the recap blog post and find the video [here](http://blog.pinaxproject.com/2016/01/27/recap-january-pinax-hangout/).
 
 
 ## Contribute
@@ -88,7 +89,7 @@ We would also highly recommend for your to read our [Open Source and Self-Care b
 
 ## Code of Conduct
 
-In order to foster a kind, inclusive, and harassment-free community, the Pinax Project has a code of conduct, which can be found here http://pinaxproject.com/pinax/code_of_conduct/.
+In order to foster a kind, inclusive, and harassment-free community, the Pinax Project has a code of conduct, which can be found here http://pinaxproject.com/pinax/code_of_conduct/. We'd like to ask you to treat everyone as a smart human programmer that shares an interest in Python, Django, and Pinax with you.
 
 
 ## Pinax Project Blog and Twitter

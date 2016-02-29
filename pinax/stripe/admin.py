@@ -19,8 +19,9 @@ def user_search_fields():
     fields = [
         "user__{0}".format(User.USERNAME_FIELD)
     ]
-    if "email" in [f.name for f in User._meta.fields]:
-        fields += ["user__email"]
+    email_fields = ["user__{0}".format(f.attname)
+            for f in User._meta.fields if "email" in f.name]:
+    fields.extend(email_fields)
     return fields
 
 

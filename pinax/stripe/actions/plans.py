@@ -16,7 +16,8 @@ def sync_plans():
             interval_count=plan["interval_count"],
             name=plan["name"],
             statement_descriptor=plan["statement_descriptor"] or "",
-            trial_period_days=plan["trial_period_days"]
+            trial_period_days=plan["trial_period_days"],
+            meta_data=plan["metadata"]
         )
         obj, created = models.Plan.objects.get_or_create(
             stripe_id=plan["id"],

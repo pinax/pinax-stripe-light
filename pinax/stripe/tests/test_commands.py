@@ -33,7 +33,7 @@ class CommandTests(TestCase):
         self.assertEquals(customer.stripe_id, "cus_XXXXX")
 
     @patch("stripe.Plan.all")
-    @patch("stripe.Plan.auto_paging_iter", side_effect=AttributeError)
+    @patch("stripe.Plan.auto_paging_iter", create=True, side_effect=AttributeError)
     def test_plans_create_deprecated(self, PlanAutoPagerMock, PlanAllMock):
         PlanAllMock().data = [{
             "id": "entry-monthly",
@@ -50,7 +50,7 @@ class CommandTests(TestCase):
         self.assertEquals(Plan.objects.all()[0].stripe_id, "entry-monthly")
         self.assertEquals(Plan.objects.all()[0].amount, decimal.Decimal("9.54"))
 
-    @patch("stripe.Plan.auto_paging_iter")
+    @patch("stripe.Plan.auto_paging_iter", create=True)
     def test_plans_create(self, PlanAutoPagerMock):
         PlanAutoPagerMock.return_value = [{
             "id": "entry-monthly",

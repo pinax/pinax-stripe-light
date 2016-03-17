@@ -642,7 +642,7 @@ class SyncsTests(TestCase):
         )
 
     @patch("stripe.Plan.all")
-    @patch("stripe.Plan.auto_paging_iter", side_effect=AttributeError)
+    @patch("stripe.Plan.auto_paging_iter", create=True, side_effect=AttributeError)
     def test_sync_plans_deprecated(self, PlanAutoPagerMock, PlanAllMock):
         PlanAllMock().data = [
             {
@@ -678,7 +678,7 @@ class SyncsTests(TestCase):
         self.assertTrue(Plan.objects.all().count(), 2)
         self.assertEquals(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
 
-    @patch("stripe.Plan.auto_paging_iter")
+    @patch("stripe.Plan.auto_paging_iter", create=True)
     def test_sync_plans(self, PlanAutoPagerMock):
         PlanAutoPagerMock.return_value = [
             {
@@ -714,7 +714,7 @@ class SyncsTests(TestCase):
         self.assertTrue(Plan.objects.all().count(), 2)
         self.assertEquals(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
 
-    @patch("stripe.Plan.auto_paging_iter")
+    @patch("stripe.Plan.auto_paging_iter", create=True)
     def test_sync_plans_update(self, PlanAutoPagerMock):
         PlanAutoPagerMock.return_value = [
             {

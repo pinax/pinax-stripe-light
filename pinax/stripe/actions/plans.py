@@ -8,7 +8,12 @@ def sync_plans():
     """
     Syncronizes all plans from the Stripe API
     """
-    for plan in stripe.Plan.all().data:
+    try:
+        plans = stripe.Plan.auto_paging_iter()
+    except AttributeError:
+        plans = iter(stripe.Plan.all().data)
+
+    for plan in plans:
         defaults = dict(
             amount=utils.convert_amount_for_db(plan["amount"], plan["currency"]),
             currency=plan["currency"] or "",

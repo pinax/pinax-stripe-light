@@ -642,7 +642,8 @@ class SyncsTests(TestCase):
         )
 
     @patch("stripe.Plan.all")
-    def test_sync_plans(self, PlanAllMock):
+    @patch("stripe.Plan.auto_paging_iter", side_effect=AttributeError)
+    def test_sync_plans_deprecated(self, PlanAutoPagerMock, PlanAllMock):
         PlanAllMock().data = [
             {
                 "id": "pro2",
@@ -677,9 +678,9 @@ class SyncsTests(TestCase):
         self.assertTrue(Plan.objects.all().count(), 2)
         self.assertEquals(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
 
-    @patch("stripe.Plan.all")
-    def test_sync_plans_update(self, PlanAllMock):
-        PlanAllMock().data = [
+    @patch("stripe.Plan.auto_paging_iter")
+    def test_sync_plans(self, PlanAutoPagerMock):
+        PlanAutoPagerMock.return_value = [
             {
                 "id": "pro2",
                 "object": "plan",
@@ -712,7 +713,43 @@ class SyncsTests(TestCase):
         plans.sync_plans()
         self.assertTrue(Plan.objects.all().count(), 2)
         self.assertEquals(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
-        PlanAllMock().data[1].update({"amount": 499})
+
+    @patch("stripe.Plan.auto_paging_iter")
+    def test_sync_plans_update(self, PlanAutoPagerMock):
+        PlanAutoPagerMock.return_value = [
+            {
+                "id": "pro2",
+                "object": "plan",
+                "amount": 1999,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {},
+                "name": "The Pro Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3
+            },
+            {
+                "id": "simple1",
+                "object": "plan",
+                "amount": 999,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {},
+                "name": "The Simple Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3
+            },
+        ]
+        plans.sync_plans()
+        self.assertTrue(Plan.objects.all().count(), 2)
+        self.assertEquals(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
+        PlanAutoPagerMock.return_value[1].update({"amount": 499})
         plans.sync_plans()
         self.assertEquals(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("4.99"))
 

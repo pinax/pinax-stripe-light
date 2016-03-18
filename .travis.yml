@@ -6,22 +6,32 @@ python:
   - "3.4"
   - "3.5"
 env:
-  - DJANGO=1.7
-  - DJANGO=1.8
-  - DJANGO=1.9
-  - DJANGO=master
+  - DJANGO=1.7 STRIPE=127
+  - DJANGO=1.7 STRIPE=128
+  - DJANGO=1.8 STRIPE=127
+  - DJANGO=1.8 STRIPE=128
+  - DJANGO=1.9 STRIPE=127
+  - DJANGO=1.9 STRIPE=128
+  - DJANGO=master STRIPE=127
+  - DJANGO=master STRIPE=128
 matrix:
   exclude:
     - python: "3.3"
-      env: DJANGO=1.9
+      env: DJANGO=1.9 STRIPE=127
     - python: "3.3"
-      env: DJANGO=master
+      env: DJANGO=1.9 STRIPE=128
+    - python: "3.3"
+      env: DJANGO=master STRIPE=127
+    - python: "3.3"
+      env: DJANGO=master STRIPE=128
     - python: "3.5"
-      env: DJANGO=1.7
+      env: DJANGO=1.7 STRIPE=127
+    - python: "3.5"
+      env: DJANGO=1.7 STRIPE=128
 install:
   - pip install tox coveralls
 script:
-  - tox -e py${TRAVIS_PYTHON_VERSION//[.]/}-$DJANGO
+  - tox -e py${TRAVIS_PYTHON_VERSION//[.]/}-$DJANGO-stripe${STRIPE}
 after_success:
   - coveralls
 notifications:

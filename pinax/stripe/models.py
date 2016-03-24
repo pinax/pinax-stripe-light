@@ -124,7 +124,7 @@ class Card(StripeObject):
     address_zip_check = models.CharField(max_length=15)
     brand = models.TextField(blank=True)
     country = models.CharField(max_length=2)
-    cvc_check = models.CharField(max_length=15)
+    cvc_check = models.CharField(max_length=15, blank=True)
     dynamic_last4 = models.CharField(max_length=4, blank=True)
     tokenization_method = models.CharField(max_length=15, blank=True)
     exp_month = models.IntegerField()

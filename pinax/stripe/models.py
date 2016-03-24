@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import decimal
 
 from django.db import models
@@ -10,6 +12,7 @@ from jsonfield.fields import JSONField
 
 from .conf import settings
 from .managers import ChargeManager, CustomerManager
+from .utils import CURRENCY_SYMBOLS
 
 
 class StripeObject(models.Model):
@@ -32,7 +35,7 @@ class Plan(StripeObject):
     trial_period_days = models.IntegerField(null=True)
 
     def __str__(self):
-        return "{} (${})".format(self.name, self.amount)
+        return "{} ({}{})".format(self.name, CURRENCY_SYMBOLS.get(self.currency, ""), self.amount)
 
 
 @python_2_unicode_compatible

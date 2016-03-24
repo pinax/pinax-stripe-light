@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import datetime
 import decimal
 
@@ -43,3 +45,17 @@ def update_with_defaults(obj, defaults, created):
             setattr(obj, key, defaults[key])
         obj.save()
     return obj
+
+
+CURRENCY_SYMBOLS = {
+    "aud": "\u0024",
+    "cad": "\u0024",
+    "chf": "\u0043\u0048\u0046",
+    "cny": "\u00a5",
+    "eur": "\u20ac",
+    "gbp": "\u00a3",
+    "jpy": "\u00a5",
+    "myr": "\u0052\u004d",
+    "sgd": "\u0024",
+    "usd": "\u0024",
+}

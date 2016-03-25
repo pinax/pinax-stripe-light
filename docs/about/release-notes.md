@@ -1,5 +1,43 @@
 # Release Notes
 
+## 3.1.0 - 2016-03-25
+
+Thanks to all the contributors that made this release happen, at least 5 of
+which were first time contributors to `pinax-stripe`!
+
+* [Patrick Altman](https://github.com/paltman/)
+* [Anna Ossowski](https://github.com/ossanna16/)
+* [Nicolas Delaby](https://github.com/ticosax/)
+* [Chris Streeter](https://github.com/streeter/)
+* [Trevor Watson](https://github.com/cfc603/)
+* [Michael Warkentin](https://github.com/mwarkentin/)
+* [Anirudh S](https://github.com/gingerjoos/)
+* [Raphael Deem](https://github.com/r0fls/)
+* [Jannis Gebauer](https://github.com/jayfk/)
+
+### Infrastructure
+
+* dropped support for Python 3.2
+* [PR 221](https://github.com/pinax/pinax-stripe/pull/221) - modernized tox.ini
+
+### Documentation
+
+* [PR 222](https://github.com/pinax/pinax-stripe/pull/222), [PR 226](https://github.com/pinax/pinax-stripe/pull/226), [PR 232](https://github.com/pinax/pinax-stripe/pull/232), [PR 235](https://github.com/pinax/pinax-stripe/pull/235) - various fixes and minor updates
+* [PR 238](https://github.com/pinax/pinax-stripe/pull/238) / [Issue 236](https://github.com/pinax/pinax-stripe/issues/236) - added [migration docs to getting started](../user-guide/getting-started.md)
+* [PR 245](https://github.com/pinax/pinax-stripe/pull/245) - added documentation for [actions](../reference/actions.md)
+* [PR 246](https://github.com/pinax/pinax-stripe/pull/246) - added documentation for [management commands](../reference/commands.md)
+
+### Enhancements
+
+* [Issue 228](https://github.com/pinax/pinax-stripe/issues/228) - added support for other currency symbols in `Plan` string representation
+* [PR 234](https://github.com/pinax/pinax-stripe/pull/234) - added form for validating payment method changes
+* [PR 237](https://github.com/pinax/pinax-stripe/pull/237) - added readonly admin for `Plan`
+* [PR 239](https://github.com/pinax/pinax-stripe/pull/239) - return objects from sources to enable integration with DRF
+* [Issue 240](https://github.com/pinax/pinax-stripe/issues/240) made CVC check value blankable
+* [PR 241](https://github.com/pinax/pinax-stripe/pull/241) provided a way to override default behavior of sending a receipt when creating a charge by setting `PINAX_STRIPE_SEND_EMAIL_RECEIPTS`
+* [PR 248](https://github.com/pinax/pinax-stripe/pull/248) - support more than default plan page size
+
+
 ## 3.0.0 - 2015-12-05
 
 * renamed to `pinax-stripe`

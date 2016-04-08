@@ -3,7 +3,7 @@
 [Pinax](http://pinaxproject.com/pinax/) is an open source ecosystem
 of reusable Django apps, themes, and starter project templates.
 
-As a reusable Django app, `pinax-stripe`, provides the ecosystem with
+As a reusable Django app, `pinax-stripe` provides the ecosystem with
 a well tested, documented, and proven Stripe integration story for
 any site that needs payments.
 

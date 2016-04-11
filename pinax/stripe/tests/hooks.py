@@ -5,8 +5,6 @@ from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.utils import timezone
 
-from django.contrib.sites.models import Site
-
 from ..hooks import DefaultHookSet
 
 
@@ -34,6 +32,8 @@ class TestHookSet(DefaultHookSet):
 
     def send_receipt(self, charge):
         if not charge.receipt_sent:
+            from django.contrib.sites.models import Site
+
             site = Site.objects.get_current()
             protocol = getattr(settings, "DEFAULT_HTTP_PROTOCOL", "http")
             ctx = {

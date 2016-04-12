@@ -89,9 +89,9 @@ We also highly recommend reading our [Open Source and Self-Care blog post](http:
 
 ## Code of Conduct
 
-In order to foster a kind, inclusive, and harassment-free community, the Pinax Project has a code of conduct, which can be found here http://pinaxproject.com/pinax/code_of_conduct/. We ask you to treat everyone as a smart human programmer that shares an interest in Python, Django, and Pinax with you.
+In order to foster a kind, inclusive, and harassment-free community, the Pinax Project has a code of conduct, which can be found [here](http://pinaxproject.com/pinax/code_of_conduct/). We ask you to treat everyone as a smart human programmer that shares an interest in Python, Django, and Pinax with you.
 
 
 ## Pinax Project Blog and Twitter
 
-For updates and news regarding the Pinax Project, please follow us on Twitter at @pinaxproject and check out our blog http://blog.pinaxproject.com.
+For updates and news regarding the Pinax Project, please follow us on Twitter at @pinaxproject and check out our [blog]( http://blog.pinaxproject.com).

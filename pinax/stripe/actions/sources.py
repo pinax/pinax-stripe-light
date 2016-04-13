@@ -57,7 +57,7 @@ def sync_card(customer, source):
         address_zip=source["address_zip"] or "",
         address_zip_check=source["address_zip_check"] or "",
         brand=source["brand"],
-        country=source["country"],
+        country=source["country"] or "",
         cvc_check=source["cvc_check"] or "",
         dynamic_last4=source["dynamic_last4"] or "",
         exp_month=source["exp_month"],

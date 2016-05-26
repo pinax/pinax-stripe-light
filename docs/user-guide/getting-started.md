@@ -26,7 +26,7 @@ There are only three required settings (four if setting up subscriptions) you
 need to configure:
 
 * Installed Apps (`INSTALLED_APPS`)
-* Stripe Keys (`PINAX_STRIPE_PUBLIC_KEY` and `PINAX_STRIPE_PRIVATE_KEY`)
+* Stripe Keys (`PINAX_STRIPE_PUBLIC_KEY` and `PINAX_STRIPE_SECRET_KEY`)
 * Default Plan (`PINAX_STRIPE_DEFAULT_PLAN`)
 
 See the [settings and configuration](settings.md) docs for more of what's

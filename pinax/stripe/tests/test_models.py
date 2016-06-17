@@ -1,5 +1,8 @@
+from __future__ import unicode_literals
+
 import datetime
 import decimal
+import sys
 
 from django.test import TestCase
 from django.utils import timezone
@@ -9,11 +12,26 @@ from mock import patch
 from ..models import Charge, Customer, Event, EventProcessingException, Invoice, InvoiceItem, Plan, Subscription
 
 
+def _str(obj):
+    if sys.version_info < (3, 0):
+        return str(obj).decode("utf-8")
+    else:
+        return str(obj)
+
+
 class ModelTests(TestCase):
 
     def test_plan_str(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
-        self.assertTrue(p.name in str(p))
+        self.assertTrue(p.name in _str(p))
+
+    def test_plan_str_usd(self):
+        p = Plan(amount=decimal.Decimal("5"), name="My Plan", currency="usd", interval="monthly", interval_count=1)
+        self.assertTrue(u"\u0024" in _str(p))
+
+    def test_plan_str_jpy(self):
+        p = Plan(amount=decimal.Decimal("5"), name="My Plan", currency="jpy", interval="monthly", interval_count=1)
+        self.assertTrue(u"\u00a5" in _str(p))
 
     def test_event_processing_exception_str(self):
         e = EventProcessingException(data="hello", message="hi there", traceback="fake")

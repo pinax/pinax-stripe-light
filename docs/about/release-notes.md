@@ -1,5 +1,32 @@
 # Release Notes
 
+## 3.2.0 - 2016-07-28
+
+We continue to have a healthy group of contributors helping to maintain and
+grow `pinax-stripe`.
+
+* [Graham Ullrich](https://github.com/grahamu)
+* [Camden Bickel](https://github.com/camdenb)
+* [Patrick Altman](https://github.com/paltman/)
+* [Anna Ossowski](https://github.com/ossanna16/)
+* [Trevor Watson](https://github.com/cfc603)
+* [Chris Streeter](https://github.com/streeter/)
+
+This is mostly fixes and clean up to some bits of documentation but one
+enhancement of the removal of Sites framework from being a hard requirement. It
+is now optional, though if you are not running Sites framework, you'll want to
+override some of the hooks in the `DefaultHookSet` to handle your specific
+case.
+
+* added a link to our code of conduct
+* added support for wheels in our release packaging
+* updated the classifier to Production/Stable (from Alpha!)
+* [PR 253](https://github.com/pinax/pinax-stripe/pull/253) - fixed a typo
+* [PR 261](https://github.com/pinax/pinax-stripe/pull/261) - fixed a documentation bug
+* [PR 263](https://github.com/pinax/pinax-stripe/pull/263) - fixed documentation bug dealing with installation
+* [PR 256](https://github.com/pinax/pinax-stripe/pull/256) - conditional sites framework import
+
+
 ## 3.1.0 - 2016-03-25
 
 Thanks to all the contributors that made this release happen, at least 5 of

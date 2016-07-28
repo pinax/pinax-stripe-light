@@ -35,7 +35,17 @@ available to customize your integration.
 #### Installed Apps
 
     # settings.py
-    INSTALLED_APPS += ["pinax.stripe"]
+    INSTALLED_APPS = (
+        ...
+        "django.contrib.sites",
+        ...
+        "pinax.stripe",
+    )
+
+#### Set `SITE_ID` for the `Sites` framework
+
+    # settings.py
+    SITE_ID = 1
     
 #### Creating the `pinax-stripe` database tables
 

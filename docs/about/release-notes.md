@@ -1,5 +1,9 @@
 # Release Notes
 
+## 3.2.1 - 2016-07-30
+
+* [PR 266](https://github.com/pinax/pinax-stripe/pull/266) added some docs for webhooks and signals
+
 ## 3.2.0 - 2016-07-28
 
 We continue to have a healthy group of contributors helping to maintain and

@@ -31,7 +31,7 @@ class Plan(StripeObject):
     interval = models.CharField(max_length=15)
     interval_count = models.IntegerField()
     name = models.CharField(max_length=150)
-    statement_descriptor = models.TextField(blank=True)
+    statement_descriptor = models.TextField(blank=True, null=True, default=None)
     trial_period_days = models.IntegerField(null=True)
 
     def __str__(self):

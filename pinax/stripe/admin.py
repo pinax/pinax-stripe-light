@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db.models import Count, Q
 
 from .models import (  # @@@ make all these read-only
     Charge,
@@ -86,10 +86,17 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
         return statuses
 
     def queryset(self, request, queryset):
-        if self.value() is None:
-            return queryset.all()
-        else:
-            return queryset.filter(subscription_set__status=self.value())
+        if self.value() == "no":
+            # Get customers with 0 subscriptions
+            return queryset.annotate(subs=Count('subscription')).filter(subs=0)
+        elif self.value():
+            # Get customer pks without a subscription with this status
+            customers = Subscription.objects.filter(
+                status=self.value()).values_list(
+                'customer_id', flat=True).distinct()
+            # Filter by those customers
+            return queryset.filter(pk__in=customers)
+        return queryset.all()
 
 
 admin.site.register(

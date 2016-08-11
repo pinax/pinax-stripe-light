@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 from .models import (  # @@@ make all these read-only
     Charge,
@@ -42,10 +43,12 @@ class CustomerHasCardListFilter(admin.SimpleListFilter):
         ]
 
     def queryset(self, request, queryset):
+        no_card = Q(card__fingerprint="") | Q(card=None)
         if self.value() == "yes":
-            return queryset.exclude(card__fingerprint="")
-        if self.value() == "no":
-            return queryset.filter(card__fingerprint="")
+            return queryset.exclude(no_card)
+        elif self.value() == "no":
+            return queryset.filter(no_card)
+        return queryset.all()
 
 
 class InvoiceCustomerHasCardListFilter(admin.SimpleListFilter):
@@ -59,10 +62,12 @@ class InvoiceCustomerHasCardListFilter(admin.SimpleListFilter):
         ]
 
     def queryset(self, request, queryset):
+        no_card = Q(customer__card__fingerprint="") | Q(customer__card=None)
         if self.value() == "yes":
-            return queryset.exclude(customer__card__fingerprint="")
-        if self.value() == "no":
-            return queryset.filter(customer__card__fingerprint="")
+            return queryset.exclude(no_card)
+        elif self.value() == "no":
+            return queryset.filter(no_card)
+        return queryset.all()
 
 
 class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):

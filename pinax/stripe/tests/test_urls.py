@@ -1,8 +1,12 @@
+from django.contrib import admin
 from django.conf.urls import url
 from .mock_views import MockView
 from ..urls import urlpatterns
 
 urlpatterns += [
+
+    url(r'^admin/', admin.site.urls),
+
     url(
         r'^the/app/$',
         MockView.as_view(),

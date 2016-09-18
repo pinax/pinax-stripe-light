@@ -6,7 +6,7 @@ import stripe
 
 from six import with_metaclass
 
-from .actions import charges, customers, exceptions, invoices, transfers, sources
+from .actions import charges, customers, exceptions, invoices, transfers, sources, subscriptions
 from .conf import settings
 
 
@@ -303,6 +303,12 @@ class CustomerSourceUpdatedWebhook(CustomerSourceWebhook):
 class CustomerSubscriptionWebhook(Webhook):
 
     def process_webhook(self):
+        if self.event.validated_message:
+            subscriptions.sync_subscription_from_stripe_data(
+                self.event.customer,
+                self.event.validated_message["data"]["object"]
+            )
+
         if self.event.customer:
             customers.sync_customer(self.event.customer, self.event.customer.stripe_customer)
 

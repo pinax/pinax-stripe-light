@@ -20,6 +20,14 @@ class TestEventMethods(TestCase):
             stripe_id="cus_xxxxxxxxxxxxxxx",
             user=self.user
         )
+        self.plan = Plan.objects.create(
+            stripe_id="p1",
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
 
     def test_link_customer_customer_created(self):
         msg = {
@@ -217,14 +225,8 @@ class TestEventMethods(TestCase):
         cm.default_source = ""
         cm.account_balance = 0
         kind = "customer.subscription.deleted"
-        plan = Plan.objects.create(
-            stripe_id="p1",
-            amount=10,
-            currency="usd",
-            interval="monthly",
-            interval_count=1,
-            name="Pro"
-        )
+        plan = self.plan
+
         cs = Subscription(stripe_id="su_2ZDdGxJ3EQQc7Q", customer=self.customer, quantity=1, start=timezone.now(), plan=plan)
         cs.save()
         customer = Customer.objects.get(pk=self.customer.pk)
@@ -247,7 +249,7 @@ class TestEventMethods(TestCase):
                         "name": "xxx",
                         "amount": 200,
                         "currency": "usd",
-                        "id": "xxx",
+                        "id": plan.stripe_id,
                         "object": "plan",
                         "livemode": True,
                         "interval_count": 1,

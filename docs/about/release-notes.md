@@ -2,7 +2,7 @@
 
 ## 3.3.0 - 2016-10-03
 
-This release saw contributions from 6 people!  Here they are in the order of their contributions since the last release:
+This release saw contributions from 6 people!
 
 * [PR 280](https://github.com/pinax/pinax-stripe/pull/280) ([Dan Olsen](https://github.com/danolsen)) - sync subscription on cancel
 * [PR 272](https://github.com/pinax/pinax-stripe/pull/272) ([Tobin Brown](https://github.com/Brobin)) - fix admin filtering for customer admin

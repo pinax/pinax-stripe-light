@@ -44,7 +44,8 @@ class CommandTests(TestCase):
             "currency": None,
             "statement_descriptor": None,
             "trial_period_days": None,
-            "name": "Pro"
+            "name": "Pro",
+            "metadata": {}
         }]
         management.call_command("sync_plans")
         self.assertEquals(Plan.objects.count(), 1)
@@ -61,7 +62,8 @@ class CommandTests(TestCase):
             "currency": None,
             "statement_descriptor": None,
             "trial_period_days": None,
-            "name": "Pro"
+            "name": "Pro",
+            "metadata": {}
         }]
         management.call_command("sync_plans")
         self.assertEquals(Plan.objects.count(), 1)

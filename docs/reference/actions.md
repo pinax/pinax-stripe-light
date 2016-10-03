@@ -349,7 +349,7 @@ Args:
     will be used
 - coupon: if provided, a coupon to apply towards the subscription
 
-Returns: the data representing the subscription object that was created
+Returns: the `pinax.stripe.models.Subscription` object that was created
 
 #### pinax.stripe.actions.subscriptions.has_active_subscription
 

@@ -1,5 +1,16 @@
 # Release Notes
 
+## 3.3.0 - 2016-10-03
+
+This release saw contributions from 6 people!
+
+* [PR 280](https://github.com/pinax/pinax-stripe/pull/280) ([Dan Olsen](https://github.com/danolsen)) - sync subscription on cancel
+* [PR 272](https://github.com/pinax/pinax-stripe/pull/272) ([Tobin Brown](https://github.com/Brobin)) - fix admin filtering for customer admin
+* [PR 252](https://github.com/pinax/pinax-stripe/pull/252) ([Chris Streeter](https://github.com/streeter)) - ignore customers who might be test customers
+* [PR 283](https://github.com/pinax/pinax-stripe/pull/283) ([Nikolai Konovalov](https://github.com/berdoc)) - fix error raised when `USE_TZ=False`
+* [PR 247](https://github.com/pinax/pinax-stripe/pull/247) ([Oli Bates](https://github.com/obates)) - add plan metadata
+* [Issue 284](https://github.com/pinax/pinax-stripe/issues/284) ([Patrick Altman](https://github.com/paltman)) - sync subscription data immediately upon subscribe
+
 ## 3.2.1 - 2016-07-30
 
 * [PR 266](https://github.com/pinax/pinax-stripe/pull/266) added some docs for webhooks and signals

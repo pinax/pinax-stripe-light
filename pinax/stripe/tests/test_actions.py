@@ -578,24 +578,30 @@ class SubscriptionsTests(TestCase):
         self.assertTrue(SyncMock.called)
 
     @patch("stripe.Customer.retrieve")
-    def test_subscription_create(self, CustomerMock):
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
+    def test_subscription_create(self, SyncMock, CustomerMock):
         subscriptions.create(self.customer, "the-plan")
         sub_create = CustomerMock().subscriptions.create
         self.assertTrue(sub_create.called)
+        self.assertTrue(SyncMock.called)
 
     @patch("stripe.Customer.retrieve")
-    def test_subscription_create_with_trial(self, CustomerMock):
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
+    def test_subscription_create_with_trial(self, SyncMock, CustomerMock):
         subscriptions.create(self.customer, "the-plan", trial_days=3)
         sub_create = CustomerMock().subscriptions.create
         self.assertTrue(sub_create.called)
+        self.assertTrue(SyncMock.called)
         _, kwargs = sub_create.call_args
         self.assertEquals(kwargs["trial_end"].date(), (datetime.datetime.utcnow() + datetime.timedelta(days=3)).date())
 
     @patch("stripe.Customer.retrieve")
-    def test_subscription_create_token(self, CustomerMock):
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
+    def test_subscription_create_token(self, SyncMock, CustomerMock):
         sub_create = CustomerMock().subscriptions.create
         subscriptions.create(self.customer, "the-plan", token="token")
         self.assertTrue(sub_create.called)
+        self.assertTrue(SyncMock.called)
         _, kwargs = sub_create.call_args
         self.assertEquals(kwargs["source"], "token")
 

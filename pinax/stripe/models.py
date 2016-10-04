@@ -33,6 +33,7 @@ class Plan(StripeObject):
     name = models.CharField(max_length=150)
     statement_descriptor = models.TextField(blank=True)
     trial_period_days = models.IntegerField(null=True)
+    metadata = JSONField(null=True)
 
     def __str__(self):
         return "{} ({}{})".format(self.name, CURRENCY_SYMBOLS.get(self.currency, ""), self.amount)

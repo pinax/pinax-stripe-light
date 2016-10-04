@@ -55,7 +55,7 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
     subscription_params["coupon"] = coupon
     resp = cu.subscriptions.create(**subscription_params)
 
-    return resp
+    return sync_subscription_from_stripe_data(customer, resp)
 
 
 def has_active_subscription(customer):

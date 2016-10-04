@@ -4,18 +4,21 @@ import datetime
 import decimal
 
 from django.utils import timezone
+from django.conf import settings
 
 
 def convert_tstamp(response, field_name=None):
+    tz = timezone.utc if settings.USE_TZ else None
+
     if field_name and response.get(field_name):
         return datetime.datetime.fromtimestamp(
             response[field_name],
-            timezone.utc
+            tz
         )
     if response is not None and not field_name:
         return datetime.datetime.fromtimestamp(
             response,
-            timezone.utc
+            tz
         )
 
 

@@ -26,7 +26,7 @@ There are only three required settings (four if setting up subscriptions) you
 need to configure:
 
 * Installed Apps (`INSTALLED_APPS`)
-* Stripe Keys (`PINAX_STRIPE_PUBLIC_KEY` and `PINAX_STRIPE_PRIVATE_KEY`)
+* Stripe Keys (`PINAX_STRIPE_PUBLIC_KEY` and `PINAX_STRIPE_SECRET_KEY`)
 * Default Plan (`PINAX_STRIPE_DEFAULT_PLAN`)
 
 See the [settings and configuration](settings.md) docs for more of what's
@@ -34,9 +34,23 @@ available to customize your integration.
 
 #### Installed Apps
 
-    # settings.py
-    INSTALLED_APPS += ["pinax.stripe"]
-    
+```python
+# settings.py
+INSTALLED_APPS = (
+    ...
+    "django.contrib.sites",
+    ...
+    "pinax.stripe",
+)
+```
+
+#### Set `SITE_ID` for the `Sites` framework
+
+```python
+# settings.py
+SITE_ID = 1
+```
+
 #### Creating the `pinax-stripe` database tables
 
 `pinax-stripe` stores a cache of some Stripe data locally, so you need to run the included migrations to set up the new tables. Just run:
@@ -56,10 +70,11 @@ It's a good idea not to commit your production keys to your source repository
 as a way of limiting access to who can access your Stripe account.  One way of
 doing this is setting environment variables where you deploy your code:
 
-    # settings.py
-    PINAX_STRIPE_PUBLIC_KEY = os.environ.get("STRIPE_PUBLIC_KEY", "your test public key")
-    PINAX_STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "your test secret key")
-
+```python
+# settings.py
+PINAX_STRIPE_PUBLIC_KEY = os.environ.get("STRIPE_PUBLIC_KEY", "your test public key")
+PINAX_STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "your test secret key")
+```
 
 This will use the environment variables `STRIPE_PUBLIC_KEY` and
 `STRIPE_SECRET_KEY` if they have been set. Otherwise what you set in the second
@@ -78,9 +93,10 @@ subscriptions.
 If you want to use the [default views](../reference/views.md) that ship with
 `pinax-stripe` you can simply hook up the urls:
 
-    # urls.py
-    url(r"^payments/", include("pinax.stripe.urls")),
-
+```python
+# urls.py
+url(r"^payments/", include("pinax.stripe.urls")),
+```
 
 However you may only want to hook up some of them or customize some and hook up
 each url individually. Please see the [urls](../reference/urls.md) docs for more
@@ -122,8 +138,10 @@ site, you'll want to do two things:
 First setup, handle new users being created in your site either in a sign up
 view, a signal receiver, etc., to run:
 
-    from pinax.stripe.actions import customers
-    customers.create(user=new_user)
+```python
+from pinax.stripe.actions import customers
+customers.create(user=new_user)
+```
 
 Then, to update your Stripe account after your initial deploy of a site with
 existing users:

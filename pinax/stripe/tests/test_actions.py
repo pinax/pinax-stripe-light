@@ -819,6 +819,36 @@ class SyncsTests(TestCase):
         sources.sync_payment_source_from_stripe_data(self.customer, source)
         self.assertEquals(Card.objects.get(stripe_id=source["id"]).cvc_check, "")
 
+    def test_sync_payment_source_from_stripe_data_card_blank_country(self):
+        source = {
+            "id": "card_17AMEBI10iPhvocM1LnJ0dBc",
+            "object": "card",
+            "address_city": None,
+            "address_country": None,
+            "address_line1": None,
+            "address_line1_check": None,
+            "address_line2": None,
+            "address_state": None,
+            "address_zip": None,
+            "address_zip_check": None,
+            "brand": "MasterCard",
+            "country": None,
+            "customer": "cus_7PAYYALEwPuDJE",
+            "cvc_check": "pass",
+            "dynamic_last4": None,
+            "exp_month": 10,
+            "exp_year": 2018,
+            "funding": "credit",
+            "last4": "4444",
+            "metadata": {
+            },
+            "name": None,
+            "tokenization_method": None,
+            "fingerprint": "xyz"
+        }
+        sources.sync_payment_source_from_stripe_data(self.customer, source)
+        self.assertEquals(Card.objects.get(stripe_id=source["id"]).country, "")
+
     def test_sync_payment_source_from_stripe_data_card_updated(self):
         source = {
             "id": "card_17AMEBI10iPhvocM1LnJ0dBc",

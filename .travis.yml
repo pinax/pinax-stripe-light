@@ -12,6 +12,8 @@ env:
   - DJANGO=1.8 STRIPE=128
   - DJANGO=1.9 STRIPE=127
   - DJANGO=1.9 STRIPE=128
+  - DJANGO=1.10 STRIPE=127
+  - DJANGO=1.10 STRIPE=128
   - DJANGO=master STRIPE=127
   - DJANGO=master STRIPE=128
 matrix:
@@ -20,6 +22,10 @@ matrix:
       env: DJANGO=1.9 STRIPE=127
     - python: "3.3"
       env: DJANGO=1.9 STRIPE=128
+    - python: "3.3"
+      env: DJANGO=1.10 STRIPE=127
+    - python: "3.3"
+      env: DJANGO=1.10 STRIPE=128
     - python: "3.3"
       env: DJANGO=master STRIPE=127
     - python: "3.3"

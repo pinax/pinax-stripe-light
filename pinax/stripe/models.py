@@ -42,7 +42,7 @@ class Plan(StripeObject):
 @python_2_unicode_compatible
 class EventProcessingException(models.Model):
 
-    event = models.ForeignKey("Event", null=True)
+    event = models.ForeignKey("Event", null=True, on_delete=models.CASCADE)
     data = models.TextField()
     message = models.CharField(max_length=500)
     traceback = models.TextField()
@@ -57,7 +57,7 @@ class Event(StripeObject):
 
     kind = models.CharField(max_length=250)
     livemode = models.BooleanField(default=False)
-    customer = models.ForeignKey("Customer", null=True)
+    customer = models.ForeignKey("Customer", null=True, on_delete=models.CASCADE)
     webhook_message = JSONField()
     validated_message = JSONField(null=True)
     valid = models.NullBooleanField(null=True)
@@ -75,7 +75,7 @@ class Event(StripeObject):
 
 
 class Transfer(StripeObject):
-    event = models.ForeignKey(Event, related_name="transfers")
+    event = models.ForeignKey(Event, related_name="transfers", on_delete=models.CASCADE)
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=25, default="usd")
     status = models.CharField(max_length=25)
@@ -85,7 +85,7 @@ class Transfer(StripeObject):
 
 class TransferChargeFee(models.Model):
 
-    transfer = models.ForeignKey(Transfer, related_name="charge_fee_details")
+    transfer = models.ForeignKey(Transfer, related_name="charge_fee_details", on_delete=models.CASCADE)
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=10, default="usd")
     application = models.TextField(null=True, blank=True)
@@ -97,7 +97,7 @@ class TransferChargeFee(models.Model):
 @python_2_unicode_compatible
 class Customer(StripeObject):
 
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
     account_balance = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     currency = models.CharField(max_length=10, default="usd", blank=True)
     delinquent = models.BooleanField(default=False)
@@ -116,7 +116,7 @@ class Customer(StripeObject):
 
 class Card(StripeObject):
 
-    customer = models.ForeignKey(Customer)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     name = models.TextField(blank=True)
     address_line_1 = models.TextField(blank=True)
     address_line_1_check = models.CharField(max_length=15)
@@ -140,7 +140,7 @@ class Card(StripeObject):
 
 class BitcoinReceiver(StripeObject):
 
-    customer = models.ForeignKey(Customer)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     active = models.BooleanField(default=False)
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     amount_received = models.DecimalField(decimal_places=2, max_digits=9, default=decimal.Decimal("0"))
@@ -160,14 +160,14 @@ class BitcoinReceiver(StripeObject):
 
 class Subscription(StripeObject):
 
-    customer = models.ForeignKey(Customer)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     application_fee_percent = models.DecimalField(decimal_places=2, max_digits=3, default=None, null=True)
     cancel_at_period_end = models.BooleanField(default=False)
     canceled_at = models.DateTimeField(blank=True, null=True)
     current_period_end = models.DateTimeField(blank=True, null=True)
     current_period_start = models.DateTimeField(blank=True, null=True)
     ended_at = models.DateTimeField(blank=True, null=True)
-    plan = models.ForeignKey(Plan)
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     start = models.DateTimeField()
     status = models.CharField(max_length=25)  # trialing, active, past_due, canceled, or unpaid
@@ -202,12 +202,12 @@ class Subscription(StripeObject):
 
 class Invoice(StripeObject):
 
-    customer = models.ForeignKey(Customer, related_name="invoices")
+    customer = models.ForeignKey(Customer, related_name="invoices", on_delete=models.CASCADE)
     amount_due = models.DecimalField(decimal_places=2, max_digits=9)
     attempted = models.NullBooleanField()
     attempt_count = models.PositiveIntegerField(null=True)
-    charge = models.ForeignKey("Charge", null=True, related_name="invoices")
-    subscription = models.ForeignKey(Subscription, null=True)
+    charge = models.ForeignKey("Charge", null=True, related_name="invoices", on_delete=models.CASCADE)
+    subscription = models.ForeignKey(Subscription, null=True, on_delete=models.CASCADE)
     statement_descriptor = models.TextField(blank=True)
     currency = models.CharField(max_length=10, default="usd")
     closed = models.BooleanField(default=False)
@@ -234,18 +234,18 @@ class InvoiceItem(models.Model):
 
     stripe_id = models.CharField(max_length=255)
     created_at = models.DateTimeField(default=timezone.now)
-    invoice = models.ForeignKey(Invoice, related_name="items")
+    invoice = models.ForeignKey(Invoice, related_name="items", on_delete=models.CASCADE)
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=10, default="usd")
     quantity = models.PositiveIntegerField(null=True)
     kind = models.CharField(max_length=25, blank=True)
-    subscription = models.ForeignKey(Subscription, null=True)
+    subscription = models.ForeignKey(Subscription, null=True, on_delete=models.CASCADE)
     period_start = models.DateTimeField()
     period_end = models.DateTimeField()
     proration = models.BooleanField(default=False)
     line_type = models.CharField(max_length=50)
     description = models.CharField(max_length=200, blank=True)
-    plan = models.ForeignKey(Plan, null=True)
+    plan = models.ForeignKey(Plan, null=True, on_delete=models.CASCADE)
     quantity = models.IntegerField(null=True)
 
     def plan_display(self):
@@ -254,8 +254,8 @@ class InvoiceItem(models.Model):
 
 class Charge(StripeObject):
 
-    customer = models.ForeignKey(Customer, related_name="charges")
-    invoice = models.ForeignKey(Invoice, null=True, related_name="charges")
+    customer = models.ForeignKey(Customer, related_name="charges", on_delete=models.CASCADE)
+    invoice = models.ForeignKey(Invoice, null=True, related_name="charges", on_delete=models.CASCADE)
     source = models.CharField(max_length=100)
     currency = models.CharField(max_length=10, default="usd")
     amount = models.DecimalField(decimal_places=2, max_digits=9, null=True)

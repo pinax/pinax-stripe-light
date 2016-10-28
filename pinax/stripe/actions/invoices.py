@@ -116,7 +116,10 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         charge.save()
 
     invoice = utils.update_with_defaults(invoice, defaults, created)
-    sync_invoice_items(invoice, stripe_invoice["lines"].get("data", []))
+    sync_invoice_items(
+        invoice,
+        stripe.Invoice.retrieve(stripe_invoice["id"]).lines.all(limit=100).get("data", [])
+    )
 
     return invoice
 

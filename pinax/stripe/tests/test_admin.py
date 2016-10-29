@@ -1,9 +1,13 @@
 import datetime
 
 from django.contrib.auth import get_user_model
-from django.core.urlresolvers import reverse
 from django.test import Client, TestCase
 from django.utils import timezone
+
+try:
+    from django.urls import reverse
+except ImportError:
+    from django.core.urlresolvers import reverse
 
 from ..models import Customer, Invoice, Plan, Subscription
 

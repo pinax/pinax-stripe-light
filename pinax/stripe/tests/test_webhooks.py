@@ -3,10 +3,14 @@ import json
 
 import six
 
-from django.core.urlresolvers import reverse
 from django.dispatch import Signal
 from django.test import TestCase
 from django.test.client import Client
+
+try:
+    from django.urls import reverse
+except ImportError:
+    from django.core.urlresolvers import reverse
 
 import stripe
 

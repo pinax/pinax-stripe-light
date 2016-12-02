@@ -71,3 +71,12 @@ class ChargeManager(models.Manager):
             total_amount=models.Sum("amount"),
             total_refunded=models.Sum("amount_refunded")
         )
+
+
+class SubscriptionManager(models.Manager):
+
+    def current_subscriptions(self, plan=1):
+        return self.filter(
+            status__in=["trialing", "active"],
+            plan=plan
+        )

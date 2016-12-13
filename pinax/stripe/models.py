@@ -11,7 +11,7 @@ import stripe
 from jsonfield.fields import JSONField
 
 from .conf import settings
-from .managers import ChargeManager, CustomerManager
+from .managers import ChargeManager, CustomerManager, SubscriptionManager
 from .utils import CURRENCY_SYMBOLS
 
 
@@ -160,7 +160,7 @@ class BitcoinReceiver(StripeObject):
 
 class Subscription(StripeObject):
 
-    customer = models.ForeignKey(Customer)
+    customer = models.ForeignKey(Customer, related_name="subscriptions")
     application_fee_percent = models.DecimalField(decimal_places=2, max_digits=3, default=None, null=True)
     cancel_at_period_end = models.BooleanField(default=False)
     canceled_at = models.DateTimeField(blank=True, null=True)
@@ -174,9 +174,7 @@ class Subscription(StripeObject):
     trial_end = models.DateTimeField(blank=True, null=True)
     trial_start = models.DateTimeField(blank=True, null=True)
 
-    @property
-    def stripe_subscription(self):
-        return stripe.Customer.retrieve(self.customer.stripe_id).subscriptions.retrieve(self.stripe_id)
+    objects = SubscriptionManager()
 
     @property
     def total_amount(self):

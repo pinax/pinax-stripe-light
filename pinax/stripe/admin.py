@@ -5,13 +5,16 @@ from django.db.models import Count, Q
 from .models import (  # @@@ make all these read-only
     Charge,
     Subscription,
+    Card,
+    BitcoinReceiver,
     Customer,
     Event,
     EventProcessingException,
     Invoice,
     InvoiceItem,
     Plan,
-    Transfer
+    Transfer,
+    TransferChargeFee
 )
 
 
@@ -175,6 +178,20 @@ admin.site.register(
 
 class SubscriptionInline(admin.TabularInline):
     model = Subscription
+    extra = 0
+    max_num = 0
+
+
+class CardInline(admin.TabularInline):
+    model = Card
+    extra = 0
+    max_num = 0
+
+
+class BitcoinReceiverInline(admin.TabularInline):
+    model = BitcoinReceiver
+    extra = 0
+    max_num = 0
 
 
 def subscription_status(obj):
@@ -203,12 +220,18 @@ admin.site.register(
     search_fields=[
         "stripe_id",
     ] + user_search_fields(),
-    inlines=[SubscriptionInline]
+    inlines=[
+        SubscriptionInline,
+        CardInline,
+        BitcoinReceiverInline
+    ]
 )
 
 
 class InvoiceItemInline(admin.TabularInline):
     model = InvoiceItem
+    extra = 0
+    max_num = 0
 
 
 def customer_has_card(obj):
@@ -256,7 +279,9 @@ admin.site.register(
         "period_end",
         "total"
     ],
-    inlines=[InvoiceItemInline]
+    inlines=[
+        InvoiceItemInline
+    ]
 )
 
 admin.site.register(
@@ -290,6 +315,13 @@ admin.site.register(
     ],
 )
 
+
+class TransferChargeFeeInline(admin.TabularInline):
+    model = TransferChargeFee
+    extra = 0
+    max_num = 0
+
+
 admin.site.register(
     Transfer,
     raw_id_fields=["event"],
@@ -303,5 +335,8 @@ admin.site.register(
     search_fields=[
         "stripe_id",
         "event__stripe_id"
+    ],
+    inlines=[
+        TransferChargeFeeInline
     ]
 )

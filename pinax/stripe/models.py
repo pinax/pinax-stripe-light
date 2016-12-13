@@ -97,7 +97,7 @@ class TransferChargeFee(models.Model):
 @python_2_unicode_compatible
 class Customer(StripeObject):
 
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True, related_name='stripe_customer')
     account_balance = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     currency = models.CharField(max_length=10, default="usd", blank=True)
     delinquent = models.BooleanField(default=False)

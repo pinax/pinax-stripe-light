@@ -131,9 +131,9 @@ def retrieve(customer, sub_id):
     if not sub_id:
         return
     try:
-        return customer.stripe_customer.subscriptions.retrieve(sub_id)
+        return stripe.Subscription.retrieve(sub_id)
     except stripe.InvalidRequestError as e:
-        if smart_str(e).find("does not have a subscription with ID") == -1:
+        if smart_str(e).find("No such subscription") == -1:
             raise
 
 

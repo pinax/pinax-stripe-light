@@ -4,7 +4,7 @@ from django.core import management
 from django.test import TestCase
 
 from django.contrib.auth import get_user_model
-from stripe.error import InvalidRequestError
+# from stripe.error import InvalidRequestError
 
 from mock import patch
 
@@ -70,6 +70,7 @@ class CommandTests(TestCase):
         self.assertEquals(Plan.objects.all()[0].stripe_id, "entry-monthly")
         self.assertEquals(Plan.objects.all()[0].amount, decimal.Decimal("9.54"))
 
+<<<<<<< 9ab3181902ea49658269343c18e0a20c0525d7f4
     @patch("stripe.Coupon.auto_paging_iter", create=True)
     def test_coupons_create(self, CouponAutoPagerMock):
         CouponAutoPagerMock.return_value = [{
@@ -119,32 +120,35 @@ class CommandTests(TestCase):
         self.assertEquals(Coupon.objects.all()[0].stripe_id, "test-coupon")
         self.assertEquals(Coupon.objects.all()[0].percent_off, 25)
 
-    @patch("stripe.Customer.retrieve")
+    @patch("stripe.Customer")
+    @patch("stripe.Charge")
+    @patch("stripe.Invoice")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
     @patch("pinax.stripe.actions.customers.sync_customer")
-    @patch("pinax.stripe.actions.invoices.sync_invoices_for_customer")
-    @patch("pinax.stripe.actions.charges.sync_charges_for_customer")
-    def test_sync_customers(self, SyncChargesMock, SyncInvoicesMock, SyncMock, RetrieveMock):
-        user2 = get_user_model().objects.create_user(username="thomas")
-        get_user_model().objects.create_user(username="altman")
-        Customer.objects.create(stripe_id="cus_XXXXX", user=self.user)
-        Customer.objects.create(stripe_id="cus_YYYYY", user=user2)
-        management.call_command("sync_customers")
-        self.assertEqual(SyncChargesMock.call_count, 2)
-        self.assertEqual(SyncInvoicesMock.call_count, 2)
-        self.assertEqual(SyncMock.call_count, 2)
+    @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
+    @patch("pinax.stripe.actions.plans.sync_plans")
+    def test_sync_customers(
+        self, StripeCustomerMock, StripeChargeMock,
+        StripeInvoiceMock, SyncChargeMock, SyncCustomerMock,
+        SyncInvoiceMock, SyncPlansMock
+    ):
 
-    @patch("stripe.Customer.retrieve")
-    @patch("pinax.stripe.actions.customers.sync_customer")
-    @patch("pinax.stripe.actions.invoices.sync_invoices_for_customer")
-    @patch("pinax.stripe.actions.charges.sync_charges_for_customer")
-    def test_sync_customers_with_test_customer(self, SyncChargesMock, SyncInvoicesMock, SyncMock, RetrieveMock):
-        user2 = get_user_model().objects.create_user(username="thomas")
-        get_user_model().objects.create_user(username="altman")
-        Customer.objects.create(stripe_id="cus_XXXXX", user=self.user)
-        Customer.objects.create(stripe_id="cus_YYYYY", user=user2)
+        class Collection(object):
 
-        SyncMock.side_effect = InvalidRequestError('Unknown customer', None, http_status=404)
+            total_count = 0
 
+            def auto_paging_iter():
+                """Fake an iterator."""
+                return iter([])
+
+        StripeCustomerMock().list.side_effect = Collection()
+        StripeChargeMock().list.side_effect = Collection()
+        StripeInvoiceMock().list.side_effect = Collection()
+
+        # user2 = get_user_model().objects.create_user(username="thomas")
+        # get_user_model().objects.create_user(username="altman")
+        # Customer.objects.create(stripe_id="cus_XXXXX", user=self.user)
+        # Customer.objects.create(stripe_id="cus_YYYYY", user=user2)
         management.call_command("sync_customers")
         self.assertEqual(SyncChargesMock.call_count, 0)
         self.assertEqual(SyncInvoicesMock.call_count, 0)
@@ -161,3 +165,25 @@ class CommandTests(TestCase):
         self.assertEqual(SyncChargesMock.call_count, 1)
         self.assertEqual(SyncInvoicesMock.call_count, 1)
         self.assertEqual(SyncMock.call_count, 1)
+=======
+        # self.assertEqual(SyncChargesMock.call_count, 2)
+        # self.assertEqual(SyncInvoicesMock.call_count, 2)
+        # self.assertEqual(SyncMock.call_count, 2)
+
+    # @patch("stripe.Customer.retrieve")
+    # @patch("pinax.stripe.actions.customers.sync_customer")
+    # @patch("pinax.stripe.actions.invoices.sync_invoices_for_customer")
+    # @patch("pinax.stripe.actions.charges.sync_charges_for_customer")
+    # def test_sync_customers_with_test_customer(self, SyncChargesMock, SyncInvoicesMock, SyncMock, RetrieveMock):
+    #     user2 = get_user_model().objects.create_user(username="thomas")
+    #     get_user_model().objects.create_user(username="altman")
+    #     Customer.objects.create(stripe_id="cus_XXXXX", user=self.user)
+    #     Customer.objects.create(stripe_id="cus_YYYYY", user=user2)
+
+    #     SyncMock.side_effect = InvalidRequestError('Unknown customer', None, http_status=404)
+
+    #     management.call_command("sync_customers")
+    #     self.assertEqual(SyncChargesMock.call_count, 0)
+    #     self.assertEqual(SyncInvoicesMock.call_count, 0)
+    #     self.assertEqual(SyncMock.call_count, 2)
+>>>>>>> Further updates to sync_customers and tests, WIP

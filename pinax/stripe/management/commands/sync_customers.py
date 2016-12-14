@@ -100,17 +100,26 @@ def _sync_invoices():
             )
             synced += 1
         except Customer.DoesNotExist:
-            print("Warning: stripe customer did not exist for invoice: {}".format(
+            message = "invoice skipped: stripe customer did not exist for invoice: {}".format(
                 obj.id
-            ))
+            )
             skipped += 1
         except Plan.DoesNotExist:
-            print("Warning: stripe plan did not exist for invoice: {}".format(
+            message = "invoice skipped: stripe plan did not exist for invoice: {}".format(
                 obj.id
-            ))
+            )
             skipped += 1
-        print("[{0}/{1} {2}%] Syncing invoice {3}".format(
-            count, total, perc, obj.id
+        except stripe.InvalidRequestError as se:
+            message = "invoice skipped: {}: {}".format(
+                obj.id, se.message
+            )
+            skipped += 1
+        else:
+            message = "synced invoice {}".format(
+                obj.id
+            )
+        print("[{0}/{1} {2}%] {3}".format(
+            count, total, perc, message
         ))
     return synced, skipped
 

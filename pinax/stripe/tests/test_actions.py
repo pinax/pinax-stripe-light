@@ -1,6 +1,7 @@
 import datetime
 import decimal
 from unittest import skipIf
+import time
 
 import django
 from django.test import TestCase
@@ -574,6 +575,30 @@ class SubscriptionsTests(TestCase):
         SubMock.customer = self.customer
         subscriptions.update(SubMock, coupon="test_value")
         self.assertEquals(SubMock.stripe_subscription.coupon, "test_value")
+        self.assertTrue(SubMock.stripe_subscription.save.called)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
+    def test_update_plan_charge_now(self, SyncMock):
+        SubMock = Mock()
+        SubMock.customer = self.customer
+        SubMock.stripe_subscription.trial_end = time.time() + 1000000.0
+
+        subscriptions.update(SubMock, charge_immediately=True)
+        self.assertEquals(SubMock.stripe_subscription.trial_end, 'now')
+        self.assertTrue(SubMock.stripe_subscription.save.called)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
+    def test_update_plan_charge_now_old_trial(self, SyncMock):
+        trial_end = time.time() - 1000000.0
+        SubMock = Mock()
+        SubMock.customer = self.customer
+        SubMock.stripe_subscription.trial_end = trial_end
+
+        subscriptions.update(SubMock, charge_immediately=True)
+        # Trial end date hasn't changed
+        self.assertEquals(SubMock.stripe_subscription.trial_end, trial_end)
         self.assertTrue(SubMock.stripe_subscription.save.called)
         self.assertTrue(SyncMock.called)
 

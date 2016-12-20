@@ -13,6 +13,7 @@ from .models import (  # @@@ make all these read-only
     Invoice,
     InvoiceItem,
     Plan,
+    Coupon,
     Transfer,
     TransferChargeFee
 )
@@ -312,6 +313,42 @@ admin.site.register(
         "trial_period_days",
         "statement_descriptor",
         "created_at",
+    ],
+)
+
+
+admin.site.register(
+    Coupon,
+    list_display=[
+        "stripe_id",
+        "amount_off",
+        "currency",
+        "percent_off",
+        "duration",
+        "duration_in_months",
+        "redeem_by",
+        "valid"
+    ],
+    search_fields=[
+        "stripe_id",
+    ],
+    list_filter=[
+        "currency",
+        "valid",
+    ],
+    readonly_fields=[
+        "stripe_id",
+        "amount_off",
+        "currency",
+        "duration",
+        "duration_in_months",
+        "max_redemptions",
+        "metadata",
+        "percent_off",
+        "redeem_by",
+        "times_redeemed",
+        "valid",
+        "created_at"
     ],
 )
 

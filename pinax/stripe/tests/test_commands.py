@@ -8,7 +8,7 @@ from stripe.error import InvalidRequestError
 
 from mock import patch
 
-from ..models import Customer, Plan
+from ..models import Customer, Plan, Coupon
 
 
 class CommandTests(TestCase):
@@ -69,6 +69,30 @@ class CommandTests(TestCase):
         self.assertEquals(Plan.objects.count(), 1)
         self.assertEquals(Plan.objects.all()[0].stripe_id, "entry-monthly")
         self.assertEquals(Plan.objects.all()[0].amount, decimal.Decimal("9.54"))
+
+    @patch("stripe.Coupon.auto_paging_iter", create=True)
+    def test_coupons_create(self, CouponAutoPagerMock):
+        CouponAutoPagerMock.return_value = [{
+            "id": "test-coupon",
+            "object": "coupon",
+            "amount_off": None,
+            "created": 1482132502,
+            "currency": "aud",
+            "duration": "repeating",
+            "duration_in_months": 3,
+            "livemode": False,
+            "max_redemptions": None,
+            "metadata": {
+            },
+            "percent_off": 25,
+            "redeem_by": None,
+            "times_redeemed": 0,
+            "valid": True
+        }]
+        management.call_command("sync_coupons")
+        self.assertEquals(Coupon.objects.count(), 1)
+        self.assertEquals(Coupon.objects.all()[0].stripe_id, "test-coupon")
+        self.assertEquals(Coupon.objects.all()[0].percent_off, 25)
 
     @patch("stripe.Customer.retrieve")
     @patch("pinax.stripe.actions.customers.sync_customer")

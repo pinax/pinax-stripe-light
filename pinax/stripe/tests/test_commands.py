@@ -94,6 +94,31 @@ class CommandTests(TestCase):
         self.assertEquals(Coupon.objects.all()[0].stripe_id, "test-coupon")
         self.assertEquals(Coupon.objects.all()[0].percent_off, 25)
 
+    @patch("stripe.Coupon.all")
+    @patch("stripe.Coupon.auto_paging_iter", create=True, side_effect=AttributeError)
+    def test_coupons_create_deprecated(self, CouponAutoPagerMock, CouponAllMock):
+        CouponAllMock().data = [{
+            "id": "test-coupon",
+            "object": "coupon",
+            "amount_off": None,
+            "created": 1482132502,
+            "currency": "aud",
+            "duration": "repeating",
+            "duration_in_months": 3,
+            "livemode": False,
+            "max_redemptions": None,
+            "metadata": {
+            },
+            "percent_off": 25,
+            "redeem_by": None,
+            "times_redeemed": 0,
+            "valid": True
+        }]
+        management.call_command("sync_coupons")
+        self.assertEquals(Coupon.objects.count(), 1)
+        self.assertEquals(Coupon.objects.all()[0].stripe_id, "test-coupon")
+        self.assertEquals(Coupon.objects.all()[0].percent_off, 25)
+
     @patch("stripe.Customer.retrieve")
     @patch("pinax.stripe.actions.customers.sync_customer")
     @patch("pinax.stripe.actions.invoices.sync_invoices_for_customer")

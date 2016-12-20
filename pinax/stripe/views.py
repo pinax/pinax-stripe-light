@@ -101,13 +101,14 @@ class SubscriptionListView(LoginRequiredMixin, CustomerMixin, ListView):
 class SubscriptionCreateView(LoginRequiredMixin, PaymentsContextMixin, CustomerMixin, FormView):
     template_name = "pinax/stripe/subscription_create.html"
     form_class = PlanForm
+    tax_percent = None
 
     def set_customer(self):
         if self.customer is None:
             self._customer = customers.create(self.request.user)
 
     def subscribe(self, customer, plan, token):
-        subscriptions.create(customer, plan, token=token)
+        subscriptions.create(customer, plan, token=token, tax_percent=tax_percent)
 
     def form_valid(self, form):
         self.set_customer()

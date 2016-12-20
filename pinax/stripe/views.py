@@ -105,14 +105,14 @@ class SubscriptionCreateView(LoginRequiredMixin, PaymentsContextMixin, CustomerM
 
     @property
     def tax_percent(self):
-        return getattr(settings, "PINAX_STRIPE_SUBSCRIPTION_TAX_PERCENT")
+        return getattr(settings, "PINAX_STRIPE_SUBSCRIPTION_TAX_PERCENT", None)
 
     def set_customer(self):
         if self.customer is None:
             self._customer = customers.create(self.request.user)
 
     def subscribe(self, customer, plan, token):
-        subscriptions.create(customer, plan, token=token, tax_percent=tax_percent)
+        subscriptions.create(customer, plan, token=token, tax_percent=self.tax_percent)
 
     def form_valid(self, form):
         self.set_customer()

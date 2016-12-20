@@ -37,6 +37,7 @@ class PinaxStripeAppConf(AppConf):
     SEND_EMAIL_RECEIPTS = True
     SUBSCRIPTION_REQUIRED_EXCEPTION_URLS = []
     SUBSCRIPTION_REQUIRED_REDIRECT = None
+    SUBSCRIPTION_TAX_PERCENT = None
 
     class Meta:
         prefix = "pinax_stripe"

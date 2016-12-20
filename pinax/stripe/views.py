@@ -1,6 +1,5 @@
 import json
 
-from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
@@ -12,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 import stripe
 
 from .actions import events, exceptions, customers, subscriptions, sources
+from .conf import settings
 from .forms import PlanForm, PaymentMethodForm
 from .mixins import LoginRequiredMixin, CustomerMixin, PaymentsContextMixin
 from .models import Invoice, Card, Subscription
@@ -105,7 +105,7 @@ class SubscriptionCreateView(LoginRequiredMixin, PaymentsContextMixin, CustomerM
 
     @property
     def tax_percent(self):
-        return getattr(settings, "PINAX_STRIPE_SUBSCRIPTION_TAX_PERCENT", None)
+        return settings.PINAX_STRIPE_SUBSCRIPTION_TAX_PERCENT
 
     def set_customer(self):
         if self.customer is None:

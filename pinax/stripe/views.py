@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
@@ -101,7 +102,10 @@ class SubscriptionListView(LoginRequiredMixin, CustomerMixin, ListView):
 class SubscriptionCreateView(LoginRequiredMixin, PaymentsContextMixin, CustomerMixin, FormView):
     template_name = "pinax/stripe/subscription_create.html"
     form_class = PlanForm
-    tax_percent = None
+
+    @property
+    def tax_percent(self):
+        return getattr(settings, "PINAX_STRIPE_SUBSCRIPTION_TAX_PERCENT")
 
     def set_customer(self):
         if self.customer is None:

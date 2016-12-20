@@ -56,7 +56,7 @@ class Coupon(StripeObject):
 
     def __str__(self):
         if self.amount_off is None:
-            description = "{} off".format(self.percent_off,)
+            description = "{}% off".format(self.percent_off,)
         else:
             description = "{}{}".format(CURRENCY_SYMBOLS.get(self.currency, ""), self.amount_off)
 

@@ -1,3 +1,4 @@
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
@@ -28,7 +29,9 @@ def can_charge(customer):
 
 def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True):
     """
-    Creates a Stripe customer
+    Creates a Stripe customer.
+
+    If a customer already exists, the existing customer will be returned.
 
     Args:
         user: a user object
@@ -48,10 +51,17 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         plan=plan,
         trial_end=trial_end
     )
-    cus = models.Customer.objects.create(
-        user=user,
-        stripe_id=stripe_customer["id"]
-    )
+    try:
+        with transaction.atomic():
+            cus = models.Customer.objects.create(
+                user=user,
+                stripe_id=stripe_customer["id"]
+            )
+    except IntegrityError:
+        # There is already a Customer object for this user
+        stripe.Customer.retrieve(stripe_customer["id"]).delete()
+        return models.Customer.objects.get(user=user)
+
     sync_customer(cus, stripe_customer)
 
     if plan and charge_immediately:

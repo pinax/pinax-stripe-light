@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 import stripe
 
 from .actions import events, exceptions, customers, subscriptions, sources
+from .conf import settings
 from .forms import PlanForm, PaymentMethodForm
 from .mixins import LoginRequiredMixin, CustomerMixin, PaymentsContextMixin
 from .models import Invoice, Card, Subscription
@@ -102,12 +103,16 @@ class SubscriptionCreateView(LoginRequiredMixin, PaymentsContextMixin, CustomerM
     template_name = "pinax/stripe/subscription_create.html"
     form_class = PlanForm
 
+    @property
+    def tax_percent(self):
+        return settings.PINAX_STRIPE_SUBSCRIPTION_TAX_PERCENT
+
     def set_customer(self):
         if self.customer is None:
             self._customer = customers.create(self.request.user)
 
     def subscribe(self, customer, plan, token):
-        subscriptions.create(customer, plan, token=token)
+        subscriptions.create(customer, plan, token=token, tax_percent=self.tax_percent)
 
     def form_valid(self, form):
         self.set_customer()

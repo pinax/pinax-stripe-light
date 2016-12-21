@@ -72,6 +72,15 @@ active subscription if the `pinax.stripe.middleware.ActiveSubscriptionMiddleware
 is installed.
 
 
+### PINAX_STRIPE_SUBSCRIPTION_TAX_PERCENT
+
+Defaults to `None`
+
+If you wish to charge tax on a subscription, set this value to an integer 
+specifying the percentage of tax required (i.e. 10% would be '10').  This is
+used by `pinax.stripe.views.SubscriptionCreateView`
+
+
 ## Stripe Account Settings Panel
 
 ![](images/stripe-account-panel.png)

@@ -40,6 +40,30 @@ class Plan(StripeObject):
 
 
 @python_2_unicode_compatible
+class Coupon(StripeObject):
+
+    amount_off = models.DecimalField(decimal_places=2, max_digits=9, null=True)
+    currency = models.CharField(max_length=10, default="usd")
+    duration = models.CharField(max_length=10, default="once")
+    duration_in_months = models.PositiveIntegerField(null=True)
+    livemode = models.BooleanField(default=False)
+    max_redemptions = models.PositiveIntegerField(null=True)
+    metadata = JSONField(null=True)
+    percent_off = models.PositiveIntegerField(null=True)
+    redeem_by = models.DateTimeField(null=True)
+    times_redeemed = models.PositiveIntegerField(null=True)
+    valid = models.BooleanField(default=False)
+
+    def __str__(self):
+        if self.amount_off is None:
+            description = "{}% off".format(self.percent_off,)
+        else:
+            description = "{}{}".format(CURRENCY_SYMBOLS.get(self.currency, ""), self.amount_off)
+
+        return "Coupon for {}, {}".format(description, self.duration)
+
+
+@python_2_unicode_compatible
 class EventProcessingException(models.Model):
 
     event = models.ForeignKey("Event", null=True)

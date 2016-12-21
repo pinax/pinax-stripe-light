@@ -348,6 +348,7 @@ Args:
     source for the customer, otherwise the current default source
     will be used
 - coupon: if provided, a coupon to apply towards the subscription
+- tax_percent: if provided, add percentage as tax 
 
 Returns: the `pinax.stripe.models.Subscription` object that was created
 

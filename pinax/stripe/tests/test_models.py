@@ -9,7 +9,9 @@ from django.utils import timezone
 
 from mock import patch
 
-from ..models import Charge, Customer, Event, EventProcessingException, Invoice, InvoiceItem, Plan, Subscription
+from ..models import (
+    Charge, Customer, Event, EventProcessingException, Invoice, InvoiceItem, Plan, Coupon, Subscription
+)
 
 
 def _str(obj):
@@ -50,6 +52,14 @@ class ModelTests(TestCase):
         p.save()
         i = InvoiceItem(plan=p)
         self.assertEquals(i.plan_display(), "My Plan")
+
+    def test_coupon_percent(self):
+        c = Coupon(percent_off=25, duration='repeating', duration_in_months=3)
+        self.assertEquals(str(c), "Coupon for 25% off, repeating")
+
+    def test_coupon_absolute(self):
+        c = Coupon(amount_off=decimal.Decimal(50.00), duration="once", currency='usd')
+        self.assertEquals(str(c), "Coupon for $50, once")
 
     def test_model_table_name(self):
         self.assertEquals(Customer()._meta.db_table, "pinax_stripe_customer")

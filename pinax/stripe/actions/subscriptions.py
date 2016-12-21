@@ -23,7 +23,7 @@ def cancel(subscription, at_period_end=True):
     sync_subscription_from_stripe_data(subscription.customer, sub)
 
 
-def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=None):
+def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=None, tax_percent=None):
     """
     Creates a subscription for the given customer
 
@@ -37,6 +37,7 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
                source for the customer, otherwise the current default source
                will be used
         coupon: if provided, a coupon to apply towards the subscription
+        tax_percent: if provided, add percentage as tax
 
     Returns:
         the data representing the subscription object that was created
@@ -53,6 +54,7 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
     subscription_params["plan"] = plan
     subscription_params["quantity"] = quantity
     subscription_params["coupon"] = coupon
+    subscription_params["tax_percent"] = tax_percent
     resp = cu.subscriptions.create(**subscription_params)
 
     return sync_subscription_from_stripe_data(customer, resp)
@@ -190,6 +192,9 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
         stripe_subscription.prorate = False
     if coupon:
         stripe_subscription.coupon = coupon
+    if charge_immediately:
+        if utils.convert_tstamp(stripe_subscription.trial_end) > timezone.now():
+            stripe_subscription.trial_end = 'now'
     sub = stripe_subscription.save()
     customer = models.Customer.objects.get(pk=subscription.customer.pk)
     sync_subscription_from_stripe_data(customer, sub)

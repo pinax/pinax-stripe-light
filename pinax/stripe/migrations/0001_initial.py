@@ -104,7 +104,7 @@ class Migration(migrations.Migration):
                 ('delinquent', models.BooleanField(default=False)),
                 ('default_source', models.TextField(blank=True)),
                 ('date_purged', models.DateTimeField(null=True, editable=False)),
-                ('user', models.OneToOneField(null=True, to=settings.AUTH_USER_MODEL)),
+                ('user', models.OneToOneField(null=True, to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
             ],
             options={
                 'abstract': False,
@@ -125,7 +125,7 @@ class Migration(migrations.Migration):
                 ('request', models.CharField(blank=True, max_length=100)),
                 ('pending_webhooks', models.PositiveIntegerField(default=0)),
                 ('api_version', models.CharField(blank=True, max_length=100)),
-                ('customer', models.ForeignKey(null=True, to='pinax_stripe.Customer')),
+                ('customer', models.ForeignKey(null=True, to='pinax_stripe.Customer', on_delete=models.CASCADE)),
             ],
             options={
                 'abstract': False,
@@ -139,7 +139,7 @@ class Migration(migrations.Migration):
                 ('message', models.CharField(max_length=500)),
                 ('traceback', models.TextField()),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('event', models.ForeignKey(null=True, to='pinax_stripe.Event')),
+                ('event', models.ForeignKey(null=True, to='pinax_stripe.Event', on_delete=models.CASCADE)),
             ],
         ),
         migrations.CreateModel(
@@ -163,8 +163,8 @@ class Migration(migrations.Migration):
                 ('total', models.DecimalField(decimal_places=2, max_digits=9)),
                 ('date', models.DateTimeField()),
                 ('webhooks_delivered_at', models.DateTimeField(null=True)),
-                ('charge', models.ForeignKey(null=True, related_name='invoices', to='pinax_stripe.Charge')),
-                ('customer', models.ForeignKey(related_name='invoices', to='pinax_stripe.Customer')),
+                ('charge', models.ForeignKey(null=True, related_name='invoices', to='pinax_stripe.Charge', on_delete=models.CASCADE)),
+                ('customer', models.ForeignKey(related_name='invoices', to='pinax_stripe.Customer', on_delete=models.CASCADE)),
             ],
             options={
                 'abstract': False,
@@ -185,7 +185,7 @@ class Migration(migrations.Migration):
                 ('line_type', models.CharField(max_length=50)),
                 ('description', models.CharField(blank=True, max_length=200)),
                 ('quantity', models.IntegerField(null=True)),
-                ('invoice', models.ForeignKey(related_name='items', to='pinax_stripe.Invoice')),
+                ('invoice', models.ForeignKey(related_name='items', to='pinax_stripe.Invoice', on_delete=models.CASCADE)),
             ],
         ),
         migrations.CreateModel(
@@ -223,8 +223,8 @@ class Migration(migrations.Migration):
                 ('status', models.CharField(max_length=25)),
                 ('trial_end', models.DateTimeField(null=True, blank=True)),
                 ('trial_start', models.DateTimeField(null=True, blank=True)),
-                ('customer', models.ForeignKey(to='pinax_stripe.Customer')),
-                ('plan', models.ForeignKey(to='pinax_stripe.Plan')),
+                ('customer', models.ForeignKey(to='pinax_stripe.Customer', on_delete=models.CASCADE)),
+                ('plan', models.ForeignKey(to='pinax_stripe.Plan', on_delete=models.CASCADE)),
             ],
             options={
                 'abstract': False,
@@ -241,7 +241,7 @@ class Migration(migrations.Migration):
                 ('status', models.CharField(max_length=25)),
                 ('date', models.DateTimeField()),
                 ('description', models.TextField(null=True, blank=True)),
-                ('event', models.ForeignKey(related_name='transfers', to='pinax_stripe.Event')),
+                ('event', models.ForeignKey(related_name='transfers', to='pinax_stripe.Event', on_delete=models.CASCADE)),
             ],
             options={
                 'abstract': False,
@@ -257,42 +257,42 @@ class Migration(migrations.Migration):
                 ('description', models.TextField(null=True, blank=True)),
                 ('kind', models.CharField(max_length=150)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('transfer', models.ForeignKey(related_name='charge_fee_details', to='pinax_stripe.Transfer')),
+                ('transfer', models.ForeignKey(related_name='charge_fee_details', to='pinax_stripe.Transfer', on_delete=models.CASCADE)),
             ],
         ),
         migrations.AddField(
             model_name='invoiceitem',
             name='plan',
-            field=models.ForeignKey(null=True, to='pinax_stripe.Plan'),
+            field=models.ForeignKey(null=True, to='pinax_stripe.Plan', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='invoiceitem',
             name='subscription',
-            field=models.ForeignKey(null=True, to='pinax_stripe.Subscription'),
+            field=models.ForeignKey(null=True, to='pinax_stripe.Subscription', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='invoice',
             name='subscription',
-            field=models.ForeignKey(null=True, to='pinax_stripe.Subscription'),
+            field=models.ForeignKey(null=True, to='pinax_stripe.Subscription', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='charge',
             name='customer',
-            field=models.ForeignKey(related_name='charges', to='pinax_stripe.Customer'),
+            field=models.ForeignKey(related_name='charges', to='pinax_stripe.Customer', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='charge',
             name='invoice',
-            field=models.ForeignKey(null=True, related_name='charges', to='pinax_stripe.Invoice'),
+            field=models.ForeignKey(null=True, related_name='charges', to='pinax_stripe.Invoice', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='card',
             name='customer',
-            field=models.ForeignKey(to='pinax_stripe.Customer'),
+            field=models.ForeignKey(to='pinax_stripe.Customer', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='bitcoinreceiver',
             name='customer',
-            field=models.ForeignKey(to='pinax_stripe.Customer'),
+            field=models.ForeignKey(to='pinax_stripe.Customer', on_delete=models.CASCADE),
         ),
     ]

@@ -1,6 +1,10 @@
-from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.utils import timezone
+
+try:
+    from django.urls import reverse
+except ImportError:
+    from django.core.urlresolvers import reverse
 
 from django.contrib.auth import authenticate, login, logout, get_user_model
 

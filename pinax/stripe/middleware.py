@@ -1,6 +1,10 @@
 import django
-from django.core.urlresolvers import resolve
 from django.shortcuts import redirect
+
+try:
+    from django.urls import resolve
+except ImportError:
+    from django.core.urlresolvers import resolve
 
 from .actions import customers, subscriptions
 from .conf import settings

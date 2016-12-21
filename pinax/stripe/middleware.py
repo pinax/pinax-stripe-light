@@ -1,3 +1,4 @@
+import django
 from django.shortcuts import redirect
 
 try:
@@ -12,7 +13,11 @@ from .conf import settings
 class ActiveSubscriptionMiddleware(object):
 
     def process_request(self, request):
-        if request.user.is_authenticated() and not request.user.is_staff:
+        is_authenticated = request.user.is_authenticated
+        if django.VERSION < (1, 10):
+            is_authenticated = is_authenticated()
+
+        if is_authenticated and not request.user.is_staff:
             url_name = resolve(request.path).url_name
             if url_name not in settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS:
                 customer = customers.get_customer_for_user(request.user)

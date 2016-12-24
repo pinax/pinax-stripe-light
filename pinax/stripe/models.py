@@ -100,12 +100,33 @@ class Event(StripeObject):
 
 
 class Transfer(StripeObject):
-    event = models.ForeignKey(Event, related_name="transfers", on_delete=models.CASCADE, null=True, blank=True)
+
     amount = models.DecimalField(decimal_places=2, max_digits=9)
+    amount_reversed = models.DecimalField(decimal_places=2, max_digits=9)
+    application_fee = models.DecimalField(decimal_places=2, max_digits=9)
+    balance_transaction = models.DecimalField(decimal_places=2, max_digits=9)
+    created = models.DateTimeField(null=True, blank=True)
     currency = models.CharField(max_length=25, default="usd")
-    status = models.CharField(max_length=25)
     date = models.DateTimeField()
     description = models.TextField(null=True, blank=True)
+    destination = models.TextField(null=True, blank=True)
+    destination_payment = models.TextField(null=True, blank=True)
+    event = models.ForeignKey(
+        Event, related_name="transfers",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+    failure_message = models.TextField(null=True)
+    livemode = models.BooleanField()
+    metadata = JSONField(null=True)
+    reversed = models.BooleanField(default=False)
+    source = models.TextField(null=True, blank=True)
+    source_transaction = models.TextField(null=True)
+    source_type = models.TextField(null=True)
+    statement_descriptor = models.TextField(null=True)
+    status = models.CharField(max_length=25)
+    type = models.TextField(null=True)
 
 
 class TransferChargeFee(models.Model):
@@ -307,3 +328,95 @@ class Charge(StripeObject):
     @property
     def card(self):
         return Card.objects.filter(stripe_id=self.source).first()
+
+
+class Account(StripeObject):
+
+    business_name = models.TextField(blank=True)
+    business_primary_color = models.TextField(blank=True)
+    business_url = models.TextField(blank=True)
+
+    charges_enabled = models.BooleanField(default=False)
+    country = models.CharField(max_length=2)
+    debit_negative_balances = models.BooleanField(default=False)
+    decline_charge_on_avs_failure = models.BooleanField(default=False)
+    decline_charge_on_cvc_failure = models.BooleanField(default=False)
+    default_currency = models.CharField(max_length=3)
+    details_submitted = models.BooleanField(default=False)
+    display_name = models.TextField(blank=True)
+    email = models.TextField(blank=True)
+
+    legal_entity_address_city = models.TextField(null=True, blank=True)
+    legal_entity_address_country = models.TextField(null=True, blank=True)
+    legal_entity_address_line1 = models.TextField(null=True, blank=True)
+    legal_entity_address_line2 = models.TextField(null=True, blank=True)
+    legal_entity_address_postal_code = models.TextField(null=True, blank=True)
+    legal_entity_address_state = models.TextField(null=True, blank=True)
+    legal_entity_dob = models.DateField(null=True)
+    legal_entity_first_name = models.TextField(null=True, blank=True)
+    legal_entity_gender = models.TextField(null=True, blank=True)
+    legal_entity_last_name = models.TextField(null=True, blank=True)
+    legal_entity_maiden_name = models.TextField(null=True, blank=True)
+    legal_entity_personal_id_number_provided = models.BooleanField(default=False)
+    legal_entity_phone_number = models.TextField(null=True, blank=True)
+    legal_entity_ssn_last_4_provided = models.BooleanField(default=False)
+    legal_entity_type = models.TextField(null=True, blank=True)
+    legal_entity_verification_details = models.TextField(null=True, blank=True)
+    legal_entity_verification_details_code = models.TextField(null=True, blank=True)
+    legal_entity_verification_document = models.TextField(null=True, blank=True)
+    legal_entity_verification_status = models.TextField(null=True, blank=True)
+
+    managed = models.NullBooleanField(null=True)
+    metadata = JSONField(null=True)
+
+    product_description = models.TextField(null=True, blank=True)
+    statement_descriptor = models.TextField(null=True, blank=True)
+    support_email = models.TextField(null=True, blank=True)
+    support_phone = models.TextField(null=True, blank=True)
+    support_url = models.TextField(null=True, blank=True)
+
+    timezone = models.TextField(null=True, blank=True)
+
+    tos_acceptance_date = models.DateField(null=True)
+    tos_acceptance_ip = models.TextField(null=True, blank=True)
+    tos_acceptance_user_agent = models.TextField(null=True, blank=True)
+
+    transfer_schedule_delay_days = models.PositiveSmallIntegerField(null=True)
+    transfer_schedule_interval = models.TextField(null=True, blank=True)
+
+    transfer_schedule_monthly_anchor = models.PositiveSmallIntegerField(null=True)
+    transfer_schedule_weekly_anchor = models.TextField(null=True, blank=True)
+
+    transfer_statement_descriptor = models.TextField(null=True, blank=True)
+    transfers_enabled = models.BooleanField(default=False)
+
+    verification_disabled_reason = models.TextField(null=True, blank=True)
+    verification_due_by = models.DateTimeField(null=True, blank=True)
+    verification_timestamp = models.DateTimeField(null=True, blank=True)
+    verification_fields_needed = JSONField(null=True)
+
+    @property
+    def stripe_account(self):
+        return stripe.Account.retrieve(self.stripe_id)
+
+
+class BankAccount(StripeObject):
+
+    account = models.ForeignKey(Account)
+    account_holder_name = models.TextField()
+    account_holder_type = models.TextField()
+    bank_name = models.TextField()
+    country = models.TextField()
+    currency = models.TextField()
+    default_for_currency = models.BooleanField(default=False)
+    fingerprint = models.TextField()
+    last4 = models.CharField(max_length=4)
+    metadata = JSONField(null=True)
+    routing_number = models.TextField()
+    status = models.TextField()
+
+    @property
+    def stripe_bankaccount(self):
+        return self.account.stripe_account.external_accounts.retrieve(
+            self.stripe_id
+        )

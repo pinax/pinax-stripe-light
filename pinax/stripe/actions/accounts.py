@@ -92,7 +92,8 @@ def sync_account_from_stripe_data(data, user=None):
         obj.tos_acceptance_date = datetime.datetime.utcfromtimestamp(
             data['tos_acceptance']['date']
         )
-    obj.tos_acceptance_date = None
+    else:
+        obj.tos_acceptance_date = None
     obj.tos_acceptance_ip = data['tos_acceptance']['ip']
     obj.tos_acceptance_user_agent = data['tos_acceptance']['user_agent']
 

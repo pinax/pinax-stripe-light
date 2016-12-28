@@ -2521,7 +2521,7 @@ class AccountsSyncTestCase(TestCase):
     "business_vat_id_provided": false,
     "dob": {
       "day": 1,
-      "month": 1,
+      "month": 2,
       "year": 1986
     },
     "first_name": "Luke",
@@ -2578,7 +2578,7 @@ class AccountsSyncTestCase(TestCase):
   "support_phone": null,
   "timezone": "Etc/UTC",
   "tos_acceptance": {
-    "date": 1383683683,
+    "date": 369126000,
     "ip": "123.123.123.123",
     "user_agent": null
   },
@@ -2614,6 +2614,9 @@ class AccountsSyncTestCase(TestCase):
         account = accounts.sync_account_from_stripe_data(
             self.data, user=user
         )
-        self.assertEqual(account.legal_identity_first_name, "Luke")
-        self.assertEqual(account.legal_identity_dob, '')
-        self.assertEqual(account.tos_acceptance, '1383683683')
+        self.assertEqual(account.legal_entity_first_name, "Luke")
+        self.assertEqual(account.legal_entity_dob, datetime.date(1986, 2, 1))
+        self.assertEqual(
+            account.tos_acceptance_date,
+            datetime.datetime(1981, 9, 12, 07, 0, 0)
+        )

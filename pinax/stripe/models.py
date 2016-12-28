@@ -102,9 +102,9 @@ class Event(StripeObject):
 class Transfer(StripeObject):
 
     amount = models.DecimalField(decimal_places=2, max_digits=9)
-    amount_reversed = models.DecimalField(decimal_places=2, max_digits=9)
-    application_fee = models.DecimalField(decimal_places=2, max_digits=9)
-    balance_transaction = models.DecimalField(decimal_places=2, max_digits=9)
+    amount_reversed = models.DecimalField(decimal_places=2, max_digits=9, null=True, blank=True)
+    application_fee = models.DecimalField(decimal_places=2, max_digits=9, null=True, blank=True)
+    balance_transaction = models.DecimalField(decimal_places=2, max_digits=9, null=True, blank=True)
     created = models.DateTimeField(null=True, blank=True)
     currency = models.CharField(max_length=25, default="usd")
     date = models.DateTimeField()
@@ -117,16 +117,16 @@ class Transfer(StripeObject):
         null=True,
         blank=True
     )
-    failure_message = models.TextField(null=True)
-    livemode = models.BooleanField()
-    metadata = JSONField(null=True)
+    failure_message = models.TextField(null=True, blank=True)
+    livemode = models.NullBooleanField(default=None, null=True, blank=True)
+    metadata = JSONField(null=True, blank=True)
     reversed = models.BooleanField(default=False)
     source = models.TextField(null=True, blank=True)
-    source_transaction = models.TextField(null=True)
-    source_type = models.TextField(null=True)
-    statement_descriptor = models.TextField(null=True)
+    source_transaction = models.TextField(null=True, blank=True)
+    source_type = models.TextField(null=True, blank=True)
+    statement_descriptor = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=25)
-    type = models.TextField(null=True)
+    type = models.TextField(null=True, blank=True)
 
 
 class TransferChargeFee(models.Model):
@@ -332,9 +332,11 @@ class Charge(StripeObject):
 
 class Account(StripeObject):
 
-    business_name = models.TextField(blank=True)
-    business_primary_color = models.TextField(blank=True)
-    business_url = models.TextField(blank=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True)
+
+    business_name = models.TextField(blank=True, null=True)
+#    business_logo = models.TextField(blank=True)
+    business_url = models.TextField(blank=True, null=True)
 
     charges_enabled = models.BooleanField(default=False)
     country = models.CharField(max_length=2)
@@ -343,8 +345,8 @@ class Account(StripeObject):
     decline_charge_on_cvc_failure = models.BooleanField(default=False)
     default_currency = models.CharField(max_length=3)
     details_submitted = models.BooleanField(default=False)
-    display_name = models.TextField(blank=True)
-    email = models.TextField(blank=True)
+    display_name = models.TextField(blank=True, null=True)
+    email = models.TextField(blank=True, null=True)
 
     legal_entity_address_city = models.TextField(null=True, blank=True)
     legal_entity_address_country = models.TextField(null=True, blank=True)
@@ -373,7 +375,7 @@ class Account(StripeObject):
     statement_descriptor = models.TextField(null=True, blank=True)
     support_email = models.TextField(null=True, blank=True)
     support_phone = models.TextField(null=True, blank=True)
-    support_url = models.TextField(null=True, blank=True)
+    #support_url = models.TextField(null=True, blank=True)
 
     timezone = models.TextField(null=True, blank=True)
 

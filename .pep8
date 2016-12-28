@@ -1,0 +1,5 @@
+[flake8]
+ignore = E402,D100,D101,D102,D105,E265,E501,D400,D205,N802,N803,N806
+max-line-length = 100
+max-complexity = 10
+exclude = .git,contrib,pinax/stripe/migrations/*,docs/*

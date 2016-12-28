@@ -13,8 +13,10 @@ import stripe
 
 from mock import patch, Mock
 
-from ..actions import charges, customers, events, invoices, plans, refunds, sources, subscriptions, transfers
+from ..actions import charges, customers, events, invoices, plans, refunds, sources, subscriptions, transfers, accounts
 from ..models import BitcoinReceiver, Customer, Charge, Card, Plan, Event, Invoice, Subscription, Transfer
+
+import json
 
 
 class ChargesTests(TestCase):
@@ -1559,9 +1561,7 @@ class SyncsTests(TestCase):
 
     @patch("stripe.Subscription.retrieve")
     def test_retrieve_stripe_subscription_missing_subscription(self, RetrieveMock):
-        def return_none(*args, **kwargs):
-            return None
-        RetrieveMock.retrieve.side_effect = return_none
+        RetrieveMock.return_value = None
         value = subscriptions.retrieve(self.customer, "sub id")
         self.assertIsNone(value)
 
@@ -2453,3 +2453,167 @@ class TransfersTests(TestCase):
         )
         transfers.update_status(transfer)
         self.assertEquals(transfer.status, "complete")
+
+
+class AccountsSyncTestCase(TestCase):
+
+    def setUp(self):
+        self.data = json.loads(
+            """{
+  "business_logo": null,
+  "business_name": null,
+  "business_url": null,
+  "charges_enabled": true,
+  "country": "CA",
+  "currencies_supported": [
+    "cad",
+    "usd"
+  ],
+  "debit_negative_balances": false,
+  "decline_charge_on": {
+    "avs_failure": false,
+    "cvc_failure": false
+  },
+  "default_currency": "cad",
+  "details_submitted": false,
+  "display_name": null,
+  "email": null,
+  "external_accounts": {
+    "data": [],
+    "has_more": false,
+    "object": "list",
+    "total_count": 0,
+    "url": "/v1/accounts/acct_19Uu2gDpqBn2Jd54/external_accounts"
+  },
+  "id": "acct_19Uu2gDpqBn2Jd54",
+  "legal_entity": {
+    "additional_owners": null,
+    "address": {
+      "city": "Sydney",
+      "country": "AU",
+      "line1": null,
+      "line2": null,
+      "postal_code": null,
+      "state": null
+    },
+    "address_kana": {
+      "city": null,
+      "country": "CA",
+      "line1": null,
+      "line2": null,
+      "postal_code": null,
+      "state": null,
+      "town": null
+    },
+    "address_kanji": {
+      "city": null,
+      "country": "CA",
+      "line1": null,
+      "line2": null,
+      "postal_code": null,
+      "state": null,
+      "town": null
+    },
+    "business_name": null,
+    "business_name_kana": null,
+    "business_name_kanji": null,
+    "business_tax_id_provided": false,
+    "business_vat_id_provided": false,
+    "dob": {
+      "day": 1,
+      "month": 1,
+      "year": 1986
+    },
+    "first_name": "Luke",
+    "first_name_kana": null,
+    "first_name_kanji": null,
+    "gender": null,
+    "last_name": null,
+    "last_name_kana": null,
+    "last_name_kanji": null,
+    "maiden_name": null,
+    "personal_address": {
+      "city": null,
+      "country": "CA",
+      "line1": null,
+      "line2": null,
+      "postal_code": null,
+      "state": null
+    },
+    "personal_address_kana": {
+      "city": null,
+      "country": "CA",
+      "line1": null,
+      "line2": null,
+      "postal_code": null,
+      "state": null,
+      "town": null
+    },
+    "personal_address_kanji": {
+      "city": null,
+      "country": "CA",
+      "line1": null,
+      "line2": null,
+      "postal_code": null,
+      "state": null,
+      "town": null
+    },
+    "personal_id_number_provided": false,
+    "phone_number": null,
+    "ssn_last_4_provided": false,
+    "type": null,
+    "verification": {
+      "details": null,
+      "details_code": null,
+      "document": null,
+      "status": "unverified"
+    }
+  },
+  "managed": true,
+  "metadata": {},
+  "object": "account",
+  "product_description": null,
+  "statement_descriptor": null,
+  "support_email": null,
+  "support_phone": null,
+  "timezone": "Etc/UTC",
+  "tos_acceptance": {
+    "date": 1383683683,
+    "ip": "123.123.123.123",
+    "user_agent": null
+  },
+  "transfer_schedule": {
+    "delay_days": 7,
+    "interval": "daily"
+  },
+  "transfer_statement_descriptor": null,
+  "transfers_enabled": false,
+  "verification": {
+    "disabled_reason": "fields_needed",
+    "due_by": null,
+    "fields_needed": [
+      "external_account",
+      "legal_entity.dob.day",
+      "legal_entity.dob.month",
+      "legal_entity.dob.year",
+      "legal_entity.first_name",
+      "legal_entity.last_name",
+      "legal_entity.type",
+      "tos_acceptance.date",
+      "tos_acceptance.ip"
+    ]
+  }
+}""")
+
+    def test_sync(self):
+        User = get_user_model()
+        user = User.objects.create_user(
+            username="snuffle",
+            email="upagus@test"
+        )
+        account = accounts.sync_account_from_stripe_data(
+            self.data, user=user
+        )
+        self.assertEqual(account.legal_identity_first_name, "Luke")
+        self.assertEqual(account.legal_identity_dob, '')
+        self.assertEqual(account.tos_acceptance, '1383683683')

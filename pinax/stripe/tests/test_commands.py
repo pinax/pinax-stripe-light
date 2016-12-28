@@ -149,6 +149,7 @@ class CommandTests(TestCase):
         # get_user_model().objects.create_user(username="altman")
         # Customer.objects.create(stripe_id="cus_XXXXX", user=self.user)
         # Customer.objects.create(stripe_id="cus_YYYYY", user=user2)
+<<<<<<< 913f9ad18904914576983d768595ae2bdb3ece82
         management.call_command("sync_customers")
         self.assertEqual(SyncChargesMock.call_count, 0)
         self.assertEqual(SyncInvoicesMock.call_count, 0)
@@ -165,7 +166,7 @@ class CommandTests(TestCase):
         self.assertEqual(SyncChargesMock.call_count, 1)
         self.assertEqual(SyncInvoicesMock.call_count, 1)
         self.assertEqual(SyncMock.call_count, 1)
-=======
+        # management.call_command("sync_customers")
         # self.assertEqual(SyncChargesMock.call_count, 2)
         # self.assertEqual(SyncInvoicesMock.call_count, 2)
         # self.assertEqual(SyncMock.call_count, 2)

@@ -17,8 +17,8 @@ class ManagedAccountForm(forms.Form):
     first_name = forms.CharField(max_length=100)
     last_name = forms.CharField(max_length=100)
     dob = forms.DateField()
+
     address_line_1 = forms.CharField(max_length=300)
-    address_line_2 = forms.CharField(max_length=300)
     address_city = forms.CharField(max_length=100)
     address_state = forms.CharField(max_length=100)
     address_country = forms.CharField(max_length=2)
@@ -26,3 +26,15 @@ class ManagedAccountForm(forms.Form):
     ssn_last4 = forms.CharField(max_length=100)
     routing_number = forms.CharField(max_length=100)
     account_number = forms.CharField(max_length=100)
+
+    tos_accepted = forms.BooleanField()
+
+    # "external_account",
+    # "legal_entity.dob.day",
+    # "legal_entity.dob.month",
+    # "legal_entity.dob.year",
+    # "legal_entity.first_name",
+    # "legal_entity.last_name",
+    # "legal_entity.type",
+    # "tos_acceptance.date",
+    # "tos_acceptance.ip"

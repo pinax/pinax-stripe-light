@@ -4,7 +4,7 @@ from .. import models
 import datetime
 
 
-def create(user, country, managed):
+def create(user, country, managed=True, individual=True):
     """
     Create an Account.
 
@@ -17,7 +17,8 @@ def create(user, country, managed):
     """
     stripe_account = stripe.Account.create(
         country=country,
-        managed=managed
+        managed=managed,
+        type='individual' if individual else 'corporation'
     )
     return sync_account_from_stripe_data(stripe_account, user=user)
 

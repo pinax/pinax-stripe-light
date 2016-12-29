@@ -13,8 +13,8 @@ import stripe
 
 from mock import patch, Mock
 
-from ..actions import charges, customers, events, invoices, plans, refunds, sources, subscriptions, transfers, accounts
-from ..models import BitcoinReceiver, Customer, Charge, Card, Plan, Event, Invoice, Subscription, Transfer
+from ..actions import charges, customers, events, invoices, plans, refunds, sources, subscriptions, transfers, accounts, externalaccounts
+from ..models import BitcoinReceiver, Customer, Charge, Card, Plan, Event, Invoice, Subscription, Transfer, Account
 
 import json
 
@@ -2620,3 +2620,44 @@ class AccountsSyncTestCase(TestCase):
             account.tos_acceptance_date,
             datetime.datetime(1981, 9, 12, 07, 0, 0)
         )
+
+
+class BankAccountsSyncTestCase(TestCase):
+
+    def setUp(self):
+        self.data = json.loads(
+            """{
+  "id": "ba_19VZfo2m3chDH8uLo0r6WCia",
+  "object": "bank_account",
+  "account": "acct_102t2K2m3chDH8uL",
+  "account_holder_name": "Jane Austen",
+  "account_holder_type": "individual",
+  "bank_name": "STRIPE TEST BANK",
+  "country": "US",
+  "currency": "cad",
+  "default_for_currency": false,
+  "fingerprint": "ObHHcvjOGrhaeWhC",
+  "last4": "6789",
+  "metadata": {
+  },
+  "routing_number": "110000000",
+  "status": "new"
+}
+""")
+
+    def test_sync(self):
+        User = get_user_model()
+        user = User.objects.create_user(
+            username="snuffle",
+            email="upagus@test"
+        )
+        account = Account.objects.create(
+            stripe_id='acct_102t2K2m3chDH8uL',
+            managed=True,
+            user=user
+        )
+        bankaccount = externalaccounts.sync_bank_account_from_stripe_data(
+            self.data
+        )
+        self.assertEqual(bankaccount.account_holder_name, "Jane Austen")
+        self.assertEqual(bankaccount.account, account)

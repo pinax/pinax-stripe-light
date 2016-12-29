@@ -16,6 +16,8 @@ from .models import (  # @@@ make all these read-only
     Coupon,
     Transfer,
     TransferChargeFee
+    Account,
+    BankAccount
 )
 
 
@@ -375,5 +377,40 @@ admin.site.register(
     ],
     inlines=[
         TransferChargeFeeInline
+    ]
+)
+
+
+admin.site.register(
+    Account,
+    raw_id_fields=["user"],
+    list_display=[
+        "stripe_id",
+        "managed",
+        "country",
+        "transfers_enabled",
+        "charges_enabled"
+    ],
+    search_fields=[
+        "stripe_id",
+    ]
+)
+
+admin.site.register(
+    BankAccount,
+    raw_id_fields=["account"],
+    list_display=[
+        "stripe_id",
+        "account",
+        "account_holder_type",
+        "account_holder_name",
+        "currency",
+        "default_for_currency",
+        "bank_name",
+        "country",
+        "last4"
+    ],
+    search_fields=[
+        "stripe_id",
     ]
 )

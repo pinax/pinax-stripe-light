@@ -1,6 +1,7 @@
 import decimal
 
 import stripe
+from django.utils.encoding import smart_str
 
 from . import charges, subscriptions
 from .. import hooks, models, utils
@@ -36,13 +37,17 @@ def create_and_pay(customer):
     Returns:
         True, if invoice was created, False if there was an error
     """
+
     try:
         invoice = create(customer)
         if invoice.amount_due > 0:
             invoice.pay()
         return True
-    except stripe.InvalidRequestError:
-        return False  # There was nothing to Invoice
+    except stripe.InvalidRequestError as e:
+        if smart_str(e).endswith("Nothing to invoice for customer"):
+            return False  # There was nothing to Invoice
+        else:
+            raise e
 
 
 def pay(invoice, send_receipt=True):

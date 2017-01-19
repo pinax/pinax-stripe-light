@@ -733,7 +733,7 @@ class InvoicesTests(TestCase):
     def test_create_and_pay_invalid_request_error(self, CreateMock):
         invoice = CreateMock()
         invoice.amount_due = 100
-        invoice.pay.side_effect = stripe.InvalidRequestError("Bad", "error")
+        invoice.pay.side_effect = stripe.InvalidRequestError("Nothing to invoice for customer", "error")
         self.assertFalse(invoices.create_and_pay(Mock()))
         self.assertTrue(invoice.pay.called)
 

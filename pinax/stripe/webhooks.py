@@ -197,27 +197,34 @@ class ChargeUpdatedWebhook(ChargeWebhook):
     description = "Occurs whenever a charge description or metadata is updated."
 
 
-class ChargeDisputeClosedWebhook(ChargeWebhook):
+class ChargeDisputeWebhook(Webhook):
+
+    def process_webhook(self):
+        charges.sync_charge_from_stripe_data(
+            stripe.Charge.retrieve(self.event.message["data"]["object"]["charge"])
+        )
+
+class ChargeDisputeClosedWebhook(ChargeDisputeWebhook):
     name = "charge.dispute.closed"
     description = "Occurs when the dispute is resolved and the dispute status changes to won or lost."
 
 
-class ChargeDisputeCreatedWebhook(ChargeWebhook):
+class ChargeDisputeCreatedWebhook(ChargeDisputeWebhook):
     name = "charge.dispute.created"
     description = "Occurs whenever a customer disputes a charge with their bank (chargeback)."
 
 
-class ChargeDisputeFundsReinstatedWebhook(ChargeWebhook):
+class ChargeDisputeFundsReinstatedWebhook(ChargeDisputeWebhook):
     name = "charge.dispute.funds_reinstated"
     description = "Occurs when funds are reinstated to your account after a dispute is won."
 
 
-class ChargeDisputeFundsWithdrawnWebhook(ChargeWebhook):
+class ChargeDisputeFundsWithdrawnWebhook(ChargeDisputeWebhook):
     name = "charge.dispute.funds_withdrawn"
     description = "Occurs when funds are removed from your account due to a dispute."
 
 
-class ChargeDisputeUpdatedWebhook(ChargeWebhook):
+class ChargeDisputeUpdatedWebhook(ChargeDisputeWebhook):
     name = "charge.dispute.updated"
     description = "Occurs when the dispute is updated (usually with evidence)."
 

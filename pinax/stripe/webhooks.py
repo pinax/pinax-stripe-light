@@ -204,6 +204,7 @@ class ChargeDisputeWebhook(Webhook):
             stripe.Charge.retrieve(self.event.message["data"]["object"]["charge"])
         )
 
+
 class ChargeDisputeClosedWebhook(ChargeDisputeWebhook):
     name = "charge.dispute.closed"
     description = "Occurs when the dispute is resolved and the dispute status changes to won or lost."

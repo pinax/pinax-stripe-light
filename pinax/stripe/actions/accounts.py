@@ -20,6 +20,9 @@ def create(user, country, **kwargs):
         stripe_account, user=user
     )
 
+def update(account):
+    stripe_account = stripe.Account.retrieve(id=account.stripe_id)
+    return sync_account_from_stripe_data(stripe_account)
 
 def sync_account_from_stripe_data(data, user=None):
     """

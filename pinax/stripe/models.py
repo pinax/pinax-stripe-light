@@ -332,7 +332,7 @@ class Charge(StripeObject):
 
 class Account(StripeObject):
 
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
 
     business_name = models.TextField(blank=True, null=True)
 #    business_logo = models.TextField(blank=True)

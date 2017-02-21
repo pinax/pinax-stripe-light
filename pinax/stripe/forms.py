@@ -24,7 +24,7 @@ class ManagedAccountForm(forms.Form):
     address_country = forms.CharField(max_length=2)
     address_postal_code = forms.CharField(max_length=100)
 
-    personal_id_number = forms.CharField(max_length=100)
+    #personal_id_number = forms.CharField(max_length=100)
     routing_number = forms.CharField(max_length=100)
     account_number = forms.CharField(max_length=100)
     currency = forms.CharField(initial='CAD', max_length=3)

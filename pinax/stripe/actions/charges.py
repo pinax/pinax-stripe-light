@@ -96,7 +96,11 @@ def sync_charge_from_stripe_data(data):
     Returns:
         a pinax.stripe.models.Charge object
     """
-    customer = models.Customer.objects.get(stripe_id=data["customer"])
+    customer_id = data["customer"]
+    if customer_id:
+        customer = models.Customer.objects.get(stripe_id=customer_id)
+    else:
+        customer = None
     obj, _ = models.Charge.objects.get_or_create(
         customer=customer,
         stripe_id=data["id"]

@@ -78,6 +78,7 @@ Args:
     `settings.PINAX_STRIPE_DEFAULT_PLAN`.
 - charge_immediately: whether or not the user should be immediately
     charged for the subscription. Defaults to `True`.
+- quantity: the quantity of the subscription. Defaults to `1`.
 
 Returns: `pinax.stripe.models.Customer` object that was created
 

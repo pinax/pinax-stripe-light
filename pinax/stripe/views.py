@@ -195,6 +195,7 @@ class Webhook(View):
 
     def post(self, request, *args, **kwargs):
         data = self.extract_json()
+        import pdb;pdb.set_trace()
         if events.dupe_event_exists(data["id"]):
             exceptions.log_exception(data, "Duplicate event record")
         else:

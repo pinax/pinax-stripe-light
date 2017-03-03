@@ -66,7 +66,11 @@ class Webhook(with_metaclass(Registerable, object)):
         self.event = event
 
     def validate(self):
-        evt = stripe.Event.retrieve(self.event.stripe_id)
+        """We may be extracting a webhook for a connected account."""
+        evt = stripe.Event.retrieve(
+            self.event.stripe_id,
+            stripe_account=self.event.webhook_message.get('user_id')
+        )
         self.event.validated_message = json.loads(
             json.dumps(
                 evt.to_dict(),

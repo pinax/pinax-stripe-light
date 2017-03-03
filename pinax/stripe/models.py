@@ -104,7 +104,6 @@ class Transfer(StripeObject):
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     amount_reversed = models.DecimalField(decimal_places=2, max_digits=9, null=True, blank=True)
     application_fee = models.DecimalField(decimal_places=2, max_digits=9, null=True, blank=True)
-    balance_transaction = models.DecimalField(decimal_places=2, max_digits=9, null=True, blank=True)
     created = models.DateTimeField(null=True, blank=True)
     currency = models.CharField(max_length=25, default="usd")
     date = models.DateTimeField()
@@ -117,16 +116,22 @@ class Transfer(StripeObject):
         null=True,
         blank=True
     )
+    failure_code = models.TextField(null=True, blank=True)
     failure_message = models.TextField(null=True, blank=True)
-    livemode = models.NullBooleanField(default=None, null=True, blank=True)
+    livemode = models.BooleanField(default=False)
     metadata = JSONField(null=True, blank=True)
+    method = models.TextField(null=True, blank=True)
     reversed = models.BooleanField(default=False)
-    source = models.TextField(null=True, blank=True)
     source_transaction = models.TextField(null=True, blank=True)
     source_type = models.TextField(null=True, blank=True)
     statement_descriptor = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=25)
+    transfer_group = models.TextField(null=True, blank=True)
     type = models.TextField(null=True, blank=True)
+
+    @property
+    def stripe_transfer(self):
+        return stripe.Transfer.retrieve(self.stripe_id)
 
 
 class TransferChargeFee(models.Model):

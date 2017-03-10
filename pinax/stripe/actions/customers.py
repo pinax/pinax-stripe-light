@@ -82,6 +82,12 @@ def get_customer_for_user(user):
     return next(iter(models.Customer.objects.filter(user=user)), None)
 
 
+def purge_local(customer):
+    customer.user = None
+    customer.date_purged = timezone.now()
+    customer.save()
+
+
 def purge(customer):
     """
     Deletes the Stripe customer data and purges the linking of the transaction
@@ -97,9 +103,7 @@ def purge(customer):
             # The exception was thrown because the customer was already
             # deleted on the stripe side, ignore the exception
             raise
-    customer.user = None
-    customer.date_purged = timezone.now()
-    customer.save()
+    purge_local(customer)
 
 
 def link_customer(event):
@@ -149,8 +153,16 @@ def sync_customer(customer, cu=None):
         customer: a Customer object
         cu: optionally, data from the Stripe API representing the customer
     """
+    if customer.date_purged is not None:
+        return
+
     if cu is None:
         cu = customer.stripe_customer
+
+    if cu.get('deleted', False):
+        purge_local(customer)
+        return
+
     customer.account_balance = utils.convert_amount_for_db(cu["account_balance"], cu["currency"])
     customer.currency = cu["currency"] or ""
     customer.delinquent = cu["delinquent"]

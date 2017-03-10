@@ -25,8 +25,16 @@ class StripeObject(models.Model):
         abstract = True
 
 
+class AccountRelatedStripeObject(StripeObject):
+
+    stripe_account = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+
 @python_2_unicode_compatible
-class Plan(StripeObject):
+class Plan(AccountRelatedStripeObject):
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=15)
     interval = models.CharField(max_length=15)
@@ -78,7 +86,7 @@ class EventProcessingException(models.Model):
 
 
 @python_2_unicode_compatible
-class Event(StripeObject):
+class Event(AccountRelatedStripeObject):
 
     kind = models.CharField(max_length=250)
     livemode = models.BooleanField(default=False)
@@ -99,7 +107,7 @@ class Event(StripeObject):
         return "{} - {}".format(self.kind, self.stripe_id)
 
 
-class Transfer(StripeObject):
+class Transfer(AccountRelatedStripeObject):
 
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     amount_reversed = models.DecimalField(decimal_places=2, max_digits=9, null=True, blank=True)
@@ -131,7 +139,10 @@ class Transfer(StripeObject):
 
     @property
     def stripe_transfer(self):
-        return stripe.Transfer.retrieve(self.stripe_id)
+        return stripe.Transfer.retrieve(
+            self.stripe_id,
+            stripe_account=self.account
+        )
 
 
 class TransferChargeFee(models.Model):
@@ -146,7 +157,7 @@ class TransferChargeFee(models.Model):
 
 
 @python_2_unicode_compatible
-class Customer(StripeObject):
+class Customer(AccountRelatedStripeObject):
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
     account_balance = models.DecimalField(decimal_places=2, max_digits=9, null=True)
@@ -159,7 +170,10 @@ class Customer(StripeObject):
 
     @cached_property
     def stripe_customer(self):
-        return stripe.Customer.retrieve(self.stripe_id)
+        return stripe.Customer.retrieve(
+            self.stripe_id,
+            stripe_account=self.stripe_account
+        )
 
     def __str__(self):
         return str(self.user)
@@ -280,7 +294,10 @@ class Invoice(StripeObject):
 
     @property
     def stripe_invoice(self):
-        return stripe.Invoice.retrieve(self.stripe_id)
+        return stripe.Invoice.retrieve(
+            self.stripe_id,
+            stripe_account=self.customer.stripe_account
+        )
 
 
 class InvoiceItem(models.Model):
@@ -328,7 +345,10 @@ class Charge(StripeObject):
 
     @property
     def stripe_charge(self):
-        return stripe.Charge.retrieve(self.stripe_id)
+        return stripe.Charge.retrieve(
+            self.stripe_id,
+            stripe_account=self.customer.stripe_account
+        )
 
     @property
     def card(self):
@@ -409,7 +429,7 @@ class Account(StripeObject):
 
 class BankAccount(StripeObject):
 
-    account = models.ForeignKey(Account)
+    account = models.ForeignKey(Account, related_name='bank_accounts')
     account_holder_name = models.TextField()
     account_holder_type = models.TextField()
     bank_name = models.TextField()

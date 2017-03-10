@@ -1,13 +1,17 @@
-import json
-
-from django.dispatch import Signal
-
-import stripe
-
-from six import with_metaclass
-
-from .actions import charges, customers, exceptions, invoices, plans, transfers, sources, subscriptions
+from .actions import accounts
+from .actions import charges
+from .actions import customers
+from .actions import exceptions
+from .actions import invoices
+from .actions import plans
+from .actions import sources
+from .actions import subscriptions
+from .actions import transfers
 from .conf import settings
+from django.dispatch import Signal
+from six import with_metaclass
+import json
+import stripe
 
 
 class WebhookRegistry(object):
@@ -66,10 +70,20 @@ class Webhook(with_metaclass(Registerable, object)):
         self.event = event
 
     def validate(self):
-        """We may be extracting a webhook for a connected account."""
+        """
+        Validate incoming events.
+
+        We fetch the event data to ensure it's legit. The only complication
+        to this is that we may be fetching an event occurring on a
+        connected account. We use `stripe_account` to perform the event
+        fetch using the correct Stripe account.
+
+        Todo: ensure this works across the board
+        """
+        self.stripe_account = self.event.webhook_message.get('user_id')
         evt = stripe.Event.retrieve(
             self.event.stripe_id,
-            stripe_account=self.event.webhook_message.get('user_id')
+            stripe_account=self.stripe_account
         )
         self.event.validated_message = json.loads(
             json.dumps(
@@ -103,7 +117,15 @@ class Webhook(with_metaclass(Registerable, object)):
         return
 
 
-class AccountUpdatedWebhook(Webhook):
+class AccountWebhook(Webhook):
+
+    def process_webhook(self):
+        accounts.sync_account_from_stripe_data(
+            stripe.Account.retrieve(self.event.message["data"]["object"]["id"])
+        )
+
+
+class AccountUpdatedWebhook(AccountWebhook):
     name = "account.updated"
     description = "Occurs whenever an account status or property has changed."
 
@@ -172,7 +194,10 @@ class ChargeWebhook(Webhook):
 
     def process_webhook(self):
         charges.sync_charge_from_stripe_data(
-            stripe.Charge.retrieve(self.event.message["data"]["object"]["id"])
+            stripe.Charge.retrieve(
+                self.event.message["data"]["object"]["id"],
+                stripe_account=self.stripe_account
+            )
         )
 
 
@@ -460,7 +485,13 @@ class SKUUpdatedWebhook(Webhook):
 class TransferWebhook(Webhook):
 
     def process_webhook(self):
-        transfers.sync_transfer(self.event.message["data"]["object"], self.event)
+        transfers.sync_transfer(
+            stripe.Transfer.retrieve(
+                self.event.message["data"]["object"]["id"],
+                stripe_account=self.stripe_account
+            ),
+            self.event
+        )
 
 
 class TransferCreatedWebhook(TransferWebhook):

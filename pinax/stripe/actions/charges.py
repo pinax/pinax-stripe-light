@@ -41,7 +41,7 @@ def capture(charge, amount=None):
     sync_charge_from_stripe_data(stripe_charge)
 
 
-def create(amount, customer, source=None, currency="usd", description=None, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True, email=None):
+def create(amount, customer, source=None, currency="usd", description=None, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True, email=None, stripe_account=None):
     """
     Creates a charge for the given customer.
 
@@ -53,6 +53,7 @@ def create(amount, customer, source=None, currency="usd", description=None, send
         description: a description of the charge
         send_receipt: send a receipt upon successful charge
         capture: immediately capture the charge instead of doing a pre-authorization
+        stripe_account: stripe_id of a connected account
 
     Returns:
         a pinax.stripe.models.Charge object
@@ -61,13 +62,20 @@ def create(amount, customer, source=None, currency="usd", description=None, send
         raise ValueError(
             "You must supply a decimal value representing dollars."
         )
-    stripe_charge = stripe.Charge.create(
+    kwargs = dict(
         amount=utils.convert_amount_for_api(amount, currency),  # find the final amount
         currency=currency,
         source=source,
         customer=customer,
         description=description,
-        capture=capture,
+        capture=capture
+    )
+    if stripe_account:
+        kwargs['destination'] = {
+            'account': stripe_account
+        }
+    stripe_charge = stripe.Charge.create(
+        **kwargs
     )
     charge = sync_charge_from_stripe_data(stripe_charge)
     if send_receipt:

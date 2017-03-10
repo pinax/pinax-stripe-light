@@ -29,40 +29,40 @@ def sync_transfer(transfer, event=None):
     """
     defaults = {
         "amount": utils.convert_amount_for_db(
-            transfer.amount, transfer.currency
+            transfer['amount'], transfer['currency']
         ),
         "amount_reversed": utils.convert_amount_for_db(
-            transfer.amount_reversed, transfer.currency
-        ) if transfer.amount_reversed else None,
+            transfer['amount_reversed'], transfer['currency']
+        ) if transfer['amount_reversed'] else None,
         "application_fee": utils.convert_amount_for_db(
-            transfer.application_fee, transfer.currency
-        ) if transfer.amount_reversed else None,
-        "created": utils.convert_tstamp(transfer.created),
-        "currency": transfer.currency,
-        "date": utils.convert_tstamp(transfer.date),
-        "description": transfer.description,
-        "destination": transfer.destination,
+            transfer['application_fee'], transfer['currency']
+        ) if transfer['application_fee'] else None,
+        "created": utils.convert_tstamp(transfer['created']),
+        "currency": transfer['currency'],
+        "date": utils.convert_tstamp(transfer.get('date')),
+        "description": transfer['description'],
+        "destination": transfer['destination'],
         "destination_payment": transfer.get('destination_payment'),
         "event": event,
-        "failure_code": transfer.failure_code,
-        "failure_message": transfer.failure_message,
-        "livemode": transfer.livemode,
-        "metadata": transfer.metadata.to_dict(),
-        "method": transfer.method,
-        "reversed": transfer.reversed,
-        "source_transaction": transfer.source_transaction,
-        "source_type": transfer.source_type,
-        "statement_descriptor": transfer.statement_descriptor,
-        "status": transfer.status,
-        "transfer_group": transfer.transfer_group,
-        "type": transfer.type
+        "failure_code": transfer['failure_code'],
+        "failure_message": transfer['failure_message'],
+        "livemode": transfer['livemode'],
+        "metadata": dict(transfer['metadata']),
+        "method": transfer['method'],
+        "reversed": transfer['reversed'],
+        "source_transaction": transfer['source_transaction'],
+        "source_type": transfer['source_type'],
+        "statement_descriptor": transfer['statement_descriptor'],
+        "status": transfer['status'],
+        "transfer_group": transfer['transfer_group'],
+        "type": transfer['type']
     }
     obj, created = models.Transfer.objects.update_or_create(
-        stripe_id=transfer.id,
+        stripe_id=transfer['id'],
         defaults=defaults
     )
     if not created:
-        obj.status = transfer.status
+        obj.status = transfer['status']
         obj.save()
     return obj
 

@@ -2,7 +2,7 @@ import stripe
 
 from .. import models
 import datetime
-
+from . externalaccounts import sync_bank_account_from_stripe_data
 
 def create(user, country, **kwargs):
     """
@@ -116,4 +116,22 @@ def sync_account_from_stripe_data(data, user=None):
     obj.verification_fields_needed = data['verification']['fields_needed']
 
     obj.save()
+
+    # sync any external accounts (bank accounts only for now) included
+    for external_account in data['external_accounts']['data']:
+        if external_account['object'] == 'bank_account':
+            sync_bank_account_from_stripe_data(external_account)
+
     return obj
+
+
+def delete(account):
+    """
+    Delete an account both remotely and locally.
+
+    Note that this will fail if the account's balance is
+    non-zero.
+    """
+    account.stripe_account.delete()
+    account.delete()
+

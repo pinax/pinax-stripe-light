@@ -15,7 +15,7 @@ from .models import (  # @@@ make all these read-only
     Plan,
     Coupon,
     Transfer,
-    TransferChargeFee
+    TransferChargeFee,
     Account,
     BankAccount
 )

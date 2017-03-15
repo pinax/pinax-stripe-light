@@ -49,7 +49,6 @@ matrix:
     - env: DJANGO=1.11 STRIPE=127
     - env: DJANGO=master STRIPE=128
     - env: DJANGO=master STRIPE=127
-
 install:
   - pip install tox coveralls
 script:

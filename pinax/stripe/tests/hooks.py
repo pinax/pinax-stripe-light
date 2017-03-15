@@ -30,7 +30,7 @@ class TestHookSet(DefaultHookSet):
         if plan is not None:
             return timezone.now() + timedelta(days=3)
 
-    def send_receipt(self, charge):
+    def send_receipt(self, charge, email=None):
         if not charge.receipt_sent:
             from django.contrib.sites.models import Site
 
@@ -44,6 +44,10 @@ class TestHookSet(DefaultHookSet):
             subject = render_to_string("pinax/stripe/email/subject.txt", ctx)
             subject = subject.strip()
             message = render_to_string("pinax/stripe/email/body.txt", ctx)
+
+            if not email and charge.customer:
+                email = charge.customer.user.email
+
             num_sent = EmailMessage(
                 subject,
                 message,

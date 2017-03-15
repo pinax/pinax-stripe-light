@@ -41,7 +41,7 @@ def capture(charge, amount=None):
     sync_charge_from_stripe_data(stripe_charge)
 
 
-def create(amount, customer, source=None, currency="usd", description=None, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True):
+def create(amount, customer, source=None, currency="usd", description=None, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True, email=None):
     """
     Creates a charge for the given customer.
 
@@ -71,7 +71,7 @@ def create(amount, customer, source=None, currency="usd", description=None, send
     )
     charge = sync_charge_from_stripe_data(stripe_charge)
     if send_receipt:
-        hooks.hookset.send_receipt(charge)
+        hooks.hookset.send_receipt(charge, email)
     return charge
 
 
@@ -96,11 +96,8 @@ def sync_charge_from_stripe_data(data):
     Returns:
         a pinax.stripe.models.Charge object
     """
-    customer = models.Customer.objects.get(stripe_id=data["customer"])
-    obj, _ = models.Charge.objects.get_or_create(
-        customer=customer,
-        stripe_id=data["id"]
-    )
+    obj, _ = models.Charge.objects.get_or_create(stripe_id=data["id"])
+    obj.customer = models.Customer.objects.filter(stripe_id=data["customer"]).first()
     obj.source = data["source"]["id"]
     obj.currency = data["currency"]
     obj.invoice = next(iter(models.Invoice.objects.filter(stripe_id=data["invoice"])), None)

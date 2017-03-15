@@ -25,7 +25,7 @@ class DefaultHookSet(object):
         """
         return None
 
-    def send_receipt(self, charge):
+    def send_receipt(self, charge, email=None):
         from django.conf import settings
         if not charge.receipt_sent:
             # Import here to not add a hard dependency on the Sites framework
@@ -41,10 +41,14 @@ class DefaultHookSet(object):
             subject = render_to_string("pinax/stripe/email/subject.txt", ctx)
             subject = subject.strip()
             message = render_to_string("pinax/stripe/email/body.txt", ctx)
+
+            if not email and charge.customer:
+                email = charge.customer.user.email
+
             num_sent = EmailMessage(
                 subject,
                 message,
-                to=[charge.customer.user.email],
+                to=[email],
                 from_email=settings.PINAX_STRIPE_INVOICE_FROM_EMAIL
             ).send()
             charge.receipt_sent = num_sent > 0

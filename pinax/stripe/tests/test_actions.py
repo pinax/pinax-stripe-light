@@ -1409,6 +1409,85 @@ class SyncsTests(TestCase):
         self.assertEquals(charge.amount, decimal.Decimal("2"))
         self.assertEquals(charge.refunded, True)
 
+    def test_sync_charge_from_stripe_data_failed(self):
+        data = {
+            "id": "ch_xxxxxxxxxxxxxxxxxxxxxxxx",
+            "object": "charge",
+            "amount": 200,
+            "amount_refunded": 0,
+            "application": None,
+            "application_fee": None,
+            "balance_transaction": None,
+            "captured": False,
+            "created": 1488208611,
+            "currency": "usd",
+            "customer": None,
+            "description": None,
+            "destination": None,
+            "dispute": None,
+            "failure_code": "card_declined",
+            "failure_message": "Your card was declined.",
+            "fraud_details": {},
+            "invoice": None,
+            "livemode": False,
+            "metadata": {},
+            "on_behalf_of": None,
+            "order": None,
+            "outcome": {
+                "network_status": "declined_by_network",
+                "reason": "generic_decline",
+                "risk_level": "normal",
+                "seller_message": "The bank did not return any further details with this decline.",
+                "type": "issuer_declined"
+            },
+            "paid": False,
+            "receipt_email": None,
+            "receipt_number": None,
+            "refunded": False,
+            "refunds": {
+                "object": "list",
+                "data": [],
+                "has_more": False,
+                "total_count": 0,
+                "url": "/v1/charges/ch_xxxxxxxxxxxxxxxxxxxxxxxx/refunds"
+            },
+            "review": None,
+            "shipping": None,
+            "source": {
+                "id": "card_xxxxxxxxxxxxxxxxxxxxxxxx",
+                "object": "card",
+                "address_city": None,
+                "address_country": None,
+                "address_line1": None,
+                "address_line1_check": None,
+                "address_line2": None,
+                "address_state": None,
+                "address_zip": "424",
+                "address_zip_check": "pass",
+                "brand": "Visa",
+                "country": "US",
+                "customer": None,
+                "cvc_check": "pass",
+                "dynamic_last4": None,
+                "exp_month": 4,
+                "exp_year": 2024,
+                "fingerprint": "xxxxxxxxxxxxxxxx",
+                "funding": "credit",
+                "last4": "0341",
+                "metadata": {},
+                "name": "example@example.com",
+                "tokenization_method": None
+            },
+            "source_transfer": None,
+            "statement_descriptor": None,
+            "status": "failed",
+            "transfer_group": None
+        }
+        charges.sync_charge_from_stripe_data(data)
+        charge = Charge.objects.get(stripe_id=data["id"])
+        self.assertEqual(charge.amount, decimal.Decimal("2"))
+        self.assertEqual(charge.customer, None)
+
     @patch("stripe.Customer.retrieve")
     def test_retrieve_stripe_subscription(self, CustomerMock):
         CustomerMock().subscriptions.retrieve.return_value = "subscription"

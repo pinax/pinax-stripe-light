@@ -27,7 +27,7 @@ def can_charge(customer):
     return False
 
 
-def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True):
+def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, coupon=None, charge_immediately=True):
     """
     Creates a Stripe customer.
 
@@ -37,6 +37,7 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         user: a user object
         card: optionally, the token for a new card
         plan: a plan to subscribe the user to
+        coupon: stripe coupon code
         charge_immediately: whether or not the user should be immediately
                             charged for the subscription
 
@@ -49,6 +50,7 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         email=user.email,
         source=card,
         plan=plan,
+        coupon=coupon,
         trial_end=trial_end
     )
     try:
@@ -109,7 +111,7 @@ def link_customer(event):
     Args:
         event: the pinax.stripe.models.Event object to link
     """
-    cus_id = None
+
     customer_crud_events = [
         "customer.created",
         "customer.updated",

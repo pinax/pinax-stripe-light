@@ -110,8 +110,12 @@ class Webhook(with_metaclass(Registerable, object)):
             self.send_signal()
             self.event.processed = True
             self.event.save()
-        except stripe.StripeError as e:
-            exceptions.log_exception(data=e.http_body, exception=e, event=self.event)
+        except Exception as e:
+            data = None
+            if isinstance(e, stripe.StripeError):
+                data = e.http_body
+            exceptions.log_exception(data=data, exception=e, event=self.event)
+            raise
 
     def process_webhook(self):
         return

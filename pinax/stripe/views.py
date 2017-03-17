@@ -14,7 +14,7 @@ from .actions import events, exceptions, customers, subscriptions, sources
 from .conf import settings
 from .forms import PlanForm, PaymentMethodForm
 from .mixins import LoginRequiredMixin, CustomerMixin, PaymentsContextMixin
-from .models import Invoice, Card, Subscription
+from .models import Invoice, Card, Subscription, Event
 
 
 class InvoiceListView(LoginRequiredMixin, CustomerMixin, ListView):
@@ -195,8 +195,9 @@ class Webhook(View):
 
     def post(self, request, *args, **kwargs):
         data = self.extract_json()
-        if events.dupe_event_exists(data["id"]):
-            exceptions.log_exception(data, "Duplicate event record")
+        event = Event.objects.filter(stripe_id=data["id"]).first()
+        if event:
+            exceptions.log_exception(data, "Duplicate event record", event=event)
         else:
             events.add_event(
                 stripe_id=data["id"],

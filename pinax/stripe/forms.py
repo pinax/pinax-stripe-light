@@ -1,6 +1,10 @@
 from django import forms
 
 from .models import Plan
+import datetime
+
+
+STRIPE_MINIMUM_DOB = datetime.date(1900, 1, 1)
 
 
 class PaymentMethodForm(forms.Form):
@@ -30,3 +34,14 @@ class ManagedAccountForm(forms.Form):
     currency = forms.CharField(initial='CAD', max_length=3)
 
     tos_accepted = forms.BooleanField()
+
+    def clean_dob(self):
+        data = self.cleaned_data['dob']
+        if data < STRIPE_MINIMUM_DOB:
+            raise forms.ValidationError(
+                'This must be greater than {}.'.format(
+                    STRIPE_MINIMUM_DOB
+                 )
+            )
+        return data
+

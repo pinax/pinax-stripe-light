@@ -169,6 +169,9 @@ class BalanceAvailableWebhook(Webhook):
     name = "balance.available"
     description = "Occurs whenever your Stripe balance has been updated (e.g. when a charge collected is available to be paid out). By default, Stripe will automatically transfer any funds in your balance to your bank account on a daily basis."
 
+    def process_webhook(self):
+        charges.update_charge_availability()
+
 
 class BitcoinReceiverCreatedWebhook(Webhook):
     name = "bitcoin.receiver.created"
@@ -193,11 +196,9 @@ class BitcoinReceiverTransactionCreatedWebhook(Webhook):
 class ChargeWebhook(Webhook):
 
     def process_webhook(self):
-        charges.sync_charge_from_stripe_data(
-            stripe.Charge.retrieve(
-                self.event.message["data"]["object"]["id"],
-                stripe_account=self.stripe_account
-            )
+        charges.sync_charge(
+            self.event.message["data"]["object"]["id"],
+            stripe_account=self.stripe_account
         )
 
 

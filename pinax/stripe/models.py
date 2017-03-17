@@ -341,13 +341,20 @@ class Charge(StripeObject):
     receipt_sent = models.BooleanField(default=False)
     charge_created = models.DateTimeField(null=True, blank=True)
 
+    # these fields are extracted from the BalanceTransaction for the
+    # charge and help us know when funds from a charge are added to
+    # our Stripe account balance
+    available = models.BooleanField(default=False)
+    available_on = models.DateTimeField(null=True, blank=True)
+
     objects = ChargeManager()
 
     @property
     def stripe_charge(self):
         return stripe.Charge.retrieve(
             self.stripe_id,
-            stripe_account=self.customer.stripe_account
+            stripe_account=self.customer.stripe_account,
+            expand=['balance_transaction']
         )
 
     @property
@@ -360,7 +367,6 @@ class Account(StripeObject):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
 
     business_name = models.TextField(blank=True, null=True)
-#    business_logo = models.TextField(blank=True)
     business_url = models.TextField(blank=True, null=True)
 
     charges_enabled = models.BooleanField(default=False)
@@ -400,7 +406,6 @@ class Account(StripeObject):
     statement_descriptor = models.TextField(null=True, blank=True)
     support_email = models.TextField(null=True, blank=True)
     support_phone = models.TextField(null=True, blank=True)
-    #support_url = models.TextField(null=True, blank=True)
 
     timezone = models.TextField(null=True, blank=True)
 

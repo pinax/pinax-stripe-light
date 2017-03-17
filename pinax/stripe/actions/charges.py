@@ -12,7 +12,7 @@ from .. import utils
 
 def calculate_refund_amount(charge, amount=None):
     """
-    Calculates the refund amount given a charge and optional amount.
+    Calculate refund amount given a charge and optional amount.
 
     Args:
         charge: a pinax.stripe.models.Charge object
@@ -43,7 +43,7 @@ def capture(charge, amount=None):
 
 def create(amount, customer, source=None, currency="usd", description=None, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True, email=None, stripe_account=None):
     """
-    Creates a charge for the given customer.
+    Create a charge for the given customer.
 
     Args:
         amount: should be a decimal.Decimal amount
@@ -83,6 +83,15 @@ def create(amount, customer, source=None, currency="usd", description=None, send
     return charge
 
 
+def retrieve(stripe_id, stripe_account=None):
+    """Retrieve a Charge plus its balance info."""
+    return stripe.Charge.retrieve(
+        stripe_id,
+        stripe_account=stripe_account,
+        expand=['balance_transaction']
+    )
+
+
 def sync_charges_for_customer(customer):
     """
     Populate database with all the charges for a customer.
@@ -92,6 +101,13 @@ def sync_charges_for_customer(customer):
     """
     for charge in customer.stripe_customer.charges().data:
         sync_charge_from_stripe_data(charge)
+
+
+def sync_charge(stripe_id, stripe_account=None):
+    """Sync a charge given a Stripe charge ID."""
+    return sync_charge_from_stripe_data(
+        retrieve(stripe_id, stripe_account=stripe_account)
+    )
 
 
 def sync_charge_from_stripe_data(data):
@@ -121,5 +137,33 @@ def sync_charge_from_stripe_data(data):
         obj.amount_refunded = utils.convert_amount_for_db(data["amount_refunded"], obj.currency)
     if data["refunded"]:
         obj.amount_refunded = obj.amount
+    balance_transaction = data.get("balance_transaction")
+    if balance_transaction and not isinstance(balance_transaction, str):
+        obj.available = balance_transaction["status"] == "available"
+        obj.available_on = utils.convert_tstamp(
+            balance_transaction, "available_on"
+        )
     obj.save()
     return obj
+
+
+def update_charge_availability():
+    """
+    Update `available` and `available_on` attributes of Charges.
+
+    We only bother checking those Charges that can become available.
+    """
+    charges = models.Charge.objects.filter(
+        paid=True,
+        captured=True
+    ).exclude(
+        available=True,
+        refunded=True
+    ).select_related(
+        'customer'
+    )
+    for c in charges.iterator():
+        sync_charge(
+            c.stripe_id,
+            stripe_account=c.customer.stripe_account
+        )

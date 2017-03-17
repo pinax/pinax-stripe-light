@@ -36,9 +36,10 @@ def capture(charge, amount=None):
         amount=utils.convert_amount_for_api(
             amount if amount else charge.amount,
             charge.currency
-        )
+        ),
+        expand=['balance_transaction']
     )
-    sync_charge_from_stripe_data(stripe_charge)
+    sync_charge(stripe_charge.id)
 
 
 def create(amount, customer, source=None, currency="usd", description=None, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True, email=None, stripe_account=None):

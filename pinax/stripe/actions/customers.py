@@ -25,8 +25,7 @@ def can_charge(customer):
         return True
     return False
 
-
-def _create_without_account(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
+def _create_without_account(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, coupon=None, charge_immediately=True, quantity=None):
     cus = models.Customer.objects.filter(user=user).first()
     if cus is not None:
         try:
@@ -42,6 +41,7 @@ def _create_without_account(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_
         email=user.email,
         source=card,
         plan=plan,
+        coupon=coupon,
         quantity=quantity,
         trial_end=trial_end
     )
@@ -59,7 +59,7 @@ def _create_without_account(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_
     return cus
 
 
-def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
+def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, coupon=None, charge_immediately=True, quantity=None):
     cus = user.customers.filter(user_account__account=stripe_account).first()
     if cus is not None:
         try:
@@ -75,6 +75,7 @@ def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_ST
         email=user.email,
         source=card,
         plan=plan,
+        coupon=coupon,
         quantity=quantity,
         trial_end=trial_end,
         stripe_account=stripe_account.stripe_id,
@@ -92,8 +93,7 @@ def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_ST
         invoices.create_and_pay(cus)
     return cus
 
-
-def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None, stripe_account=None):
+def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, coupon=None, charge_immediately=True, quantity=None, stripe_account=None):
     """
     Creates a Stripe customer.
 
@@ -103,6 +103,7 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         user: a user object
         card: optionally, the token for a new card
         plan: a plan to subscribe the user to
+        coupon: stripe coupon code
         charge_immediately: whether or not the user should be immediately
                             charged for the subscription
         quantity: the quantity (multiplier) of the subscription
@@ -113,8 +114,8 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         the pinax.stripe.models.Customer object that was created
     """
     if stripe_account is None:
-        return _create_without_account(user, card=card, plan=plan, charge_immediately=charge_immediately, quantity=quantity)
-    return _create_with_account(user, stripe_account, card=card, plan=plan, charge_immediately=charge_immediately, quantity=quantity)
+        return _create_without_account(user, card=card, plan=plan, coupon=coupon, charge_immediately=charge_immediately, quantity=quantity)
+    return _create_with_account(user, stripe_account, card=card, plan=plan, coupon=coupon, charge_immediately=charge_immediately, quantity=quantity)
 
 
 def get_customer_for_user(user, stripe_account=None):
@@ -165,7 +166,7 @@ def link_customer(event):
     Args:
         event: the pinax.stripe.models.Event object to link
     """
-    cus_id = None
+
     customer_crud_events = [
         "customer.created",
         "customer.updated",

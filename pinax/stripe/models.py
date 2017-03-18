@@ -141,7 +141,7 @@ class Transfer(AccountRelatedStripeObject):
     def stripe_transfer(self):
         return stripe.Transfer.retrieve(
             self.stripe_id,
-            stripe_account=self.account
+            stripe_account=self.stripe_account
         )
 
 

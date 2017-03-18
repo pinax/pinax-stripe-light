@@ -144,6 +144,7 @@ def sync_charge_from_stripe_data(data):
         obj.available_on = utils.convert_tstamp(
             balance_transaction, "available_on"
         )
+    obj.transfer_group = data["transfer_group"]
     obj.save()
     return obj
 

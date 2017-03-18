@@ -347,6 +347,8 @@ class Charge(StripeObject):
     available = models.BooleanField(default=False)
     available_on = models.DateTimeField(null=True, blank=True)
 
+    transfer_group = models.TextField(null=True, blank=True)
+ 
     objects = ChargeManager()
 
     @property

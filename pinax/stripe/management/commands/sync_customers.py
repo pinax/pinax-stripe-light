@@ -15,16 +15,17 @@ import stripe
 class StripeIterator(object):
     """Iterator over Stripe collection with extra context."""
 
-    def __init__(self, cls):
+    def __init__(self, cls, **kwargs):
         """Fetch total and setup iterator."""
         self.count = 0
         collection = cls.list(
             include=['total_count'],
-            limit=1
+            limit=1,
         )
         self.total = collection.total_count
         self.iterator = cls.list(
-            limit=100
+            limit=100,
+            **kwargs
         ).auto_paging_iter()
 
     def __iter__(self):
@@ -79,7 +80,7 @@ def _sync_customers():
 def _sync_charges():
     synced = 0
     skipped = 0
-    for obj, count, total, perc in StripeIterator(stripe.Charge):
+    for obj, count, total, perc in StripeIterator(stripe.Charge, expand=['data.balance_transaction']):
         try:
             charges.sync_charge_from_stripe_data(obj)
             synced += 1

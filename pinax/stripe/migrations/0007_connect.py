@@ -87,7 +87,7 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('account_holder_name', models.TextField()),
                 ('account_holder_type', models.TextField()),
-                ('bank_name', models.TextField()),
+                ('bank_name', models.TextField(blank=True, null=True)),
                 ('country', models.TextField()),
                 ('currency', models.TextField()),
                 ('default_for_currency', models.BooleanField(default=False)),

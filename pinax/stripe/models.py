@@ -439,7 +439,7 @@ class BankAccount(StripeObject):
     account = models.ForeignKey(Account, related_name='bank_accounts')
     account_holder_name = models.TextField()
     account_holder_type = models.TextField()
-    bank_name = models.TextField()
+    bank_name = models.TextField(null=True, blank=True)
     country = models.TextField()
     currency = models.TextField()
     default_for_currency = models.BooleanField(default=False)

@@ -176,7 +176,7 @@ class Customer(AccountRelatedStripeObject):
         )
 
     def __str__(self):
-        return str(self.user)
+        return unicode(self.user)
 
 
 class Card(StripeObject):

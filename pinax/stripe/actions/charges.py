@@ -1,6 +1,7 @@
 import decimal
 
 
+from django.db.models import Q
 from django.conf import settings
 
 import stripe
@@ -159,8 +160,7 @@ def update_charge_availability():
         paid=True,
         captured=True
     ).exclude(
-        available=True,
-        refunded=True
+        Q(available=True) | Q(refunded=True)
     ).select_related(
         'customer'
     )

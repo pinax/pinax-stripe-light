@@ -173,12 +173,6 @@ class BalanceAvailableWebhook(Webhook):
     name = "balance.available"
     description = "Occurs whenever your Stripe balance has been updated (e.g. when a charge collected is available to be paid out). By default, Stripe will automatically transfer any funds in your balance to your bank account on a daily basis."
 
-    def process_webhook(self):
-        if not self.stripe_account:
-            # Luke: move this out of pinax-stripe, and throw it on a queue
-            # for performance plus also it may not be wanted logic for all users
-            charges.update_charge_availability()
-
 
 class BitcoinReceiverCreatedWebhook(Webhook):
     name = "bitcoin.receiver.created"

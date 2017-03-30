@@ -154,21 +154,21 @@ class CommandTests(TestCase):
         # self.assertEqual(SyncInvoicesMock.call_count, 0)
         # self.assertEqual(SyncMock.call_count, 2)
 
-    @patch("stripe.Customer.retrieve")
+    @patch("stripe.Customer.list")
     @patch("pinax.stripe.actions.customers.sync_customer")
     @patch("pinax.stripe.actions.invoices.sync_invoices_for_customer")
     @patch("pinax.stripe.actions.charges.sync_charges_for_customer")
-    def test_sync_customers_with_unicode_username(self, SyncChargesMock, SyncInvoicesMock, SyncMock, RetrieveMock):
+    def test_sync_customers_with_unicode_username(self, SyncChargesMock, SyncInvoicesMock, SyncMock, ListMock):
         user2 = get_user_model().objects.create_user(username=u"tom\xe1s")
         Customer.objects.create(stripe_id="cus_YYYYY", user=user2)
         management.call_command("sync_customers")
         self.assertEqual(SyncChargesMock.call_count, 1)
         self.assertEqual(SyncInvoicesMock.call_count, 1)
         self.assertEqual(SyncMock.call_count, 1)
-        # management.call_command("sync_customers")
-        # self.assertEqual(SyncChargesMock.call_count, 2)
-        # self.assertEqual(SyncInvoicesMock.call_count, 2)
-        # self.assertEqual(SyncMock.call_count, 2)
+        management.call_command("sync_customers")
+        self.assertEqual(SyncChargesMock.call_count, 2)
+        self.assertEqual(SyncInvoicesMock.call_count, 2)
+        self.assertEqual(SyncMock.call_count, 2)
 
     # @patch("stripe.Customer.retrieve")
     # @patch("pinax.stripe.actions.customers.sync_customer")

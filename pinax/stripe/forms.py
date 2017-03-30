@@ -41,7 +41,6 @@ class ManagedAccountForm(forms.Form):
             raise forms.ValidationError(
                 'This must be greater than {}.'.format(
                     STRIPE_MINIMUM_DOB
-                 )
+                )
             )
         return data
-

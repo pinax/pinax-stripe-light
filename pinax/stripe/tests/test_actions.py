@@ -2458,168 +2458,235 @@ class TransfersTests(TestCase):
 class AccountsSyncTestCase(TestCase):
 
     def setUp(self):
-        self.data = json.loads(
+        self.managed_account_data = json.loads(
             """{
-  "business_logo": null,
-  "business_name": null,
-  "business_url": null,
-  "charges_enabled": true,
-  "country": "CA",
-  "currencies_supported": [
-    "cad",
-    "usd"
-  ],
-  "debit_negative_balances": false,
-  "decline_charge_on": {
-    "avs_failure": false,
-    "cvc_failure": false
-  },
-  "default_currency": "cad",
-  "details_submitted": false,
-  "display_name": null,
-  "email": null,
-  "external_accounts": {
-    "data": [],
-    "has_more": false,
-    "object": "list",
-    "total_count": 0,
-    "url": "/v1/accounts/acct_19Uu2gDpqBn2Jd54/external_accounts"
-  },
-  "id": "acct_19Uu2gDpqBn2Jd54",
-  "legal_entity": {
-    "additional_owners": null,
-    "address": {
-      "city": "Sydney",
-      "country": "AU",
-      "line1": null,
-      "line2": null,
-      "postal_code": null,
-      "state": null
-    },
-    "address_kana": {
-      "city": null,
-      "country": "CA",
-      "line1": null,
-      "line2": null,
-      "postal_code": null,
-      "state": null,
-      "town": null
-    },
-    "address_kanji": {
-      "city": null,
-      "country": "CA",
-      "line1": null,
-      "line2": null,
-      "postal_code": null,
-      "state": null,
-      "town": null
-    },
-    "business_name": null,
-    "business_name_kana": null,
-    "business_name_kanji": null,
-    "business_tax_id_provided": false,
-    "business_vat_id_provided": false,
-    "dob": {
-      "day": 1,
-      "month": 2,
-      "year": 1986
-    },
-    "first_name": "Luke",
-    "first_name_kana": null,
-    "first_name_kanji": null,
-    "gender": null,
-    "last_name": null,
-    "last_name_kana": null,
-    "last_name_kanji": null,
-    "maiden_name": null,
-    "personal_address": {
-      "city": null,
-      "country": "CA",
-      "line1": null,
-      "line2": null,
-      "postal_code": null,
-      "state": null
-    },
-    "personal_address_kana": {
-      "city": null,
-      "country": "CA",
-      "line1": null,
-      "line2": null,
-      "postal_code": null,
-      "state": null,
-      "town": null
-    },
-    "personal_address_kanji": {
-      "city": null,
-      "country": "CA",
-      "line1": null,
-      "line2": null,
-      "postal_code": null,
-      "state": null,
-      "town": null
-    },
-    "personal_id_number_provided": false,
-    "phone_number": null,
-    "ssn_last_4_provided": false,
-    "type": null,
-    "verification": {
-      "details": null,
-      "details_code": null,
-      "document": null,
-      "status": "unverified"
-    }
-  },
-  "managed": true,
-  "metadata": {},
-  "object": "account",
-  "product_description": null,
-  "statement_descriptor": null,
-  "support_email": null,
-  "support_phone": null,
-  "timezone": "Etc/UTC",
-  "tos_acceptance": {
-    "date": 369126000,
-    "ip": "123.123.123.123",
-    "user_agent": null
-  },
-  "transfer_schedule": {
-    "delay_days": 7,
-    "interval": "daily"
-  },
-  "transfer_statement_descriptor": null,
-  "transfers_enabled": false,
-  "verification": {
-    "disabled_reason": "fields_needed",
-    "due_by": null,
-    "fields_needed": [
-      "external_account",
-      "legal_entity.dob.day",
-      "legal_entity.dob.month",
-      "legal_entity.dob.year",
-      "legal_entity.first_name",
-      "legal_entity.last_name",
-      "legal_entity.type",
-      "tos_acceptance.date",
-      "tos_acceptance.ip"
-    ]
-  }
-}""")
+      "managed":true,
+      "tos_acceptance":{
+        "date":1490903452,
+        "ip":"123.107.1.28",
+        "user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36"
+      },
+      "business_logo":null,
+      "email":"operations@someurl.com",
+      "timezone":"Etc/UTC",
+      "statement_descriptor":"SOME COMP",
+      "default_currency":"cad",
+      "transfer_schedule":{
+        "delay_days":3,
+        "interval":"manual"
+      },
+      "display_name":"Some Company",
+      "transfer_statement_descriptor": "For reals",
+      "id":"acct_1A39IGDwqdd5icDO",
+      "transfers_enabled":true,
+      "external_accounts":{
+        "has_more":false,
+        "total_count":1,
+        "object":"list",
+        "data":[
+          {
+            "routing_number":"11000-000",
+            "bank_name":"SOME CREDIT UNION",
+            "account":"acct_1A39IGDwqdd5icDO",
+            "object":"bank_account",
+            "currency":"cad",
+            "country":"CA",
+            "account_holder_name":"Luke Burden",
+            "last4":"6789",
+            "status":"new",
+            "fingerprint":"bZJnuqqS4qIX0SX0",
+            "account_holder_type":"individual",
+            "default_for_currency":true,
+            "id":"ba_1A39IGDwqdd5icDOn9VrFXlQ",
+            "metadata":{}
+          }
+        ],
+        "url":"/v1/accounts/acct_1A39IGDwqdd5icDO/external_accounts"
+      },
+      "support_email":"support@someurl.com",
+      "metadata":{
+        "user_id":"9428"
+      },
+      "support_phone":"7788188181",
+      "business_name":"Woop Woop",
+      "object":"account",
+      "charges_enabled":true,
+      "business_name":"Woop Woop",
+      "debit_negative_balances":false,
+      "country":"CA",
+      "decline_charge_on":{
+        "avs_failure":true,
+        "cvc_failure":true
+      },
+      "product_description":"Monkey Magic",
+      "legal_entity":{
+        "personal_id_number_provided":false,
+        "first_name":"Luke",
+        "last_name":"Baaard",
+        "dob":{
+          "month":2,
+          "day":3,
+          "year":1999
+        },
+        "personal_address":{
+          "city":null,
+          "country":"CA",
+          "line2":null,
+          "line1":null,
+          "state":null,
+          "postal_code":null
+        },
+        "business_tax_id_provided":false,
+        "verification":{
+          "status":"unverified",
+          "details_code":"failed_keyed_identity",
+          "document":null,
+          "details":"Provided identity information could not be verified"
+        },
+        "address":{
+          "city":"Vancouver",
+          "country":"CA",
+          "line2":null,
+          "line1":"14 Alberta St",
+          "state":"BC",
+          "postal_code":"V5Y4Z2"
+        },
+        "business_name":null,
+        "type":"individual"
+      },
+      "details_submitted":true,
+      "verification":{
+        "due_by":null,
+        "fields_needed":[
+          "legal_entity.personal_id_number"
+        ],
+        "disabled_reason":null
+      }
+    }""")
+        self.not_managed_account_data = json.loads(
+            """{
+      "support_phone":"7788188181",
+      "business_name":"Woop Woop",
+      "business_url":"https://www.someurl.com",
+      "support_url":"https://support.someurl.com",
+      "country":"CA",
+      "object":"account",
+      "business_logo":null,
+      "charges_enabled":true,
+      "support_email":"support@someurl.com",
+      "details_submitted":true,
+      "email":"operations@someurl.com",
+      "transfers_enabled":true,
+      "timezone":"Etc/UTC",
+      "id":"acct_102t2K2m3chDH8uL",
+      "display_name":"Some Company",
+      "statement_descriptor":"SOME COMP",
+      "managed":false,
+      "default_currency":"cad"
+    }""")
 
-    def test_sync(self):
+    def assert_common_attributes(self, account):
+        self.assertEqual(account.support_phone, '7788188181')
+        self.assertEqual(account.business_name, 'Woop Woop')
+        self.assertEqual(account.country, 'CA')
+        self.assertEqual(account.charges_enabled, True)
+        self.assertEqual(account.support_email, 'support@someurl.com')
+        self.assertEqual(account.details_submitted, True)
+        self.assertEqual(account.email, 'operations@someurl.com')
+        self.assertEqual(account.transfers_enabled, True)
+        self.assertEqual(account.timezone, 'Etc/UTC')
+        self.assertEqual(account.display_name, 'Some Company')
+        self.assertEqual(account.statement_descriptor, 'SOME COMP')
+        self.assertEqual(account.default_currency, 'cad')
+
+    def assert_managed_attributes(self, account):
+
+        # extra top level attributes
+        self.assertEqual(account.debit_negative_balances, False)
+        self.assertEqual(account.product_description, "Monkey Magic")
+        self.assertEqual(account.metadata, {'user_id': '9428'})
+        self.assertEqual(account.transfer_statement_descriptor, "For reals")
+
+        # legal entity
+        self.assertEqual(account.legal_entity_address_city, 'Vancouver')
+        self.assertEqual(account.legal_entity_address_country, 'CA')
+        self.assertEqual(account.legal_entity_address_line1, '14 Alberta St')
+        self.assertEqual(account.legal_entity_address_line2, None)
+        self.assertEqual(account.legal_entity_address_postal_code, 'V5Y4Z2')
+        self.assertEqual(account.legal_entity_address_state, 'BC')
+        self.assertEqual(account.legal_entity_dob, datetime.date(1999, 2, 3))
+        self.assertEqual(account.legal_entity_type, 'individual')
+        self.assertEqual(account.legal_entity_first_name, "Luke")
+        self.assertEqual(account.legal_entity_last_name, "Baaard")
+        self.assertEqual(account.legal_entity_personal_id_number_provided, False)
+
+        # verification
+        self.assertEqual(
+            account.legal_entity_verification_details,
+            "Provided identity information could not be verified"
+        )
+        self.assertEqual(
+            account.legal_entity_verification_details_code, "failed_keyed_identity"
+        )
+        self.assertEqual(account.legal_entity_verification_document, None)
+        self.assertEqual(account.legal_entity_verification_status, "unverified")
+
+        self.assertEqual(
+            account.tos_acceptance_date,
+            datetime.datetime(2017, 3, 30, 19, 50, 52)
+        )
+
+        self.assertEqual(account.tos_acceptance_ip, "123.107.1.28")
+        self.assertEqual(
+            account.tos_acceptance_user_agent,
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36"
+        )
+
+        # decline charge on certain conditions
+        self.assertEqual(account.decline_charge_on_avs_failure, True)
+        self.assertEqual(account.decline_charge_on_cvc_failure, True)
+
+        # transfer schedule
+        self.assertEqual(account.transfer_schedule_interval, "manual")
+        self.assertEqual(account.transfer_schedule_delay_days, 3)
+        self.assertEqual(account.transfer_schedule_weekly_anchor, None)
+        self.assertEqual(account.transfer_schedule_monthly_anchor, None)
+
+        # verification status, key to progressing account setup
+        self.assertEqual(account.verification_disabled_reason, None)
+        self.assertEqual(account.verification_due_by, None)
+        self.assertEqual(
+            account.verification_fields_needed,
+            [
+                "legal_entity.personal_id_number"
+            ]
+        )
+
+        # external accounts should be sync'd - leave the detail check to
+        # its own test
+        self.assertEqual(
+            account.bank_accounts.all().count(), 1
+        )
+
+    def test_sync_managed_account(self):
         User = get_user_model()
         user = User.objects.create_user(
             username="snuffle",
             email="upagus@test"
         )
         account = accounts.sync_account_from_stripe_data(
-            self.data, user=user
+            self.managed_account_data, user=user
         )
-        self.assertEqual(account.legal_entity_first_name, "Luke")
-        self.assertEqual(account.legal_entity_dob, datetime.date(1986, 2, 1))
-        self.assertEqual(
-            account.tos_acceptance_date,
-            datetime.datetime(1981, 9, 12, 07, 0, 0)
+        self.assertTrue(account.managed)
+        self.assert_common_attributes(account)
+        self.assert_managed_attributes(account)
+
+    def test_sync_not_managed_account(self):
+        account = accounts.sync_account_from_stripe_data(
+            self.not_managed_account_data
         )
+        self.assertFalse(account.managed)
+        self.assert_common_attributes(account)
 
 
 class BankAccountsSyncTestCase(TestCase):

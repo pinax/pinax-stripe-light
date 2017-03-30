@@ -68,6 +68,7 @@ class Webhook(with_metaclass(Registerable, object)):
         if event.kind != self.name:
             raise Exception("The Webhook handler ({}) received the wrong type of Event ({})".format(self.name, event.kind))
         self.event = event
+        self.stripe_account = None
 
     def validate(self):
         """

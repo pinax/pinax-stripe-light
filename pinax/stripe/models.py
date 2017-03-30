@@ -296,7 +296,9 @@ class Invoice(StripeObject):
     def stripe_invoice(self):
         return stripe.Invoice.retrieve(
             self.stripe_id,
-            stripe_account=self.customer.stripe_account
+            stripe_account=(
+                self.customer.stripe_account if self.customer_id else None
+            )
         )
 
 
@@ -348,14 +350,16 @@ class Charge(StripeObject):
     available_on = models.DateTimeField(null=True, blank=True)
 
     transfer_group = models.TextField(null=True, blank=True)
- 
+
     objects = ChargeManager()
 
     @property
     def stripe_charge(self):
         return stripe.Charge.retrieve(
             self.stripe_id,
-            stripe_account=self.customer.stripe_account,
+            stripe_account=(
+                self.customer.stripe_account if self.customer_id else None
+            ),
             expand=['balance_transaction']
         )
 

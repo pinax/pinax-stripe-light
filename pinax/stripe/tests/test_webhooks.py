@@ -1,33 +1,31 @@
-import decimal
-import json
-
-import six
-
+from . import PLAN_CREATED_TEST_DATA
+from . import TRANSFER_CREATED_TEST_DATA
+from . import TRANSFER_PENDING_TEST_DATA
+from ..models import Customer
+from ..models import Event
+from ..models import EventProcessingException
+from ..models import Plan
+from ..models import Transfer
+from ..webhooks import AccountApplicationDeauthorizeWebhook
+from ..webhooks import ChargeCapturedWebhook
+from ..webhooks import CustomerSourceCreatedWebhook
+from ..webhooks import CustomerSourceDeletedWebhook
+from ..webhooks import CustomerSubscriptionCreatedWebhook
+from ..webhooks import CustomerUpdatedWebhook
+from ..webhooks import InvoiceCreatedWebhook
+from ..webhooks import registry
 from django.dispatch import Signal
 from django.test import TestCase
 from django.test.client import Client
-
 try:
     from django.urls import reverse
 except ImportError:
     from django.core.urlresolvers import reverse
-
-import stripe
-
 from mock import patch
-
-from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_PENDING_TEST_DATA, PLAN_CREATED_TEST_DATA
-from ..models import Event, Transfer, EventProcessingException, Customer, Plan
-from ..webhooks import (
-    registry,
-    AccountUpdatedWebhook,
-    ChargeCapturedWebhook,
-    CustomerUpdatedWebhook,
-    CustomerSourceCreatedWebhook,
-    CustomerSourceDeletedWebhook,
-    CustomerSubscriptionCreatedWebhook,
-    InvoiceCreatedWebhook
-)
+import decimal
+import json
+import six
+import stripe
 
 
 class WebhookRegistryTest(TestCase):
@@ -43,7 +41,8 @@ class WebhookRegistryTest(TestCase):
 class WebhookTests(TestCase):
 
     @patch("stripe.Event.retrieve")
-    def test_webhook_with_transfer_event(self, StripeEventMock):
+    @patch("stripe.Transfer.retrieve")
+    def test_webhook_with_transfer_event(self, TransferMock, StripeEventMock):
         data = {
             "created": 1348360173,
             "data": {
@@ -119,18 +118,18 @@ class WebhookTests(TestCase):
 
     @patch("django.dispatch.Signal.send")
     def test_send_signal(self, SignalSendMock):
-        event = Event(kind="account.updated")
-        WH = registry.get("account.updated")
+        event = Event(kind="account.application.deauthorized")
+        WH = registry.get("account.application.deauthorized")
         WH(event).send_signal()
         self.assertTrue(SignalSendMock.called)
 
     def test_send_signal_not_sent(self):
-        event = Event(kind="account.updated")
-        WH = registry.get("account.updated")
+        event = Event(kind="account.application.deauthorized")
+        WH = registry.get("account.application.deauthorized")
 
         def signal_handler(sender, *args, **kwargs):
             self.fail("Should not have been called.")
-        registry.get_signal("account.updated").connect(signal_handler)
+        registry.get_signal("account.application.deauthorized").connect(signal_handler)
         webhook = WH(event)
         webhook.name = "mismatch name"  # Not sure how this ever happens due to the registry
         webhook.send_signal()
@@ -139,16 +138,19 @@ class WebhookTests(TestCase):
     @patch("pinax.stripe.webhooks.Webhook.validate")
     @patch("pinax.stripe.webhooks.Webhook.process_webhook")
     def test_process_exception_is_logged(self, ProcessWebhookMock, ValidateMock, LinkMock):
-        event = Event.objects.create(kind="account.updated", webhook_message={}, valid=True, processed=False)
+        # note: we choose an event type for which we do no processing
+        event = Event.objects.create(kind="account.application.deauthorized", webhook_message={}, valid=True, processed=False)
         ProcessWebhookMock.side_effect = stripe.StripeError("Message", "error")
-        AccountUpdatedWebhook(event).process()
+        with self.assertRaises(stripe.StripeError):
+            AccountApplicationDeauthorizeWebhook(event).process()
         self.assertTrue(EventProcessingException.objects.filter(event=event).exists())
 
     @patch("pinax.stripe.actions.customers.link_customer")
     @patch("pinax.stripe.webhooks.Webhook.validate")
     def test_process_return_none(self, ValidateMock, LinkMock):
-        event = Event.objects.create(kind="account.updated", webhook_message={}, valid=True, processed=False)
-        self.assertIsNone(AccountUpdatedWebhook(event).process())
+        # note: we choose an event type for which we do no processing
+        event = Event.objects.create(kind="account.application.deauthorized", webhook_message={}, valid=True, processed=False)
+        self.assertIsNone(AccountApplicationDeauthorizeWebhook(event).process())
 
 
 class ChargeWebhookTest(TestCase):
@@ -264,9 +266,11 @@ class InvoiceCreatedWebhookTest(TestCase):
 class TestTransferWebhooks(TestCase):
 
     @patch("stripe.Event.retrieve")
-    def test_transfer_created(self, EventMock):
+    @patch("stripe.Transfer.retrieve")
+    def test_transfer_created(self, TransferMock, EventMock):
         ev = EventMock()
         ev.to_dict.return_value = TRANSFER_CREATED_TEST_DATA
+        TransferMock.return_value = TRANSFER_CREATED_TEST_DATA['data']['object']
         event = Event.objects.create(
             stripe_id=TRANSFER_CREATED_TEST_DATA["id"],
             kind="transfer.created",
@@ -281,9 +285,11 @@ class TestTransferWebhooks(TestCase):
         self.assertEquals(transfer.status, "paid")
 
     @patch("stripe.Event.retrieve")
-    def test_transfer_pending_create(self, EventMock):
+    @patch("stripe.Transfer.retrieve")
+    def test_transfer_pending_create(self, TransferMock, EventMock):
         ev = EventMock()
         ev.to_dict.return_value = TRANSFER_PENDING_TEST_DATA
+        TransferMock.return_value = TRANSFER_PENDING_TEST_DATA['data']['object']
         event = Event.objects.create(
             stripe_id=TRANSFER_PENDING_TEST_DATA["id"],
             kind="transfer.created",
@@ -298,9 +304,11 @@ class TestTransferWebhooks(TestCase):
         self.assertEquals(transfer.status, "pending")
 
     @patch("stripe.Event.retrieve")
-    def test_transfer_paid_updates_existing_record(self, EventMock):
+    @patch("stripe.Transfer.retrieve")
+    def test_transfer_paid_updates_existing_record(self, TransferMock, EventMock):
         ev = EventMock()
         ev.to_dict.return_value = TRANSFER_CREATED_TEST_DATA
+        TransferMock.return_value = TRANSFER_CREATED_TEST_DATA['data']['object']
         event = Event.objects.create(
             stripe_id=TRANSFER_CREATED_TEST_DATA["id"],
             kind="transfer.created",

@@ -4,6 +4,7 @@ from .. import models
 import datetime
 from . externalaccounts import sync_bank_account_from_stripe_data
 
+
 def create(user, country, **kwargs):
     """
     Create an Account.
@@ -20,9 +21,12 @@ def create(user, country, **kwargs):
         stripe_account, user=user
     )
 
+
 def update(account):
+    """Update the given local Account instance from remote data."""
     stripe_account = stripe.Account.retrieve(id=account.stripe_id)
     return sync_account_from_stripe_data(stripe_account)
+
 
 def sync_account_from_stripe_data(data, user=None):
     """
@@ -40,15 +44,34 @@ def sync_account_from_stripe_data(data, user=None):
     obj, created = models.Account.objects.get_or_create(
         **kwargs
     )
-    top_level_attrs = (
+
+    common_attrs = (
         'business_name', 'business_url', 'charges_enabled', 'country',
-        'debit_negative_balances', 'default_currency', 'details_submitted',
-        'display_name', 'email', 'managed', 'metadata', 'product_description',
-        'statement_descriptor', 'support_email', 'support_phone',
-        'timezone', 'transfer_statement_descriptor', 'transfers_enabled'
+        'default_currency', 'details_submitted', 'display_name',
+        'email', 'managed', 'statement_descriptor', 'support_email',
+        'support_phone', 'timezone', 'transfers_enabled'
     )
+
+    managed_attrs = (
+        'debit_negative_balances', 'metadata', 'product_description',
+        'transfer_statement_descriptor'
+    )
+
+    if data['managed']:
+        top_level_attrs = common_attrs + managed_attrs
+    else:
+        top_level_attrs = common_attrs
+
     for a in top_level_attrs:
         setattr(obj, a, data.get(a))
+
+    # that's all we get for accounts that are not managed!
+    if not data['managed']:
+        obj.save()
+        return obj
+
+    # otherwise we continue on to gather a range of details available
+    # to us on managed accounts
 
     # legal entity for individual accounts
     le = data['legal_entity']
@@ -134,4 +157,3 @@ def delete(account):
     """
     account.stripe_account.delete()
     account.delete()
-

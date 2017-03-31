@@ -40,56 +40,60 @@ class WebhookRegistryTest(TestCase):
 
 class WebhookTests(TestCase):
 
+    event_data = {
+        "created": 1348360173,
+        "data": {
+            "object": {
+                "amount": 455,
+                "currency": "usd",
+                "date": 1348876800,
+                "description": None,
+                "id": "ach_XXXXXXXXXXXX",
+                "object": "transfer",
+                "other_transfers": [],
+                "status": "pending",
+                "livemode": True,
+                "reversed": False,
+                "summary": {
+                    "adjustment_count": 0,
+                    "adjustment_fee_details": [],
+                    "adjustment_fees": 0,
+                    "adjustment_gross": 0,
+                    "charge_count": 1,
+                    "charge_fee_details": [{
+                        "amount": 45,
+                        "application": None,
+                        "currency": "usd",
+                        "description": None,
+                        "type": "stripe_fee"
+                    }],
+                    "charge_fees": 45,
+                    "charge_gross": 500,
+                    "collected_fee_count": 0,
+                    "collected_fee_gross": 0,
+                    "currency": "usd",
+                    "net": 455,
+                    "refund_count": 0,
+                    "refund_fees": 0,
+                    "refund_gross": 0,
+                    "validation_count": 0,
+                    "validation_fees": 0
+                }
+            }
+        },
+        "id": "evt_XXXXXXXXXXXXx",
+        "livemode": True,
+        "object": "event",
+        "pending_webhooks": 1,
+        "type": "transfer.created"
+    }
+
     @patch("stripe.Event.retrieve")
     @patch("stripe.Transfer.retrieve")
     def test_webhook_with_transfer_event(self, TransferMock, StripeEventMock):
-        data = {
-            "created": 1348360173,
-            "data": {
-                "object": {
-                    "amount": 455,
-                    "currency": "usd",
-                    "date": 1348876800,
-                    "description": None,
-                    "id": "ach_XXXXXXXXXXXX",
-                    "object": "transfer",
-                    "other_transfers": [],
-                    "status": "pending",
-                    "summary": {
-                        "adjustment_count": 0,
-                        "adjustment_fee_details": [],
-                        "adjustment_fees": 0,
-                        "adjustment_gross": 0,
-                        "charge_count": 1,
-                        "charge_fee_details": [{
-                            "amount": 45,
-                            "application": None,
-                            "currency": "usd",
-                            "description": None,
-                            "type": "stripe_fee"
-                        }],
-                        "charge_fees": 45,
-                        "charge_gross": 500,
-                        "collected_fee_count": 0,
-                        "collected_fee_gross": 0,
-                        "currency": "usd",
-                        "net": 455,
-                        "refund_count": 0,
-                        "refund_fees": 0,
-                        "refund_gross": 0,
-                        "validation_count": 0,
-                        "validation_fees": 0
-                    }
-                }
-            },
-            "id": "evt_XXXXXXXXXXXXx",
-            "livemode": True,
-            "object": "event",
-            "pending_webhooks": 1,
-            "type": "transfer.created"
-        }
-        StripeEventMock.return_value.to_dict.return_value = data
-        msg = json.dumps(data)
+        StripeEventMock.return_value.to_dict.return_value = self.event_data
+        TransferMock.return_value = self.event_data['data']['object']
+        msg = json.dumps(self.event_data)
         resp = Client().post(
             reverse("pinax_stripe_webhook"),
             six.u(msg),
@@ -97,6 +101,28 @@ class WebhookTests(TestCase):
         )
         self.assertEquals(resp.status_code, 200)
         self.assertTrue(Event.objects.filter(kind="transfer.created").exists())
+
+    @patch("stripe.Event.retrieve")
+    @patch("stripe.Transfer.retrieve")
+    def test_webhook_associated_with_stripe_account(self, TransferMock, StripeEventMock):
+        connect_event_data = self.event_data.copy()
+        stripe_account = 'acct_123123123'
+        # only difference is that we'll have a user_id value
+        connect_event_data['user_id'] = stripe_account
+        StripeEventMock.return_value.to_dict.return_value = connect_event_data
+        TransferMock.return_value = connect_event_data['data']['object']
+        msg = json.dumps(connect_event_data)
+        resp = Client().post(
+            reverse("pinax_stripe_webhook"),
+            six.u(msg),
+            content_type="application/json"
+        )
+        self.assertEquals(resp.status_code, 200)
+        self.assertTrue(Event.objects.filter(kind="transfer.created").exists())
+        self.assertEqual(
+            Event.objects.filter(kind="transfer.created").first().stripe_account,
+            stripe_account
+        )
 
     def test_webhook_duplicate_event(self):
         data = {"id": 123}

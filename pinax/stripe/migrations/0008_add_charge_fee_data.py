@@ -20,6 +20,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='charge',
             name='fee_currency',
-            field=models.CharField(default='usd', max_length=10),
+            field=models.CharField(blank=True, max_length=10, null=True),
         ),
     ]

@@ -351,7 +351,7 @@ class Charge(StripeObject):
     fee = models.DecimalField(
         decimal_places=2, max_digits=9, null=True, blank=True
     )
-    fee_currency = models.CharField(max_length=10, default="usd")
+    fee_currency = models.CharField(max_length=10, null=True, blank=True)
 
     transfer_group = models.TextField(null=True, blank=True)
 

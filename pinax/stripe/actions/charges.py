@@ -145,6 +145,10 @@ def sync_charge_from_stripe_data(data):
         obj.available_on = utils.convert_tstamp(
             balance_transaction, "available_on"
         )
+        obj.fee = utils.convert_amount_for_db(
+            balance_transaction["fee"], balance_transaction["currency"]
+        )
+        obj.fee_currency = balance_transaction["currency"]
     obj.transfer_group = data.get("transfer_group")
     obj.save()
     return obj

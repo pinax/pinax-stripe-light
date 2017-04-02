@@ -348,6 +348,10 @@ class Charge(StripeObject):
     # our Stripe account balance
     available = models.BooleanField(default=False)
     available_on = models.DateTimeField(null=True, blank=True)
+    fee = models.DecimalField(
+        decimal_places=2, max_digits=9, null=True, blank=True
+    )
+    fee_currency = models.CharField(max_length=10, default="usd")
 
     transfer_group = models.TextField(null=True, blank=True)
 

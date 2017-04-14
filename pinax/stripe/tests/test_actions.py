@@ -193,6 +193,31 @@ class CustomersTests(TestCase):
         self.assertTrue(SyncMock.called)
         self.assertTrue(CreateAndPayMock.called)
 
+    @patch("pinax.stripe.actions.invoices.create_and_pay")
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    @patch("stripe.Customer.create")
+    def test_customer_create_user_with_plan_and_quantity(self, CreateMock, SyncMock, CreateAndPayMock):
+        Plan.objects.create(
+            stripe_id="pro-monthly",
+            name="Pro ($19.99/month each)",
+            amount=19.99,
+            interval="monthly",
+            interval_count=1,
+            currency="usd"
+        )
+        CreateMock.return_value = dict(id="cus_YYYYYYYYYYYYY")
+        customer = customers.create(self.user, card="token232323", plan=self.plan, quantity=42)
+        self.assertEqual(customer.user, self.user)
+        self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["email"], self.user.email)
+        self.assertEqual(kwargs["source"], "token232323")
+        self.assertEqual(kwargs["plan"], self.plan)
+        self.assertEqual(kwargs["quantity"], 42)
+        self.assertIsNotNone(kwargs["trial_end"])
+        self.assertTrue(SyncMock.called)
+        self.assertTrue(CreateAndPayMock.called)
+
     @patch("stripe.Customer.retrieve")
     def test_purge(self, RetrieveMock):
         customer = Customer.objects.create(

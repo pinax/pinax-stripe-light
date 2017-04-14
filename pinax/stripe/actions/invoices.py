@@ -37,8 +37,8 @@ def create_and_pay(customer):
     Returns:
         True, if invoice was created, False if there was an error
     """
-    invoice = create(customer)
     try:
+        invoice = create(customer)
         if invoice.amount_due > 0:
             invoice.pay()
         return True

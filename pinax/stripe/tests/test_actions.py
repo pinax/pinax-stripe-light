@@ -341,6 +341,11 @@ class InvoicesTests(TestCase):
         self.assertFalse(invoices.create_and_pay(Mock()))
         self.assertTrue(invoice.pay.called)
 
+    @patch("stripe.Invoice.create")
+    def test_create_and_pay_invalid_request_error_on_create(self, CreateMock):
+        CreateMock.side_effect = stripe.InvalidRequestError("Bad", "error")
+        self.assertFalse(invoices.create_and_pay(Mock()))
+
 
 class RefundsTests(TestCase):
 

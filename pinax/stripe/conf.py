@@ -38,6 +38,7 @@ class PinaxStripeAppConf(AppConf):
     SUBSCRIPTION_REQUIRED_EXCEPTION_URLS = []
     SUBSCRIPTION_REQUIRED_REDIRECT = None
     SUBSCRIPTION_TAX_PERCENT = None
+    DOCUMENT_MAX_SIZE_KB = 20 * 1024 * 1024
 
     class Meta:
         prefix = "pinax_stripe"

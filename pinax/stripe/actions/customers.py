@@ -46,9 +46,6 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
     """
     trial_end = hooks.hookset.trial_period(user, plan)
 
-    if plan and not quantity:
-        quantity = 1  # if there's a default plan, set a default quantity
-
     stripe_customer = stripe.Customer.create(
         email=user.email,
         source=card,

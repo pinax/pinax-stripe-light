@@ -27,7 +27,7 @@ def can_charge(customer):
     return False
 
 
-def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=1):
+def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
     """
     Creates a Stripe customer.
 
@@ -45,6 +45,9 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         the pinax.stripe.models.Customer object that was created
     """
     trial_end = hooks.hookset.trial_period(user, plan)
+
+    if plan and not quantity:
+        quantity = 1  # if there's a default plan, set a default quantity
 
     stripe_customer = stripe.Customer.create(
         email=user.email,

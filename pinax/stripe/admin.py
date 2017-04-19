@@ -7,6 +7,7 @@ from .models import (  # @@@ make all these read-only
     Subscription,
     Card,
     BitcoinReceiver,
+    Ideal,
     Customer,
     Event,
     EventProcessingException,
@@ -195,6 +196,12 @@ class BitcoinReceiverInline(admin.TabularInline):
     max_num = 0
 
 
+class IdealInline(admin.TabularInline):
+    model = Ideal
+    extra = 0
+    max_num = 0
+
+
 def subscription_status(obj):
     return ", ".join([subscription.status for subscription in obj.subscription_set.all()])
 subscription_status.short_description = "Subscription Status"
@@ -224,7 +231,8 @@ admin.site.register(
     inlines=[
         SubscriptionInline,
         CardInline,
-        BitcoinReceiverInline
+        BitcoinReceiverInline,
+        IdealInline,
     ]
 )
 

@@ -88,6 +88,7 @@ setup(
         "django>=1.7",
         "pytz",
         "six",
+        "django-ipware==1.1.6"
     ],
     test_suite="runtests.runtests",
     tests_require=[

@@ -22,8 +22,57 @@ def create(user, country, **kwargs):
     )
 
 
-def update(account):
-    """Update the given local Account instance from remote data."""
+def update(account, data):
+    """
+    Update the given account with extra data.
+
+    Args:
+        account: a pinax.stripe.models.Account object
+        data: dict of account fields to update via API:
+
+            first_name         -> legal_entity.first_name
+            last_name          -> legal_entity.last_name
+            dob                -> legal_entity.dob
+            personal_id_number -> legal_entity.personal_id_number
+            document           -> legal_entity.verification.document
+
+    Returns:
+        a pinax.stripe.models.Account object
+    """
+    stripe_account = stripe.Account.retrieve(id=account.stripe_id)
+
+    # first, upload our document data if we have it
+    if 'dob' in data:
+        stripe_account.legal_entity.dob = data['dob']
+
+    if 'first_name' in data:
+        stripe_account.legal_entity.first_name = data['first_name']
+
+    if 'last_name' in data:
+        stripe_account.legal_entity.last_name = data['last_name']
+
+    if 'document' in data:
+        response = stripe.FileUpload.create(
+            purpose="identity_document",
+            file=data['document'],
+            stripe_account=stripe_account.id
+        )
+        stripe_account.legal_entity.verification.document = response['id']
+
+    stripe_account.save()
+    return sync_account_from_stripe_data(stripe_account)
+
+
+def sync_account(account):
+    """
+    Update the given local Account instance from remote data.
+
+    Args:
+        account: a pinax.stripe.models.Account object
+
+    Returns:
+        a pinax.stripe.models.Account object
+    """
     stripe_account = stripe.Account.retrieve(id=account.stripe_id)
     return sync_account_from_stripe_data(stripe_account)
 

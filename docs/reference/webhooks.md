@@ -112,6 +112,10 @@ details on how to wire those up.
 * `recipient.created` - Occurs whenever a recipient is created.
 * `recipient.deleted` - Occurs whenever a recipient is deleted.
 * `recipient.updated` - Occurs whenever a recipient is updated.
+* `source.chargeable` - A Source object becomes chargeable after a customer has authenticated and verified a payment
+* `source.canceled` - A Source object expired and cannot be used to create a charge
+* `source.consumed` - A Source object that was single-use has already been charged
+* `source.failed` - A Source object failed to become chargeable as your customer declined to authenticate the payment
 * `sku.created` - Occurs whenever a SKU is created.
 * `sku.updated` - Occurs whenever a SKU is updated.
 * `transfer.created` - Occurs whenever a new transfer is created.

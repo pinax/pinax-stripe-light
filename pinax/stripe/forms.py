@@ -121,7 +121,8 @@ STRIPE_FIELDS_TO_LOCAL_FIELDS = {
     'second_name': 'second_name',
     'routing_number': 'routing_number',
     'currency': 'currency',
-    'account_number': 'account_number'
+    'account_number': 'account_number',
+    'file': 'document'
 }
 
 
@@ -172,6 +173,32 @@ class DynamicManagedAccountForm(forms.Form):
             )
         return data
 
+    def stripe_field_to_local_field(self, stripe_field):
+        for r, l in STRIPE_FIELDS_TO_LOCAL_FIELDS.items():
+            if r in stripe_field:
+                return l
+
+    def stripe_error_to_form_error(self, error):
+        """
+        Translate a Stripe error into meaningful form feedback.
+
+        error.json_body = {
+            u'error': {
+                u'message':
+                u"This value must be greater than 1900.",
+                u'type': u'invalid_request_error',
+                u'param': u'legal_entity[dob][year]'
+            }
+        }
+        """
+        message = error.json_body['error']['message']
+        stripe_field = error.json_body['error']['param']
+        local_field = self.stripe_field_to_local_field(stripe_field)
+        if local_field:
+            self.add_error(local_field, message)
+        else:
+            self.add_error(None, message)
+
 
 def extract_ipaddress(request):
     """Extract IP address from request."""
@@ -220,32 +247,6 @@ class InitialManagedAccountForm(DynamicManagedAccountForm):
         self.fields['currency'] = forms.ChoiceField(
             choices=CURRENCY_CHOICES_BY_COUNTRY[country]
         )
-
-    def stripe_field_to_local_field(self, stripe_field):
-        for r, l in STRIPE_FIELDS_TO_LOCAL_FIELDS.items():
-            if r in stripe_field:
-                return l
-
-    def stripe_error_to_form_error(self, error):
-        """
-        Translate a Stripe error into meaningful form feedback.
-
-        error.json_body = {
-            u'error': {
-                u'message':
-                u"This value must be greater than 1900.",
-                u'type': u'invalid_request_error',
-                u'param': u'legal_entity[dob][year]'
-            }
-        }
-        """
-        message = error.json_body['error']['message']
-        stripe_field = error.json_body['error']['param']
-        local_field = self.stripe_field_to_local_field(stripe_field)
-        if local_field:
-            self.add_error(local_field, message)
-        else:
-            self.add_error(None, message)
 
     def get_ipaddress(self):
         return extract_ipaddress(self.request)
@@ -364,8 +365,8 @@ class AdditionalManagedAccountForm(DynamicManagedAccountForm):
                     },
                     'first_name': data['first_name'],
                     'last_name': data['last_name'],
-                    'personal_id_number': data['personal_id'],
-                    'document': data['document']
+                    'personal_id_number': data.get('personal_id'),
+                    'document': data.get('document')
                 }
             )
 

@@ -51,6 +51,11 @@ def update(account, data):
     if 'last_name' in data:
         stripe_account.legal_entity.last_name = data['last_name']
 
+    if 'personal_id_number' in data:
+        stripe_account.legal_entity.personal_id_number = data[
+            'personal_id_number'
+        ]
+
     if 'document' in data:
         response = stripe.FileUpload.create(
             purpose="identity_document",

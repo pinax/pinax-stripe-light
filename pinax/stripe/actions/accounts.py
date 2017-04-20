@@ -1,9 +1,9 @@
 import stripe
 
 from .. import models
+from .. import utils
 import datetime
 from . externalaccounts import sync_bank_account_from_stripe_data
-
 
 def create(user, country, **kwargs):
     """
@@ -98,7 +98,6 @@ def sync_account_from_stripe_data(data, user=None):
     obj, created = models.Account.objects.get_or_create(
         **kwargs
     )
-
     common_attrs = (
         'business_name', 'business_url', 'charges_enabled', 'country',
         'default_currency', 'details_submitted', 'display_name',
@@ -199,7 +198,7 @@ def sync_account_from_stripe_data(data, user=None):
 
     # verification status, key to progressing account setup
     obj.verification_disabled_reason = data['verification']['disabled_reason']
-    obj.verification_due_by = data['verification']['due_by']
+    obj.verification_due_by = utils.convert_tstamp(data['verification'], 'due_by')
     obj.verification_fields_needed = data['verification']['fields_needed']
 
     obj.save()

@@ -1,5 +1,12 @@
 # Release Notes
 
+## 3.4.1 - 2017-04-21
+
+This fixes a bug that was introduced in `3.4.0` with customer creation taking a `quantity` parameter.
+
+* [PR 332](https://github.com/pinax/pinax-stripe/pull/332) ([Ryan Verner](https://github.com/xfxf))
+
+
 ## 3.4.0 - 2017-04-14
 
 This release is long overdue.  It includes coupon support, improved admin,

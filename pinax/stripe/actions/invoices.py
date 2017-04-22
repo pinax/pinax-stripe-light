@@ -33,8 +33,8 @@ def create_item(customer, amount, currency="usd", invoice=None, description=None
 
     Args:
         customer: the customer to create the invoice for (Customer)
-        amount:The integer amount in cents of the charge to be applied to the upcoming invoice. To apply a credit to the customer’s account, pass a negative amount
-        currency:Three-letter ISO currency code, in lowercase, Supported codes at -https://support.stripe.com/questions/which-currencies-does-stripe-support
+        amount:The integer amount in cents of the charge to be applied to the upcoming invoice. To apply a credit to the customer's account, pass a negative amount
+        currency:Three letter ISO currency code, in lowercase, Supported codes at -https://support.stripe.com/questions/which-currencies-does-stripe-support
         invoice:The ID of an existing invoice to add this invoice item to. By default the invoice item will be added to the next upcoming scheduled invoice. Use this when adding invoice items in response to an invoice. You cannot add an invoice item to an invoice that has already been paid, attempted or closed
         description:An optional string which you can attach to the invoice item
         discountable:Controls whether discounts apply to this invoice item. Defaults to false

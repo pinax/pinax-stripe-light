@@ -26,7 +26,8 @@ def create(customer):
     """
     return stripe.Invoice.create(customer=customer.stripe_id)
 
-def create_item(customer,amount,currency="usd", invoice=None,description=None,discountable=False, metadata=None,subscription=None):
+
+def create_item(customer, amount, currency="usd", invoice=None, description=None, discountable=False, metadata=None, subscription=None):
     """
     Creates a Stripe invoice item
 
@@ -37,23 +38,24 @@ def create_item(customer,amount,currency="usd", invoice=None,description=None,di
         invoice:The ID of an existing invoice to add this invoice item to. By default the invoice item will be added to the next upcoming scheduled invoice. Use this when adding invoice items in response to an invoice. You cannot add an invoice item to an invoice that has already been paid, attempted or closed
         description:An optional string which you can attach to the invoice item
         discountable:Controls whether discounts apply to this invoice item. Defaults to false
-        metadata:A set of key/value pairs that you can attach to an invoice item object. It can be useful for storing additional information about the invoice item in a structured format. You can unset an individual key by setting its value to None and then saving. To clear all keys, set metadata to None, then save. 
-        subscription:The ID of a subscription to add this invoice item to. When left blank, the invoice item will be be added to the next upcoming scheduled invoice. When set, scheduled invoices for subscriptions other than the specified subscription will ignore the invoice item. Use this when you want to express that an invoice item has been accrued within the context of a particular subscription. 
+        metadata:A set of key/value pairs that you can attach to an invoice item object. It can be useful for storing additional information about the invoice item in a structured format. You can unset an individual key by setting its value to None and then saving. To clear all keys, set metadata to None, then save.
+        subscription:The ID of a subscription to add this invoice item to. When left blank, the invoice item will be be added to the next upcoming scheduled invoice. When set, scheduled invoices for subscriptions other than the specified subscription will ignore the invoice item. Use this when you want to express that an invoice item has been accrued within the context of a particular subscription.
     Returns:
         the data from the Stripe API that represents the invoice item object that
         was created
 
     """
     return stripe.InvoiceItem.create(
-                customer=customer.stripe_id,
-                amount=amount,
-                currency=currency,
-                invoice=invoice,
-                description=description,
-                discountable=discountable, 
-                metadata=metadata,
-                subscription=subscription
-            )
+        customer=customer.stripe_id,
+        amount=amount,
+        currency=currency,
+        invoice=invoice,
+        description=description,
+        discountable=discountable,
+        metadata=metadata,
+        subscription=subscription
+    )
+
 
 def create_and_pay(customer):
     """

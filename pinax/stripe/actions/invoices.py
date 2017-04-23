@@ -45,7 +45,7 @@ def create_item(customer, amount, currency="usd", invoice=None, description=None
         was created
 
     """
-    return stripe.InvoiceItem.create(
+    invoice_item = stripe.InvoiceItem.create(
         customer=customer.stripe_id,
         amount=amount,
         currency=currency,
@@ -55,6 +55,7 @@ def create_item(customer, amount, currency="usd", invoice=None, description=None
         metadata=metadata,
         subscription=subscription
     )
+    return invoice_item
 
 
 def create_and_pay(customer):

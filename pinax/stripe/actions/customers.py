@@ -27,7 +27,7 @@ def can_charge(customer):
     return False
 
 
-def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, coupon=None, charge_immediately=True):
+def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, coupon=None, charge_immediately=True, quantity=None):
     """
     Creates a Stripe customer.
 
@@ -40,6 +40,7 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, coupon=None
         coupon: stripe coupon code
         charge_immediately: whether or not the user should be immediately
                             charged for the subscription
+        quantity: the quantity (multiplier) of the subscription
 
     Returns:
         the pinax.stripe.models.Customer object that was created
@@ -51,6 +52,7 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, coupon=None
         source=card,
         plan=plan,
         coupon=coupon,
+        quantity=quantity,
         trial_end=trial_end
     )
     try:
@@ -95,7 +97,7 @@ def purge(customer):
     try:
         customer.stripe_customer.delete()
     except stripe.InvalidRequestError as e:
-        if not smart_str(e).startswith("No such customer:"):
+        if 'no such customer:' not in smart_str(e).lower():
             # The exception was thrown because the customer was already
             # deleted on the stripe side, ignore the exception
             raise

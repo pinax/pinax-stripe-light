@@ -1,5 +1,35 @@
 # Release Notes
 
+## 3.4.1 - 2017-04-21
+
+This fixes a bug that was introduced in `3.4.0` with customer creation taking a `quantity` parameter.
+
+* [PR 332](https://github.com/pinax/pinax-stripe/pull/332) ([Ryan Verner](https://github.com/xfxf))
+
+
+## 3.4.0 - 2017-04-14
+
+This release is long overdue.  It includes coupon support, improved admin,
+fixing some bugs and deprecation warnings, support for taxes on subscriptions
+and handling unicode in customers names.
+
+* [PR 259](https://github.com/pinax/pinax-stripe/pull/259) ([Vadim](https://github.com/bessiash)) - country is blankable now for `Card` objects
+* [PR 292](https://github.com/pinax/pinax-stripe/pull/292) ([Russell Keith-Magee](https://github.com/freakboy3742)) - handle unicode characters in customer names
+* [PR 299](https://github.com/pinax/pinax-stripe/pull/299) ([Russell Keith-Magee](https://github.com/freakboy3742)) - add template tag for stripe public key
+* [PR 302](https://github.com/pinax/pinax-stripe/pull/302) ([Ryan Verner](https://github.com/xfxf)) - tax support to subscriptions
+* [PR 304](https://github.com/pinax/pinax-stripe/pull/304) ([Russell Keith-Magee](https://github.com/freakboy3742)) - enable charge immediately option on subscription update
+* [PR 303](https://github.com/pinax/pinax-stripe/pull/303) ([Russell Keith-Magee](https://github.com/freakboy3742)) - coupon support
+* [PR 305](https://github.com/pinax/pinax-stripe/pull/305) ([Russell Keith-Magee](https://github.com/freakboy3742)) - protect against duplicate customer creation
+* [PR 307](https://github.com/pinax/pinax-stripe/pull/307) ([Adam Duren](https://github.com/adamduren)) - do not require customer to create a charge
+* [PR 313](https://github.com/pinax/pinax-stripe/pull/313) ([Ian R-P](https://github.com/iarp)) - update to handle change in exception message from stripe for customer not found
+* [PR 316](https://github.com/pinax/pinax-stripe/pull/316) ([Charlie Denton](https://github.com/meshy)) - doc updates
+* [PR 317](https://github.com/pinax/pinax-stripe/pull/317) ([Charlie Denton](https://github.com/meshy)) - fixes failed charge webhook processing
+* [PR 319](https://github.com/pinax/pinax-stripe/pull/319) ([Charlie Denton](https://github.com/meshy)) - allow customers to be created with qty > 1 of a subscription plan
+* [PR 323](https://github.com/pinax/pinax-stripe/pull/323) ([Charlie Denton](https://github.com/meshy)) - fix packaging to prevent jsonfield 2+ from installing
+* [PR 324](https://github.com/pinax/pinax-stripe/pull/324) ([Charlie Denton](https://github.com/meshy)) - gracefully handle invoice creation failure
+* [PR 295](https://github.com/pinax/pinax-stripe/pull/295), [PR 291](https://github.com/pinax/pinax-stripe/pull/291), [PR 288](https://github.com/pinax/pinax-stripe/pull/288), [PR 286](https://github.com/pinax/pinax-stripe/pull/286) ([Mariusz Felisiak](https://github.com/felixxm)) - fixed deprecation warnings
+
+
 ## 3.3.0 - 2016-10-03
 
 This release saw contributions from 6 people!

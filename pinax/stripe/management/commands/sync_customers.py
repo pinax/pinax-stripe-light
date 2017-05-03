@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 
 from stripe.error import InvalidRequestError
 
-from ...actions import charges, customers, invoices
+from ...actions import customers, charges, invoices, orders
 
 
 class Command(BaseCommand):
@@ -34,3 +34,4 @@ class Command(BaseCommand):
             if customer.date_purged is None:
                 invoices.sync_invoices_for_customer(customer)
                 charges.sync_charges_for_customer(customer)
+                orders.sync_orders_from_customer(customer)

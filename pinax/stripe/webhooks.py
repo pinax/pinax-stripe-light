@@ -582,3 +582,58 @@ class TransferUpdatedWebhook(TransferWebhook):
 class PingWebhook(Webhook):
     name = "ping"
     description = "May be sent by Stripe at any time to see if a provided webhook URL is working."
+
+
+class OrderCreatedWebhook(Webhook):
+    name = "order.created"
+    description = "Occurs whenever an order is created."
+
+
+class OrderPaymentFailedWebhook(Webhook):
+    name = "order.payment_failed"
+    description = "Occurs whenever payment is attempted on an order, and the payment fails."
+
+
+class OrderPaymentSucceededWebhook(Webhook):
+    name = "order.payment_succeeded"
+    description = "Occurs whenever payment is attempted on an order, and the payment succeeds."
+
+
+class OrderUpdatedWebhook(Webhook):
+    name = "order.updated"
+    description = "Occurs whenever an order is updated."
+
+
+class OrderReturnCreatedWebhook(Webhook):
+    name = "order_return.created"
+    description = "Occurs whenever an order return created."
+
+
+class SkuCreatedWebhook(Webhook):
+    name = "sku.created"
+    description = "Occurs whenever a SKU is created."
+
+
+class SkuDeletedWebhook(Webhook):
+    name = "sku.deleted"
+    description = "Occurs whenever a SKU is deleted."
+
+
+class SkuUpdatedWebhook(Webhook):
+    name = "sku.updated"
+    description = "Occurs whenever a SKU is updated."
+
+
+class ProductCreatedWebhook(Webhook):
+    name = "product.created"
+    description = "Occurs whenever a product is created."
+
+
+class ProductDeletedWebhook(Webhook):
+    name = "product.deleted"
+    description = "Occurs whenever a product is deleted."
+
+
+class ProductUpdatedWebhook(Webhook):
+    name = "product.updated"
+    description = "Occurs whenever a product is updated."

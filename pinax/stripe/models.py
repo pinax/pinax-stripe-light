@@ -624,3 +624,67 @@ class BankAccount(StripeObject):
         return self.account.stripe_account.external_accounts.retrieve(
             self.stripe_id
         )
+
+class Product(StripeObject):
+
+    active = models.BooleanField(default=False)
+    attributes = JSONField(null=True, blank=True)
+    caption = models.TextField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    images = JSONField(null=True, blank=True)
+    livemode = models.BooleanField(default=False)
+    metadata = JSONField(null=True, blank=True)
+    name = models.TextField(blank=True)
+    package_dimensions = JSONField(null=True, blank=True)
+    shippable = models.BooleanField(default=False)
+    # skus
+
+    @property
+    def stripe_product(self):
+        return stripe.Product.retrieve(self.stripe_id)
+
+class Sku(StripeObject):
+
+    product = models.ForeignKey("Product", null=True, related_name="skus", on_delete=models.CASCADE)
+    price = models.DecimalField(decimal_places=2, max_digits=9, null=True)
+    currency = models.CharField(max_length=10, default="usd")
+    attributes = JSONField(null=True)
+    image = models.TextField(blank=True, null=True)
+    inventory = JSONField(null=True)
+    livemode = models.BooleanField(default=False)
+    metadata = JSONField(null=True)
+    package_dimensions = JSONField(null=True)
+    active = models.BooleanField(default=False)
+    updated = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def stripe_sku(self):
+        return stripe.SKU.retrieve(self.stripe_id)
+
+    def convert_to_order_item(self, quantity=1):
+        return {
+            "type": "sku",
+            "parent" :self.stripe_id,
+            "quantity": quantity
+        }
+
+class Order(StripeObject):
+
+    amount = models.DecimalField(decimal_places=2, max_digits=9, blank=True, null=True)
+    amount_returned = models.DecimalField(decimal_places=2, max_digits=9, default=decimal.Decimal("0"), blank=True, null=True)
+    charge = models.ForeignKey("Charge", null=True, related_name="orders", on_delete=models.CASCADE)
+    currency = models.CharField(max_length=10, default="usd")
+    customer = models.ForeignKey("Customer", null=True, on_delete=models.CASCADE)
+    livemode = models.BooleanField(default=False)
+    metadata = JSONField(null=True)
+    selected_shipping_method = models.TextField(blank=True)
+    shipping = JSONField(null=True)
+    shipping_methods = JSONField(null=True)
+    status = models.CharField(max_length=25)
+    status_transitions = JSONField(null=True)
+    items = JSONField(null=True)
+    returns = JSONField(null=True)
+
+    @property
+    def stripe_order(self):
+        return stripe.Order.retrieve(self.stripe_id)

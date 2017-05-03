@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 
 from stripe.error import InvalidRequestError
 
-from ...actions import customers, charges, invoices
+from ...actions import customers, charges, invoices, orders
 
 
 class Command(BaseCommand):
@@ -33,3 +33,4 @@ class Command(BaseCommand):
 
             invoices.sync_invoices_for_customer(customer)
             charges.sync_charges_for_customer(customer)
+            orders.sync_orders_from_customer(customer)

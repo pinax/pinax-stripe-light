@@ -1,3 +1,5 @@
+from django.utils.encoding import smart_str
+
 import stripe
 
 from . import charges
@@ -42,8 +44,11 @@ def create_and_pay(customer):
         if invoice.amount_due > 0:
             invoice.pay()
         return True
-    except stripe.InvalidRequestError:
-        return False  # There was nothing to Invoice
+    except stripe.InvalidRequestError as e:
+        if smart_str(e).endswith("Nothing to invoice for customer"):
+            return False  # There was nothing to Invoice
+        else:
+            raise e
 
 
 def pay(invoice, send_receipt=True):

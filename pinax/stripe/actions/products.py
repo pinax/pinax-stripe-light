@@ -1,7 +1,9 @@
 import stripe
+from django.utils.encoding import smart_str
 
 from .. import utils
 from .. import models
+from .. actions import skus
 
 def sync_products():
     """
@@ -29,6 +31,7 @@ def sync_products():
             defaults=defaults
         )
         utils.update_with_defaults(obj, defaults, created)
+        skus.sync_skus_from_product(obj)
 
 def sync_product_from_stripe_data(stripe_product):
     """
@@ -78,7 +81,7 @@ def create(name, caption="", description="", active=True, shippable=False, attri
         }
 
     Returns:
-        the data representing the subscription object that was created
+        the data representing the product object that was created
     """
 
     product_params = {
@@ -110,20 +113,20 @@ def create(name, caption="", description="", active=True, shippable=False, attri
 
 def update(product, name="", caption="", description="", active=True, shippable=False, attributes=None, images=None, metadata=None, package_dimensions=None):
     """
-        Updates a product
+    Updates a product
 
-        Args:
-            product: the product to update
-            name: optionally, whether or not to charge immediately
-            caption: optionally, whether or not to charge immediately
-            description: optionally, whether or not to charge immediately
-            active: optionally, whether or not to charge immediately
-            shippable: optionally, whether or not to charge immediately
-            attributes: optionally, whether or not to charge immediately
-            images: optionally, whether or not to charge immediately
-            metadata: optionally, whether or not to charge immediately
-            package_dimensions: optionally, whether or not to charge immediately
-        """
+    Args:
+        product: the product to update
+        name: optionally, whether or not to charge immediately
+        caption: optionally, whether or not to charge immediately
+        description: optionally, whether or not to charge immediately
+        active: optionally, whether or not to charge immediately
+        shippable: optionally, whether or not to charge immediately
+        attributes: optionally, whether or not to charge immediately
+        images: optionally, whether or not to charge immediately
+        metadata: optionally, whether or not to charge immediately
+        package_dimensions: optionally, whether or not to charge immediately
+    """
 
     stripe_product = product.stripe_product
 
@@ -148,6 +151,32 @@ def update(product, name="", caption="", description="", active=True, shippable=
 
     stripe_product.save()
     sync_product_from_stripe_data(stripe_product)
+
+def retrieve(product_id):
+    """
+    Retrieve a sku object from Stripe's API
+
+    Stripe throws an exception if the product has been deleted that we are
+    attempting to sync. In this case we want to just silently ignore that
+    exception but pass on any other.
+
+    Args:
+        product_id: the Stripe ID of the product you are fetching
+
+    Returns:
+        the data for a order object from the Stripe API
+    """
+    if not product_id:
+        return
+
+    try:
+        return stripe.Product.retrieve(product_id)
+    except stripe.InvalidRequestError as e:
+        if smart_str(e).find("No such order") == -1:
+            raise
+        else:
+            # Not Found
+            return None
 
 def delete(product):
     """

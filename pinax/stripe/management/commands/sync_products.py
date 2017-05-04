@@ -9,4 +9,3 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         products.sync_products()
-        skus.sync_skus()

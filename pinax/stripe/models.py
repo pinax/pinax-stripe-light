@@ -688,3 +688,7 @@ class Order(StripeObject):
     @property
     def stripe_order(self):
         return stripe.Order.retrieve(self.stripe_id)
+
+    @property
+    def skus(self):
+        return Sku.objects.filter(stripe_id__in=[s['parent'] for s in self.items if s['type'] == "sku"])

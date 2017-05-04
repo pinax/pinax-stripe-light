@@ -60,11 +60,56 @@ def create(product, price, inventory, currency="usd", attributes=None, image=Non
     stripe_sku = stripe.SKU.create(**sku_params)
     return sync_sku_from_stripe_data(stripe_sku)
 
-def update():
-    pass
+def update(sku, active=None, attributes=None, currency=None, image=None, inventory=None, metadata=None, package_dimensions=None, price=None, product=None):
+    """
+    Updates a product
 
-def delete():
-    pass
+    Args:
+        active: optionally, Whether or not this SKU is available for purchase.
+        attributes: optionally, A dictionary of attributes and values for the attributes defined by the product.
+        currency: optionally, Three-letter ISO currency code, in lowercase. Must be a supported currency.
+        image: optionally, The URL of an image for this SKU, meant to be displayable to the customer. 
+        inventory: optionally, Description of the SKU’s inventory.
+        metadata: optionally, A set of key/value pairs that you can attach to a SKU object.
+        package_dimensions: optionally, The dimensions of this SKU for shipping purposes.
+        price: optionally, The cost of the item as a positive integer.
+        product: optionally, The ID of the product that this SKU should belong to.
+    """
+
+    stripe_sku = sku.stripe_sku
+
+    if active is not None:
+        sku.active = active
+    if attributes:
+        sku.attributes = attributes
+    if currency:
+        sku.currency = currency
+    if image:
+        sku.image = image
+    if inventory:
+        sku.inventory = inventory
+    if metadata:
+        sku.metadata = metadata
+    if package_dimensions:
+        sku.package_dimensions = package_dimensions
+    if price:
+        sku.price = price
+    if product:
+        sku.product = product
+
+    stripe_sku.save()
+    sync_sku_from_stripe_data(stripe_sku)
+
+def delete(sku):
+    """
+    delete a sku
+
+    Args:
+        sku: the sku to delete
+    """
+    stripe_sku = stripe.Product.retrieve(sku.stripe_id)
+    stripe_sku.delete()
+    sku.delete()
 
 def retrieve(sku_id):
     """
@@ -89,6 +134,9 @@ def retrieve(sku_id):
     except stripe.InvalidRequestError as e:
         if smart_str(e).find("No such sku") == -1:
             raise
+        else:
+            # Not Found
+            return None
 
 def sync_skus():
     """
@@ -159,5 +207,5 @@ def sync_skus_from_product(product):
     Args:
         product: a pinax.stripe.models.Product object
     """
-    for sku in product.stripe_product.skus.list().data:
+    for sku in iter(product.stripe_product.skus.list().data):
         sync_sku_from_stripe_data(sku)

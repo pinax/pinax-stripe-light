@@ -5,7 +5,7 @@ from .. import models
 from .. import utils
 
 
-def create(product, price, inventory, currency="usd", attributes=None, image=None, metadata=None, package_dimensions=None, active=True):
+def create(product, price, inventory, s_id=None, currency="usd", attributes=None, image=None, metadata=None, package_dimensions=None, active=True):
     """
     Creates a sku
 
@@ -18,18 +18,19 @@ def create(product, price, inventory, currency="usd", attributes=None, image=Non
             "type": "finite", # Possible values are finite, bucket (not quantified), and infinite.
             "value": "limited" # Possible values are in_stock, limited, and out_of_stock
         }
-        currency: Three-letter ISO currency code, in lowercase. Must be a supported . Defaults to usd
-        attributes: A dictionary of attributes and values for the attributes defined by the product. (e.g {"size": "Medium", "gender": "Unisex"})
-        image: The URL of an image for this SKU, meant to be displayable to the customer.
-        metadata: A set of key/value pairs that you can attach to a product object. It can be useful for storing additional information about the product in a structured format.
-        package_dimensions: The dimensions of this product for shipping purposes, all values are required. e.g
+        s_id: optionally, The identifier for the SKU. Must be unique. If not provided, an identifier will be randomly generated.
+        currency: optionally, Three-letter ISO currency code, in lowercase. Must be a supported . Defaults to usd
+        attributes: optionally, A dictionary of attributes and values for the attributes defined by the product. (e.g {"size": "Medium", "gender": "Unisex"})
+        image: optionally, The URL of an image for this SKU, meant to be displayable to the customer.
+        metadata: optionally, A set of key/value pairs that you can attach to a product object. It can be useful for storing additional information about the product in a structured format.
+        package_dimensions: optionally, The dimensions of this product for shipping purposes, all values are required. e.g
         {
             "height": 20
             "length": 21
             "weight": 22
             "width": 23
         }
-        active: Whether or not the SKU is available for purchase. Default to true
+        active: optionally, Whether or not the SKU is available for purchase. Default to true
 
     Returns:
         the data representing the subscription object that was created
@@ -41,6 +42,9 @@ def create(product, price, inventory, currency="usd", attributes=None, image=Non
         "inventory": inventory,
         "currency": currency
     }
+
+    if s_id:
+        sku_params.update({"id": s_id})
 
     if attributes:
         sku_params.update({"attributes": attributes})

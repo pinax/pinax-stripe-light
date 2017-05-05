@@ -59,20 +59,21 @@ def sync_product_from_stripe_data(stripe_product):
     obj.save()
     return obj
 
-def create(name, caption="", description="", active=True, shippable=False, attributes=None, images=None, metadata=None, package_dimensions=None):
+def create(name, p_id="", caption="", description="", active=True, shippable=False, attributes=None, images=None, metadata=None, package_dimensions=None):
     """
     Creates a product
 
     Args:
         name: The product’s name, meant to be displayable to the customer.
-        caption: A short one-line description of the product, meant to be displayable to the customer.
-        description: The product’s description, meant to be displayable to the customer.
-        active: Whether or not the product is currently available for purchase. Defaults to True
-        shippable: Whether this product is shipped (i.e. physical goods). Defaults to False.
-        attributes: A list of up to 5 alphanumeric attributes that each SKU can provide values for (e.g. ["color", "size"]).
-        images: A list of up to 8 URLs of images for this product, meant to be displayable to the customer.
-        metadata: A set of key/value pairs that you can attach to a product object. It can be useful for storing additional information about the product in a structured format.
-        package_dimensions: The dimensions of this product for shipping purposes, all values are required. e.g
+        p_id: optionally, Unique identifier for the object, If an ID isn't provided, we'll generate one for you.
+        caption: optionally,  A short one-line description of the product, meant to be displayable to the customer.
+        description: optionally,  The product’s description, meant to be displayable to the customer.
+        active: optionally,  Whether or not the product is currently available for purchase. Defaults to True
+        shippable: optionally,  Whether this product is shipped (i.e. physical goods). Defaults to False.
+        attributes: optionally,  A list of up to 5 alphanumeric attributes that each SKU can provide values for (e.g. ["color", "size"]).
+        images: optionally,  A list of up to 8 URLs of images for this product, meant to be displayable to the customer.
+        metadata: optionally,  A set of key/value pairs that you can attach to a product object. It can be useful for storing additional information about the product in a structured format.
+        package_dimensions: optionally,  The dimensions of this product for shipping purposes, all values are required. e.g
         {
             "height": 20
             "length": 21
@@ -89,6 +90,9 @@ def create(name, caption="", description="", active=True, shippable=False, attri
         "active": active,
         "shippable": shippable
     }
+
+    if p_id:
+        product_params.update({"id": p_id})
 
     if caption:
         product_params.update({"caption": caption})

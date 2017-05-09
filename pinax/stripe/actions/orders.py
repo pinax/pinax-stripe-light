@@ -76,7 +76,7 @@ def update(order, coupon=None, metadata=None, selected_shipping_method=None, shi
         stripe_order.status = status
 
     stripe_order.save()
-    sync_order_from_stripe_data(stripe_order)
+    return sync_order_from_stripe_data(stripe_order)
 
 def retrieve(order_id):
     """

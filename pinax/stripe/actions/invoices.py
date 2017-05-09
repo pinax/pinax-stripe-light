@@ -109,7 +109,7 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         date=date,
         charge=charge,
         subscription=subscription,
-        receipt_number = stripe_invoice["receipt_number"] or "",
+        receipt_number=stripe_invoice["receipt_number"] or "",
     )
     invoice, created = models.Invoice.objects.get_or_create(
         stripe_id=stripe_invoice["id"],

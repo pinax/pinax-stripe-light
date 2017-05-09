@@ -241,6 +241,8 @@ class Invoice(StripeObject):
     period_end = models.DateTimeField()
     period_start = models.DateTimeField()
     subtotal = models.DecimalField(decimal_places=2, max_digits=9)
+    tax = models.DecimalField(decimal_places=2, max_digits=9, null=True)
+    tax_percent = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     total = models.DecimalField(decimal_places=2, max_digits=9)
     date = models.DateTimeField()
     webhooks_delivered_at = models.DateTimeField(null=True)

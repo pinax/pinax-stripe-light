@@ -1,3 +1,4 @@
+import decimal
 import stripe
 
 from . import charges
@@ -101,11 +102,14 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         period_end=period_end,
         period_start=period_start,
         subtotal=utils.convert_amount_for_db(stripe_invoice["subtotal"], stripe_invoice["currency"]),
+        tax=utils.convert_amount_for_db(stripe_invoice["tax"], stripe_invoice["currency"]) if stripe_invoice["tax"] is not None else None,
+        tax_percent=decimal.Decimal(stripe_invoice["tax_percent"]) if stripe_invoice["tax_percent"] is not None else None,
         total=utils.convert_amount_for_db(stripe_invoice["total"], stripe_invoice["currency"]),
         currency=stripe_invoice["currency"],
         date=date,
         charge=charge,
-        subscription=subscription
+        subscription=subscription,
+        receipt_number = stripe_invoice["receipt_number"] or "",
     )
     invoice, created = models.Invoice.objects.get_or_create(
         stripe_id=stripe_invoice["id"],
@@ -168,7 +172,8 @@ def sync_invoice_items(invoice, items):
                     invoice.customer,
                     stripe_subscription
                 ) if stripe_subscription else None
-            plan = item_subscription.plan if item_subscription is not None and plan is None else None
+            if plan is None and item_subscription is not None and item_subscription.plan is not None:
+                plan = item_subscription.plan
         else:
             item_subscription = None
 

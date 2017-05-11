@@ -1549,9 +1549,9 @@ class SyncsTests(TestCase):
         self.assertEqual(charge.amount, decimal.Decimal("2"))
         self.assertEqual(charge.customer, None)
 
-    @patch("stripe.Customer.retrieve")
-    def test_retrieve_stripe_subscription(self, CustomerMock):
-        CustomerMock().subscriptions.retrieve.return_value = "subscription"
+    @patch("stripe.Subscription.retrieve")
+    def test_retrieve_stripe_subscription(self, RetrieveMock):
+        RetrieveMock.return_value = "subscription"
         value = subscriptions.retrieve(self.customer, "sub id")
         self.assertEquals(value, "subscription")
 

@@ -661,12 +661,16 @@ class Sku(StripeObject):
     def stripe_sku(self):
         return stripe.SKU.retrieve(self.stripe_id)
 
-    def convert_to_order_item(self, quantity=1):
-        return {
-            "type": "sku",
-            "parent" :self.stripe_id,
-            "quantity": quantity
-        }
+    def convert_to_order_item(self, **kwargs):
+
+        rep = {"type": "sku", "parent" :self.stripe_id}
+
+        rep.update(kwargs)
+
+        if 'quantity' not in rep:
+            rep.update({"quantity": 1})
+
+        return rep
 
 class Order(StripeObject):
 

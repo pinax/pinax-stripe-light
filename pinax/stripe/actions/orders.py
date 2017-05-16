@@ -34,7 +34,7 @@ def create(customer, items, currency="usd", source=None, shipping=None, coupon=N
         params.update({"coupon": coupon})
 
     if metadata:
-        params.update({"metadata": coupon})
+        params.update({"metadata": metadata})
 
     stripe_order = stripe.Order.create(**params)
     if pay_immediately:

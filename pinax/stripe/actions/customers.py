@@ -50,6 +50,7 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         email=user.email,
         source=card,
         plan=plan,
+        quantity=quantity,
         trial_end=trial_end
     )
     try:

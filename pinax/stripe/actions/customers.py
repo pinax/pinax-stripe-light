@@ -144,7 +144,7 @@ def set_default_source(customer, source):
 
 def sync_customer(customer, cu=None):
     """
-    Synchronizes a local Customer object with details from the Stripe API
+    Syncronizes a local Customer object with details from the Stripe API
 
     Args:
         customer: a Customer object

@@ -185,9 +185,6 @@ class BitcoinReceiver(StripeObject):
 class Ideal(StripeObject):
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    status = models.CharField(max_length=32, blank=True)
-    type = models.CharField(max_length=32, blank=True)
-    usage = models.CharField(max_length=32, blank=True)
     amount = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     flow = models.CharField(max_length=32)
     livemode = models.BooleanField(default=False)
@@ -202,6 +199,8 @@ class Ideal(StripeObject):
     redirect_return_url = models.URLField(max_length=1024)
     redirect_status = models.TextField(blank=True)
     redirect_url = models.URLField(max_length=1024)
+    status = models.TextField(blank=True)
+    usage = models.TextField(blank=True)
     ideal_bank = models.TextField(blank=True)
 
 

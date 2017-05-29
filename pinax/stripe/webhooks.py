@@ -447,35 +447,6 @@ class SKUUpdatedWebhook(Webhook):
     description = "Occurs whenever a SKU is updated."
 
 
-class SourceWebhook(Webhook):
-
-    def process_webhook(self):
-        sources.sync_payment_source_from_stripe_data(
-            self.event.customer,
-            self.event.validated_message["data"]["object"]
-        )
-
-
-class SourceChargeableWebhook(SourceWebhook):
-    name = "source.chargeable"
-    description = "A Source object becomes chargeable after a customer has authenticated and verified a payment."
-
-
-class SourceCanceledWebhook(SourceWebhook):
-    name = "source.canceled"
-    description = "A Source object expired and cannot be used to create a charge."
-
-
-class SourceConsumedWebhook(SourceWebhook):
-    name = "source.consumed"
-    description = "A Source object that was single-use has already been charged."
-
-
-class SourceFailedWebhook(SourceWebhook):
-    name = "source.failed"
-    description = "A Source object failed to become chargeable as your customer declined to authenticate the payment."
-
-
 class TransferWebhook(Webhook):
 
     def process_webhook(self):

@@ -119,9 +119,6 @@ def sync_ideal(customer, source):
     """
     defaults = dict(
         customer=customer,
-        status = source["status"] or "",
-        type = source["type"] or "",
-        usage = source["usage"] or "",
         amount = utils.convert_amount_for_db(source["amount"], source["currency"]),  # currency is in but in fact it's always eur
         flow = source["flow"] or "",
         livemode = source["livemode"],
@@ -136,6 +133,8 @@ def sync_ideal(customer, source):
         redirect_return_url = source["redirect"]["return_url"] or "",
         redirect_status = source["redirect"]["status"] or "",
         redirect_url = source["redirect"]["url"] or "",
+        status = source["status"] or "",
+        usage =source["usage"] or "",
         ideal_bank = source["ideal"]["bank"] or "",
     )
     o, created = models.Ideal.objects.get_or_create(
@@ -155,8 +154,7 @@ def sync_payment_source_from_stripe_data(customer, source):
     """
     if source["id"].startswith("card_"):
         return sync_card(customer, source)
-    elif source.get("type", None) == "ideal":
-        # ideal is created using Sources, only then will it have a type attribute
+    elif source["type"] == "ideal":
         return sync_ideal(customer, source)
     else:
         return sync_bitcoin(customer, source)

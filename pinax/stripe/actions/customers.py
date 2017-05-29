@@ -50,7 +50,6 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         email=user.email,
         source=card,
         plan=plan,
-        quantity=quantity,
         trial_end=trial_end
     )
     try:
@@ -145,7 +144,7 @@ def set_default_source(customer, source):
 
 def sync_customer(customer, cu=None):
     """
-    Syncronizes a local Customer object with details from the Stripe API
+    Synchronizes a local Customer object with details from the Stripe API
 
     Args:
         customer: a Customer object

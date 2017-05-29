@@ -171,7 +171,7 @@ def sync_subscription_from_stripe_data(customer, subscription):
     return sub
 
 
-def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, charge_immediately=False):
+def update(subscription, plan=None, quantity=None, token=None, prorate=True, coupon=None, charge_immediately=False):
     """
     Updates a subscription
 
@@ -179,6 +179,10 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
         subscription: the subscription to update
         plan: optionally, the plan to change the subscription to
         quantity: optionally, the quantiy of the subscription to change
+        token: if provided, a token from Stripe.js that will be used as the
+               payment source for the subscription and set as the default
+               source for the customer, otherwise the current default source
+               will be used
         prorate: optionally, if the subscription should be prorated or not
         coupon: optionally, a coupon to apply to the subscription
         charge_immediately: optionally, whether or not to charge immediately
@@ -188,6 +192,8 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
         stripe_subscription.plan = plan
     if quantity:
         stripe_subscription.quantity = quantity
+    if token:
+        stripe_subscription.token = token
     if not prorate:
         stripe_subscription.prorate = False
     if coupon:

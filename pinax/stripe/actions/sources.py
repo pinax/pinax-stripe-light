@@ -106,6 +106,45 @@ def sync_bitcoin(customer, source):
     return utils.update_with_defaults(receiver, defaults, created)
 
 
+def sync_ideal(customer, source):
+    """
+    Syncronizes the data for an ideal source locally for a given customer
+
+    This is required since payment through ideal involves additional steps to be taken by the customer (select bank, enter codes, confirm, ...), updates will be made
+    available through webhooks or the return url and we then need to relate the payment to an instance of a source locally in order to process it further.
+
+    Args:
+        customer: the customer to create or update the source for
+        source: data reprenting the source from the Stripe API
+    """
+    defaults = dict(
+        customer=customer,
+        status = source["status"] or "",
+        type = source["type"] or "",
+        usage = source["usage"] or "",
+        amount = utils.convert_amount_for_db(source["amount"], source["currency"]),  # currency is in but in fact it's always eur
+        flow = source["flow"] or "",
+        livemode = source["livemode"],
+        owner_address = source["owner"]["address"] or "",
+        owner_email = source["owner"]["email"] or "",
+        owner_name = source["owner"]["name"] or "",
+        owner_phone = source["owner"]["phone"] or "",
+        owner_verified_address = source["owner"]["verified_address"] or "",
+        owner_verified_email = source["owner"]["verified_email"] or "",
+        owner_verified_name = source["owner"]["verified_name"] or "",
+        owner_verified_phone = source["owner"]["verified_phone"] or "",
+        redirect_return_url = source["redirect"]["return_url"] or "",
+        redirect_status = source["redirect"]["status"] or "",
+        redirect_url = source["redirect"]["url"] or "",
+        ideal_bank = source["ideal"]["bank"] or "",
+    )
+    o, created = models.Ideal.objects.get_or_create(
+        stripe_id=source["id"],
+        defaults=defaults
+    )
+    return utils.update_with_defaults(o, defaults, created)
+
+
 def sync_payment_source_from_stripe_data(customer, source):
     """
     Syncronizes the data for a payment source locally for a given customer
@@ -116,6 +155,9 @@ def sync_payment_source_from_stripe_data(customer, source):
     """
     if source["id"].startswith("card_"):
         return sync_card(customer, source)
+    elif source.get("type", None) == "ideal":
+        # ideal is created using Sources, only then will it have a type attribute
+        return sync_ideal(customer, source)
     else:
         return sync_bitcoin(customer, source)
 
@@ -140,3 +182,15 @@ def update_card(customer, source, name=None, exp_month=None, exp_year=None):
         stripe_source.exp_year = exp_year
     s = stripe_source.save()
     return sync_payment_source_from_stripe_data(customer, s)
+
+
+def create_ideal(customer, token):
+    """
+    Attaches an ideal source to a customer
+
+    Args:
+        customer: the customer to create the source for
+        token: the token created from Stripe.js
+    """
+    source = customer.stripe_customer.sources.create(source=token)
+    return sync_payment_source_from_stripe_data(customer, source)

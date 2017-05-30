@@ -65,9 +65,55 @@ def pay(invoice, send_receipt=True):
     return False
 
 
+def create_invoice_item(customer, invoice, subscription, amount, currency, description, metadata=None):
+    """
+    :param customer: The pinax-stripe Customer
+    :param invoice:
+    :param subscription:
+    :param amount:
+    :param currency:
+    :param description:
+    :param metadata: Any optional metadata that is attached to the invoice item
+    :return:
+    """
+    stripe_invoice_item = stripe.InvoiceItem.create(
+        customer=customer.stripe_id,
+        amount=utils.convert_amount_for_api(amount, currency),
+        currency=currency,
+        description=description,
+        invoice=invoice.stripe_id,
+        metadata=metadata,
+        subscription=subscription.stripe_id,
+    )
+
+    period_end = utils.convert_tstamp(stripe_invoice_item["period"], "end")
+    period_start = utils.convert_tstamp(stripe_invoice_item["period"], "start")
+
+    # We can safely take the plan from the subscription here because we are creating a new invoice item for this new invoice that is applicable
+    # to the current subscription/current plan.
+    plan = subscription.plan
+
+    defaults = dict(
+        amount=utils.convert_amount_for_db(stripe_invoice_item["amount"], stripe_invoice_item["currency"]),
+        currency=stripe_invoice_item["currency"],
+        proration=stripe_invoice_item["proration"],
+        description=description,
+        line_type=stripe_invoice_item["object"],
+        plan=plan,
+        period_start=period_start,
+        period_end=period_end,
+        quantity=stripe_invoice_item.get("quantity"),
+        subscription=subscription,
+    )
+    inv_item, inv_item_created = invoice.items.get_or_create(
+        stripe_id=stripe_invoice_item["id"],
+        defaults=defaults
+    )
+    return utils.update_with_defaults(inv_item, defaults, inv_item_created)
+
 def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
     """
-    Syncronizes a local invoice with data from the Stripe API
+    Synchronizes a local invoice with data from the Stripe API
 
     Args:
         stripe_invoice: data that represents the invoice from the Stripe API

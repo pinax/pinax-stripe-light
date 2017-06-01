@@ -83,26 +83,26 @@ def update(sku, active=None, attributes=None, currency=None, image=None, invento
     stripe_sku = sku.stripe_sku
 
     if active is not None:
-        sku.active = active
+        stripe_sku.active = active
     if attributes:
-        sku.attributes = attributes
+        stripe_sku.attributes = attributes
     if currency:
-        sku.currency = currency
+        stripe_sku.currency = currency
     if image:
-        sku.image = image
+        stripe_sku.image = image
     if inventory:
-        sku.inventory = inventory
+        stripe_sku.inventory = inventory
     if metadata:
-        sku.metadata = metadata
+        stripe_sku.metadata = metadata
     if package_dimensions:
-        sku.package_dimensions = package_dimensions
+        stripe_sku.package_dimensions = package_dimensions
     if price:
-        sku.price = price
+        stripe_sku.price = price
     if product:
-        sku.product = product
+        stripe_sku.product = product
 
     stripe_sku.save()
-    sync_sku_from_stripe_data(stripe_sku)
+    return sync_sku_from_stripe_data(stripe_sku)
 
 def delete(sku):
     """

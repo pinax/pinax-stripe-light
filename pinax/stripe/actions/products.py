@@ -115,7 +115,7 @@ def create(name, p_id="", caption="", description="", active=True, shippable=Fal
     stripe_product = stripe.Product.create(**product_params)
     return sync_product_from_stripe_data(stripe_product)
 
-def update(product, name="", caption="", description="", active=True, shippable=False, attributes=None, images=None, metadata=None, package_dimensions=None):
+def update(product, name="", caption="", description="", active=None, shippable=False, attributes=None, images=None, metadata=None, package_dimensions=None):
     """
     Updates a product
 
@@ -140,7 +140,7 @@ def update(product, name="", caption="", description="", active=True, shippable=
         stripe_product.caption = caption
     if description:
         stripe_product.description = description
-    if active:
+    if active is not None:
         stripe_product.active = active
     if shippable:
         stripe_product.shippable = shippable

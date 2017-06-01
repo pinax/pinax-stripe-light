@@ -11,7 +11,7 @@ def create(customer, items, currency="usd", source=None, shipping=None, coupon=N
 
     Args:
         customer: The customer to use for this order. 
-        items: List of items constituting the order.
+        items: List of Sku instances constituting the order.
         currency: optionally, Three-letter ISO currency code, in lowercase, default to "usd"
         source: optionally, The source you provide must either be a token, like the ones returned by Stripe.js, or a dictionary containing a user's credit card details
         shipping: optionally, Shipping address for the order. Required if any of the SKUs are for products that have shippable set to true.
@@ -22,6 +22,8 @@ def create(customer, items, currency="usd", source=None, shipping=None, coupon=N
     Returns:
         the data representing the order object that was created
     """
+
+    items = list(map(lambda sku: sku.convert_to_order_item() if isinstance(sku, models.Sku) else sku, items))
 
     params = {
         "customer": customer.stripe_id,

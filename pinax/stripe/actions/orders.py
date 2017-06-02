@@ -106,19 +106,21 @@ def retrieve(order_id):
             # Not Found
             return None
 
-def pay(stripe_order, source=None):
+def pay(order, source=None):
     """
     Pays an order
     
-    :param stripe_order: the stripe order object to be paid
+    :param order: models.Order instance
     :param source: the source you provide must either be a token, like the ones returned by Stripe.js, or a dictionary containing a user's credit card details 
     :return: stripe api object
     """
+    stripe_order = order.stripe_order
     params = {}
     if source:
         params.update({"source": source})
 
-    return stripe_order.pay(**params)
+    paid_order = stripe_order.pay(**params)
+    return sync_order_from_stripe_data(paid_order)
 
 
 def create_return(order, items=None):

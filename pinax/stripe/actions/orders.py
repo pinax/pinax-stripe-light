@@ -114,7 +114,7 @@ def pay(order, source=None):
     :param source: the source you provide must either be a token, like the ones returned by Stripe.js, or a dictionary containing a user's credit card details 
     :return: stripe api object
     """
-    stripe_order = order.stripe_order
+    stripe_order = order.stripe_order if hasattr(order, "stripe_order") else order
     params = {}
     if source:
         params.update({"source": source})

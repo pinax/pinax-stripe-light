@@ -25,7 +25,7 @@ def cancel(subscription, at_period_end=True):
     return sync_subscription_from_stripe_data(subscription.customer, sub)
 
 
-def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=None, tax_percent=None):
+def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=None, tax_percent=None, charge_immediately=False):
     """
     Creates a subscription for the given customer
 
@@ -40,6 +40,7 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
                will be used
         coupon: if provided, a coupon to apply towards the subscription
         tax_percent: if provided, add percentage as tax
+        charge_immediately: optionally, whether or not to charge immediately
 
     Returns:
         the pinax.stripe.models.Subscription object (created or updated)
@@ -49,8 +50,12 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
     subscription_params = {}
     if trial_days:
         subscription_params["trial_end"] = datetime.datetime.utcnow() + datetime.timedelta(days=trial_days)
+
     if token:
         subscription_params["source"] = token
+
+    if charge_immediately:
+        subscription_params["trial_end"] = 'now'
 
     subscription_params["stripe_account"] = customer.stripe_account_stripe_id
     subscription_params["customer"] = customer.stripe_id

@@ -16,7 +16,7 @@ def create(user, country, **kwargs):
     Returns:
         a pinax.stripe.models.Account object
     """
-    kwargs['country'] = country
+    kwargs["country"] = country
     stripe_account = stripe.Account.create(**kwargs)
     return sync_account_from_stripe_data(
         stripe_account, user=user
@@ -43,27 +43,27 @@ def update(account, data):
     stripe_account = stripe.Account.retrieve(id=account.stripe_id)
 
     # first, upload our document data if we have it
-    if 'dob' in data:
-        stripe_account.legal_entity.dob = data['dob']
+    if "dob" in data:
+        stripe_account.legal_entity.dob = data["dob"]
 
-    if 'first_name' in data:
-        stripe_account.legal_entity.first_name = data['first_name']
+    if "first_name" in data:
+        stripe_account.legal_entity.first_name = data["first_name"]
 
-    if 'last_name' in data:
-        stripe_account.legal_entity.last_name = data['last_name']
+    if "last_name" in data:
+        stripe_account.legal_entity.last_name = data["last_name"]
 
-    if 'personal_id_number' in data:
+    if "personal_id_number" in data:
         stripe_account.legal_entity.personal_id_number = data[
-            'personal_id_number'
+            "personal_id_number"
         ]
 
-    if 'document' in data:
+    if "document" in data:
         response = stripe.FileUpload.create(
             purpose="identity_document",
-            file=data['document'],
+            file=data["document"],
             stripe_account=stripe_account.id
         )
-        stripe_account.legal_entity.verification.document = response['id']
+        stripe_account.legal_entity.verification.document = response["id"]
 
     stripe_account.save()
     return sync_account_from_stripe_data(stripe_account)
@@ -93,25 +93,25 @@ def sync_account_from_stripe_data(data, user=None):
     Returns:
         a pinax.stripe.models.Account object
     """
-    kwargs = {'stripe_id': data['id']}
+    kwargs = {"stripe_id": data["id"]}
     if user:
-        kwargs['user'] = user
+        kwargs["user"] = user
     obj, created = models.Account.objects.get_or_create(
         **kwargs
     )
     common_attrs = (
-        'business_name', 'business_url', 'charges_enabled', 'country',
-        'default_currency', 'details_submitted', 'display_name',
-        'email', 'managed', 'statement_descriptor', 'support_email',
-        'support_phone', 'timezone', 'transfers_enabled'
+        "business_name", "business_url", "charges_enabled", "country",
+        "default_currency", "details_submitted", "display_name",
+        "email", "managed", "statement_descriptor", "support_email",
+        "support_phone", "timezone", "transfers_enabled"
     )
 
     managed_attrs = (
-        'debit_negative_balances', 'metadata', 'product_description',
-        'transfer_statement_descriptor'
+        "debit_negative_balances", "metadata", "product_description",
+        "transfer_statement_descriptor"
     )
 
-    if data['managed']:
+    if data["managed"]:
         top_level_attrs = common_attrs + managed_attrs
     else:
         top_level_attrs = common_attrs
@@ -120,7 +120,7 @@ def sync_account_from_stripe_data(data, user=None):
         setattr(obj, a, data.get(a))
 
     # that's all we get for accounts that are not managed!
-    if not data['managed']:
+    if not data["managed"]:
         obj.save()
         return obj
 
@@ -128,48 +128,48 @@ def sync_account_from_stripe_data(data, user=None):
     # to us on managed accounts
 
     # legal entity for individual accounts
-    le = data['legal_entity']
-    address = le['address']
-    obj.legal_entity_address_city = address['city']
-    obj.legal_entity_address_country = address['country']
-    obj.legal_entity_address_line1 = address['line1']
-    obj.legal_entity_address_line2 = address['line2']
-    obj.legal_entity_address_postal_code = address['postal_code']
-    obj.legal_entity_address_state = address['state']
+    le = data["legal_entity"]
+    address = le["address"]
+    obj.legal_entity_address_city = address["city"]
+    obj.legal_entity_address_country = address["country"]
+    obj.legal_entity_address_line1 = address["line1"]
+    obj.legal_entity_address_line2 = address["line2"]
+    obj.legal_entity_address_postal_code = address["postal_code"]
+    obj.legal_entity_address_state = address["state"]
 
-    dob = le['dob']
+    dob = le["dob"]
     if dob:
         obj.legal_entity_dob = datetime.date(
-            dob['year'], dob['month'], dob['day']
+            dob["year"], dob["month"], dob["day"]
         )
     else:
         obj.legal_entity_dob = None
 
-    obj.legal_entity_type = le['type']
-    obj.legal_entity_first_name = le['first_name']
-    obj.legal_entity_last_name = le['last_name']
-    obj.legal_entity_personal_id_number_provided = le['personal_id_number_provided']
+    obj.legal_entity_type = le["type"]
+    obj.legal_entity_first_name = le["first_name"]
+    obj.legal_entity_last_name = le["last_name"]
+    obj.legal_entity_personal_id_number_provided = le["personal_id_number_provided"]
 
     # these attributes are not always present
     obj.legal_entity_gender = le.get(
-        'gender', obj.legal_entity_gender
+        "gender", obj.legal_entity_gender
     )
     obj.legal_entity_maiden_name = le.get(
-        'maiden_name', obj.legal_entity_maiden_name
+        "maiden_name", obj.legal_entity_maiden_name
     )
     obj.legal_entity_phone_number = le.get(
-        'phone_number', obj.legal_entity_phone_number
+        "phone_number", obj.legal_entity_phone_number
     )
     obj.legal_entity_ssn_last_4_provided = le.get(
-        'ssn_last_4_provided', obj.legal_entity_ssn_last_4_provided
+        "ssn_last_4_provided", obj.legal_entity_ssn_last_4_provided
     )
 
-    verification = le['verification']
+    verification = le["verification"]
     if verification:
-        obj.legal_entity_verification_details = verification.get('details')
-        obj.legal_entity_verification_details_code = verification.get('details_code')
-        obj.legal_entity_verification_document = verification.get('document')
-        obj.legal_entity_verification_status = verification.get('status')
+        obj.legal_entity_verification_details = verification.get("details")
+        obj.legal_entity_verification_details_code = verification.get("details_code")
+        obj.legal_entity_verification_document = verification.get("document")
+        obj.legal_entity_verification_status = verification.get("status")
     else:
         obj.legal_entity_verification_details = None
         obj.legal_entity_verification_details_code = None
@@ -177,36 +177,36 @@ def sync_account_from_stripe_data(data, user=None):
         obj.legal_entity_verification_status = None
 
     # tos state
-    if data['tos_acceptance']['date']:
+    if data["tos_acceptance"]["date"]:
         obj.tos_acceptance_date = datetime.datetime.utcfromtimestamp(
-            data['tos_acceptance']['date']
+            data["tos_acceptance"]["date"]
         )
     else:
         obj.tos_acceptance_date = None
-    obj.tos_acceptance_ip = data['tos_acceptance']['ip']
-    obj.tos_acceptance_user_agent = data['tos_acceptance']['user_agent']
+    obj.tos_acceptance_ip = data["tos_acceptance"]["ip"]
+    obj.tos_acceptance_user_agent = data["tos_acceptance"]["user_agent"]
 
     # decline charge on certain conditions
-    obj.decline_charge_on_avs_failure = data['decline_charge_on']['avs_failure']
-    obj.decline_charge_on_cvc_failure = data['decline_charge_on']['cvc_failure']
+    obj.decline_charge_on_avs_failure = data["decline_charge_on"]["avs_failure"]
+    obj.decline_charge_on_cvc_failure = data["decline_charge_on"]["cvc_failure"]
 
     # transfer schedule to external account
-    ts = data['transfer_schedule']
-    obj.transfer_schedule_interval = ts['interval']
-    obj.transfer_schedule_delay_days = ts.get('delay_days')
-    obj.transfer_schedule_weekly_anchor = ts.get('weekly_anchor')
-    obj.transfer_schedule_monthly_anchor = ts.get('monthly_anchor')
+    ts = data["transfer_schedule"]
+    obj.transfer_schedule_interval = ts["interval"]
+    obj.transfer_schedule_delay_days = ts.get("delay_days")
+    obj.transfer_schedule_weekly_anchor = ts.get("weekly_anchor")
+    obj.transfer_schedule_monthly_anchor = ts.get("monthly_anchor")
 
     # verification status, key to progressing account setup
-    obj.verification_disabled_reason = data['verification']['disabled_reason']
-    obj.verification_due_by = utils.convert_tstamp(data['verification'], 'due_by')
-    obj.verification_fields_needed = data['verification']['fields_needed']
+    obj.verification_disabled_reason = data["verification"]["disabled_reason"]
+    obj.verification_due_by = utils.convert_tstamp(data["verification"], "due_by")
+    obj.verification_fields_needed = data["verification"]["fields_needed"]
 
     obj.save()
 
     # sync any external accounts (bank accounts only for now) included
-    for external_account in data['external_accounts']['data']:
-        if external_account['object'] == 'bank_account':
+    for external_account in data["external_accounts"]["data"]:
+        if external_account["object"] == "bank_account":
             sync_bank_account_from_stripe_data(external_account)
 
     return obj

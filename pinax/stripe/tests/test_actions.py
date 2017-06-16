@@ -150,6 +150,7 @@ class CustomersTests(TestCase):
 
         # customers.Create will return a new customer instance
         CreateMock.return_value = dict(id="cus_YYYYY")
+
         customer = customers.create(self.user)
 
         # But only one customer will exist - the original one

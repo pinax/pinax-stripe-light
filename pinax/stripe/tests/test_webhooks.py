@@ -26,8 +26,7 @@ from ..webhooks import (
     CustomerSourceCreatedWebhook,
     CustomerSourceDeletedWebhook,
     CustomerSubscriptionCreatedWebhook,
-    InvoiceCreatedWebhook,
-    PlanUpdatedWebhook
+    InvoiceCreatedWebhook
 )
 
 

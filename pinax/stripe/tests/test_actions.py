@@ -844,6 +844,35 @@ class SyncsTests(TestCase):
         plans.sync_plans()
         self.assertEquals(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("4.99"))
 
+    def test_sync_plan(self):
+        """
+        Test that a single Plan is updated
+        """
+        Plan.objects.create(
+            stripe_id="pro2",
+            name="Plan Plan",
+            interval="month",
+            interval_count=1,
+            amount=decimal.Decimal("19.99")
+        )
+        plan = {
+            "id": "pro2",
+            "object": "plan",
+            "amount": 1999,
+            "created": 1448121054,
+            "currency": "usd",
+            "interval": "month",
+            "interval_count": 1,
+            "livemode": False,
+            "metadata": {},
+            "name": "Gold Plan",
+            "statement_descriptor": "ALTMAN",
+            "trial_period_days": 3
+        }
+        plans.sync_plan(plan)
+        self.assertTrue(Plan.objects.all().count(), 1)
+        self.assertEquals(Plan.objects.get(stripe_id="pro2").name, plan["name"])
+
     def test_sync_payment_source_from_stripe_data_card(self):
         source = {
             "id": "card_17AMEBI10iPhvocM1LnJ0dBc",

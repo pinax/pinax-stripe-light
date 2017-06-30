@@ -38,6 +38,13 @@ class Plan(StripeObject):
     def __str__(self):
         return "{} ({}{})".format(self.name, CURRENCY_SYMBOLS.get(self.currency, ""), self.amount)
 
+    @classmethod
+    def get_or_create(cls, *args, **kwargs):
+        try:
+            return cls.objects.get(**kwargs)
+        except Exception:
+            return cls.objects.create(**kwargs)
+
 
 @python_2_unicode_compatible
 class Coupon(StripeObject):

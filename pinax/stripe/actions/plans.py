@@ -24,7 +24,7 @@ def sync_plans():
             trial_period_days=plan["trial_period_days"],
             metadata=plan["metadata"]
         )
-        obj, created = models.Plan.objects.get_or_create(
+        obj, created = models.Plan.get_or_create(
             stripe_id=plan["id"],
             defaults=defaults
         )
@@ -51,7 +51,7 @@ def sync_plan(plan, event=None):
         "metadata": plan["metadata"]
     }
 
-    obj, created = models.Plan.objects.get_or_create(
+    obj, created = models.Plan.get_or_create(
         stripe_id=plan["id"],
         defaults=defaults
     )

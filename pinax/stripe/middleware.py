@@ -6,11 +6,13 @@ try:
 except ImportError:
     from django.core.urlresolvers import resolve
 
+from django.utils.deprecation import MiddlewareMixin
+
 from .actions import customers, subscriptions
 from .conf import settings
 
 
-class ActiveSubscriptionMiddleware(object):
+class ActiveSubscriptionMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         is_authenticated = request.user.is_authenticated

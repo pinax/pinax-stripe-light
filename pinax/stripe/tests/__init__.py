@@ -123,3 +123,33 @@ TRANSFER_PENDING_TEST_DATA = {
     "request": None,
     "type": "transfer.created"
 }
+
+PLAN_CREATED_TEST_DATA = {
+    "data": {
+        "previous_attributes": {
+            "name": "Old name"
+        },
+        "object": {
+            "interval": "month",
+            "amount": 50,
+            "id": "gold1",
+            "trial_period_days": None,
+            "livemode": True,
+            "statement_descriptor": None,
+            "interval_count": 1,
+            "object": "plan",
+            "currency": "usd",
+            "created": 1498573686,
+            "name": "Pro Plan",
+            "metadata": {}
+        }
+    },
+    "type": "plan.updated",
+    "request": None,
+    "api_version": "2017-06-05",
+    "object": "event",
+    "id": "evt_00000000000000",
+    "livemode": True,
+    "pending_webhooks": 1,
+    "created": 1326853478
+}

@@ -263,7 +263,6 @@ class InvoiceItem(models.Model):
     invoice = models.ForeignKey(Invoice, related_name="items", on_delete=models.CASCADE)
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=10, default="usd")
-    quantity = models.PositiveIntegerField(null=True)
     kind = models.CharField(max_length=25, blank=True)
     subscription = models.ForeignKey(Subscription, null=True, on_delete=models.CASCADE)
     period_start = models.DateTimeField()

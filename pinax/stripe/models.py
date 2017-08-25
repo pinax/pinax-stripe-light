@@ -303,3 +303,7 @@ class Charge(StripeObject):
     @property
     def stripe_charge(self):
         return stripe.Charge.retrieve(self.stripe_id)
+
+    @property
+    def card(self):
+        return Card.objects.filter(stripe_id=self.source).first()

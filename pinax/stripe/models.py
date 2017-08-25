@@ -5,6 +5,7 @@ import decimal
 from django.db import models
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.functional import cached_property
 
 import stripe
 
@@ -130,7 +131,7 @@ class Customer(StripeObject):
 
     objects = CustomerManager()
 
-    @property
+    @cached_property
     def stripe_customer(self):
         return stripe.Customer.retrieve(self.stripe_id)
 

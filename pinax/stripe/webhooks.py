@@ -6,7 +6,7 @@ import stripe
 
 from six import with_metaclass
 
-from .actions import charges, customers, exceptions, invoices, transfers, sources, subscriptions
+from .actions import charges, customers, exceptions, invoices, plans, transfers, sources, subscriptions
 from .conf import settings
 
 
@@ -405,7 +405,13 @@ class OrderUpdatedWebhook(Webhook):
     description = "Occurs whenever an order is updated."
 
 
-class PlanCreatedWebhook(Webhook):
+class PlanWebhook(Webhook):
+
+    def process_webhook(self):
+        plans.sync_plan(self.event.message["data"]["object"], self.event)
+
+
+class PlanCreatedWebhook(PlanWebhook):
     name = "plan.created"
     description = "Occurs whenever a plan is created."
 
@@ -415,7 +421,7 @@ class PlanDeletedWebhook(Webhook):
     description = "Occurs whenever a plan is deleted."
 
 
-class PlanUpdatedWebhook(Webhook):
+class PlanUpdatedWebhook(PlanWebhook):
     name = "plan.updated"
     description = "Occurs whenever a plan is updated."
 

@@ -100,7 +100,7 @@ class Event(StripeObject):
 
 
 class Transfer(StripeObject):
-    event = models.ForeignKey(Event, related_name="transfers", on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, related_name="transfers", on_delete=models.CASCADE, null=True, blank=True)
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=25, default="usd")
     status = models.CharField(max_length=25)

@@ -5,6 +5,7 @@ import decimal
 from django.db import models
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.functional import cached_property
 
 import stripe
 
@@ -99,7 +100,7 @@ class Event(StripeObject):
 
 
 class Transfer(StripeObject):
-    event = models.ForeignKey(Event, related_name="transfers", on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, related_name="transfers", on_delete=models.CASCADE, null=True, blank=True)
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=25, default="usd")
     status = models.CharField(max_length=25)
@@ -130,7 +131,7 @@ class Customer(StripeObject):
 
     objects = CustomerManager()
 
-    @property
+    @cached_property
     def stripe_customer(self):
         return stripe.Customer.retrieve(self.stripe_id)
 
@@ -263,7 +264,6 @@ class InvoiceItem(models.Model):
     invoice = models.ForeignKey(Invoice, related_name="items", on_delete=models.CASCADE)
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=10, default="usd")
-    quantity = models.PositiveIntegerField(null=True)
     kind = models.CharField(max_length=25, blank=True)
     subscription = models.ForeignKey(Subscription, null=True, on_delete=models.CASCADE)
     period_start = models.DateTimeField()

@@ -18,7 +18,7 @@ from .utils import CURRENCY_SYMBOLS
 
 class StripeObject(models.Model):
 
-    stripe_id = models.CharField(max_length=255, unique=True)
+    stripe_id = models.CharField(max_length=191, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

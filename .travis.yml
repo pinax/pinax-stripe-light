@@ -46,8 +46,6 @@ matrix:
     - python: "3.5"
       env: DJANGO=1.7 STRIPE=128
   allow_failures:
-    - env: DJANGO=1.11 STRIPE=128
-    - env: DJANGO=1.11 STRIPE=127
     - env: DJANGO=master STRIPE=128
     - env: DJANGO=master STRIPE=127
 install:

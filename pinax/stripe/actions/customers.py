@@ -27,7 +27,10 @@ def can_charge(customer):
     return False
 
 
-def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
+default_plan = settings.PINAX_STRIPE_DEFAULT_PLAN
+
+
+def create(user, card=None, plan=default_plan, charge_immediately=True, quantity=None, coupon=None):
     """
     Creates a Stripe customer.
 
@@ -46,13 +49,15 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
     """
     trial_end = hooks.hookset.trial_period(user, plan)
 
-    stripe_customer = stripe.Customer.create(
-        email=user.email,
-        source=card,
-        plan=plan,
-        quantity=quantity,
-        trial_end=trial_end
-    )
+    kwargs = {
+        'email': user.email,
+        'source': card,
+        'plan': plan,
+        'trial_end': trial_end,
+    }
+    if coupon:
+        kwargs.update({'coupon': coupon})
+    stripe_customer = stripe.Customer.create(**kwargs)
     try:
         with transaction.atomic():
             cus = models.Customer.objects.create(
@@ -158,6 +163,21 @@ def sync_customer(customer, cu=None):
     customer.delinquent = cu["delinquent"]
     customer.default_source = cu["default_source"] or ""
     customer.save()
+    if cu.get("discount", None):
+        try:
+            coupon = models.Coupon.objects.get(stripe_id=cu["discount"]["coupon"]["id"])
+        except models.Coupon.DoesNotExist:
+            raise models.Coupon.DoesNotExist("Sync coupons before syncing customers.")
+        start = utils.convert_tstamp(cu["discount"]["start"])
+        end = utils.convert_tstamp(cu["discount"]["end"])
+        if models.Discount.objects.filter(customer=customer).exists():
+            discount = models.Discount.objects.get(customer=customer)
+            discount.coupon = coupon
+            discount.start = start
+            discount.end = end
+            discount.save()
+        else:
+            models.Discount.objects.create(customer=customer, coupon=coupon, start=start, end=end)
     for source in cu["sources"]["data"]:
         sources.sync_payment_source_from_stripe_data(customer, source)
     for subscription in cu["subscriptions"]["data"]:

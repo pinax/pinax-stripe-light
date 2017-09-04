@@ -43,9 +43,15 @@ class Plan(StripeObject):
 @python_2_unicode_compatible
 class Coupon(StripeObject):
 
+    DURATION_CHOICES = (
+        ('forever', 'forever'),
+        ('once', 'once'),
+        ('repeating', 'repeating'),
+    )
+
     amount_off = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     currency = models.CharField(max_length=10, default="usd")
-    duration = models.CharField(max_length=10, default="once")
+    duration = models.CharField(max_length=10, default="once", choices=DURATION_CHOICES)
     duration_in_months = models.PositiveIntegerField(null=True)
     livemode = models.BooleanField(default=False)
     max_redemptions = models.PositiveIntegerField(null=True)
@@ -139,6 +145,27 @@ class Customer(StripeObject):
         return str(self.user)
 
 
+@python_2_unicode_compatible
+class Discount(models.Model):
+
+    coupon = models.ForeignKey("Coupon", on_delete=models.CASCADE)
+    customer = models.OneToOneField("Customer", null=True, on_delete=models.CASCADE)
+    subscription = models.OneToOneField("Subscription", null=True, on_delete=models.CASCADE)
+    start = models.DateTimeField(null=True)
+    end = models.DateTimeField(null=True)
+
+    def __str__(self):
+        return "<coupon={}, customer={}, subscription={}>".format(self.coupon, self.customer, self.subscription)
+
+    def apply_discount(self, amount):
+        if self.end is not None and self.end > timezone.now():
+            return amount
+        if self.coupon.amount_off:
+            return decimal.Decimal(amount - self.coupon.amount_off)
+        elif self.coupon.percent_off:
+            return decimal.Decimal('{:.2f}'.format(amount - (decimal.Decimal(self.coupon.percent_off) / 100 * amount)))
+
+
 class Card(StripeObject):
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
@@ -205,7 +232,10 @@ class Subscription(StripeObject):
 
     @property
     def total_amount(self):
-        return self.plan.amount * self.quantity
+        total_amount = self.plan.amount * self.quantity
+        if hasattr(self, 'discount'):
+            total_amount = self.discount.apply_discount(total_amount)
+        return total_amount
 
     def plan_display(self):
         return self.plan.name

@@ -161,17 +161,33 @@ def sync_subscription_from_stripe_data(customer, subscription):
         start=utils.convert_tstamp(subscription["start"]),
         status=subscription["status"],
         trial_start=utils.convert_tstamp(subscription["trial_start"]) if subscription["trial_start"] else None,
-        trial_end=utils.convert_tstamp(subscription["trial_end"]) if subscription["trial_end"] else None
+        trial_end=utils.convert_tstamp(subscription["trial_end"]) if subscription["trial_end"] else None,
     )
     sub, created = models.Subscription.objects.get_or_create(
         stripe_id=subscription["id"],
         defaults=defaults
     )
     sub = utils.update_with_defaults(sub, defaults, created)
+    if subscription.get("discount", None):
+        start = utils.convert_tstamp(subscription["discount"]["start"])
+        end = utils.convert_tstamp(subscription["discount"]["end"]) if subscription["discount"]["end"] else None
+        try:
+            coupon = models.Coupon.objects.get(stripe_id=subscription["discount"]["coupon"]["id"])
+        except models.Coupon.DoesNotExist:
+            raise models.Coupon.DoesNotExist("Sync coupons before syncing subscriptions.")
+        if models.Discount.objects.filter(subscription=sub).exists():
+            discount = models.Discount.objects.get(subscription=sub)
+            discount.coupon = coupon
+            discount.start = start
+            discount.end = end
+            discount.save()
+        else:
+            models.Discount.objects.create(subscription=sub, coupon=coupon, start=start, end=end)
     return sub
 
 
-def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, charge_immediately=False):
+def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, charge_immediately=False,
+           trial_days=None):
     """
     Updates a subscription
 
@@ -182,8 +198,11 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
         prorate: optionally, if the subscription should be prorated or not
         coupon: optionally, a coupon to apply to the subscription
         charge_immediately: optionally, whether or not to charge immediately
+        trial_days: optionally, number of days to pause billing
     """
     stripe_subscription = subscription.stripe_subscription
+    if trial_days:
+        stripe_subscription.trial_end = datetime.datetime.utcnow() + datetime.timedelta(days=trial_days)
     if plan:
         stripe_subscription.plan = plan
     if quantity:

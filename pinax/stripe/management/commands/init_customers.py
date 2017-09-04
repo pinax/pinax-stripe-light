@@ -13,4 +13,4 @@ class Command(BaseCommand):
         User = get_user_model()
         for user in User.objects.filter(customer__isnull=True):
             customers.create(user=user)
-            print("Created customer for {0}".format(user.email))
+            self.stdout.write("Created customer for {0}\n".format(user.email))

@@ -31,5 +31,6 @@ class Command(BaseCommand):
                     # This user doesn't exist (might be in test mode)
                     continue
 
-            invoices.sync_invoices_for_customer(customer)
-            charges.sync_charges_for_customer(customer)
+            if customer.date_purged is None:
+                invoices.sync_invoices_for_customer(customer)
+                charges.sync_charges_for_customer(customer)

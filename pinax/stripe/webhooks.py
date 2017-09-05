@@ -247,7 +247,7 @@ class CustomerDeletedWebhook(Webhook):
     description = "Occurs whenever a customer is deleted."
 
     def process_webhook(self):
-        customers.purge(self.event.customer)
+        customers.purge_local(self.event.customer)
 
 
 class CustomerUpdatedWebhook(Webhook):

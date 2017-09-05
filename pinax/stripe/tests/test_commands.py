@@ -161,3 +161,22 @@ class CommandTests(TestCase):
         self.assertEqual(SyncChargesMock.call_count, 1)
         self.assertEqual(SyncInvoicesMock.call_count, 1)
         self.assertEqual(SyncMock.call_count, 1)
+
+    @patch("stripe.Customer.retrieve")
+    @patch("pinax.stripe.actions.invoices.sync_invoices_for_customer")
+    @patch("pinax.stripe.actions.charges.sync_charges_for_customer")
+    def test_sync_customers_with_remotely_purged_customer(self, SyncChargesMock, SyncInvoicesMock, RetrieveMock):
+        customer = Customer.objects.create(
+            user=self.user,
+            stripe_id="cus_XXXXX"
+        )
+
+        RetrieveMock.return_value = dict(
+            deleted=True
+        )
+
+        management.call_command("sync_customers")
+        self.assertIsNone(Customer.objects.get(stripe_id=customer.stripe_id).user)
+        self.assertIsNotNone(Customer.objects.get(stripe_id=customer.stripe_id).date_purged)
+        self.assertEqual(SyncChargesMock.call_count, 0)
+        self.assertEqual(SyncInvoicesMock.call_count, 0)

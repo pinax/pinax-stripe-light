@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('pinax_stripe', '0008_auto_20170509_1736'),
+        ('pinax_stripe', '0009_auto_20170825_1841'),
     ]
 
     operations = [

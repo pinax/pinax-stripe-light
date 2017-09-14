@@ -22,7 +22,7 @@ DEFAULT_SETTINGS = dict(
         "django.contrib.auth.middleware.AuthenticationMiddleware",
         "django.contrib.messages.middleware.MessageMiddleware"
     ],
-    ROOT_URLCONF="pinax.stripe.urls",
+    ROOT_URLCONF="pinax.stripe.tests.urls",
     INSTALLED_APPS=[
         "django.contrib.admin",
         "django.contrib.auth",

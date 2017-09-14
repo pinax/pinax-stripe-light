@@ -1,4 +1,8 @@
 language: python
+cache:
+  directories:
+    - .tox
+    - $HOME/.cache/pip
 sudo: false
 matrix:
   fast_finish: true

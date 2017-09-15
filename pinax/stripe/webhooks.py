@@ -429,7 +429,7 @@ class OrderUpdatedWebhook(Webhook):
 
 class PaymentCreatedWebhook(Webhook):
     name = "payment.created"
-    description = "A payment has been received by a managed Connect account via Transfer from the platform account."
+    description = "A payment has been received by a Connect account via Transfer from the platform account."
 
 
 class PlanWebhook(Webhook):

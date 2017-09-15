@@ -2459,9 +2459,9 @@ class TransfersTests(TestCase):
 class AccountsSyncTestCase(TestCase):
 
     def setUp(self):
-        self.managed_account_data = json.loads(
+        self.custom_account_data = json.loads(
             """{
-      "managed":true,
+      "type":"custom",
       "tos_acceptance":{
         "date":1490903452,
         "ip":"123.107.1.28",
@@ -2564,7 +2564,7 @@ class AccountsSyncTestCase(TestCase):
         "disabled_reason":null
       }
     }""")
-        self.not_managed_account_data = json.loads(
+        self.not_custom_account_data = json.loads(
             """{
       "support_phone":"7788188181",
       "business_name":"Woop Woop",
@@ -2582,7 +2582,7 @@ class AccountsSyncTestCase(TestCase):
       "id":"acct_102t2K2m3chDH8uL",
       "display_name":"Some Company",
       "statement_descriptor":"SOME COMP",
-      "managed":false,
+      "type":"standard",
       "default_currency":"cad"
     }""")
 
@@ -2600,7 +2600,7 @@ class AccountsSyncTestCase(TestCase):
         self.assertEqual(account.statement_descriptor, 'SOME COMP')
         self.assertEqual(account.default_currency, 'cad')
 
-    def assert_managed_attributes(self, account):
+    def assert_custom_attributes(self, account):
 
         # extra top level attributes
         self.assertEqual(account.debit_negative_balances, False)
@@ -2669,24 +2669,24 @@ class AccountsSyncTestCase(TestCase):
             account.bank_accounts.all().count(), 1
         )
 
-    def test_sync_managed_account(self):
+    def test_sync_custom_account(self):
         User = get_user_model()
         user = User.objects.create_user(
             username="snuffle",
             email="upagus@test"
         )
         account = accounts.sync_account_from_stripe_data(
-            self.managed_account_data, user=user
+            self.custom_account_data, user=user
         )
-        self.assertTrue(account.managed)
+        self.assertEqual(account.type, "custom")
         self.assert_common_attributes(account)
-        self.assert_managed_attributes(account)
+        self.assert_custom_attributes(account)
 
-    def test_sync_not_managed_account(self):
+    def test_sync_not_custom_account(self):
         account = accounts.sync_account_from_stripe_data(
-            self.not_managed_account_data
+            self.not_custom_account_data
         )
-        self.assertFalse(account.managed)
+        self.assertNotEqual(account.type, "custom")
         self.assert_common_attributes(account)
 
 
@@ -2721,7 +2721,7 @@ class BankAccountsSyncTestCase(TestCase):
         )
         account = Account.objects.create(
             stripe_id='acct_102t2K2m3chDH8uL',
-            managed=True,
+            type="custom",
             user=user
         )
         bankaccount = externalaccounts.sync_bank_account_from_stripe_data(

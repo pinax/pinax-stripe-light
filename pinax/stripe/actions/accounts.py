@@ -102,30 +102,30 @@ def sync_account_from_stripe_data(data, user=None):
     common_attrs = (
         "business_name", "business_url", "charges_enabled", "country",
         "default_currency", "details_submitted", "display_name",
-        "email", "managed", "statement_descriptor", "support_email",
+        "email", "type", "statement_descriptor", "support_email",
         "support_phone", "timezone", "transfers_enabled"
     )
 
-    managed_attrs = (
+    custom_attrs = (
         "debit_negative_balances", "metadata", "product_description",
         "transfer_statement_descriptor"
     )
 
-    if data["managed"]:
-        top_level_attrs = common_attrs + managed_attrs
+    if data["type"] == "custom":
+        top_level_attrs = common_attrs + custom_attrs
     else:
         top_level_attrs = common_attrs
 
     for a in top_level_attrs:
         setattr(obj, a, data.get(a))
 
-    # that's all we get for accounts that are not managed!
-    if not data["managed"]:
+    # that's all we get for standard and express accounts!
+    if data["type"] != "custom":
         obj.save()
         return obj
 
     # otherwise we continue on to gather a range of details available
-    # to us on managed accounts
+    # to us on custom accounts
 
     # legal entity for individual accounts
     le = data["legal_entity"]

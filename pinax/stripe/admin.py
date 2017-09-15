@@ -386,7 +386,7 @@ admin.site.register(
     raw_id_fields=["user"],
     list_display=[
         "stripe_id",
-        "managed",
+        "type",
         "country",
         "transfers_enabled",
         "charges_enabled"

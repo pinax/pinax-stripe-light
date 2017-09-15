@@ -409,7 +409,9 @@ class Account(StripeObject):
     legal_entity_verification_document = models.TextField(null=True, blank=True)
     legal_entity_verification_status = models.TextField(null=True, blank=True)
 
-    managed = models.NullBooleanField(null=True)
+    # The type of the Stripe account. Can be 'standard', 'express', or 'custom'.
+    type = models.TextField(null=True, blank=True)
+
     metadata = JSONField(null=True)
 
     product_description = models.TextField(null=True, blank=True)

@@ -24,7 +24,7 @@ class PlanForm(forms.Form):
 
 """
 The Connect forms here are designed to get users through the multi-stage
-verification process Stripe uses for managed accounts, as detailed here:
+verification process Stripe uses for custom accounts, as detailed here:
 
 https://stripe.com/docs/connect/testing-verification
 
@@ -130,22 +130,6 @@ CURRENCY_CHOICES_BY_COUNTRY = {
 }
 
 FIELDS_BY_COUNTRY = {
-    'default': {
-        # we use dob.day as a trigger for a field to collect
-        # their whole dob
-        'legal_entity.personal_id_number': (
-            'personal_id',
-            forms.CharField(
-                label=_('Personal ID Number')
-            )
-        ),
-        'legal_entity.verification.document': (
-            'document',
-            forms.ImageField(
-                label=_('ID')
-            )
-        )
-    },
     'CA': {
         'legal_entity.personal_id_number': (
             'personal_id',
@@ -183,7 +167,7 @@ class DynamicManagedAccountForm(forms.Form):
     """Set up fields according to fields needed and relevant country."""
 
     def __init__(self, *args, **kwargs):
-        self.country = kwargs.pop('country', 'default')
+        self.country = kwargs.pop('country')
         self.fields_needed = kwargs.pop('fields_needed', [])
         super(DynamicManagedAccountForm, self).__init__(*args, **kwargs)
         # build our form using the country specific fields and falling
@@ -261,7 +245,7 @@ def extract_ipaddress(request):
     return ipaddress
 
 
-class InitialManagedAccountForm(DynamicManagedAccountForm):
+class InitialCustomAccountForm(DynamicManagedAccountForm):
     """
     Collect `minimum` fields for CA and US CountrySpecs.
 
@@ -279,6 +263,7 @@ class InitialManagedAccountForm(DynamicManagedAccountForm):
     address_line1 = forms.CharField(max_length=300)
     address_city = forms.CharField(max_length=100)
     address_state = forms.CharField(max_length=100)
+    address_country = forms.ChoiceField(choices=COUNTRY_CHOICES)
     address_postal_code = forms.CharField(max_length=100)
 
     # for external_account
@@ -290,7 +275,7 @@ class InitialManagedAccountForm(DynamicManagedAccountForm):
     def __init__(self, *args, **kwargs):
         """Instantiate no fields based on `fields_needed` initially."""
         self.request = kwargs.pop('request')
-        super(InitialManagedAccountForm, self).__init__(
+        super(InitialCustomAccountForm, self).__init__(
             *args, **kwargs
         )
         self.fields['address_state'] = forms.ChoiceField(
@@ -308,9 +293,9 @@ class InitialManagedAccountForm(DynamicManagedAccountForm):
 
     def save(self):
         """
-        Create a managed account, handling Stripe errors.
+        Create a custom account, handling Stripe errors.
 
-        Note: the below will create a managed, manually paid out
+        Note: the below will create a custom, manually paid out
         account. This is here mostly as an example, you will likely
         need to override this method and do your own application
         specific special sauce.
@@ -320,7 +305,7 @@ class InitialManagedAccountForm(DynamicManagedAccountForm):
             return accounts.create(
                 self.request.user,
                 country=data['address_country'],
-                managed=True,
+                type="custom",
                 legal_entity={
                     'dob': {
                         'day': data['dob'].day,
@@ -372,7 +357,7 @@ class InitialManagedAccountForm(DynamicManagedAccountForm):
             raise
 
 
-class AdditionalManagedAccountForm(DynamicManagedAccountForm):
+class AdditionalCustomAccountForm(DynamicManagedAccountForm):
     """
     Collect `additional` fields for CA and US CountrySpecs.
 
@@ -393,12 +378,13 @@ class AdditionalManagedAccountForm(DynamicManagedAccountForm):
 
     def __init__(self, *args, **kwargs):
         self.account = kwargs.pop('account')
-        super(AdditionalManagedAccountForm, self).__init__(
-            *args,
-            fields_needed=self.account.verification_fields_needed,
-            country=self.account.country,
-            **kwargs
+        kwargs.update(
+            {
+                'country': self.account.country,
+                'fields_needed': self.account.verification_fields_needed,
+            }
         )
+        super(AdditionalCustomAccountForm, self).__init__(*args, **kwargs)
         # prepopulate with the existing account details
         self.fields['first_name'].initial = self.account.legal_entity_first_name
         self.fields['last_name'].initial = self.account.legal_entity_last_name

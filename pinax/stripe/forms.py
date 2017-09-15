@@ -40,109 +40,109 @@ STRIPE_MINIMUM_DOB = datetime.date(1900, 1, 1)
 
 
 ACCEPTED_DOCUMENT_CONTENT_TYPES = (
-    'image/jpg', 'image/jpeg', 'image/png'
+    "image/jpg", "image/jpeg", "image/png"
 )
 
 COUNTRY_CHOICES = [
-    ('CA', _('Canada')),
-    ('US', _('United States'))
+    ("CA", _("Canada")),
+    ("US", _("United States"))
 ]
 
 STATE_CHOICES_BY_COUNTRY = {
-    'CA': [
-        ('AB', _('Alberta')),
-        ('BC', _('British Columbia')),
-        ('MB', _('Manitoba')),
-        ('NB', _('New Brunswick')),
-        ('NL', _('Newfoundland and Labrador')),
-        ('NT', _('Northwest Territories')),
-        ('NS', _('Nova Scotia')),
-        ('NU', _('Nunavut')),
-        ('ON', _('Ontario')),
-        ('PE', _('Prince Edward Island')),
-        ('QC', _('Quebec')),
-        ('SK', _('Saskatchewan')),
-        ('YT', _('Yukon'))
+    "CA": [
+        ("AB", _("Alberta")),
+        ("BC", _("British Columbia")),
+        ("MB", _("Manitoba")),
+        ("NB", _("New Brunswick")),
+        ("NL", _("Newfoundland and Labrador")),
+        ("NT", _("Northwest Territories")),
+        ("NS", _("Nova Scotia")),
+        ("NU", _("Nunavut")),
+        ("ON", _("Ontario")),
+        ("PE", _("Prince Edward Island")),
+        ("QC", _("Quebec")),
+        ("SK", _("Saskatchewan")),
+        ("YT", _("Yukon"))
     ],
-    'US': [
-        ('AL', _('Alabama')),
-        ('AK', _('Alaska')),
-        ('AZ', _('Arizona')),
-        ('AR', _('Arkansas')),
-        ('CA', _('California')),
-        ('CO', _('Colorado')),
-        ('CT', _('Connecticut')),
-        ('DE', _('Delaware')),
-        ('DC', _('District of Columbia')),
-        ('FL', _('Florida')),
-        ('GA', _('Georgia')),
-        ('HI', _('Hawaii')),
-        ('ID', _('Idaho')),
-        ('IL', _('Illinois')),
-        ('IN', _('Indiana')),
-        ('IA', _('Iowa')),
-        ('KS', _('Kansas')),
-        ('KY', _('Kentucky')),
-        ('LA', _('Louisiana')),
-        ('ME', _('Maine')),
-        ('MD', _('Maryland')),
-        ('MA', _('Massachusetts')),
-        ('MI', _('Michigan')),
-        ('MN', _('Minnesota')),
-        ('MS', _('Mississippi')),
-        ('MO', _('Missouri')),
-        ('MT', _('Montana')),
-        ('NE', _('Nebraska')),
-        ('NV', _('Nevada')),
-        ('NH', _('New Hampshire')),
-        ('NJ', _('New Jersey')),
-        ('NM', _('New Mexico')),
-        ('NY', _('New York')),
-        ('NC', _('North Carolina')),
-        ('ND', _('North Dakota')),
-        ('OH', _('Ohio')),
-        ('OK', _('Oklahoma')),
-        ('OR', _('Oregon')),
-        ('PA', _('Pennsylvania')),
-        ('RI', _('Rhode Island')),
-        ('SC', _('South Carolina')),
-        ('SD', _('South Dakota')),
-        ('TN', _('Tennessee')),
-        ('TX', _('Texas')),
-        ('UT', _('Utah')),
-        ('VT', _('Vermont')),
-        ('VA', _('Virginia')),
-        ('WA', _('Washington')),
-        ('WV', _('West Virginia')),
-        ('WI', _('Wisconsin')),
-        ('WY', _('Wyoming'))
+    "US": [
+        ("AL", _("Alabama")),
+        ("AK", _("Alaska")),
+        ("AZ", _("Arizona")),
+        ("AR", _("Arkansas")),
+        ("CA", _("California")),
+        ("CO", _("Colorado")),
+        ("CT", _("Connecticut")),
+        ("DE", _("Delaware")),
+        ("DC", _("District of Columbia")),
+        ("FL", _("Florida")),
+        ("GA", _("Georgia")),
+        ("HI", _("Hawaii")),
+        ("ID", _("Idaho")),
+        ("IL", _("Illinois")),
+        ("IN", _("Indiana")),
+        ("IA", _("Iowa")),
+        ("KS", _("Kansas")),
+        ("KY", _("Kentucky")),
+        ("LA", _("Louisiana")),
+        ("ME", _("Maine")),
+        ("MD", _("Maryland")),
+        ("MA", _("Massachusetts")),
+        ("MI", _("Michigan")),
+        ("MN", _("Minnesota")),
+        ("MS", _("Mississippi")),
+        ("MO", _("Missouri")),
+        ("MT", _("Montana")),
+        ("NE", _("Nebraska")),
+        ("NV", _("Nevada")),
+        ("NH", _("New Hampshire")),
+        ("NJ", _("New Jersey")),
+        ("NM", _("New Mexico")),
+        ("NY", _("New York")),
+        ("NC", _("North Carolina")),
+        ("ND", _("North Dakota")),
+        ("OH", _("Ohio")),
+        ("OK", _("Oklahoma")),
+        ("OR", _("Oregon")),
+        ("PA", _("Pennsylvania")),
+        ("RI", _("Rhode Island")),
+        ("SC", _("South Carolina")),
+        ("SD", _("South Dakota")),
+        ("TN", _("Tennessee")),
+        ("TX", _("Texas")),
+        ("UT", _("Utah")),
+        ("VT", _("Vermont")),
+        ("VA", _("Virginia")),
+        ("WA", _("Washington")),
+        ("WV", _("West Virginia")),
+        ("WI", _("Wisconsin")),
+        ("WY", _("Wyoming"))
     ]
 }
 
 CURRENCY_CHOICES_BY_COUNTRY = {
-    'CA': [
-        ('CAD', _('CAD: Canadian Dollars')),
-        ('USD', _('USD: US Dollars')),
+    "CA": [
+        ("CAD", _("CAD: Canadian Dollars")),
+        ("USD", _("USD: US Dollars")),
     ],
-    'US': [
-        ('USD', _('USD: US Dollars')),
+    "US": [
+        ("USD", _("USD: US Dollars")),
     ]
 }
 
 FIELDS_BY_COUNTRY = {
-    'CA': {
-        'legal_entity.personal_id_number': (
-            'personal_id',
+    "CA": {
+        "legal_entity.personal_id_number": (
+            "personal_id",
             forms.CharField(
-                label=_('SIN')
+                label=_("SIN")
             ),
         )
     },
-    'US': {
-        'legal_entity.personal_id_number': (
-            'personal_id',
+    "US": {
+        "legal_entity.personal_id_number": (
+            "personal_id",
             forms.CharField(
-                label=_('SSN')
+                label=_("SSN")
             )
         )
     }
@@ -153,13 +153,13 @@ FIELDS_BY_COUNTRY = {
 # not be super specific
 
 STRIPE_FIELDS_TO_LOCAL_FIELDS = {
-    'dob': 'dob',
-    'first_name': 'first_name',
-    'second_name': 'second_name',
-    'routing_number': 'routing_number',
-    'currency': 'currency',
-    'account_number': 'account_number',
-    'file': 'document'
+    "dob": "dob",
+    "first_name": "first_name",
+    "second_name": "second_name",
+    "routing_number": "routing_number",
+    "currency": "currency",
+    "account_number": "account_number",
+    "file": "document"
 }
 
 
@@ -167,8 +167,8 @@ class DynamicManagedAccountForm(forms.Form):
     """Set up fields according to fields needed and relevant country."""
 
     def __init__(self, *args, **kwargs):
-        self.country = kwargs.pop('country')
-        self.fields_needed = kwargs.pop('fields_needed', [])
+        self.country = kwargs.pop("country")
+        self.fields_needed = kwargs.pop("fields_needed", [])
         super(DynamicManagedAccountForm, self).__init__(*args, **kwargs)
         # build our form using the country specific fields and falling
         # back to our default set
@@ -176,17 +176,17 @@ class DynamicManagedAccountForm(forms.Form):
             if f in FIELDS_BY_COUNTRY.get(self.country, {}):
                 field_name, field = FIELDS_BY_COUNTRY[self.country][f]
             else:
-                field_name, field = FIELDS_BY_COUNTRY['default'][f]
+                field_name, field = FIELDS_BY_COUNTRY["default"][f]
             self.fields[field_name] = field
 
     # clean methods only kick in if the form has the relevant field
 
     def clean_document(self):
-        document = self.cleaned_data.get('document')
+        document = self.cleaned_data.get("document")
         if document._size > settings.PINAX_STRIPE_DOCUMENT_MAX_SIZE_KB:
             raise forms.ValidationError(
-                _('Document image is too large (> %(maxsize)sMB)') % {
-                    'maxsize': settings.PINAX_STRIPE_DOCUMENT_MAX_SIZE_KB / (
+                _("Document image is too large (> %(maxsize)sMB)") % {
+                    "maxsize": settings.PINAX_STRIPE_DOCUMENT_MAX_SIZE_KB / (
                         1024 * 1024
                     )
                 }
@@ -194,17 +194,17 @@ class DynamicManagedAccountForm(forms.Form):
         if document.content_type not in ACCEPTED_DOCUMENT_CONTENT_TYPES:
             raise forms.ValidationError(
                 _(
-                    'The type of image you supplied is not supported. '
-                    'Please upload a JPG or PNG file.'
+                    "The type of image you supplied is not supported. "
+                    "Please upload a JPG or PNG file."
                 )
             )
         return document
 
     def clean_dob(self):
-        data = self.cleaned_data['dob']
+        data = self.cleaned_data["dob"]
         if data < STRIPE_MINIMUM_DOB:
             raise forms.ValidationError(
-                'This must be greater than {}.'.format(
+                "This must be greater than {}.".format(
                     STRIPE_MINIMUM_DOB
                 )
             )
@@ -228,8 +228,8 @@ class DynamicManagedAccountForm(forms.Form):
             }
         }
         """
-        message = error.json_body['error']['message']
-        stripe_field = error.json_body['error']['param']
+        message = error.json_body["error"]["message"]
+        stripe_field = error.json_body["error"]["param"]
         local_field = self.stripe_field_to_local_field(stripe_field)
         if local_field:
             self.add_error(local_field, message)
@@ -274,14 +274,14 @@ class InitialCustomAccountForm(DynamicManagedAccountForm):
 
     def __init__(self, *args, **kwargs):
         """Instantiate no fields based on `fields_needed` initially."""
-        self.request = kwargs.pop('request')
+        self.request = kwargs.pop("request")
         super(InitialCustomAccountForm, self).__init__(
             *args, **kwargs
         )
-        self.fields['address_state'] = forms.ChoiceField(
+        self.fields["address_state"] = forms.ChoiceField(
             choices=STATE_CHOICES_BY_COUNTRY[self.country]
         )
-        self.fields['currency'] = forms.ChoiceField(
+        self.fields["currency"] = forms.ChoiceField(
             choices=CURRENCY_CHOICES_BY_COUNTRY[self.country]
         )
 
@@ -289,7 +289,7 @@ class InitialCustomAccountForm(DynamicManagedAccountForm):
         return extract_ipaddress(self.request)
 
     def get_user_agent(self):
-        return self.request.META.get('HTTP_USER_AGENT')
+        return self.request.META.get("HTTP_USER_AGENT")
 
     def save(self):
         """
@@ -304,51 +304,51 @@ class InitialCustomAccountForm(DynamicManagedAccountForm):
         try:
             return accounts.create(
                 self.request.user,
-                country=data['address_country'],
+                country=data["address_country"],
                 type="custom",
                 legal_entity={
-                    'dob': {
-                        'day': data['dob'].day,
-                        'month': data['dob'].month,
-                        'year': data['dob'].year
+                    "dob": {
+                        "day": data["dob"].day,
+                        "month": data["dob"].month,
+                        "year": data["dob"].year
                     },
-                    'first_name': data['first_name'],
-                    'last_name': data['last_name'],
-                    'type': 'individual',
-                    'address': {
-                        'line1': data['address_line1'],
-                        'city': data['address_city'],
-                        'postal_code': data['address_postal_code'],
-                        'state': data['address_state'],
-                        'country': data['address_country']
+                    "first_name": data["first_name"],
+                    "last_name": data["last_name"],
+                    "type": "individual",
+                    "address": {
+                        "line1": data["address_line1"],
+                        "city": data["address_city"],
+                        "postal_code": data["address_postal_code"],
+                        "state": data["address_state"],
+                        "country": data["address_country"]
                     }
                 },
                 tos_acceptance={
-                    'date': int(time.time()),
-                    'ip': self.get_ipaddress(),
-                    'user_agent': self.get_user_agent()
+                    "date": int(time.time()),
+                    "ip": self.get_ipaddress(),
+                    "user_agent": self.get_user_agent()
                 },
                 transfer_schedule={
-                    'interval': 'manual'
+                    "interval": "manual"
                 },
                 external_account={
-                    'object': 'bank_account',
-                    'account_holder_name': u' '.join(
+                    "object": "bank_account",
+                    "account_holder_name": u" ".join(
                         [
-                            data['first_name'],
-                            data['last_name']
+                            data["first_name"],
+                            data["last_name"]
                         ]
                     ),
-                    'country': data['address_country'],
-                    'currency': data['currency'],
-                    'account_holder_type': 'individual',
-                    'default_for_currency': True,
-                    'account_number': data['account_number'],
-                    'routing_number': data['routing_number']
+                    "country": data["address_country"],
+                    "currency": data["currency"],
+                    "account_holder_type": "individual",
+                    "default_for_currency": True,
+                    "account_number": data["account_number"],
+                    "routing_number": data["routing_number"]
                 },
                 # useful reference to our local user instance
                 metadata={
-                    'user_id': self.request.user.id
+                    "user_id": self.request.user.id
                 }
             )
 
@@ -377,18 +377,18 @@ class AdditionalCustomAccountForm(DynamicManagedAccountForm):
     dob = forms.DateField()
 
     def __init__(self, *args, **kwargs):
-        self.account = kwargs.pop('account')
+        self.account = kwargs.pop("account")
         kwargs.update(
             {
-                'country': self.account.country,
-                'fields_needed': self.account.verification_fields_needed,
+                "country": self.account.country,
+                "fields_needed": self.account.verification_fields_needed,
             }
         )
         super(AdditionalCustomAccountForm, self).__init__(*args, **kwargs)
         # prepopulate with the existing account details
-        self.fields['first_name'].initial = self.account.legal_entity_first_name
-        self.fields['last_name'].initial = self.account.legal_entity_last_name
-        self.fields['dob'].initial = self.account.legal_entity_dob
+        self.fields["first_name"].initial = self.account.legal_entity_first_name
+        self.fields["last_name"].initial = self.account.legal_entity_last_name
+        self.fields["dob"].initial = self.account.legal_entity_dob
 
     def save(self):
         data = self.cleaned_data
@@ -396,15 +396,15 @@ class AdditionalCustomAccountForm(DynamicManagedAccountForm):
             return accounts.update(
                 self.account,
                 {
-                    'dob': {
-                        'day': data['dob'].day,
-                        'month': data['dob'].month,
-                        'year': data['dob'].year
+                    "dob": {
+                        "day": data["dob"].day,
+                        "month": data["dob"].month,
+                        "year": data["dob"].year
                     },
-                    'first_name': data['first_name'],
-                    'last_name': data['last_name'],
-                    'personal_id_number': data.get('personal_id'),
-                    'document': data.get('document')
+                    "first_name": data["first_name"],
+                    "last_name": data["last_name"],
+                    "personal_id_number": data.get("personal_id"),
+                    "document": data.get("document")
                 }
             )
         except stripe.error.InvalidRequestError, se:

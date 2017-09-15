@@ -364,7 +364,7 @@ class Charge(StripeObject):
             stripe_account=(
                 self.customer.stripe_account if self.customer_id else None
             ),
-            expand=['balance_transaction']
+            expand=["balance_transaction"]
         )
 
     @property
@@ -409,7 +409,7 @@ class Account(StripeObject):
     legal_entity_verification_document = models.TextField(null=True, blank=True)
     legal_entity_verification_status = models.TextField(null=True, blank=True)
 
-    # The type of the Stripe account. Can be 'standard', 'express', or 'custom'.
+    # The type of the Stripe account. Can be "standard", "express", or "custom".
     type = models.TextField(null=True, blank=True)
 
     metadata = JSONField(null=True)
@@ -446,7 +446,7 @@ class Account(StripeObject):
 
 class BankAccount(StripeObject):
 
-    account = models.ForeignKey(Account, related_name='bank_accounts')
+    account = models.ForeignKey(Account, related_name="bank_accounts")
     account_holder_name = models.TextField()
     account_holder_type = models.TextField()
     bank_name = models.TextField(null=True, blank=True)

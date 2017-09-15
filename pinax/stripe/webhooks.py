@@ -78,7 +78,7 @@ class Webhook(with_metaclass(Registerable, object)):
         accounts we must fetch the event using the `stripe_account`
         parameter, else we won't find it.
         """
-        self.stripe_account = self.event.webhook_message.get('user_id')
+        self.stripe_account = self.event.webhook_message.get("user_id")
         self.event.stripe_account = self.stripe_account
         evt = stripe.Event.retrieve(
             self.event.stripe_id,

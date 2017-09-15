@@ -421,7 +421,6 @@ class AdditionalManagedAccountForm(DynamicManagedAccountForm):
                     'document': data.get('document')
                 }
             )
-
         except stripe.error.InvalidRequestError, se:
-            self.translate_stripe_error(se)
+            self.stripe_error_to_form_error(se)
             raise

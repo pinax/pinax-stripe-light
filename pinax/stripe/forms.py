@@ -63,6 +63,10 @@ STATE_CHOICES_BY_COUNTRY = {
         ('QC', _('Quebec')),
         ('SK', _('Saskatchewan')),
         ('YT', _('Yukon'))
+    ],
+    'US': [
+        ('CA', _('California')),
+        ('HI', _('Hawaii')),
     ]
 }
 
@@ -236,16 +240,15 @@ class InitialManagedAccountForm(DynamicManagedAccountForm):
 
     def __init__(self, *args, **kwargs):
         """Instantiate no fields based on `fields_needed` initially."""
-        country = kwargs.pop('country')
         self.request = kwargs.pop('request')
         super(InitialManagedAccountForm, self).__init__(
-            *args, country=country, **kwargs
+            *args, **kwargs
         )
         self.fields['address_state'] = forms.ChoiceField(
-            choices=STATE_CHOICES_BY_COUNTRY[country]
+            choices=STATE_CHOICES_BY_COUNTRY[self.country]
         )
         self.fields['currency'] = forms.ChoiceField(
-            choices=CURRENCY_CHOICES_BY_COUNTRY[country]
+            choices=CURRENCY_CHOICES_BY_COUNTRY[self.country]
         )
 
     def get_ipaddress(self):

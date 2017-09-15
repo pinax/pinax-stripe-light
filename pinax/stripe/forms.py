@@ -352,7 +352,7 @@ class InitialCustomAccountForm(DynamicManagedAccountForm):
                 }
             )
 
-        except stripe.error.InvalidRequestError, se:
+        except stripe.error.InvalidRequestError as se:
             self.stripe_error_to_form_error(se)
             raise
 
@@ -407,6 +407,6 @@ class AdditionalCustomAccountForm(DynamicManagedAccountForm):
                     "document": data.get("document")
                 }
             )
-        except stripe.error.InvalidRequestError, se:
+        except stripe.error.InvalidRequestError as se:
             self.stripe_error_to_form_error(se)
             raise

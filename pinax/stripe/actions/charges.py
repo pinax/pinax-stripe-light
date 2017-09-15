@@ -43,7 +43,12 @@ def capture(charge, amount=None):
     sync_charge_from_stripe_data(stripe_charge)
 
 
-def create(amount, customer, source=None, currency="usd", description=None, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True, email=None, stripe_account=None):
+def create(
+    amount, customer, source=None, currency="usd", description=None,
+    send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True,
+    email=None, destination_account=None, destination_amount=None,
+    application_fee=None
+):
     """
     Create a charge for the given customer.
 
@@ -55,14 +60,28 @@ def create(amount, customer, source=None, currency="usd", description=None, send
         description: a description of the charge
         send_receipt: send a receipt upon successful charge
         capture: immediately capture the charge instead of doing a pre-authorization
-        stripe_account: stripe_id of a connected account
+        destination_account: stripe_id of a connected account
+        destination_amount: amount to transfer to the `destination_account` without creating an application fee
+        application_fee: used with `destination_account` to add a fee destined for the platform account
 
     Returns:
         a pinax.stripe.models.Charge object
     """
     if not isinstance(amount, decimal.Decimal):
         raise ValueError(
-            "You must supply a decimal value representing dollars."
+            "You must supply a decimal value for `amount`."
+        )
+    if application_fee and not isinstance(application_fee, decimal.Decimal):
+        raise ValueError(
+            "You must supply a decimal value for `application_fee`."
+        )
+    if application_fee and not destination_account:
+        raise ValueError(
+            "You can only specify `application_fee` with `destination_account`"
+        )
+    if application_fee and destination_account and destination_amount:
+        raise ValueError(
+            "You can't specify `application_fee` with `destination_amount`"
         )
     kwargs = dict(
         amount=utils.convert_amount_for_api(amount, currency),  # find the final amount
@@ -72,10 +91,20 @@ def create(amount, customer, source=None, currency="usd", description=None, send
         description=description,
         capture=capture
     )
-    if stripe_account:
+    if destination_account:
         kwargs['destination'] = {
-            'account': stripe_account
+            'account': destination_account
         }
+        if destination_amount:
+            kwargs['destination'] = {
+                'amount': utils.convert_amount_for_api(
+                    destination_amount, currency
+                ),
+            }
+    if application_fee:
+        kwargs['application_fee'] = utils.convert_amount_for_api(
+            application_fee, currency
+        )
     stripe_charge = stripe.Charge.create(
         **kwargs
     )

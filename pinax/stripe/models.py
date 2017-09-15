@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import decimal
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
@@ -294,11 +295,13 @@ class Invoice(StripeObject):
 
     @property
     def stripe_invoice(self):
+        try:
+            stripe_account = self.customer.stripe_account
+        except ObjectDoesNotExist:
+            stripe_account = None
         return stripe.Invoice.retrieve(
             self.stripe_id,
-            stripe_account=(
-                self.customer.stripe_account if self.customer_id else None
-            )
+            stripe_account=stripe_account
         )
 
 

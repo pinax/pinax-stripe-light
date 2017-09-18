@@ -157,7 +157,7 @@ def sync_customer(customer, cu=None):
     if cu is None:
         cu = customer.stripe_customer
 
-    if cu.get('deleted', False):
+    if cu.get("deleted", False):
         purge_local(customer)
         return
 

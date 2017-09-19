@@ -38,7 +38,7 @@ def capture(charge, amount=None):
             amount if amount else charge.amount,
             charge.currency
         ),
-        expand=['balance_transaction']
+        expand=["balance_transaction"]
     )
     sync_charge_from_stripe_data(stripe_charge)
 
@@ -92,17 +92,17 @@ def create(
         capture=capture
     )
     if destination_account:
-        kwargs['destination'] = {
-            'account': destination_account
+        kwargs["destination"] = {
+            "account": destination_account
         }
         if destination_amount:
-            kwargs['destination'] = {
-                'amount': utils.convert_amount_for_api(
-                    destination_amount, currency
-                ),
-            }
+            kwargs["destination"]["amount"] = utils.convert_amount_for_api(
+                destination_amount,
+                currency
+            )
+
     if application_fee:
-        kwargs['application_fee'] = utils.convert_amount_for_api(
+        kwargs["application_fee"] = utils.convert_amount_for_api(
             application_fee, currency
         )
     stripe_charge = stripe.Charge.create(
@@ -119,7 +119,7 @@ def retrieve(stripe_id, stripe_account=None):
     return stripe.Charge.retrieve(
         stripe_id,
         stripe_account=stripe_account,
-        expand=['balance_transaction']
+        expand=["balance_transaction"]
     )
 
 
@@ -195,7 +195,7 @@ def update_charge_availability():
     ).exclude(
         Q(available=True) | Q(refunded=True)
     ).select_related(
-        'customer'
+        "customer"
     )
     for c in charges.iterator():
         sync_charge(

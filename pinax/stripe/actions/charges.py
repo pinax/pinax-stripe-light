@@ -96,11 +96,11 @@ def create(
             'account': destination_account
         }
         if destination_amount:
-            kwargs['destination'] = {
-                'amount': utils.convert_amount_for_api(
-                    destination_amount, currency
-                ),
-            }
+            kwargs['destination']["amount"] = utils.convert_amount_for_api(
+                destination_amount,
+                currency
+            )
+
     if application_fee:
         kwargs['application_fee'] = utils.convert_amount_for_api(
             application_fee, currency

@@ -144,6 +144,70 @@ class ChargesTests(TestCase):
         self.assertTrue(SyncMock.called)
         self.assertTrue(SendReceiptMock.called)
 
+    @patch("pinax.stripe.hooks.hookset.send_receipt")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("stripe.Charge.create")
+    def test_create_with_app_fee(self, CreateMock, SyncMock, SendReceiptMock):
+        charges.create(
+            amount=decimal.Decimal("10"),
+            customer=self.customer,
+            destination_account="xxx",
+            application_fee=decimal.Decimal("25")
+        )
+        self.assertTrue(CreateMock.called)
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["application_fee"], 2500)
+        self.assertEqual(kwargs["destination"]["account"], "xxx")
+        self.assertEqual(kwargs["destination"].get("amount"), None)
+        self.assertTrue(SyncMock.called)
+        self.assertTrue(SendReceiptMock.called)
+
+    @patch("pinax.stripe.hooks.hookset.send_receipt")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("stripe.Charge.create")
+    def test_create_with_destination(self, CreateMock, SyncMock, SendReceiptMock):
+        charges.create(
+            amount=decimal.Decimal("10"),
+            customer=self.customer,
+            destination_account="xxx",
+            destination_amount=decimal.Decimal("45")
+        )
+        self.assertTrue(CreateMock.called)
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["destination"]["account"], "xxx")
+        self.assertEqual(kwargs["destination"]["amount"], 4500)
+        self.assertTrue(SyncMock.called)
+        self.assertTrue(SendReceiptMock.called)
+
+    @patch("stripe.Charge.create")
+    def test_create_not_decimal_raises_exception(self, CreateMock):
+        with self.assertRaises(ValueError):
+            charges.create(
+                amount=decimal.Decimal("100"),
+                customer=self.customer,
+                application_fee=10
+            )
+
+    @patch("stripe.Charge.create")
+    def test_create_app_fee_no_dest_raises_exception(self, CreateMock):
+        with self.assertRaises(ValueError):
+            charges.create(
+                amount=decimal.Decimal("100"),
+                customer=self.customer,
+                application_fee=decimal.Decimal("10")
+            )
+
+    @patch("stripe.Charge.create")
+    def test_create_app_fee_dest_acct_and_dest_amt_raises_exception(self, CreateMock):
+        with self.assertRaises(ValueError):
+            charges.create(
+                amount=decimal.Decimal("100"),
+                customer=self.customer,
+                application_fee=decimal.Decimal("10"),
+                destination_account="xxx",
+                destination_amount=decimal.Decimal("15")
+            )
+
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
     @patch("stripe.Charge.retrieve")
     def test_capture(self, RetrieveMock, SyncMock):
@@ -158,6 +222,12 @@ class ChargesTests(TestCase):
         self.assertTrue(RetrieveMock.return_value.capture.called)
         _, kwargs = RetrieveMock.return_value.capture.call_args
         self.assertEquals(kwargs["amount"], 5000)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.charges.sync_charge")
+    def test_update_availability(self, SyncMock):
+        Charge.objects.create(customer=self.customer, amount=decimal.Decimal("100"), currency="usd", paid=True, captured=True, available=False, refunded=False)
+        charges.update_charge_availability()
         self.assertTrue(SyncMock.called)
 
 
@@ -1328,6 +1398,100 @@ class SyncsTests(TestCase):
         charges.sync_charge_from_stripe_data(data)
         charge = Charge.objects.get(customer=self.customer, stripe_id=data["id"])
         self.assertEquals(charge.amount, decimal.Decimal("2"))
+
+    def test_sync_charge_from_stripe_data_balance_transaction(self):
+        data = {
+            "id": "ch_17A1dUI10iPhvocMOecpvQlI",
+            "object": "charge",
+            "amount": 200,
+            "amount_refunded": 0,
+            "application_fee": None,
+            "balance_transaction": {
+                "id": "txn_19XJJ02eZvKYlo2ClwuJ1rbA",
+                "object": "balance_transaction",
+                "amount": 999,
+                "available_on": 1483920000,
+                "created": 1483315442,
+                "currency": "usd",
+                "description": None,
+                "fee": 59,
+                "fee_details": [
+                    {
+                        "amount": 59,
+                        "application": None,
+                        "currency": "usd",
+                        "description": "Stripe processing fees",
+                        "type": "stripe_fee"
+                    }
+                ],
+                "net": 940,
+                "source": "ch_19XJJ02eZvKYlo2CHfSUsSpl",
+                "status": "pending",
+                "type": "charge"
+            },
+            "captured": True,
+            "created": 1448213304,
+            "currency": "usd",
+            "customer": self.customer.stripe_id,
+            "description": None,
+            "destination": None,
+            "dispute": None,
+            "failure_code": None,
+            "failure_message": None,
+            "fraud_details": {
+            },
+            "invoice": "in_17A1dUI10iPhvocMSGtIfUDF",
+            "livemode": False,
+            "metadata": {
+            },
+            "paid": True,
+            "receipt_email": None,
+            "receipt_number": None,
+            "refunded": False,
+            "refunds": {
+                "object": "list",
+                "data": [
+
+                ],
+                "has_more": False,
+                "total_count": 0,
+                "url": "/v1/charges/ch_17A1dUI10iPhvocMOecpvQlI/refunds"
+            },
+            "shipping": None,
+            "source": {
+                "id": "card_179o0lI10iPhvocMZgdPiR5M",
+                "object": "card",
+                "address_city": None,
+                "address_country": None,
+                "address_line1": None,
+                "address_line1_check": None,
+                "address_line2": None,
+                "address_state": None,
+                "address_zip": None,
+                "address_zip_check": None,
+                "brand": "Visa",
+                "country": "US",
+                "customer": "cus_7ObCqsp1NGVT6o",
+                "cvc_check": None,
+                "dynamic_last4": None,
+                "exp_month": 10,
+                "exp_year": 2019,
+                "funding": "credit",
+                "last4": "4242",
+                "metadata": {
+                },
+                "name": None,
+                "tokenization_method": None
+            },
+            "statement_descriptor": "A descriptor",
+            "status": "succeeded"
+        }
+        charges.sync_charge_from_stripe_data(data)
+        charge = Charge.objects.get(customer=self.customer, stripe_id=data["id"])
+        self.assertEquals(charge.amount, decimal.Decimal("2"))
+        self.assertEquals(charge.available, False)
+        self.assertEquals(charge.fee, decimal.Decimal("0.59"))
+        self.assertEquals(charge.currency, "usd")
 
     def test_sync_charge_from_stripe_data_description(self):
         data = {

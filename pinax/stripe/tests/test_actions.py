@@ -3081,3 +3081,10 @@ class BankAccountsSyncTestCase(TestCase):
         )
         self.assertEqual(bankaccount.account_holder_name, "Jane Austen")
         self.assertEqual(bankaccount.account, account)
+
+    @patch("pinax.stripe.actions.externalaccounts.sync_bank_account_from_stripe_data")
+    def test_create_bank_account(self, SyncMock):
+        account = Mock()
+        externalaccounts.create_bank_account(account, 123455, "US", "usd")
+        self.assertTrue(account.external_accounts.create.called)
+        self.assertTrue(SyncMock.called)

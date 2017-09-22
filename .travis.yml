@@ -87,10 +87,16 @@ matrix:
     - env: TOXENV=py36-master-stripe128
 install:
   - pip install tox
-  - if [ "$TOXENV" != checkqa ]; then pip install coveralls; fi
+  - if [ "$TOXENV" != checkqa ]; then pip install codecov coveralls; fi
 script:
   - tox -e $TOXENV
 after_success:
-  - if [ "$TOXENV" != checkqa ]; then coveralls; fi
+  - |
+    if [[ "$TOXENV" != checkqa ]]; then
+      coveralls
+      flags="${TOXENV//-/ }"
+      flags="${flags//./}"
+      codecov --name $TOXENV --flags $flags
+    fi
 notifications:
   slack: pinax:nR1p8bAyjlJUc1CSYn2DT5ps

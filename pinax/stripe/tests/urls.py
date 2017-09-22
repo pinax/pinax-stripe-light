@@ -5,21 +5,21 @@ from ..urls import urlpatterns
 
 urlpatterns += [
 
-    url(r'^admin/', admin.site.urls),
+    url(r"^admin/", admin.site.urls),
 
     url(
-        r'^the/app/$',
+        r"^the/app/$",
         MockView.as_view(),
-        name='the_app'
+        name="the_app"
     ),
     url(
-        r'^accounts/signup/$',
+        r"^accounts/signup/$",
         MockView.as_view(),
-        name='signup'
+        name="signup"
     ),
     url(
-        r'^password/reset/confirm/(?P<token>.+)/$',
+        r"^password/reset/confirm/(?P<token>.+)/$",
         MockView.as_view(),
-        name='password_reset'
+        name="password_reset"
     ),
 ]

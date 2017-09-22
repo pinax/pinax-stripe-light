@@ -91,7 +91,7 @@ def purge(customer):
     try:
         customer.stripe_customer.delete()
     except stripe.InvalidRequestError as e:
-        if 'no such customer:' not in smart_str(e).lower():
+        if "no such customer:" not in smart_str(e).lower():
             # The exception was thrown because the customer was already
             # deleted on the stripe side, ignore the exception
             raise

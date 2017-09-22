@@ -143,7 +143,7 @@ class CustomersTests(TestCase):
     @patch("stripe.Customer.create")
     def test_customer_create_user_duplicate(self, CreateMock, RetrieveMock):
         # Create an existing database customer for this user
-        original = Customer.objects.create(user=self.user, stripe_id='cus_XXXXX')
+        original = Customer.objects.create(user=self.user, stripe_id="cus_XXXXX")
 
         new_customer = Mock()
         RetrieveMock.return_value = new_customer
@@ -454,7 +454,7 @@ class SourcesTests(TestCase):
     def test_delete_card_dj19(self):
         CustomerMock = Mock()
         result = sources.delete_card(CustomerMock, source="card_token")
-        self.assertEqual(result, (0, {'pinax_stripe.Card': 0}))
+        self.assertEqual(result, (0, {"pinax_stripe.Card": 0}))
         self.assertTrue(CustomerMock.stripe_customer.sources.retrieve().delete.called)
 
     @skipIf(django.VERSION >= (1, 9), "Only for django before 1.9")
@@ -646,7 +646,7 @@ class SubscriptionsTests(TestCase):
         SubMock.stripe_subscription.trial_end = time.time() + 1000000.0
 
         subscriptions.update(SubMock, charge_immediately=True)
-        self.assertEquals(SubMock.stripe_subscription.trial_end, 'now')
+        self.assertEquals(SubMock.stripe_subscription.trial_end, "now")
         self.assertTrue(SubMock.stripe_subscription.save.called)
         self.assertTrue(SyncMock.called)
 

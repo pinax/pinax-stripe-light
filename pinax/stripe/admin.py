@@ -94,12 +94,12 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value() == "none":
             # Get customers with 0 subscriptions
-            return queryset.annotate(subs=Count('subscription')).filter(subs=0)
+            return queryset.annotate(subs=Count("subscription")).filter(subs=0)
         elif self.value():
             # Get customer pks without a subscription with this status
             customers = Subscription.objects.filter(
                 status=self.value()).values_list(
-                'customer', flat=True).distinct()
+                "customer", flat=True).distinct()
             # Filter by those customers
             return queryset.filter(pk__in=customers)
         return queryset.all()
@@ -236,7 +236,7 @@ class InvoiceItemInline(admin.TabularInline):
 
 
 def customer_has_card(obj):
-    return obj.customer.card_set.exclude(fingerprint='').exists()
+    return obj.customer.card_set.exclude(fingerprint="").exists()
 customer_has_card.short_description = "Customer Has Card"
 
 

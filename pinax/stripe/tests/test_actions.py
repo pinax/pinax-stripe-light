@@ -2699,6 +2699,26 @@ class TransfersTests(TestCase):
         transfers.update_status(transfer)
         self.assertEquals(transfer.status, "complete")
 
+    @patch("stripe.Transfer.create")
+    def test_transfer_create(self, CreateMock):
+        CreateMock.return_value = self.data
+        transfers.create(decimal.Decimal("100"), "usd", None, None)
+        self.assertTrue(CreateMock.called)
+
+    @patch("stripe.Transfer.create")
+    def test_transfer_create_with_transfer_group(self, CreateMock):
+        CreateMock.return_value = self.data
+        transfers.create(decimal.Decimal("100"), "usd", None, None, transfer_group="foo")
+        _, kwargs = CreateMock.call_args
+        self.assertEquals(kwargs["transfer_group"], "foo")
+
+    @patch("stripe.Transfer.create")
+    def test_transfer_create_with_stripe_account(self, CreateMock):
+        CreateMock.return_value = self.data
+        transfers.create(decimal.Decimal("100"), "usd", None, None, stripe_account="foo")
+        _, kwargs = CreateMock.call_args
+        self.assertEquals(kwargs["stripe_account"], "foo")
+
 
 class AccountsSyncTestCase(TestCase):
 

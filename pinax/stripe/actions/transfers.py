@@ -101,7 +101,7 @@ def create(
         description=description
     ))
     if transfer_group:
-        kwargs['transfer_group'] = stripe_account
+        kwargs['transfer_group'] = transfer_group
     if stripe_account:
         kwargs['stripe_account'] = stripe_account
     transfer = stripe.Transfer.create(**kwargs)

@@ -1795,6 +1795,16 @@ class SyncsTests(TestCase):
         self.assertIsNone(value)
 
     @patch("stripe.Subscription.retrieve")
+    def test_retrieve_stripe_subscription_diff_customer(self, RetrieveMock):
+        class Subscription:
+            customer = "cus_xxxxxxxxxxxxZZZ"
+
+        RetrieveMock.return_value = Subscription()
+
+        value = subscriptions.retrieve(self.customer, "sub_id")
+        self.assertIsNone(value)
+
+    @patch("stripe.Subscription.retrieve")
     def test_retrieve_stripe_subscription_missing_subscription(self, RetrieveMock):
         RetrieveMock.return_value = None
         value = subscriptions.retrieve(self.customer, "sub id")

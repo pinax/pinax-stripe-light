@@ -1316,6 +1316,31 @@ class SyncsTests(TestCase):
         self.assertTrue(SyncPaymentSourceMock.called)
         self.assertTrue(SyncSubscriptionMock.called)
 
+    @patch("pinax.stripe.actions.customers.purge_local")
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
+    @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")
+    @patch("stripe.Customer.retrieve")
+    def test_sync_customer_purged_locally(self, RetrieveMock, SyncPaymentSourceMock, SyncSubscriptionMock, PurgeLocalMock):
+        self.customer.date_purged = timezone.now()
+        customers.sync_customer(self.customer)
+        self.assertFalse(RetrieveMock.called)
+        self.assertFalse(SyncPaymentSourceMock.called)
+        self.assertFalse(SyncSubscriptionMock.called)
+        self.assertFalse(PurgeLocalMock.called)
+
+    @patch("pinax.stripe.actions.customers.purge_local")
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
+    @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")
+    @patch("stripe.Customer.retrieve")
+    def test_sync_customer_purged_remotely_not_locally(self, RetrieveMock, SyncPaymentSourceMock, SyncSubscriptionMock, PurgeLocalMock):
+        RetrieveMock.return_value = dict(
+            deleted=True
+        )
+        customers.sync_customer(self.customer)
+        self.assertFalse(SyncPaymentSourceMock.called)
+        self.assertFalse(SyncSubscriptionMock.called)
+        self.assertTrue(PurgeLocalMock.called)
+
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
     @patch("stripe.Customer.retrieve")
     def test_sync_invoices_for_customer(self, RetreiveMock, SyncMock):

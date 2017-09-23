@@ -1795,6 +1795,16 @@ class SyncsTests(TestCase):
         self.assertIsNone(value)
 
     @patch("stripe.Subscription.retrieve")
+    def test_retrieve_stripe_subscription_diff_customer(self, RetrieveMock):
+        class Subscription:
+            customer = "cus_xxxxxxxxxxxxZZZ"
+
+        RetrieveMock.return_value = Subscription()
+
+        value = subscriptions.retrieve(self.customer, "sub_id")
+        self.assertIsNone(value)
+
+    @patch("stripe.Subscription.retrieve")
     def test_retrieve_stripe_subscription_missing_subscription(self, RetrieveMock):
         RetrieveMock.return_value = None
         value = subscriptions.retrieve(self.customer, "sub id")
@@ -2689,6 +2699,26 @@ class TransfersTests(TestCase):
         transfers.update_status(transfer)
         self.assertEquals(transfer.status, "complete")
 
+    @patch("stripe.Transfer.create")
+    def test_transfer_create(self, CreateMock):
+        CreateMock.return_value = self.data
+        transfers.create(decimal.Decimal("100"), "usd", None, None)
+        self.assertTrue(CreateMock.called)
+
+    @patch("stripe.Transfer.create")
+    def test_transfer_create_with_transfer_group(self, CreateMock):
+        CreateMock.return_value = self.data
+        transfers.create(decimal.Decimal("100"), "usd", None, None, transfer_group="foo")
+        _, kwargs = CreateMock.call_args
+        self.assertEquals(kwargs["transfer_group"], "foo")
+
+    @patch("stripe.Transfer.create")
+    def test_transfer_create_with_stripe_account(self, CreateMock):
+        CreateMock.return_value = self.data
+        transfers.create(decimal.Decimal("100"), "usd", None, None, stripe_account="foo")
+        _, kwargs = CreateMock.call_args
+        self.assertEquals(kwargs["stripe_account"], "foo")
+
 
 class AccountsSyncTestCase(TestCase):
 
@@ -3081,3 +3111,10 @@ class BankAccountsSyncTestCase(TestCase):
         )
         self.assertEqual(bankaccount.account_holder_name, "Jane Austen")
         self.assertEqual(bankaccount.account, account)
+
+    @patch("pinax.stripe.actions.externalaccounts.sync_bank_account_from_stripe_data")
+    def test_create_bank_account(self, SyncMock):
+        account = Mock()
+        externalaccounts.create_bank_account(account, 123455, "US", "usd")
+        self.assertTrue(account.external_accounts.create.called)
+        self.assertTrue(SyncMock.called)

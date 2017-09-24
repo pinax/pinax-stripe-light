@@ -136,6 +136,12 @@ FIELDS_BY_COUNTRY = {
             forms.CharField(
                 label=_("SIN")
             ),
+        ),
+        "legal_entity.verification.document": (
+            "document",
+            forms.FileField(
+                label=_("Scan of government-issued ID")
+            ),
         )
     },
     "US": {
@@ -144,6 +150,12 @@ FIELDS_BY_COUNTRY = {
             forms.CharField(
                 label=_("SSN")
             )
+        ),
+        "legal_entity.verification.document": (
+            "document",
+            forms.FileField(
+                label=_("Scan of government-issued ID")
+            ),
         )
     }
 }
@@ -175,9 +187,7 @@ class DynamicManagedAccountForm(forms.Form):
         for f in self.fields_needed:
             if f in FIELDS_BY_COUNTRY.get(self.country, {}):
                 field_name, field = FIELDS_BY_COUNTRY[self.country][f]
-            else:
-                field_name, field = FIELDS_BY_COUNTRY["default"][f]
-            self.fields[field_name] = field
+                self.fields[field_name] = field
 
     # clean methods only kick in if the form has the relevant field
 

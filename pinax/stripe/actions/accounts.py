@@ -1,9 +1,8 @@
-import stripe
-
+from . externalaccounts import sync_bank_account_from_stripe_data
 from .. import models
 from .. import utils
 import datetime
-from . externalaccounts import sync_bank_account_from_stripe_data
+import stripe
 
 
 def create(user, country, **kwargs):
@@ -42,22 +41,19 @@ def update(account, data):
     """
     stripe_account = stripe.Account.retrieve(id=account.stripe_id)
 
-    # first, upload our document data if we have it
-    if "dob" in data:
+    if data.get("dob"):
         stripe_account.legal_entity.dob = data["dob"]
 
-    if "first_name" in data:
+    if data.get("first_name"):
         stripe_account.legal_entity.first_name = data["first_name"]
 
-    if "last_name" in data:
+    if data.get("last_name"):
         stripe_account.legal_entity.last_name = data["last_name"]
 
-    if "personal_id_number" in data:
-        stripe_account.legal_entity.personal_id_number = data[
-            "personal_id_number"
-        ]
+    if data.get("personal_id_number"):
+        stripe_account.legal_entity.personal_id_number = data["personal_id_number"]
 
-    if "document" in data:
+    if data.get("document"):
         response = stripe.FileUpload.create(
             purpose="identity_document",
             file=data["document"],

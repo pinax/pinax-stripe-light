@@ -1,13 +1,11 @@
-from django import forms
-from django.utils.translation import ugettext_lazy as _
-
+from .actions import accounts
 from .conf import settings
 from .models import Plan
-from .actions import accounts
-import datetime
-
-from ipware.ip import get_real_ip
+from django import forms
+from django.utils.translation import ugettext_lazy as _
 from ipware.ip import get_ip
+from ipware.ip import get_real_ip
+import datetime
 import stripe
 import time
 
@@ -132,7 +130,7 @@ CURRENCY_CHOICES_BY_COUNTRY = {
 FIELDS_BY_COUNTRY = {
     "CA": {
         "legal_entity.personal_id_number": (
-            "personal_id",
+            "personal_id_number",
             forms.CharField(
                 label=_("SIN")
             ),
@@ -146,7 +144,7 @@ FIELDS_BY_COUNTRY = {
     },
     "US": {
         "legal_entity.personal_id_number": (
-            "personal_id",
+            "personal_id_number",
             forms.CharField(
                 label=_("SSN")
             )
@@ -171,6 +169,7 @@ STRIPE_FIELDS_TO_LOCAL_FIELDS = {
     "routing_number": "routing_number",
     "currency": "currency",
     "account_number": "account_number",
+    "personal_id_number": "personal_id_number",
     "file": "document"
 }
 
@@ -413,7 +412,7 @@ class AdditionalCustomAccountForm(DynamicManagedAccountForm):
                     },
                     "first_name": data["first_name"],
                     "last_name": data["last_name"],
-                    "personal_id_number": data.get("personal_id"),
+                    "personal_id_number": data.get("personal_id_number"),
                     "document": data.get("document")
                 }
             )

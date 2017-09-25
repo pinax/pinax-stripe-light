@@ -1,9 +1,11 @@
 from ..forms import AdditionalCustomAccountForm
 from ..forms import InitialCustomAccountForm
 from ..models import Account
+from base64 import b64decode
 from copy import copy
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.utils import timezone
@@ -117,7 +119,8 @@ class AdditionalCustomAccountFormTestCase(TestCase):
         self.data = {
             "first_name": "Donkey",
             "last_name": "McGee",
-            "dob": "1980-01-01"
+            "dob": "1980-01-01",
+            "personal_id_number": "123123123"
         }
         self.account = Account.objects.create(
             user=self.user,
@@ -168,9 +171,9 @@ class AdditionalCustomAccountFormTestCase(TestCase):
         form = AdditionalCustomAccountForm(
             account=self.account
         )
-        self.assertIn("personal_id", form.fields)
+        self.assertIn("personal_id_number", form.fields)
         self.assertTrue(
-            isinstance(form.fields["personal_id"], forms.CharField)
+            isinstance(form.fields["personal_id_number"], forms.CharField)
         )
 
     def test_dynamic_document_field_added(self):
@@ -197,16 +200,72 @@ class AdditionalCustomAccountFormTestCase(TestCase):
         self.assertTrue(
             isinstance(form.fields["document"], forms.FileField)
         )
-        self.assertIn("personal_id", form.fields)
+        self.assertIn("personal_id_number", form.fields)
         self.assertTrue(
-            isinstance(form.fields["personal_id"], forms.CharField)
+            isinstance(form.fields["personal_id_number"], forms.CharField)
         )
 
-    # def test_save(self):
-    #     pass
+    @patch("pinax.stripe.actions.accounts.sync_account_from_stripe_data")
+    @patch("stripe.Account.retrieve")
+    @patch("stripe.FileUpload.create")
+    def test_save(self, file_upload_mock, retrieve_mock, sync_mock):
+        self.account.verification_fields_needed = [
+            "legal_entity.personal_id_number"
+        ]
+        form = AdditionalCustomAccountForm(
+            self.data,
+            account=self.account
+        )
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertEqual(
+            retrieve_mock.return_value.legal_entity.first_name,
+            "Donkey"
+        )
+        self.assertEqual(
+            retrieve_mock.return_value.legal_entity.personal_id_number,
+            "123123123"
+        )
+        self.assertFalse(file_upload_mock.called)
 
-    # def test_save_with_document(self):
-    #     pass
+    @patch("pinax.stripe.actions.accounts.sync_account_from_stripe_data")
+    @patch("stripe.Account.retrieve")
+    @patch("stripe.FileUpload.create")
+    def test_save_with_document(self, file_upload_mock, retrieve_mock, sync_mock):
+        file_upload_mock.return_value = {"id": 5555}
+        self.account.verification_fields_needed = [
+            "legal_entity.personal_id_number",
+            "legal_entity.verification.document"
+        ]
+        # https://raw.githubusercontent.com/mathiasbynens/small/master/jpeg.jpg
+        image = b64decode(
+            "/9j/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOC"
+            "wkJDRENDg8QEBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQ"
+            "EAAD8A0s8g/9k="
+        )
+        image = InMemoryUploadedFile(
+            image, None, 'random-name.jpg', 'image/jpeg', len(image), None
+        )
+        form = AdditionalCustomAccountForm(
+            self.data,
+            account=self.account,
+            files={'document': image}
+        )
+        self.assertTrue(form.is_valid())
+        form.save()
+        self.assertEqual(
+            retrieve_mock.return_value.legal_entity.first_name,
+            "Donkey"
+        )
+        self.assertEqual(
+            retrieve_mock.return_value.legal_entity.personal_id_number,
+            "123123123"
+        )
+        self.assertTrue(file_upload_mock.called)
+        self.assertEqual(
+            retrieve_mock.return_value.legal_entity.verification.document,
+            file_upload_mock.return_value["id"]
+        )
 
     # def test_save_with_stripe_error(self):
     #     pass

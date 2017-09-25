@@ -26,7 +26,8 @@ from ..webhooks import (
     CustomerSourceCreatedWebhook,
     CustomerSourceDeletedWebhook,
     CustomerSubscriptionCreatedWebhook,
-    InvoiceCreatedWebhook
+    InvoiceCreatedWebhook,
+    ChargeDisputeCreatedWebhook
 )
 
 
@@ -159,6 +160,17 @@ class ChargeWebhookTest(TestCase):
         event = Event.objects.create(kind=ChargeCapturedWebhook.name, webhook_message={}, valid=True, processed=False)
         event.validated_message = dict(data=dict(object=dict(id=1)))
         ChargeCapturedWebhook(event).process_webhook()
+        self.assertTrue(SyncMock.called)
+
+
+class ChargeDisputeCreatedWebhookTest(TestCase):
+
+    @patch("stripe.Charge.retrieve")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    def test_process_webhook(self, SyncMock, RetrieveMock):
+        event = Event.objects.create(kind=ChargeDisputeCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
+        event.validated_message = dict(data=dict(object=dict(charge=1)))
+        ChargeDisputeCreatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
 
 

@@ -53,6 +53,11 @@ This app allows you to process one off charges as well as signup users for
 recurring subscriptions managed by Stripe.
 """
 
+tests_require = [
+    "mock",
+    "django_forms_bootstrap",
+]
+
 setup(
     name=NAME,
     author=AUTHOR,
@@ -90,10 +95,10 @@ setup(
         "six",
         "django-ipware==1.1.6"
     ],
+    extras_require={
+        "pytest": ["pytest", "pytest-django"] + tests_require,
+    },
     test_suite="runtests.runtests",
-    tests_require=[
-        "mock",
-        "django_forms_bootstrap",
-    ],
+    tests_require=tests_require,
     zip_safe=False,
 )

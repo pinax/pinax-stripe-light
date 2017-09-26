@@ -8,11 +8,49 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test import TestCase
 from django.test.client import RequestFactory
+from django.test.utils import override_settings
 from django.utils import timezone
 from mock import patch
 from stripe.error import InvalidRequestError
 import datetime
 import json
+
+
+def get_stripe_error(field_name=None, message=None):
+    if field_name is None:
+        field_name = u"legal_entity[dob][year]"
+    if message is None:
+        message = u"This value must be greater than 1900 (it currently is '1800')."
+    json_body = {
+        "error": {
+            "type": "invalid_request_error",
+            "message": message,
+            "param": field_name
+        }
+    }
+    http_body = json.dumps(json_body)
+    return InvalidRequestError(
+        message,
+        field_name,
+        http_body=http_body,
+        json_body=json_body
+    )
+
+
+def get_image(name=None, _type=None):
+    # https://raw.githubusercontent.com/mathiasbynens/small/master/jpeg.jpg
+    if _type is None:
+        _type = "image/jpeg"
+    if name is None:
+        name = 'random-name.jpg'
+    image = b64decode(
+        "/9j/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOC"
+        "wkJDRENDg8QEBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQ"
+        "EAAD8A0s8g/9k="
+    )
+    return InMemoryUploadedFile(
+        image, None, name, _type, len(image), None
+    )
 
 
 class InitialCustomAccountFormTestCase(TestCase):
@@ -81,18 +119,7 @@ class InitialCustomAccountFormTestCase(TestCase):
     @patch("pinax.stripe.actions.accounts.sync_account_from_stripe_data")
     @patch("stripe.Account.create")
     def test_save_with_stripe_error(self, create_mock, sync_mock):
-        http_body = (
-            u"""{\n  "error": {\n    "type": "invalid_request_error",\n    "message": "This """
-            u"""value must be greater than 1900 (it currently is \'1800\').",\n    "param": """
-            u""""legal_entity[dob][year]"\n  }\n}\n"""
-        )
-        json_body = json.loads(http_body)
-        create_mock.side_effect = InvalidRequestError(
-            u"This value must be greater than 1900 (it currently is '1800').",
-            u"legal_entity[dob][year]",
-            http_body=http_body,
-            json_body=json_body
-        )
+        create_mock.side_effect = get_stripe_error()
         form = InitialCustomAccountForm(
             self.data,
             request=self.request,
@@ -106,6 +133,25 @@ class InitialCustomAccountFormTestCase(TestCase):
         self.assertEqual(
             form.errors["dob"],
             [u"This value must be greater than 1900 (it currently is '1800')."]
+        )
+
+    @patch("stripe.Account.create")
+    def test_save_with_stripe_error_unknown_field(self, create_mock):
+        create_mock.side_effect = get_stripe_error(
+            field_name="unknown",
+            message="Oopsie daisy"
+        )
+        form = InitialCustomAccountForm(
+            self.data,
+            request=self.request,
+            country="US"
+        )
+        self.assertTrue(form.is_valid())
+        with self.assertRaises(InvalidRequestError):
+            form.save()
+        self.assertEqual(
+            form.non_field_errors()[0],
+            "Oopsie daisy"
         )
 
 
@@ -205,6 +251,52 @@ class AdditionalCustomAccountFormTestCase(TestCase):
             isinstance(form.fields["personal_id_number"], forms.CharField)
         )
 
+    @override_settings(
+        PINAX_STRIPE_DOCUMENT_MAX_SIZE_KB=0
+    )
+    def test_clean_document_too_large(self):
+        self.account.verification_fields_needed = [
+            "legal_entity.verification.document"
+        ]
+        form = AdditionalCustomAccountForm(
+            self.data,
+            account=self.account,
+            files={'document': get_image()}
+        )
+        self.assertFalse(form.is_valid())
+        self.assertEqual(
+            form.errors["document"],
+            [u'Document image is too large (> 0MB)']
+        )
+
+    def test_clean_document_wrong_type(self):
+        self.account.verification_fields_needed = [
+            "legal_entity.verification.document"
+        ]
+        form = AdditionalCustomAccountForm(
+            self.data,
+            account=self.account,
+            files={'document': get_image(name="donkey.gif", _type="image/gif")}
+        )
+        self.assertFalse(form.is_valid())
+        self.assertEqual(
+            form.errors["document"],
+            [u'The type of image you supplied is not supported. Please upload a JPG or PNG file.']
+        )
+
+    def test_clean_dob_too_old(self):
+        data = copy(self.data)
+        data["dob"] = "1780-01-01"
+        form = AdditionalCustomAccountForm(
+            data,
+            account=self.account
+        )
+        self.assertFalse(form.is_valid())
+        self.assertEqual(
+            form.errors["dob"],
+            [u'This must be greater than 1900-01-01.']
+        )
+
     @patch("pinax.stripe.actions.accounts.sync_account_from_stripe_data")
     @patch("stripe.Account.retrieve")
     @patch("stripe.FileUpload.create")
@@ -237,19 +329,10 @@ class AdditionalCustomAccountFormTestCase(TestCase):
             "legal_entity.personal_id_number",
             "legal_entity.verification.document"
         ]
-        # https://raw.githubusercontent.com/mathiasbynens/small/master/jpeg.jpg
-        image = b64decode(
-            "/9j/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOC"
-            "wkJDRENDg8QEBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQ"
-            "EAAD8A0s8g/9k="
-        )
-        image = InMemoryUploadedFile(
-            image, None, 'random-name.jpg', 'image/jpeg', len(image), None
-        )
         form = AdditionalCustomAccountForm(
             self.data,
             account=self.account,
-            files={'document': image}
+            files={'document': get_image()}
         )
         self.assertTrue(form.is_valid())
         form.save()
@@ -267,17 +350,24 @@ class AdditionalCustomAccountFormTestCase(TestCase):
             file_upload_mock.return_value["id"]
         )
 
-    # def test_save_with_stripe_error(self):
-    #     pass
-
-
-# class DynamicManagedAccountFormTestCase(TestCase):
-
-#     def test_stripe_error_to_form_error(self):
-#         pass
-
-#     def test_clean_document(self):
-#         pass
-
-#     def test_clean_dob(self):
-#         pass
+    @patch("pinax.stripe.actions.accounts.sync_account_from_stripe_data")
+    @patch("stripe.Account.retrieve")
+    @patch("stripe.FileUpload.create")
+    def test_save_with_stripe_error(self, file_upload_mock, retrieve_mock, sync_mock):
+        retrieve_mock.return_value.save.side_effect = get_stripe_error()
+        self.account.verification_fields_needed = [
+            "legal_entity.personal_id_number",
+            "legal_entity.verification.document"
+        ]
+        form = AdditionalCustomAccountForm(
+            self.data,
+            account=self.account,
+            files={'document': get_image()}
+        )
+        self.assertTrue(form.is_valid())
+        with self.assertRaises(InvalidRequestError):
+            form.save()
+        self.assertEqual(
+            form.errors["dob"],
+            [u"This value must be greater than 1900 (it currently is '1800')."]
+        )

@@ -1,17 +1,23 @@
 from __future__ import unicode_literals
 
+from ..models import Account
+from ..models import BankAccount
+from ..models import Charge
+from ..models import Coupon
+from ..models import Customer
+from ..models import Event
+from ..models import EventProcessingException
+from ..models import Invoice
+from ..models import InvoiceItem
+from ..models import Plan
+from ..models import Subscription
+from ..models import Transfer
+from django.test import TestCase
+from django.utils import timezone
+from mock import patch
 import datetime
 import decimal
 import sys
-
-from django.test import TestCase
-from django.utils import timezone
-
-from mock import patch
-
-from ..models import (
-    Charge, Customer, Event, EventProcessingException, Invoice, InvoiceItem, Plan, Coupon, Subscription
-)
 
 
 def _str(obj):
@@ -117,3 +123,13 @@ class StripeObjectTests(TestCase):
     def test_stripe_subscription(self, RetrieveMock):
         Subscription(customer=Customer(stripe_id="foo")).stripe_subscription
         self.assertTrue(RetrieveMock().subscriptions.retrieve.called)
+
+    @patch("stripe.Transfer.retrieve")
+    def test_stripe_transfer(self, RetrieveMock):
+        Transfer(amount=10).stripe_transfer
+        self.assertTrue(RetrieveMock.called)
+
+    @patch("stripe.Account.retrieve")
+    def test_stripe_bankaccount(self, RetrieveMock):
+        BankAccount(account=Account(stripe_id="foo")).stripe_bankaccount
+        self.assertTrue(RetrieveMock.return_value.external_accounts.retrieve.called)

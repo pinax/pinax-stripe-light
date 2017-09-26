@@ -7,6 +7,7 @@ from ..models import EventProcessingException
 from ..models import Plan
 from ..models import Transfer
 from ..webhooks import AccountApplicationDeauthorizeWebhook
+from ..webhooks import AccountUpdatedWebhook
 from ..webhooks import ChargeCapturedWebhook
 from ..webhooks import CustomerSourceCreatedWebhook
 from ..webhooks import CustomerSourceDeletedWebhook
@@ -433,3 +434,19 @@ class TestTransferWebhooks(TestCase):
         registry.get(paid_event.kind)(paid_event).process()
         transfer = Transfer.objects.get(stripe_id="tr_XXXXXXXXXXXX")
         self.assertEquals(transfer.status, "paid")
+
+
+class AccountWebhookTest(TestCase):
+
+    @patch("stripe.Account.retrieve")
+    @patch("pinax.stripe.actions.accounts.sync_account_from_stripe_data")
+    def test_process_webhook(self, SyncMock, RetrieveMock):
+        event = Event.objects.create(
+            kind=AccountUpdatedWebhook.name,
+            webhook_message={},
+            valid=True,
+            processed=False
+        )
+        event.validated_message = dict(data=dict(object=dict(id=1)))
+        AccountUpdatedWebhook(event).process_webhook()
+        self.assertTrue(SyncMock.called)

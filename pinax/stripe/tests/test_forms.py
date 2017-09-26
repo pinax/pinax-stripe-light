@@ -266,7 +266,7 @@ class AdditionalCustomAccountFormTestCase(TestCase):
         self.assertFalse(form.is_valid())
         self.assertEqual(
             form.errors["document"],
-            [u'Document image is too large (> 0MB)']
+            [u'Document image is too large (> 0.0 MB)']
         )
 
     def test_clean_document_wrong_type(self):

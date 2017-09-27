@@ -6,6 +6,7 @@ from .models import (  # @@@ make all these read-only
     Charge,
     Subscription,
     Card,
+    BankAccount,
     BitcoinReceiver,
     Customer,
     Event,
@@ -189,6 +190,12 @@ class CardInline(admin.TabularInline):
     max_num = 0
 
 
+class BankAccountInline(admin.TabularInline):
+    model = BankAccount
+    extra = 0
+    max_num = 0
+
+
 class BitcoinReceiverInline(admin.TabularInline):
     model = BitcoinReceiver
     extra = 0
@@ -224,6 +231,7 @@ admin.site.register(
     inlines=[
         SubscriptionInline,
         CardInline,
+        BankAccountInline,
         BitcoinReceiverInline
     ]
 )

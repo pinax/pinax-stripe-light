@@ -163,6 +163,20 @@ class Card(StripeObject):
     fingerprint = models.TextField()
 
 
+class BankAccount(StripeObject):
+
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    name = models.TextField(blank=True)
+    country = models.CharField(max_length=2, blank=True)
+    bank_name = models.CharField(max_length=200, blank=True)
+    routing_number = models.CharField(max_length=35)
+    account_holder_type = models.CharField(max_length=20, blank=True)
+    currency = models.CharField(max_length=4, blank=True)
+    funding = models.CharField(max_length=15)
+    last4 = models.CharField(max_length=4, blank=True)
+    fingerprint = models.TextField()
+
+
 class BitcoinReceiver(StripeObject):
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)

@@ -1,8 +1,7 @@
 import decimal
 
-
-from django.db.models import Q
 from django.conf import settings
+from django.db.models import Q
 
 import stripe
 

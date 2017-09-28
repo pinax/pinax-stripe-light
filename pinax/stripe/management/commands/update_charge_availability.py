@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from pinax.stripe.actions import charges
+from ...actions import charges
 
 
 class Command(BaseCommand):

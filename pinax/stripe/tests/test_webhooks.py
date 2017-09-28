@@ -1,32 +1,41 @@
-from . import PLAN_CREATED_TEST_DATA
-from . import TRANSFER_CREATED_TEST_DATA
-from . import TRANSFER_PENDING_TEST_DATA
-from ..models import Customer
-from ..models import Event
-from ..models import EventProcessingException
-from ..models import Plan
-from ..models import Transfer
-from ..webhooks import AccountApplicationDeauthorizeWebhook
-from ..webhooks import AccountUpdatedWebhook
-from ..webhooks import ChargeCapturedWebhook
-from ..webhooks import CustomerSourceCreatedWebhook
-from ..webhooks import CustomerSourceDeletedWebhook
-from ..webhooks import CustomerSubscriptionCreatedWebhook
-from ..webhooks import CustomerUpdatedWebhook
-from ..webhooks import InvoiceCreatedWebhook
-from ..webhooks import registry
+import decimal
+import json
+import six
+
+from mock import patch
+
 from django.dispatch import Signal
 from django.test import TestCase
 from django.test.client import Client
+
 try:
     from django.urls import reverse
 except ImportError:
     from django.core.urlresolvers import reverse
-from mock import patch
-import decimal
-import json
-import six
+
 import stripe
+
+from ..models import (
+    Customer,
+    Event,
+    EventProcessingException,
+    Plan,
+    Transfer,
+)
+from ..webhooks import (
+    AccountApplicationDeauthorizeWebhook,
+    AccountUpdatedWebhook,
+    ChargeCapturedWebhook,
+    CustomerSourceCreatedWebhook,
+    CustomerSourceDeletedWebhook,
+    CustomerSubscriptionCreatedWebhook,
+    CustomerUpdatedWebhook,
+    InvoiceCreatedWebhook,
+    registry,
+)
+from . import PLAN_CREATED_TEST_DATA
+from . import TRANSFER_CREATED_TEST_DATA
+from . import TRANSFER_PENDING_TEST_DATA
 
 
 class WebhookRegistryTest(TestCase):
@@ -169,6 +178,17 @@ class WebhookTests(TestCase):
         event = Event.objects.create(kind="account.application.deauthorized", webhook_message={}, valid=True, processed=False)
         ProcessWebhookMock.side_effect = stripe.StripeError("Message", "error")
         with self.assertRaises(stripe.StripeError):
+            AccountApplicationDeauthorizeWebhook(event).process()
+        self.assertTrue(EventProcessingException.objects.filter(event=event).exists())
+
+    @patch("pinax.stripe.actions.customers.link_customer")
+    @patch("pinax.stripe.webhooks.Webhook.validate")
+    @patch("pinax.stripe.webhooks.Webhook.process_webhook")
+    def test_process_exception_is_logged_non_stripeerror(self, ProcessWebhookMock, ValidateMock, LinkMock):
+        # note: we choose an event type for which we do no processing
+        event = Event.objects.create(kind="account.application.deauthorized", webhook_message={}, valid=True, processed=False)
+        ProcessWebhookMock.side_effect = Exception("generic exception")
+        with self.assertRaises(Exception):
             AccountApplicationDeauthorizeWebhook(event).process()
         self.assertTrue(EventProcessingException.objects.filter(event=event).exists())
 

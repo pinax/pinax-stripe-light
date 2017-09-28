@@ -1,7 +1,8 @@
 import stripe
 
-from . import charges
 from .. import utils
+
+from . import charges
 
 
 def create(charge, amount=None):

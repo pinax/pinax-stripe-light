@@ -1,3 +1,5 @@
+from mock import Mock
+
 from django.test import TestCase
 from django.utils import timezone
 
@@ -7,8 +9,6 @@ except ImportError:
     from django.core.urlresolvers import reverse
 
 from django.contrib.auth import authenticate, login, logout, get_user_model
-
-from mock import Mock
 
 from ..conf import settings
 from ..middleware import ActiveSubscriptionMiddleware

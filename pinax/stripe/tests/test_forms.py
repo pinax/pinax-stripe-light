@@ -1,20 +1,25 @@
-from ..forms import AdditionalCustomAccountForm
-from ..forms import InitialCustomAccountForm
-from ..forms import extract_ipaddress
-from ..models import Account
+import datetime
+import json
+
 from base64 import b64decode
 from copy import copy
+from mock import patch
+
 from django import forms
-from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
 from django.utils import timezone
-from mock import patch
+
+from django.contrib.auth import get_user_model
+
 from stripe.error import InvalidRequestError
-import datetime
-import json
+
+from ..forms import AdditionalCustomAccountForm
+from ..forms import InitialCustomAccountForm
+from ..forms import extract_ipaddress
+from ..models import Account
 
 
 def get_stripe_error(field_name=None, message=None):
@@ -89,6 +94,15 @@ class InitialCustomAccountFormTestCase(TestCase):
             form.errors["address_state"][0],
             "Select a valid choice. CA is not one of the available choices."
         )
+
+    def test_fields_needed(self):
+        form = InitialCustomAccountForm(
+            self.data,
+            request=self.request,
+            country="CA",
+            fields_needed=["legal_entity.verification.document"]
+        )
+        self.assertTrue("document" in form.fields)
 
     def test_conditional_currency_field(self):
         data = copy(self.data)

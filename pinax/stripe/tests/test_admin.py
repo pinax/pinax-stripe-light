@@ -1,8 +1,9 @@
 import datetime
 
-from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.utils import timezone
+
+from django.contrib.auth import get_user_model
 
 try:
     from django.urls import reverse
@@ -123,6 +124,9 @@ class AdminTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
         response = self.client.get(url + "?has_card=no")
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get(url + "?has_card=yes")
         self.assertEqual(response.status_code, 200)
 
     def test_plan_admin(self):

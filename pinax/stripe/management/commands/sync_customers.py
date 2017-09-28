@@ -27,7 +27,7 @@ class Command(BaseCommand):
             try:
                 customers.sync_customer(customer)
             except InvalidRequestError as e:
-                if e.http_status == 404:
+                if e.http_status == 404:  # pragma: no branch
                     # This user doesn't exist (might be in test mode)
                     continue
 

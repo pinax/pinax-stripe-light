@@ -1,13 +1,17 @@
+import datetime
+import time
+
+from django import forms
+from django.utils.translation import ugettext_lazy as _
+
+import stripe
+
+from ipware.ip import get_ip
+from ipware.ip import get_real_ip
+
 from .actions import accounts
 from .conf import settings
 from .models import Plan
-from django import forms
-from django.utils.translation import ugettext_lazy as _
-from ipware.ip import get_ip
-from ipware.ip import get_real_ip
-import datetime
-import stripe
-import time
 
 
 class PaymentMethodForm(forms.Form):
@@ -184,7 +188,7 @@ class DynamicManagedAccountForm(forms.Form):
         # build our form using the country specific fields and falling
         # back to our default set
         for f in self.fields_needed:
-            if f in FIELDS_BY_COUNTRY.get(self.country, {}):
+            if f in FIELDS_BY_COUNTRY.get(self.country, {}):  # pragma: no branch
                 field_name, field = FIELDS_BY_COUNTRY[self.country][f]
                 self.fields[field_name] = field
 
@@ -253,7 +257,7 @@ class DynamicManagedAccountForm(forms.Form):
 def extract_ipaddress(request):
     """Extract IP address from request."""
     ipaddress = get_real_ip(request)
-    if not ipaddress and settings.DEBUG:
+    if not ipaddress and settings.DEBUG:  # pragma: no cover
         ipaddress = get_ip(request)
     return ipaddress
 

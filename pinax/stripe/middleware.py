@@ -1,14 +1,15 @@
 import django
+
 from django.shortcuts import redirect
 
 try:
     from django.urls import resolve
-except ImportError:
+except ImportError:  # pragma: no cover
     from django.core.urlresolvers import resolve
 
 try:
     from django.utils.deprecation import MiddlewareMixin as MixinorObject
-except ImportError:
+except ImportError:  # pragma: no cover
     MixinorObject = object
 
 
@@ -20,7 +21,7 @@ class ActiveSubscriptionMiddleware(MixinorObject):
 
     def process_request(self, request):
         is_authenticated = request.user.is_authenticated
-        if django.VERSION < (1, 10):
+        if django.VERSION < (1, 10):  # pragma: no cover
             is_authenticated = is_authenticated()
 
         if is_authenticated and not request.user.is_staff:

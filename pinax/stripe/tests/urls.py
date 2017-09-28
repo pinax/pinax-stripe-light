@@ -1,7 +1,11 @@
-from django.contrib import admin
 from django.conf.urls import url
-from .mock_views import MockView
+
+from django.contrib import admin
+
 from ..urls import urlpatterns
+
+from .mock_views import MockView
+
 
 urlpatterns += [
 

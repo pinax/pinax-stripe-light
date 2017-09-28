@@ -1,6 +1,7 @@
+from django.db.models import Count
+
 from django.contrib import admin
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Q
 
 from .models import (  # @@@ make all these read-only
     Charge,
@@ -21,12 +22,12 @@ from .models import (  # @@@ make all these read-only
 )
 
 
-def user_search_fields():  # coverage: omit
+def user_search_fields():
     User = get_user_model()
     fields = [
         "user__{0}".format(User.USERNAME_FIELD)
     ]
-    if "email" in [f.name for f in User._meta.fields]:
+    if "email" in [f.name for f in User._meta.fields]:  # pragma: no branch
         fields += ["user__email"]
     return fields
 
@@ -49,11 +50,10 @@ class CustomerHasCardListFilter(admin.SimpleListFilter):
         ]
 
     def queryset(self, request, queryset):
-        no_card = Q(card__fingerprint="") | Q(card=None)
         if self.value() == "yes":
-            return queryset.exclude(no_card)
+            return queryset.filter(card__isnull=True)
         elif self.value() == "no":
-            return queryset.filter(no_card)
+            return queryset.filter(card__isnull=False)
         return queryset.all()
 
 
@@ -68,13 +68,10 @@ class InvoiceCustomerHasCardListFilter(admin.SimpleListFilter):
         ]
 
     def queryset(self, request, queryset):
-        no_card = (Q(customer__card__fingerprint="") | Q(customer__card=None))
-        if self.value() == "yes":  # coverage: omit
-            # Worked when manually tested, getting a weird error otherwise
-            # Better than no tests at all
-            return queryset.exclude(no_card)
+        if self.value() == "yes":
+            return queryset.filter(customer__card__isnull=True)
         elif self.value() == "no":
-            return queryset.filter(no_card)
+            return queryset.filter(customer__card__isnull=False)
         return queryset.all()
 
 

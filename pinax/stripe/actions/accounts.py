@@ -1,8 +1,11 @@
-from . externalaccounts import sync_bank_account_from_stripe_data
+import datetime
+
+import stripe
+
 from .. import models
 from .. import utils
-import datetime
-import stripe
+
+from . externalaccounts import sync_bank_account_from_stripe_data
 
 
 def create(user, country, **kwargs):

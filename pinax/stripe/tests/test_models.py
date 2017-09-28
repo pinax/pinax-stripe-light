@@ -1,23 +1,28 @@
 from __future__ import unicode_literals
 
-from ..models import Account
-from ..models import BankAccount
-from ..models import Charge
-from ..models import Coupon
-from ..models import Customer
-from ..models import Event
-from ..models import EventProcessingException
-from ..models import Invoice
-from ..models import InvoiceItem
-from ..models import Plan
-from ..models import Subscription
-from ..models import Transfer
-from django.test import TestCase
-from django.utils import timezone
-from mock import patch
 import datetime
 import decimal
 import sys
+
+from mock import patch
+
+from django.test import TestCase
+from django.utils import timezone
+
+from ..models import (
+    Account,
+    BankAccount,
+    Charge,
+    Coupon,
+    Customer,
+    Event,
+    EventProcessingException,
+    Invoice,
+    InvoiceItem,
+    Plan,
+    Subscription,
+    Transfer
+)
 
 
 def _str(obj):

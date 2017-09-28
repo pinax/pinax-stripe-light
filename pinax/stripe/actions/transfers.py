@@ -78,10 +78,8 @@ def update_status(transfer):
     transfer.save()
 
 
-def create(
-    amount, currency, destination, description,
-    transfer_group=None, stripe_account=None, **kwargs
-):
+def create(amount, currency, destination, description, transfer_group=None,
+           stripe_account=None, **kwargs):
     """
     Create a transfer.
 
@@ -91,7 +89,7 @@ def create(
         destination: stripe_id of either a connected Stripe Account or Bank Account
         description: an arbitrary string displayed in the webui alongside the transfer
         transfer_group: a string that identifies this transfer as part of a group
-        stripe_account: the stripe_id of a connect account if creating a transfer on
+        stripe_account: the stripe_id of a Connect account if creating a transfer on
             their behalf
     """
     kwargs.update(dict(

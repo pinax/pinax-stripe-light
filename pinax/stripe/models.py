@@ -346,9 +346,9 @@ class Charge(StripeObject):
     receipt_sent = models.BooleanField(default=False)
     charge_created = models.DateTimeField(null=True, blank=True)
 
-    # these fields are extracted from the BalanceTransaction for the
-    # charge and help us know when funds from a charge are added to
-    # our Stripe account balance
+    # These fields are extracted from the BalanceTransaction for the
+    # charge and help us to know when funds from a charge are added to
+    # our Stripe account's balance.
     available = models.BooleanField(default=False)
     available_on = models.DateTimeField(null=True, blank=True)
     fee = models.DecimalField(

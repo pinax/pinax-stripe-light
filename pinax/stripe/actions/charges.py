@@ -89,7 +89,7 @@ def create(
         source=source,
         customer=customer,
         description=description,
-        capture=capture
+        capture=capture,
     )
     if destination_account:
         kwargs["destination"] = {

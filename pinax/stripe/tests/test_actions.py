@@ -1810,7 +1810,7 @@ class SyncsTests(TestCase):
     @patch("stripe.Subscription.retrieve")
     def test_retrieve_stripe_subscription(self, RetrieveMock):
         RetrieveMock.return_value = stripe.Subscription(
-            customer='cus_xxxxxxxxxxxxxxx'
+            customer="cus_xxxxxxxxxxxxxxx"
         )
         value = subscriptions.retrieve(self.customer, "sub id")
         self.assertEquals(value, RetrieveMock.return_value)
@@ -2972,36 +2972,36 @@ class AccountsSyncTestCase(TestCase):
     }""")
 
     def assert_common_attributes(self, account):
-        self.assertEqual(account.support_phone, '7788188181')
-        self.assertEqual(account.business_name, 'Woop Woop')
-        self.assertEqual(account.country, 'CA')
+        self.assertEqual(account.support_phone, "7788188181")
+        self.assertEqual(account.business_name, "Woop Woop")
+        self.assertEqual(account.country, "CA")
         self.assertEqual(account.charges_enabled, True)
-        self.assertEqual(account.support_email, 'support@someurl.com')
+        self.assertEqual(account.support_email, "support@someurl.com")
         self.assertEqual(account.details_submitted, True)
-        self.assertEqual(account.email, 'operations@someurl.com')
+        self.assertEqual(account.email, "operations@someurl.com")
         self.assertEqual(account.transfers_enabled, True)
-        self.assertEqual(account.timezone, 'Etc/UTC')
-        self.assertEqual(account.display_name, 'Some Company')
-        self.assertEqual(account.statement_descriptor, 'SOME COMP')
-        self.assertEqual(account.default_currency, 'cad')
+        self.assertEqual(account.timezone, "Etc/UTC")
+        self.assertEqual(account.display_name, "Some Company")
+        self.assertEqual(account.statement_descriptor, "SOME COMP")
+        self.assertEqual(account.default_currency, "cad")
 
     def assert_custom_attributes(self, account, dob=None, verification=None, acceptance_date=None, bank_accounts=0):
 
         # extra top level attributes
         self.assertEqual(account.debit_negative_balances, False)
         self.assertEqual(account.product_description, "Monkey Magic")
-        self.assertEqual(account.metadata, {'user_id': '9428'})
+        self.assertEqual(account.metadata, {"user_id": "9428"})
         self.assertEqual(account.transfer_statement_descriptor, "For reals")
 
         # legal entity
-        self.assertEqual(account.legal_entity_address_city, 'Vancouver')
-        self.assertEqual(account.legal_entity_address_country, 'CA')
-        self.assertEqual(account.legal_entity_address_line1, '14 Alberta St')
+        self.assertEqual(account.legal_entity_address_city, "Vancouver")
+        self.assertEqual(account.legal_entity_address_country, "CA")
+        self.assertEqual(account.legal_entity_address_line1, "14 Alberta St")
         self.assertEqual(account.legal_entity_address_line2, None)
-        self.assertEqual(account.legal_entity_address_postal_code, 'V5Y4Z2')
-        self.assertEqual(account.legal_entity_address_state, 'BC')
+        self.assertEqual(account.legal_entity_address_postal_code, "V5Y4Z2")
+        self.assertEqual(account.legal_entity_address_state, "BC")
         self.assertEqual(account.legal_entity_dob, dob)
-        self.assertEqual(account.legal_entity_type, 'individual')
+        self.assertEqual(account.legal_entity_type, "individual")
         self.assertEqual(account.legal_entity_first_name, "Luke")
         self.assertEqual(account.legal_entity_last_name, "Baaard")
         self.assertEqual(account.legal_entity_personal_id_number_provided, False)
@@ -3127,7 +3127,7 @@ class BankAccountsSyncTestCase(TestCase):
             email="upagus@test"
         )
         account = Account.objects.create(
-            stripe_id='acct_102t2K2m3chDH8uL',
+            stripe_id="acct_102t2K2m3chDH8uL",
             type="custom",
             user=user
         )

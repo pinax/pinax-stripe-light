@@ -239,7 +239,7 @@ class InvoiceItemInline(admin.TabularInline):
 
 def customer_has_card(obj):
     return obj.customer.card_set.exclude(fingerprint="").exists()
-customer_has_card.short_description = "Customer Has Card"
+customer_has_card.short_description = "Customer Has Card"  # noqa
 
 
 def customer_user(obj):

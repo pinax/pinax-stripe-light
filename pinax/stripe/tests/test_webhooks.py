@@ -93,7 +93,7 @@ class WebhookTests(TestCase):
     @patch("stripe.Transfer.retrieve")
     def test_webhook_with_transfer_event(self, TransferMock, StripeEventMock):
         StripeEventMock.return_value.to_dict.return_value = self.event_data
-        TransferMock.return_value = self.event_data['data']['object']
+        TransferMock.return_value = self.event_data["data"]["object"]
         msg = json.dumps(self.event_data)
         resp = Client().post(
             reverse("pinax_stripe_webhook"),
@@ -107,11 +107,11 @@ class WebhookTests(TestCase):
     @patch("stripe.Transfer.retrieve")
     def test_webhook_associated_with_stripe_account(self, TransferMock, StripeEventMock):
         connect_event_data = self.event_data.copy()
-        stripe_account = 'acct_123123123'
+        stripe_account = "acct_123123123"
         # only difference is that we'll have a user_id value
-        connect_event_data['user_id'] = stripe_account
+        connect_event_data["user_id"] = stripe_account
         StripeEventMock.return_value.to_dict.return_value = connect_event_data
-        TransferMock.return_value = connect_event_data['data']['object']
+        TransferMock.return_value = connect_event_data["data"]["object"]
         msg = json.dumps(connect_event_data)
         resp = Client().post(
             reverse("pinax_stripe_webhook"),
@@ -297,7 +297,7 @@ class TestTransferWebhooks(TestCase):
     def test_transfer_created(self, TransferMock, EventMock):
         ev = EventMock()
         ev.to_dict.return_value = TRANSFER_CREATED_TEST_DATA
-        TransferMock.return_value = TRANSFER_CREATED_TEST_DATA['data']['object']
+        TransferMock.return_value = TRANSFER_CREATED_TEST_DATA["data"]["object"]
         event = Event.objects.create(
             stripe_id=TRANSFER_CREATED_TEST_DATA["id"],
             kind="transfer.created",
@@ -316,7 +316,7 @@ class TestTransferWebhooks(TestCase):
     def test_transfer_pending_create(self, TransferMock, EventMock):
         ev = EventMock()
         ev.to_dict.return_value = TRANSFER_PENDING_TEST_DATA
-        TransferMock.return_value = TRANSFER_PENDING_TEST_DATA['data']['object']
+        TransferMock.return_value = TRANSFER_PENDING_TEST_DATA["data"]["object"]
         event = Event.objects.create(
             stripe_id=TRANSFER_PENDING_TEST_DATA["id"],
             kind="transfer.created",
@@ -335,7 +335,7 @@ class TestTransferWebhooks(TestCase):
     def test_transfer_paid_updates_existing_record(self, TransferMock, EventMock):
         ev = EventMock()
         ev.to_dict.return_value = TRANSFER_CREATED_TEST_DATA
-        TransferMock.return_value = TRANSFER_CREATED_TEST_DATA['data']['object']
+        TransferMock.return_value = TRANSFER_CREATED_TEST_DATA["data"]["object"]
         event = Event.objects.create(
             stripe_id=TRANSFER_CREATED_TEST_DATA["id"],
             kind="transfer.created",

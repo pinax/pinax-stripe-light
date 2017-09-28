@@ -43,7 +43,7 @@ def get_image(name=None, _type=None):
     if _type is None:
         _type = "image/jpeg"
     if name is None:
-        name = 'random-name.jpg'
+        name = "random-name.jpg"
     image = b64decode(
         "/9j/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOC"
         "wkJDRENDg8QEBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQ"
@@ -272,12 +272,12 @@ class AdditionalCustomAccountFormTestCase(TestCase):
         form = AdditionalCustomAccountForm(
             self.data,
             account=self.account,
-            files={'document': get_image()}
+            files={"document": get_image()}
         )
         self.assertFalse(form.is_valid())
         self.assertEqual(
             form.errors["document"],
-            [u'Document image is too large (> 0.0 MB)']
+            [u"Document image is too large (> 0.0 MB)"]
         )
 
     def test_clean_document_wrong_type(self):
@@ -287,12 +287,12 @@ class AdditionalCustomAccountFormTestCase(TestCase):
         form = AdditionalCustomAccountForm(
             self.data,
             account=self.account,
-            files={'document': get_image(name="donkey.gif", _type="image/gif")}
+            files={"document": get_image(name="donkey.gif", _type="image/gif")}
         )
         self.assertFalse(form.is_valid())
         self.assertEqual(
             form.errors["document"],
-            [u'The type of image you supplied is not supported. Please upload a JPG or PNG file.']
+            [u"The type of image you supplied is not supported. Please upload a JPG or PNG file."]
         )
 
     def test_clean_dob_too_old(self):
@@ -305,7 +305,7 @@ class AdditionalCustomAccountFormTestCase(TestCase):
         self.assertFalse(form.is_valid())
         self.assertEqual(
             form.errors["dob"],
-            [u'This must be greater than 1900-01-01.']
+            [u"This must be greater than 1900-01-01."]
         )
 
     @patch("pinax.stripe.actions.accounts.sync_account_from_stripe_data")
@@ -343,7 +343,7 @@ class AdditionalCustomAccountFormTestCase(TestCase):
         form = AdditionalCustomAccountForm(
             self.data,
             account=self.account,
-            files={'document': get_image()}
+            files={"document": get_image()}
         )
         self.assertTrue(form.is_valid())
         form.save()
@@ -373,7 +373,7 @@ class AdditionalCustomAccountFormTestCase(TestCase):
         form = AdditionalCustomAccountForm(
             self.data,
             account=self.account,
-            files={'document': get_image()}
+            files={"document": get_image()}
         )
         self.assertTrue(form.is_valid())
         with self.assertRaises(InvalidRequestError):

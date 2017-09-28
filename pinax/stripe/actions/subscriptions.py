@@ -189,7 +189,7 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
         stripe_subscription.coupon = coupon
     if charge_immediately:
         if utils.convert_tstamp(stripe_subscription.trial_end) > timezone.now():
-            stripe_subscription.trial_end = 'now'
+            stripe_subscription.trial_end = "now"
     sub = stripe_subscription.save()
     customer = models.Customer.objects.get(pk=subscription.customer.pk)
     sync_subscription_from_stripe_data(customer, sub)

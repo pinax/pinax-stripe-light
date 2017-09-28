@@ -143,7 +143,7 @@ class CommandTests(TestCase):
         Customer.objects.create(stripe_id="cus_XXXXX", user=self.user)
         Customer.objects.create(stripe_id="cus_YYYYY", user=user2)
 
-        SyncMock.side_effect = InvalidRequestError('Unknown customer', None, http_status=404)
+        SyncMock.side_effect = InvalidRequestError("Unknown customer", None, http_status=404)
 
         management.call_command("sync_customers")
         self.assertEqual(SyncChargesMock.call_count, 0)

@@ -60,11 +60,11 @@ class ModelTests(TestCase):
         self.assertEquals(i.plan_display(), "My Plan")
 
     def test_coupon_percent(self):
-        c = Coupon(percent_off=25, duration='repeating', duration_in_months=3)
+        c = Coupon(percent_off=25, duration="repeating", duration_in_months=3)
         self.assertEquals(str(c), "Coupon for 25% off, repeating")
 
     def test_coupon_absolute(self):
-        c = Coupon(amount_off=decimal.Decimal(50.00), duration="once", currency='usd')
+        c = Coupon(amount_off=decimal.Decimal(50.00), duration="once", currency="usd")
         self.assertEquals(str(c), "Coupon for $50, once")
 
     def test_model_table_name(self):

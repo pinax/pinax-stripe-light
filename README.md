@@ -1,3 +1,5 @@
+![](http://pinaxproject.com/pinax-design/badges/pinax-stripe.svg)
+
 # Pinax Stripe
 
 [![](http://slack.pinaxproject.com/badge.svg)](http://slack.pinaxproject.com/)

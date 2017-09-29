@@ -1,4 +1,4 @@
-![](http://pinaxproject.com/pinax-design/badges/pinax-stripe.svg)
+![](http://pinaxproject.com/pinax-design/patches/pinax-stripe.svg)
 
 # Pinax Stripe
 

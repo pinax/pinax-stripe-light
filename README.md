@@ -2,13 +2,16 @@
 
 # Pinax Stripe
 
-[![](http://slack.pinaxproject.com/badge.svg)](http://slack.pinaxproject.com/)
-[![](https://img.shields.io/travis/pinax/pinax-stripe.svg)](https://travis-ci.org/pinax/pinax-stripe)
-[![Codecov](https://img.shields.io/codecov/c/github/pinax/pinax-stripe.svg)](https://codecov.io/gh/pinax/pinax-stripe)
-[![](https://img.shields.io/pypi/dm/pinax-stripe.svg)](https://pypi.python.org/pypi/pinax-stripe/)
 [![](https://img.shields.io/pypi/v/pinax-stripe.svg)](https://pypi.python.org/pypi/pinax-stripe/)
 [![](https://img.shields.io/badge/license-MIT-blue.svg)](https://pypi.python.org/pypi/pinax-stripe/)
-[![](https://readthedocs.org/projects/pinax-stripe/badge/?version=latest)](http://pinax-stripe.readthedocs.org/en/latest/?badge=latest)
+
+[![](https://img.shields.io/travis/pinax/pinax-stripe.svg)](https://travis-ci.org/pinax/pinax-stripe)
+[![Codecov](https://img.shields.io/codecov/c/github/pinax/pinax-stripe.svg)](https://codecov.io/gh/pinax/pinax-stripe)
+![](https://img.shields.io/github/contributors/pinax/pinax-stripe.svg)
+![](https://img.shields.io/github/issues-pr/pinax/pinax-stripe.svg)
+![](https://img.shields.io/github/issues-pr-closed/pinax/pinax-stripe.svg)
+
+[![](http://slack.pinaxproject.com/badge.svg)](http://slack.pinaxproject.com/)
 
 This app was formerly called `django-stripe-payments` and has been renamed to
 avoid namespace collisions and to have more consistency with Pinax.

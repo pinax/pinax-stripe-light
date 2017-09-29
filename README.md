@@ -4,7 +4,7 @@
 
 [![](http://slack.pinaxproject.com/badge.svg)](http://slack.pinaxproject.com/)
 [![](https://img.shields.io/travis/pinax/pinax-stripe.svg)](https://travis-ci.org/pinax/pinax-stripe)
-[![](https://img.shields.io/coveralls/pinax/pinax-stripe.svg)](https://coveralls.io/r/pinax/pinax-stripe)
+[![Codecov](https://img.shields.io/codecov/c/github/pinax/pinax-stripe.svg)](https://codecov.io/gh/pinax/pinax-stripe)
 [![](https://img.shields.io/pypi/dm/pinax-stripe.svg)](https://pypi.python.org/pypi/pinax-stripe/)
 [![](https://img.shields.io/pypi/v/pinax-stripe.svg)](https://pypi.python.org/pypi/pinax-stripe/)
 [![](https://img.shields.io/badge/license-MIT-blue.svg)](https://pypi.python.org/pypi/pinax-stripe/)
@@ -86,7 +86,7 @@ See [this blog post](http://blog.pinaxproject.com/2016/02/26/recap-february-pina
 
 In case of any questions we recommend you [join our Pinax Slack team](http://slack.pinaxproject.com) and ping us there instead of creating an issue on GitHub. Creating issues on GitHub is of course also valid but we are usually able to help you faster if you ping us in Slack.
 
-We also highly recommend reading our [Open Source and Self-Care blog post](http://blog.pinaxproject.com/2016/01/19/open-source-and-self-care/).  
+We also highly recommend reading our [Open Source and Self-Care blog post](http://blog.pinaxproject.com/2016/01/19/open-source-and-self-care/).
 
 
 ## Code of Conduct

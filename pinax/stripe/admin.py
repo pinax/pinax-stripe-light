@@ -197,7 +197,7 @@ class BitcoinReceiverInline(admin.TabularInline):
 
 def subscription_status(obj):
     return ", ".join([subscription.status for subscription in obj.subscription_set.all()])
-subscription_status.short_description = "Subscription Status"
+subscription_status.short_description = "Subscription Status"  # noqa
 
 
 admin.site.register(
@@ -237,7 +237,7 @@ class InvoiceItemInline(admin.TabularInline):
 
 def customer_has_card(obj):
     return obj.customer.card_set.exclude(fingerprint="").exists()
-customer_has_card.short_description = "Customer Has Card"
+customer_has_card.short_description = "Customer Has Card"  # noqa
 
 
 def customer_user(obj):
@@ -248,7 +248,7 @@ def customer_user(obj):
         username,
         email
     )
-customer_user.short_description = "Customer"
+customer_user.short_description = "Customer"  # noqa
 
 
 admin.site.register(

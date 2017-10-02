@@ -47,7 +47,7 @@ jobs:
           name: lint code
           command: |
             . venv/bin/activate
-            flake8 --inline-quotes "double" pinax
+            flake8 pinax
 
   py27dj18:
     <<: *common

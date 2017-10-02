@@ -32,13 +32,13 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-lint-deps
+            - v2-lint-deps
       - run:
           name: install dependencies
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install flake8 flake8-quotes==0.11.0
+            pip install flake8==3.4.1 flake8-quotes==0.11.0
       - save_cache:
           paths:
             - ./venv

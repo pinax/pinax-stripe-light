@@ -168,7 +168,18 @@ class CustomerUpdatedWebhookTest(TestCase):
     def test_process_webhook(self, SyncMock):
         event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
         CustomerUpdatedWebhook(event).process_webhook()
-        self.assertTrue(SyncMock.called)
+        self.assertEquals(SyncMock.call_count, 1)
+        self.assertEquals(SyncMock.call_args[0], (None, None))
+
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    def test_process_webhook_with_data(self, SyncMock):
+        event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CustomerUpdatedWebhook(event).process_webhook()
+        self.assertEquals(SyncMock.call_count, 1)
+        self.assertIsNone(SyncMock.call_args[0][0])
+        self.assertIs(SyncMock.call_args[0][1], obj)
 
 
 class CustomerSourceCreatedWebhookTest(TestCase):

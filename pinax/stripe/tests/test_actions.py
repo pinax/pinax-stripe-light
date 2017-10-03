@@ -143,13 +143,14 @@ class CustomersTests(TestCase):
     @patch("stripe.Customer.create")
     def test_customer_create_user_duplicate(self, CreateMock, RetrieveMock):
         # Create an existing database customer for this user
-        original = Customer.objects.create(user=self.user, stripe_id='cus_XXXXX')
+        original = Customer.objects.create(user=self.user, stripe_id="cus_XXXXX")
 
         new_customer = Mock()
         RetrieveMock.return_value = new_customer
 
         # customers.Create will return a new customer instance
         CreateMock.return_value = dict(id="cus_YYYYY")
+
         customer = customers.create(self.user)
 
         # But only one customer will exist - the original one
@@ -189,6 +190,31 @@ class CustomersTests(TestCase):
         self.assertEqual(kwargs["email"], self.user.email)
         self.assertEqual(kwargs["source"], "token232323")
         self.assertEqual(kwargs["plan"], self.plan)
+        self.assertIsNotNone(kwargs["trial_end"])
+        self.assertTrue(SyncMock.called)
+        self.assertTrue(CreateAndPayMock.called)
+
+    @patch("pinax.stripe.actions.invoices.create_and_pay")
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    @patch("stripe.Customer.create")
+    def test_customer_create_user_with_plan_and_quantity(self, CreateMock, SyncMock, CreateAndPayMock):
+        Plan.objects.create(
+            stripe_id="pro-monthly",
+            name="Pro ($19.99/month each)",
+            amount=19.99,
+            interval="monthly",
+            interval_count=1,
+            currency="usd"
+        )
+        CreateMock.return_value = dict(id="cus_YYYYYYYYYYYYY")
+        customer = customers.create(self.user, card="token232323", plan=self.plan, quantity=42)
+        self.assertEqual(customer.user, self.user)
+        self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["email"], self.user.email)
+        self.assertEqual(kwargs["source"], "token232323")
+        self.assertEqual(kwargs["plan"], self.plan)
+        self.assertEqual(kwargs["quantity"], 42)
         self.assertIsNotNone(kwargs["trial_end"])
         self.assertTrue(SyncMock.called)
         self.assertTrue(CreateAndPayMock.called)
@@ -341,6 +367,11 @@ class InvoicesTests(TestCase):
         self.assertFalse(invoices.create_and_pay(Mock()))
         self.assertTrue(invoice.pay.called)
 
+    @patch("stripe.Invoice.create")
+    def test_create_and_pay_invalid_request_error_on_create(self, CreateMock):
+        CreateMock.side_effect = stripe.InvalidRequestError("Bad", "error")
+        self.assertFalse(invoices.create_and_pay(Mock()))
+
 
 class RefundsTests(TestCase):
 
@@ -423,7 +454,7 @@ class SourcesTests(TestCase):
     def test_delete_card_dj19(self):
         CustomerMock = Mock()
         result = sources.delete_card(CustomerMock, source="card_token")
-        self.assertEqual(result, (0, {'pinax_stripe.Card': 0}))
+        self.assertEqual(result, (0, {"pinax_stripe.Card": 0}))
         self.assertTrue(CustomerMock.stripe_customer.sources.retrieve().delete.called)
 
     @skipIf(django.VERSION >= (1, 9), "Only for django before 1.9")
@@ -615,7 +646,7 @@ class SubscriptionsTests(TestCase):
         SubMock.stripe_subscription.trial_end = time.time() + 1000000.0
 
         subscriptions.update(SubMock, charge_immediately=True)
-        self.assertEquals(SubMock.stripe_subscription.trial_end, 'now')
+        self.assertEquals(SubMock.stripe_subscription.trial_end, "now")
         self.assertTrue(SubMock.stripe_subscription.save.called)
         self.assertTrue(SyncMock.called)
 
@@ -813,6 +844,35 @@ class SyncsTests(TestCase):
         PlanAutoPagerMock.return_value[1].update({"amount": 499})
         plans.sync_plans()
         self.assertEquals(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("4.99"))
+
+    def test_sync_plan(self):
+        """
+        Test that a single Plan is updated
+        """
+        Plan.objects.create(
+            stripe_id="pro2",
+            name="Plan Plan",
+            interval="month",
+            interval_count=1,
+            amount=decimal.Decimal("19.99")
+        )
+        plan = {
+            "id": "pro2",
+            "object": "plan",
+            "amount": 1999,
+            "created": 1448121054,
+            "currency": "usd",
+            "interval": "month",
+            "interval_count": 1,
+            "livemode": False,
+            "metadata": {},
+            "name": "Gold Plan",
+            "statement_descriptor": "ALTMAN",
+            "trial_period_days": 3
+        }
+        plans.sync_plan(plan)
+        self.assertTrue(Plan.objects.all().count(), 1)
+        self.assertEquals(Plan.objects.get(stripe_id="pro2").name, plan["name"])
 
     def test_sync_payment_source_from_stripe_data_card(self):
         source = {
@@ -1116,6 +1176,31 @@ class SyncsTests(TestCase):
         self.assertTrue(SyncPaymentSourceMock.called)
         self.assertTrue(SyncSubscriptionMock.called)
 
+    @patch("pinax.stripe.actions.customers.purge_local")
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
+    @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")
+    @patch("stripe.Customer.retrieve")
+    def test_sync_customer_purged_locally(self, RetrieveMock, SyncPaymentSourceMock, SyncSubscriptionMock, PurgeLocalMock):
+        self.customer.date_purged = timezone.now()
+        customers.sync_customer(self.customer)
+        self.assertFalse(RetrieveMock.called)
+        self.assertFalse(SyncPaymentSourceMock.called)
+        self.assertFalse(SyncSubscriptionMock.called)
+        self.assertFalse(PurgeLocalMock.called)
+
+    @patch("pinax.stripe.actions.customers.purge_local")
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
+    @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")
+    @patch("stripe.Customer.retrieve")
+    def test_sync_customer_purged_remotely_not_locally(self, RetrieveMock, SyncPaymentSourceMock, SyncSubscriptionMock, PurgeLocalMock):
+        RetrieveMock.return_value = dict(
+            deleted=True
+        )
+        customers.sync_customer(self.customer)
+        self.assertFalse(SyncPaymentSourceMock.called)
+        self.assertFalse(SyncSubscriptionMock.called)
+        self.assertTrue(PurgeLocalMock.called)
+
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
     @patch("stripe.Customer.retrieve")
     def test_sync_invoices_for_customer(self, RetreiveMock, SyncMock):
@@ -1408,6 +1493,85 @@ class SyncsTests(TestCase):
         charge = Charge.objects.get(customer=self.customer, stripe_id=data["id"])
         self.assertEquals(charge.amount, decimal.Decimal("2"))
         self.assertEquals(charge.refunded, True)
+
+    def test_sync_charge_from_stripe_data_failed(self):
+        data = {
+            "id": "ch_xxxxxxxxxxxxxxxxxxxxxxxx",
+            "object": "charge",
+            "amount": 200,
+            "amount_refunded": 0,
+            "application": None,
+            "application_fee": None,
+            "balance_transaction": None,
+            "captured": False,
+            "created": 1488208611,
+            "currency": "usd",
+            "customer": None,
+            "description": None,
+            "destination": None,
+            "dispute": None,
+            "failure_code": "card_declined",
+            "failure_message": "Your card was declined.",
+            "fraud_details": {},
+            "invoice": None,
+            "livemode": False,
+            "metadata": {},
+            "on_behalf_of": None,
+            "order": None,
+            "outcome": {
+                "network_status": "declined_by_network",
+                "reason": "generic_decline",
+                "risk_level": "normal",
+                "seller_message": "The bank did not return any further details with this decline.",
+                "type": "issuer_declined"
+            },
+            "paid": False,
+            "receipt_email": None,
+            "receipt_number": None,
+            "refunded": False,
+            "refunds": {
+                "object": "list",
+                "data": [],
+                "has_more": False,
+                "total_count": 0,
+                "url": "/v1/charges/ch_xxxxxxxxxxxxxxxxxxxxxxxx/refunds"
+            },
+            "review": None,
+            "shipping": None,
+            "source": {
+                "id": "card_xxxxxxxxxxxxxxxxxxxxxxxx",
+                "object": "card",
+                "address_city": None,
+                "address_country": None,
+                "address_line1": None,
+                "address_line1_check": None,
+                "address_line2": None,
+                "address_state": None,
+                "address_zip": "424",
+                "address_zip_check": "pass",
+                "brand": "Visa",
+                "country": "US",
+                "customer": None,
+                "cvc_check": "pass",
+                "dynamic_last4": None,
+                "exp_month": 4,
+                "exp_year": 2024,
+                "fingerprint": "xxxxxxxxxxxxxxxx",
+                "funding": "credit",
+                "last4": "0341",
+                "metadata": {},
+                "name": "example@example.com",
+                "tokenization_method": None
+            },
+            "source_transfer": None,
+            "statement_descriptor": None,
+            "status": "failed",
+            "transfer_group": None
+        }
+        charges.sync_charge_from_stripe_data(data)
+        charge = Charge.objects.get(stripe_id=data["id"])
+        self.assertEqual(charge.amount, decimal.Decimal("2"))
+        self.assertEqual(charge.customer, None)
 
     @patch("stripe.Customer.retrieve")
     def test_retrieve_stripe_subscription(self, CustomerMock):

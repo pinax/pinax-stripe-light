@@ -25,7 +25,7 @@ class DummySession(dict):
 
 
 class ActiveSubscriptionMiddlewareTests(TestCase):
-    urls = 'pinax.stripe.tests.test_urls'
+    urls = "pinax.stripe.tests.urls"
 
     def setUp(self):
         self.middleware = ActiveSubscriptionMiddleware()
@@ -35,8 +35,8 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
 
         self.old_urls = settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS
         settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS += (
-            'signup',
-            'password_reset'
+            "signup",
+            "password_reset"
         )
 
         user = get_user_model().objects.create_user(username="patrick")

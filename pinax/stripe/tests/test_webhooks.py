@@ -16,9 +16,18 @@ import stripe
 
 from mock import patch
 
-from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_PENDING_TEST_DATA
-from ..models import Event, Transfer, EventProcessingException, Customer
-from ..webhooks import registry, AccountUpdatedWebhook, ChargeCapturedWebhook, CustomerUpdatedWebhook, CustomerSourceCreatedWebhook, CustomerSourceDeletedWebhook, CustomerSubscriptionCreatedWebhook, InvoiceCreatedWebhook
+from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_PENDING_TEST_DATA, PLAN_CREATED_TEST_DATA
+from ..models import Event, Transfer, EventProcessingException, Customer, Plan
+from ..webhooks import (
+    registry,
+    AccountUpdatedWebhook,
+    ChargeCapturedWebhook,
+    CustomerUpdatedWebhook,
+    CustomerSourceCreatedWebhook,
+    CustomerSourceDeletedWebhook,
+    CustomerSubscriptionCreatedWebhook,
+    InvoiceCreatedWebhook
+)
 
 
 class WebhookRegistryTest(TestCase):
@@ -159,7 +168,18 @@ class CustomerUpdatedWebhookTest(TestCase):
     def test_process_webhook(self, SyncMock):
         event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
         CustomerUpdatedWebhook(event).process_webhook()
-        self.assertTrue(SyncMock.called)
+        self.assertEquals(SyncMock.call_count, 1)
+        self.assertEquals(SyncMock.call_args[0], (None, None))
+
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    def test_process_webhook_with_data(self, SyncMock):
+        event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CustomerUpdatedWebhook(event).process_webhook()
+        self.assertEquals(SyncMock.call_count, 1)
+        self.assertIsNone(SyncMock.call_args[0][0])
+        self.assertIs(SyncMock.call_args[0][1], obj)
 
 
 class CustomerSourceCreatedWebhookTest(TestCase):
@@ -180,6 +200,50 @@ class CustomerSourceDeletedWebhookTest(TestCase):
         event.validated_message = dict(data=dict(object=dict(id=1)))
         CustomerSourceDeletedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
+
+
+class PlanCreatedWebhookTest(TestCase):
+
+    @patch("stripe.Event.retrieve")
+    def test_plan_created(self, EventMock):
+        ev = EventMock()
+        ev.to_dict.return_value = PLAN_CREATED_TEST_DATA
+        event = Event.objects.create(
+            stripe_id=PLAN_CREATED_TEST_DATA["id"],
+            kind="plan.created",
+            livemode=True,
+            webhook_message=PLAN_CREATED_TEST_DATA,
+            validated_message=PLAN_CREATED_TEST_DATA,
+            valid=True
+        )
+        registry.get(event.kind)(event).process()
+        self.assertEquals(Plan.objects.all().count(), 1)
+
+
+class PlanUpdatedWebhookTest(TestCase):
+
+    @patch("stripe.Event.retrieve")
+    def test_plan_created(self, EventMock):
+        Plan.objects.create(
+            stripe_id="gold1",
+            name="Gold Plan",
+            interval="month",
+            interval_count=1,
+            amount=decimal.Decimal("9.99")
+        )
+        ev = EventMock()
+        ev.to_dict.return_value = PLAN_CREATED_TEST_DATA
+        event = Event.objects.create(
+            stripe_id=PLAN_CREATED_TEST_DATA["id"],
+            kind="plan.updated",
+            livemode=True,
+            webhook_message=PLAN_CREATED_TEST_DATA,
+            validated_message=PLAN_CREATED_TEST_DATA,
+            valid=True
+        )
+        registry.get(event.kind)(event).process()
+        plan = Plan.objects.get(stripe_id="gold1")
+        self.assertEquals(plan.name, PLAN_CREATED_TEST_DATA["data"]["object"]["name"])
 
 
 class CustomerSubscriptionCreatedWebhookTest(TestCase):

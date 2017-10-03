@@ -94,12 +94,12 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value() == "none":
             # Get customers with 0 subscriptions
-            return queryset.annotate(subs=Count('subscription')).filter(subs=0)
+            return queryset.annotate(subs=Count("subscription")).filter(subs=0)
         elif self.value():
             # Get customer pks without a subscription with this status
             customers = Subscription.objects.filter(
                 status=self.value()).values_list(
-                'customer', flat=True).distinct()
+                "customer", flat=True).distinct()
             # Filter by those customers
             return queryset.filter(pk__in=customers)
         return queryset.all()
@@ -197,7 +197,7 @@ class BitcoinReceiverInline(admin.TabularInline):
 
 def subscription_status(obj):
     return ", ".join([subscription.status for subscription in obj.subscription_set.all()])
-subscription_status.short_description = "Subscription Status"
+subscription_status.short_description = "Subscription Status"  # noqa
 
 
 admin.site.register(
@@ -236,8 +236,8 @@ class InvoiceItemInline(admin.TabularInline):
 
 
 def customer_has_card(obj):
-    return obj.customer.card_set.exclude(fingerprint='').exists()
-customer_has_card.short_description = "Customer Has Card"
+    return obj.customer.card_set.exclude(fingerprint="").exists()
+customer_has_card.short_description = "Customer Has Card"  # noqa
 
 
 def customer_user(obj):
@@ -248,7 +248,7 @@ def customer_user(obj):
         username,
         email
     )
-customer_user.short_description = "Customer"
+customer_user.short_description = "Customer"  # noqa
 
 
 admin.site.register(

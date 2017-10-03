@@ -5,6 +5,7 @@ import decimal
 from django.db import models
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.functional import cached_property
 
 import stripe
 
@@ -17,7 +18,7 @@ from .utils import CURRENCY_SYMBOLS
 
 class StripeObject(models.Model):
 
-    stripe_id = models.CharField(max_length=255, unique=True)
+    stripe_id = models.CharField(max_length=191, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -99,7 +100,7 @@ class Event(StripeObject):
 
 
 class Transfer(StripeObject):
-    event = models.ForeignKey(Event, related_name="transfers", on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, related_name="transfers", on_delete=models.CASCADE, null=True, blank=True)
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=25, default="usd")
     status = models.CharField(max_length=25)
@@ -130,7 +131,7 @@ class Customer(StripeObject):
 
     objects = CustomerManager()
 
-    @property
+    @cached_property
     def stripe_customer(self):
         return stripe.Customer.retrieve(self.stripe_id)
 
@@ -241,6 +242,8 @@ class Invoice(StripeObject):
     period_end = models.DateTimeField()
     period_start = models.DateTimeField()
     subtotal = models.DecimalField(decimal_places=2, max_digits=9)
+    tax = models.DecimalField(decimal_places=2, max_digits=9, null=True)
+    tax_percent = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     total = models.DecimalField(decimal_places=2, max_digits=9)
     date = models.DateTimeField()
     webhooks_delivered_at = models.DateTimeField(null=True)
@@ -261,7 +264,6 @@ class InvoiceItem(models.Model):
     invoice = models.ForeignKey(Invoice, related_name="items", on_delete=models.CASCADE)
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=10, default="usd")
-    quantity = models.PositiveIntegerField(null=True)
     kind = models.CharField(max_length=25, blank=True)
     subscription = models.ForeignKey(Subscription, null=True, on_delete=models.CASCADE)
     period_start = models.DateTimeField()
@@ -301,3 +303,7 @@ class Charge(StripeObject):
     @property
     def stripe_charge(self):
         return stripe.Charge.retrieve(self.stripe_id)
+
+    @property
+    def card(self):
+        return Card.objects.filter(stripe_id=self.source).first()

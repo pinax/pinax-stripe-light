@@ -58,7 +58,7 @@ Returns: `pinax.stripe.models.Charge` object
 
 ## Customers
 
-#### pinax.stripe.actions.customer.can_charge
+#### pinax.stripe.actions.customers.can_charge
 
 Can the given customer create a charge
 
@@ -66,7 +66,7 @@ Args:
 
 - customer: a `pinax.stripe.models.Customer` object
 
-#### pinax.stripe.actions.customer.create
+#### pinax.stripe.actions.customers.create
 
 Creates a Stripe customer
 
@@ -78,10 +78,11 @@ Args:
     `settings.PINAX_STRIPE_DEFAULT_PLAN`.
 - charge_immediately: whether or not the user should be immediately
     charged for the subscription. Defaults to `True`.
+- quantity: the quantity of the subscription. Defaults to `1`.
 
 Returns: `pinax.stripe.models.Customer` object that was created
 
-#### pinax.stripe.actions.customer.get_customer_for_user
+#### pinax.stripe.actions.customers.get_customer_for_user
 
 Get a customer object for a given user
 
@@ -89,9 +90,9 @@ Args:
 
 - user: a `user` object
 
-Returns: `pinax.stripe.models.Customer` object
+Returns: `pinax.stripe.models.Customer` object or `None` if it doesn't exist
 
-#### pinax.stripe.actions.customer.purge
+#### pinax.stripe.actions.customers.purge
 
 Deletes the Stripe customer data and purges the linking of the transaction
 data to the Django user.
@@ -100,7 +101,7 @@ Args:
 
 - customer: the `pinax.stripe.models.Customer` object to purge.
 
-#### pinax.stripe.actions.customer.link_customer
+#### pinax.stripe.actions.customers.link_customer
 
 Links a customer referenced in a webhook event message to the event object
 
@@ -108,7 +109,7 @@ Args:
 
 - event: the `pinax.stripe.models.Event` object to link
 
-#### pinax.stripe.actions.customer.set_default_source
+#### pinax.stripe.actions.customers.set_default_source
 
 Sets the default payment source for a customer
 
@@ -117,7 +118,7 @@ Args:
 - customer: a `pinax.stripe.models.Customer` object
 - source: the Stripe ID of the payment source
 
-#### pinax.stripe.actions.customer.sync_customer
+#### pinax.stripe.actions.customers.sync_customer
 
 Syncronizes a local Customer object with details from the Stripe API
 

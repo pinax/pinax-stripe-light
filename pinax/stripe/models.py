@@ -377,7 +377,7 @@ class Charge(StripeObject):
 
 class Account(StripeObject):
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
 
     business_name = models.TextField(blank=True, null=True)
     business_url = models.TextField(blank=True, null=True)
@@ -449,7 +449,7 @@ class Account(StripeObject):
 
 class BankAccount(StripeObject):
 
-    account = models.ForeignKey(Account, related_name="bank_accounts")
+    account = models.ForeignKey(Account, related_name="bank_accounts", on_delete=models.CASCADE)
     account_holder_name = models.TextField()
     account_holder_type = models.TextField()
     bank_name = models.TextField(null=True, blank=True)

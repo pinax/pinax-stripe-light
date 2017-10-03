@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
             name='Coupon',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('stripe_id', models.CharField(max_length=255, unique=True)),
+                ('stripe_id', models.CharField(max_length=191, unique=True)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('amount_off', models.DecimalField(decimal_places=2, max_digits=9, null=True)),
                 ('currency', models.CharField(default='usd', max_length=10)),

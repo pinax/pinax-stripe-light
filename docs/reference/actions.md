@@ -90,7 +90,7 @@ Args:
 
 - user: a `user` object
 
-Returns: `pinax.stripe.models.Customer` object
+Returns: `pinax.stripe.models.Customer` object or `None` if it doesn't exist
 
 #### pinax.stripe.actions.customers.purge
 

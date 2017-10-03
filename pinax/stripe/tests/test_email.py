@@ -15,7 +15,7 @@ class EmailReceiptTest(TestCase):
 
     def setUp(self):
         User = get_user_model()
-        self.user = User.objects.create_user(username="patrick", email='user@test.com')
+        self.user = User.objects.create_user(username="patrick", email="user@test.com")
         self.customer = Customer.objects.create(
             user=self.user,
             stripe_id="cus_xxxxxxxxxxxxxxx"

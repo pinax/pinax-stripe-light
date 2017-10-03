@@ -10,7 +10,8 @@ def log_exception(data, exception, event=None):
 
     Args:
         data: the data to log about the exception
-        exception: the exception object itself
+        exception: a string describing the exception (can be the exception
+            object itself - `str()` gets called on it)
         event: optionally, the event object from which the exception occurred
     """
     info = sys.exc_info()

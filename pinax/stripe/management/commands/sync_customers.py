@@ -20,7 +20,7 @@ class Command(BaseCommand):
             count += 1
             perc = int(round(100 * (float(count) / float(total))))
             username = getattr(user, user.USERNAME_FIELD)
-            print(u"[{0}/{1} {2}%] Syncing {3} [{4}]".format(
+            self.stdout.write(u"[{0}/{1} {2}%] Syncing {3} [{4}]\n".format(
                 count, total, perc, username, user.pk
             ))
             customer = customers.get_customer_for_user(user)
@@ -31,5 +31,6 @@ class Command(BaseCommand):
                     # This user doesn't exist (might be in test mode)
                     continue
 
-            invoices.sync_invoices_for_customer(customer)
-            charges.sync_charges_for_customer(customer)
+            if customer.date_purged is None:
+                invoices.sync_invoices_for_customer(customer)
+                charges.sync_charges_for_customer(customer)

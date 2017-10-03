@@ -92,45 +92,45 @@ class AdminTestCase(TestCase):
             period_start=period_start
         )
         User.objects.create_superuser(
-            username='admin', email='admin@test.com', password='admin')
+            username="admin", email="admin@test.com", password="admin")
         self.client = Client()
-        self.client.login(username='admin', password='admin')
+        self.client.login(username="admin", password="admin")
 
     def test_customer_admin(self):
         """Make sure we get good responses for all filter options"""
-        url = reverse('admin:pinax_stripe_customer_changelist')
+        url = reverse("admin:pinax_stripe_customer_changelist")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.get(url + '?sub_status=active')
+        response = self.client.get(url + "?sub_status=active")
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.get(url + '?sub_status=cancelled')
+        response = self.client.get(url + "?sub_status=cancelled")
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.get(url + '?sub_status=none')
+        response = self.client.get(url + "?sub_status=none")
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.get(url + '?has_card=yes')
+        response = self.client.get(url + "?has_card=yes")
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.get(url + '?has_card=no')
+        response = self.client.get(url + "?has_card=no")
         self.assertEqual(response.status_code, 200)
 
     def test_invoice_admin(self):
-        url = reverse('admin:pinax_stripe_invoice_changelist')
+        url = reverse("admin:pinax_stripe_invoice_changelist")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.get(url + '?has_card=no')
+        response = self.client.get(url + "?has_card=no")
         self.assertEqual(response.status_code, 200)
 
     def test_plan_admin(self):
-        url = reverse('admin:pinax_stripe_plan_changelist')
+        url = reverse("admin:pinax_stripe_plan_changelist")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
     def test_charge_admin(self):
-        url = reverse('admin:pinax_stripe_charge_changelist')
+        url = reverse("admin:pinax_stripe_charge_changelist")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)

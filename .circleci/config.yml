@@ -38,7 +38,7 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install flake8==3.4.1 flake8-quotes==0.11.0
+            pip install flake8==3.4.1 flake8-quotes==0.11.0 isort==4.2.15
       - save_cache:
           paths:
             - ./venv
@@ -48,6 +48,11 @@ jobs:
           command: |
             . venv/bin/activate
             flake8 pinax
+      - run:
+          name: check imports
+          command: |
+            . venv/bin/activate
+            isort pinax/**/*.py -c
 
   py27dj18:
     <<: *common

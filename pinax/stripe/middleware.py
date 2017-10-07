@@ -16,8 +16,6 @@ except ImportError:  # pragma: no cover
     MixinorObject = object
 
 
-
-
 class ActiveSubscriptionMiddleware(MixinorObject):
 
     def process_request(self, request):

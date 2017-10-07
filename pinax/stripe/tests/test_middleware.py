@@ -14,9 +14,6 @@ except ImportError:
     from django.core.urlresolvers import reverse
 
 
-
-
-
 class DummySession(dict):
 
     def cycle_key(self):

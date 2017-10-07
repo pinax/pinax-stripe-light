@@ -12,7 +12,6 @@ except ImportError:
     from django.core.urlresolvers import reverse
 
 
-
 User = get_user_model()
 
 

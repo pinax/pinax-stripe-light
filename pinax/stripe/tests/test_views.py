@@ -14,10 +14,6 @@ except ImportError:
     from django.core.urlresolvers import reverse
 
 
-
-
-
-
 class PaymentsContextMixinTests(TestCase):
 
     def test_payments_context_mixin_get_context_data(self):

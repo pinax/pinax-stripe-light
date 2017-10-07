@@ -33,9 +33,6 @@ except ImportError:
     from django.core.urlresolvers import reverse
 
 
-
-
-
 class WebhookRegistryTest(TestCase):
 
     def test_get_signal(self):

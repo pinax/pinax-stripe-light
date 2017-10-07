@@ -32,7 +32,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v2-lint-deps
+            - v3-lint-deps
       - run:
           name: install dependencies
           command: |
@@ -42,7 +42,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v1-lint-deps
+          key: v3-lint-deps
       - run:
           name: lint code
           command: |

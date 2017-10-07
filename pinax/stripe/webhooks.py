@@ -2,11 +2,20 @@ import json
 
 from django.dispatch import Signal
 
-import stripe
-
 from six import with_metaclass
 
-from .actions import charges, customers, exceptions, invoices, plans, transfers, sources, subscriptions
+import stripe
+
+from .actions import (
+    charges,
+    customers,
+    exceptions,
+    invoices,
+    plans,
+    sources,
+    subscriptions,
+    transfers
+)
 from .conf import settings
 
 

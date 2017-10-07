@@ -1,12 +1,13 @@
 from django.utils.decorators import method_decorator
 
+from .actions import customers
+from .conf import settings
+
 try:
     from account.decorators import login_required
 except ImportError:
     from django.contrib.auth.decorators import login_required
 
-from .actions import customers
-from .conf import settings
 
 
 class LoginRequiredMixin(object):

@@ -32,7 +32,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v3-lint-deps
+            - v3-lint-deps-{{ checksum "tox.ini" }}
       - run:
           name: install dependencies
           command: |
@@ -42,7 +42,7 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v3-lint-deps
+          key: v3-lint-deps-{{ checksum "tox.ini" }}
       - run:
           name: lint code
           command: |
@@ -52,7 +52,7 @@ jobs:
           name: check imports
           command: |
             . venv/bin/activate
-            isort pinax/**/*.py -c --diff
+            isort --recursive --check-only --diff pinax
 
   py27dj18:
     <<: *common

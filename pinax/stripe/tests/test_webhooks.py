@@ -1,27 +1,15 @@
 import decimal
 import json
-import six
-
-from mock import patch
 
 from django.dispatch import Signal
 from django.test import TestCase
 from django.test.client import Client
 
-try:
-    from django.urls import reverse
-except ImportError:
-    from django.core.urlresolvers import reverse
-
+import six
 import stripe
+from mock import patch
 
-from ..models import (
-    Customer,
-    Event,
-    EventProcessingException,
-    Plan,
-    Transfer,
-)
+from ..models import Customer, Event, EventProcessingException, Plan, Transfer
 from ..webhooks import (
     AccountApplicationDeauthorizeWebhook,
     AccountUpdatedWebhook,
@@ -31,11 +19,18 @@ from ..webhooks import (
     CustomerSubscriptionCreatedWebhook,
     CustomerUpdatedWebhook,
     InvoiceCreatedWebhook,
-    registry,
+    registry
 )
-from . import PLAN_CREATED_TEST_DATA
-from . import TRANSFER_CREATED_TEST_DATA
-from . import TRANSFER_PENDING_TEST_DATA
+from . import (
+    PLAN_CREATED_TEST_DATA,
+    TRANSFER_CREATED_TEST_DATA,
+    TRANSFER_PENDING_TEST_DATA
+)
+
+try:
+    from django.urls import reverse
+except ImportError:
+    from django.core.urlresolvers import reverse
 
 
 class WebhookRegistryTest(TestCase):

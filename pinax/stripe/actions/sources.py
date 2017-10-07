@@ -1,5 +1,4 @@
-from .. import models
-from .. import utils
+from .. import models, utils
 
 
 def create_card(customer, token):

@@ -1,10 +1,9 @@
-from django.core.management.base import BaseCommand
-
 from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
 
 from stripe.error import InvalidRequestError
 
-from ...actions import customers, charges, invoices
+from ...actions import charges, customers, invoices
 
 
 class Command(BaseCommand):

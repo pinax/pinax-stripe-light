@@ -3,14 +3,10 @@ from django.utils.encoding import smart_str
 
 import stripe
 
+from .. import hooks, models, utils
 from ..conf import settings
-from .. import hooks
-from .. import models
-from .. import utils
 
-from . import invoices
-from . import sources
-from . import subscriptions
+from . import invoices, sources, subscriptions
 
 
 def can_charge(customer):

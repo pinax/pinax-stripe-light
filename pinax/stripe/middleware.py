@@ -15,8 +15,6 @@ except ImportError:
     MixinorObject = object
 
 
-
-
 class ActiveSubscriptionMiddleware(MixinorObject):
 
     def process_request(self, request):

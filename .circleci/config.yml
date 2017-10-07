@@ -52,7 +52,7 @@ jobs:
           name: check imports
           command: |
             . venv/bin/activate
-            isort pinax/**/*.py -c
+            isort pinax/**/*.py -c --diff
 
   py27dj18:
     <<: *common

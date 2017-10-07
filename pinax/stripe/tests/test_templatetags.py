@@ -1,5 +1,5 @@
+from django.template import Context, Template
 from django.test import TestCase, override_settings
-from django.template import Template, Context
 
 
 class TemplateTagTests(TestCase):

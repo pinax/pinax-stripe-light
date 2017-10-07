@@ -1,8 +1,7 @@
 import decimal
 
-from django.test import TestCase
-
 from django.contrib.auth import get_user_model
+from django.test import TestCase
 
 from ..hooks import DefaultHookSet
 from ..models import Charge, Customer

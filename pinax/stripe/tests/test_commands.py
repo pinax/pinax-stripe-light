@@ -1,14 +1,13 @@
 import decimal
 
+from django.contrib.auth import get_user_model
 from django.core import management
 from django.test import TestCase
 
-from django.contrib.auth import get_user_model
+from mock import patch
 from stripe.error import InvalidRequestError
 
-from mock import patch
-
-from ..models import Customer, Plan, Coupon
+from ..models import Coupon, Customer, Plan
 
 
 class CommandTests(TestCase):

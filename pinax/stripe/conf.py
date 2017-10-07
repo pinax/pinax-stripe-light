@@ -4,7 +4,6 @@ from django.conf import settings  # noqa
 from django.core.exceptions import ImproperlyConfigured
 
 import stripe
-
 from appconf import AppConf
 
 

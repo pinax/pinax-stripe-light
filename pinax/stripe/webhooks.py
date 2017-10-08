@@ -4,9 +4,8 @@ from six import with_metaclass
 
 from django.dispatch import Signal
 
-from six import with_metaclass
-
 import stripe
+from six import with_metaclass
 
 from .actions import (
     accounts,

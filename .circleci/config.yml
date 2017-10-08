@@ -52,7 +52,7 @@ jobs:
           name: check imports
           command: |
             . venv/bin/activate
-            isort --recursive --check-only --diff pinax
+            isort --recursive --check-only --diff pinax -sp tox.ini
 
   py27dj18:
     <<: *common

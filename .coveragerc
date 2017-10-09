@@ -1,8 +1,0 @@
-[run]
-source = pinax
-omit = pinax/stripe/conf.py,pinax/stripe/tests/*,pinax/stripe/migrations/*
-branch = true
-
-[report]
-omit = pinax/stripe/conf.py,pinax/stripe/tests/*,pinax/stripe/migrations/*
-show_missing = True

@@ -17,8 +17,8 @@ Pinax Stripe
 .. image:: https://img.shields.io/travis/pinax/pinax-stripe.svg
     :target: https://travis-ci.org/pinax/pinax-stripe
 
-.. image:: https://img.shields.io/coveralls/pinax/pinax-stripe.svg
-    :target: https://coveralls.io/r/pinax/pinax-stripe
+.. image:: https://img.shields.io/codecov/c/github/pinax/pinax-stripe.svg
+    :target: https://codecov.io/gh/pinax/pinax-stripe
 
 .. image:: https://img.shields.io/pypi/dm/pinax-stripe.svg
     :target:  https://pypi.python.org/pypi/pinax-stripe/

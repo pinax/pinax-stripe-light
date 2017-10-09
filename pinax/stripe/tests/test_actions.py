@@ -755,32 +755,27 @@ class SubscriptionsTests(TestCase):
         self.assertTrue(SubMock.stripe_subscription.save.called)
         self.assertTrue(SyncMock.called)
 
-    @patch("stripe.Customer.retrieve")
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
-    def test_subscription_create(self, SyncMock, CustomerMock):
+    @patch("stripe.Subscription.create")
+    def test_subscription_create(self, SubscriptionCreateMock, SyncMock):
         subscriptions.create(self.customer, "the-plan")
-        sub_create = CustomerMock().subscriptions.create
-        self.assertTrue(sub_create.called)
         self.assertTrue(SyncMock.called)
+        self.assertTrue(SubscriptionCreateMock.called)
 
-    @patch("stripe.Customer.retrieve")
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
-    def test_subscription_create_with_trial(self, SyncMock, CustomerMock):
+    @patch("stripe.Subscription.create")
+    def test_subscription_create_with_trial(self, SubscriptionCreateMock, SyncMock):
         subscriptions.create(self.customer, "the-plan", trial_days=3)
-        sub_create = CustomerMock().subscriptions.create
-        self.assertTrue(sub_create.called)
-        self.assertTrue(SyncMock.called)
-        _, kwargs = sub_create.call_args
+        self.assertTrue(SubscriptionCreateMock.called)
+        _, kwargs = SubscriptionCreateMock.call_args
         self.assertEquals(kwargs["trial_end"].date(), (datetime.datetime.utcnow() + datetime.timedelta(days=3)).date())
 
-    @patch("stripe.Customer.retrieve")
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
-    def test_subscription_create_token(self, SyncMock, CustomerMock):
-        sub_create = CustomerMock().subscriptions.create
+    @patch("stripe.Subscription.create")
+    def test_subscription_create_token(self, SubscriptionCreateMock, CustomerMock):
         subscriptions.create(self.customer, "the-plan", token="token")
-        self.assertTrue(sub_create.called)
-        self.assertTrue(SyncMock.called)
-        _, kwargs = sub_create.call_args
+        self.assertTrue(SubscriptionCreateMock.called)
+        _, kwargs = SubscriptionCreateMock.call_args
         self.assertEquals(kwargs["source"], "token")
 
     def test_is_period_current(self):

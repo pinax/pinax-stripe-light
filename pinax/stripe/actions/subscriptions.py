@@ -6,9 +6,7 @@ from django.utils.encoding import smart_str
 
 import stripe
 
-from .. import hooks
-from .. import models
-from .. import utils
+from .. import hooks, models, utils
 
 
 def cancel(subscription, at_period_end=True):

@@ -8,7 +8,6 @@ from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import cached_property
 
 import stripe
-
 from jsonfield.fields import JSONField
 
 from .conf import settings

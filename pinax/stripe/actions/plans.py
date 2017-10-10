@@ -1,7 +1,6 @@
 import stripe
 
-from .. import utils
-from .. import models
+from .. import models, utils
 
 
 def sync_plans():

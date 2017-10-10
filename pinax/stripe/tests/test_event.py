@@ -1,12 +1,11 @@
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
-
-from django.contrib.auth import get_user_model
 
 from mock import patch
 
 from ..actions import customers
-from ..models import Customer, Event, Subscription, Plan
+from ..models import Customer, Event, Plan, Subscription
 from ..signals import WEBHOOK_SIGNALS
 from ..webhooks import registry
 

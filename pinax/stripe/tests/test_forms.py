@@ -1,24 +1,24 @@
 import datetime
 import json
-
 from base64 import b64decode
 from copy import copy
-from mock import patch
 
 from django import forms
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.test.utils import override_settings
 from django.utils import timezone
 
-from django.contrib.auth import get_user_model
-
+from mock import patch
 from stripe.error import InvalidRequestError
 
-from ..forms import AdditionalCustomAccountForm
-from ..forms import InitialCustomAccountForm
-from ..forms import extract_ipaddress
+from ..forms import (
+    AdditionalCustomAccountForm,
+    InitialCustomAccountForm,
+    extract_ipaddress
+)
 from ..models import Account
 
 

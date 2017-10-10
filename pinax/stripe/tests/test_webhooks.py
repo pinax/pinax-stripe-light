@@ -9,6 +9,11 @@ import six
 import stripe
 from mock import patch
 
+from . import (
+    PLAN_CREATED_TEST_DATA,
+    TRANSFER_CREATED_TEST_DATA,
+    TRANSFER_PENDING_TEST_DATA
+)
 from ..models import Customer, Event, EventProcessingException, Plan, Transfer
 from ..webhooks import (
     AccountApplicationDeauthorizeWebhook,
@@ -20,11 +25,6 @@ from ..webhooks import (
     CustomerUpdatedWebhook,
     InvoiceCreatedWebhook,
     registry
-)
-from . import (
-    PLAN_CREATED_TEST_DATA,
-    TRANSFER_CREATED_TEST_DATA,
-    TRANSFER_PENDING_TEST_DATA
 )
 
 try:

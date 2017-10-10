@@ -1,5 +1,4 @@
 import django
-
 from django.shortcuts import redirect
 
 from .actions import customers, subscriptions

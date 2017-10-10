@@ -1,5 +1,6 @@
 import decimal
 
+from django.core import mail
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
@@ -47,6 +48,23 @@ class HooksTestCase(TestCase):
         )
         self.hookset.send_receipt(charge)
         self.assertTrue(Charge.objects.get(pk=charge.pk).receipt_sent)
+
+    def test_send_receipt_with_email(self):
+        charge = Charge.objects.create(
+            stripe_id="ch_XXXXXX",
+            customer=self.customer,
+            source="card_01",
+            amount=decimal.Decimal("10.00"),
+            currency="usd",
+            paid=True,
+            refunded=False,
+            disputed=False,
+            receipt_sent=False
+        )
+        self.hookset.send_receipt(charge, email="email@override.com")
+        self.assertTrue(Charge.objects.get(pk=charge.pk).receipt_sent)
+        self.assertTrue(len(mail.outbox), 1)
+        self.assertEquals(mail.outbox[0].to, ["email@override.com"])
 
     def test_send_receipt_already_sent(self):
         charge = Charge.objects.create(

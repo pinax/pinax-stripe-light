@@ -6,21 +6,21 @@ from .conf import settings
 
 try:
     from django.urls import resolve
-except ImportError:
-    from django.core.urlresolvers import resolve
+except ImportError:  # coverage: omit
+    from django.core.urlresolvers import resolve  # coverage: omit
 
 try:
     from django.utils.deprecation import MiddlewareMixin as MixinorObject
-except ImportError:
-    MixinorObject = object
+except ImportError:  # coverage: omit
+    MixinorObject = object  # coverage: omit
 
 
 class ActiveSubscriptionMiddleware(MixinorObject):
 
     def process_request(self, request):
         is_authenticated = request.user.is_authenticated
-        if django.VERSION < (1, 10):
-            is_authenticated = is_authenticated()
+        if django.VERSION < (1, 10):  # coverage: omit
+            is_authenticated = is_authenticated()  # coverage: omit
 
         if is_authenticated and not request.user.is_staff:
             url_name = resolve(request.path).url_name

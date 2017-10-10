@@ -1,5 +1,6 @@
 import decimal
 
+from django.core import mail
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import TestCase
@@ -49,7 +50,7 @@ class HooksTestCase(TestCase):
         self.hookset.send_receipt(charge)
         self.assertTrue(Charge.objects.get(pk=charge.pk).receipt_sent)
 
-    def test_send_receipt_with_email_override(self):
+    def test_send_receipt_with_email(self):
         charge = Charge.objects.create(
             stripe_id="ch_XXXXXX",
             customer=self.customer,

@@ -91,7 +91,7 @@ def is_status_current(subscription):
     Args:
         subscription: a pinax.stripe.models.Subscription object to test
     """
-    return subscription.status in ["trialing", "active"]
+    return subscription.status in subscription.STATUS_CURRENT
 
 
 def is_valid(subscription):

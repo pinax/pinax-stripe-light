@@ -73,6 +73,32 @@ def sync_card(customer, source):
     return utils.update_with_defaults(card, defaults, created)
 
 
+def sync_bank_account(customer, source):
+    """
+    Syncronizes the data for a card locally for a given customer
+
+    Args:
+        customer: the customer to create or update a card for
+        source: data reprenting the card from the Stripe API
+    """
+    defaults = dict(
+        customer=customer,
+        name=source["account_holder_name"] or "",
+        bank_name=source["bank_name"] or "",
+        routing_number=source['routing_number'],
+        account_holder_type=source['account_holder_type'] or "",
+        currency=source['currency'] or "",
+        country=source["country"] or "",
+        last4=source["last4"] or "",
+        fingerprint=source["fingerprint"] or ""
+    )
+    bank_account, created = models.BankAccount.objects.get_or_create(
+        stripe_id=source["id"],
+        defaults=defaults
+    )
+    return utils.update_with_defaults(bank_account, defaults, created)
+
+
 def sync_bitcoin(customer, source):
     """
     Syncronizes the data for a Bitcoin receiver locally for a given customer
@@ -116,6 +142,8 @@ def sync_payment_source_from_stripe_data(customer, source):
     """
     if source["id"].startswith("card_"):
         return sync_card(customer, source)
+    if source["id"].startswith("ba_"):
+        return sync_bank_account(customer, source)
     else:
         return sync_bitcoin(customer, source)
 

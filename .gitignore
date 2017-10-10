@@ -45,3 +45,5 @@ coverage.xml
 
 # MkDocs
 site/
+
+.python-version

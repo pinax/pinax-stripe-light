@@ -5,9 +5,7 @@ from django.db.models import Q
 
 import stripe
 
-from .. import hooks
-from .. import models
-from .. import utils
+from .. import hooks, models, utils
 
 
 def calculate_refund_amount(charge, amount=None):

@@ -9,7 +9,6 @@ from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import cached_property
 
 import stripe
-
 from jsonfield.fields import JSONField
 
 from .conf import settings
@@ -225,6 +224,8 @@ class BitcoinReceiver(StripeObject):
 
 
 class Subscription(StripeObject):
+
+    STATUS_CURRENT = ["trialing", "active"]
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     application_fee_percent = models.DecimalField(decimal_places=2, max_digits=3, default=None, null=True)

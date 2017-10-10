@@ -1,18 +1,17 @@
-from mock import Mock
-
+from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.test import TestCase
 from django.utils import timezone
+
+from mock import Mock
+
+from ..conf import settings
+from ..middleware import ActiveSubscriptionMiddleware
+from ..models import Customer, Plan, Subscription
 
 try:
     from django.urls import reverse
 except ImportError:
     from django.core.urlresolvers import reverse
-
-from django.contrib.auth import authenticate, login, logout, get_user_model
-
-from ..conf import settings
-from ..middleware import ActiveSubscriptionMiddleware
-from ..models import Customer, Subscription, Plan
 
 
 class DummySession(dict):

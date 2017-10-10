@@ -5,9 +5,7 @@ from django.utils import timezone
 
 import stripe
 
-from .. import hooks
-from .. import models
-from .. import utils
+from .. import hooks, models, utils
 
 
 def cancel(subscription, at_period_end=True):
@@ -93,7 +91,7 @@ def is_status_current(subscription):
     Args:
         subscription: a pinax.stripe.models.Subscription object to test
     """
-    return subscription.status in ["trialing", "active"]
+    return subscription.status in subscription.STATUS_CURRENT
 
 
 def is_valid(subscription):

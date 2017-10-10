@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from django.conf import settings
-from django.db import migrations, models, connection
+from django.db import connection, migrations, models
 
 
 def migrate_customers(apps, schema_editor):

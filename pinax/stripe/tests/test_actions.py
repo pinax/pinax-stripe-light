@@ -1,22 +1,42 @@
 import datetime
 import decimal
-from unittest import skipIf
+import json
 import time
+from unittest import skipIf
 
 import django
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
-from django.contrib.auth import get_user_model
-
 import stripe
+from mock import Mock, patch
 
-from mock import patch, Mock
-
-from ..actions import charges, customers, events, invoices, plans, refunds, sources, subscriptions, transfers, accounts, externalaccounts
-from ..models import BitcoinReceiver, Customer, Charge, Card, Plan, Event, Invoice, Subscription, Transfer, Account
-
-import json
+from ..actions import (
+    accounts,
+    charges,
+    customers,
+    events,
+    externalaccounts,
+    invoices,
+    plans,
+    refunds,
+    sources,
+    subscriptions,
+    transfers
+)
+from ..models import (
+    Account,
+    BitcoinReceiver,
+    Card,
+    Charge,
+    Customer,
+    Event,
+    Invoice,
+    Plan,
+    Subscription,
+    Transfer
+)
 
 
 class AccountsTests(TestCase):

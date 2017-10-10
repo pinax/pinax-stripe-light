@@ -1,9 +1,8 @@
 import decimal
 
+from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import TestCase
-
-from django.contrib.auth import get_user_model
 
 from ..hooks import DefaultHookSet
 from ..models import Charge, Customer

@@ -4,10 +4,10 @@ import datetime
 import decimal
 import sys
 
-from mock import patch
-
 from django.test import TestCase
 from django.utils import timezone
+
+from mock import patch
 
 from ..models import (
     Account,

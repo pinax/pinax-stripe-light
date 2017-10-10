@@ -6,8 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 
 import stripe
 
-from ipware.ip import get_ip
-from ipware.ip import get_real_ip
+from ipware.ip import get_ip, get_real_ip
 
 from .actions import accounts
 from .conf import settings

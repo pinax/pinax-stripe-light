@@ -1,5 +1,6 @@
 import decimal
 
+from django.core import mail
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import TestCase

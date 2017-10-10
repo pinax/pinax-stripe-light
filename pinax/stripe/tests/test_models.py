@@ -10,7 +10,15 @@ from django.utils import timezone
 from mock import patch
 
 from ..models import (
-    Charge, Customer, Event, EventProcessingException, Invoice, InvoiceItem, Plan, Coupon, Subscription
+    Charge,
+    Coupon,
+    Customer,
+    Event,
+    EventProcessingException,
+    Invoice,
+    InvoiceItem,
+    Plan,
+    Subscription
 )
 
 

@@ -1,13 +1,10 @@
 import decimal
 
-
 from django.conf import settings
 
 import stripe
 
-from .. import hooks
-from .. import models
-from .. import utils
+from .. import hooks, models, utils
 
 
 def calculate_refund_amount(charge, amount=None):

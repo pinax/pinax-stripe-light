@@ -4,12 +4,12 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.utils import timezone
 
+from ..models import Customer, Invoice, Plan, Subscription
+
 try:
     from django.urls import reverse
 except ImportError:
     from django.core.urlresolvers import reverse
-
-from ..models import Customer, Invoice, Plan, Subscription
 
 
 User = get_user_model()

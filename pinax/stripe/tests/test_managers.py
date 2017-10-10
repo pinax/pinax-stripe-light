@@ -1,12 +1,11 @@
 import datetime
 import decimal
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
-from django.contrib.auth import get_user_model
-
-from ..models import Customer, Subscription, Charge, Plan
+from ..models import Charge, Customer, Plan, Subscription
 
 
 class CustomerManagerTest(TestCase):

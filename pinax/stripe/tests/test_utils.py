@@ -4,7 +4,11 @@ import decimal
 from django.test import TestCase
 from django.utils import timezone
 
-from ..utils import convert_tstamp, convert_amount_for_api, convert_amount_for_db
+from ..utils import (
+    convert_amount_for_api,
+    convert_amount_for_db,
+    convert_tstamp
+)
 
 
 class TestTimestampConversion(TestCase):

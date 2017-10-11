@@ -36,7 +36,7 @@ class AccountRelatedStripeObject(StripeObject):
 @python_2_unicode_compatible
 class Plan(AccountRelatedStripeObject):
     amount = models.DecimalField(decimal_places=2, max_digits=9)
-    currency = models.CharField(max_length=15)
+    currency = models.CharField(max_length=15, blank=False)
     interval = models.CharField(max_length=15)
     interval_count = models.IntegerField()
     name = models.CharField(max_length=150)

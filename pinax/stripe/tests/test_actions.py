@@ -26,6 +26,7 @@ from ..actions import (
     transfers
 )
 from ..models import (
+    Account,
     BitcoinReceiver,
     Card,
     Charge,

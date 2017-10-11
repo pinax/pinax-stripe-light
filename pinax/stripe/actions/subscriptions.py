@@ -2,7 +2,6 @@ import datetime
 
 from django.db.models import Q
 from django.utils import timezone
-from django.utils.encoding import smart_str
 
 import stripe
 
@@ -115,12 +114,9 @@ def retrieve(customer, sub_id):
     """
     Retrieve a subscription object from Stripe's API
 
-    Stripe throws an exception if a subscription has been deleted that we are
-    attempting to sync. In this case we want to just silently ignore that
-    exception but pass on any other.
-
     Args:
-        customer: the customer who's subscription you are trying to retrieve
+        customer: a legacy argument, we check that the given
+            subscription belongs to the given customer
         sub_id: the Stripe ID of the subscription you are fetching
 
     Returns:
@@ -128,11 +124,10 @@ def retrieve(customer, sub_id):
     """
     if not sub_id:
         return
-    try:
-        return customer.stripe_customer.subscriptions.retrieve(sub_id)
-    except stripe.InvalidRequestError as e:
-        if smart_str(e).find("does not have a subscription with ID") == -1:
-            raise
+    subscription = stripe.Subscription.retrieve(sub_id)
+    if subscription and subscription.customer != customer.stripe_id:
+        return
+    return subscription
 
 
 def sync_subscription_from_stripe_data(customer, subscription):

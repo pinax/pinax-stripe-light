@@ -10,6 +10,8 @@ from django.utils import timezone
 from mock import patch
 
 from ..models import (
+    Account,
+    BankAccount,
     Charge,
     Coupon,
     Customer,
@@ -18,7 +20,8 @@ from ..models import (
     Invoice,
     InvoiceItem,
     Plan,
-    Subscription
+    Subscription,
+    Transfer
 )
 
 
@@ -125,3 +128,13 @@ class StripeObjectTests(TestCase):
     def test_stripe_subscription(self, RetrieveMock):
         Subscription(customer=Customer(stripe_id="foo")).stripe_subscription
         self.assertTrue(RetrieveMock().subscriptions.retrieve.called)
+
+    @patch("stripe.Transfer.retrieve")
+    def test_stripe_transfer(self, RetrieveMock):
+        Transfer(amount=10).stripe_transfer
+        self.assertTrue(RetrieveMock.called)
+
+    @patch("stripe.Account.retrieve")
+    def test_stripe_bankaccount(self, RetrieveMock):
+        BankAccount(account=Account(stripe_id="foo")).stripe_bankaccount
+        self.assertTrue(RetrieveMock.return_value.external_accounts.retrieve.called)

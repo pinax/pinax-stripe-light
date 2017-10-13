@@ -199,6 +199,9 @@ class CustomersTests(TestCase):
             interval_count=1,
             name="Pro"
         )
+        self.account = Account.objects.create(
+            stripe_id="a1"
+        )
 
     def test_get_customer_for_user(self):
         expected = Customer.objects.create(stripe_id="x", user=self.user)
@@ -310,6 +313,22 @@ class CustomersTests(TestCase):
         self.assertIsNotNone(kwargs["trial_end"])
         self.assertTrue(SyncMock.called)
         self.assertTrue(CreateAndPayMock.called)
+
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    @patch("stripe.Customer.create")
+    def test_customer_create_user_with_stripe_account(self, CreateMock, SyncMock):
+        CreateMock.return_value = dict(id="cus_XXXXX")
+        customer = customers.create(self.user, stripe_account=self.account)
+        self.assertIsNone(customer.user)
+        self.assertEqual(customers.get_customer_for_user(
+            self.user, stripe_account=self.account), customer)
+        self.assertEqual(customer.stripe_id, "cus_XXXXX")
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["email"], self.user.email)
+        self.assertIsNone(kwargs["source"])
+        self.assertIsNone(kwargs["plan"])
+        self.assertIsNone(kwargs["trial_end"])
+        self.assertTrue(SyncMock.called)
 
     @patch("stripe.Customer.retrieve")
     def test_purge(self, RetrieveMock):

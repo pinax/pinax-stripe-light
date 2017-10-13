@@ -1,3 +1,5 @@
+from contextlib import suppress
+
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
@@ -22,7 +24,7 @@ def can_charge(customer):
     return False
 
 
-def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
+def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None, stripe_account=None):
     """
     Creates a Stripe customer.
 
@@ -35,6 +37,8 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         charge_immediately: whether or not the user should be immediately
                             charged for the subscription
         quantity: the quantity (multiplier) of the subscription
+        stripe_account: An account object. If given, the Customer and User relation will be established for you through UserAccount model.
+        Because a single User might have several Customers, one per Account.
 
     Returns:
         the pinax.stripe.models.Customer object that was created
@@ -45,14 +49,26 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         source=card,
         plan=plan,
         quantity=quantity,
-        trial_end=trial_end
+        trial_end=trial_end,
+        stripe_account=getattr(stripe_account, 'stripe_id', None),
     )
-    cus, created = models.Customer.objects.get_or_create(
-        user=user,
-        defaults={
-            "stripe_id": stripe_customer["id"]
-        }
-    )
+    if stripe_account is not None:
+        # we want to allow several customers per user, for any stripe account
+        cus, created = models.Customer.objects.get_or_create(
+            defaults={
+                "stripe_id": stripe_customer["id"]
+            },
+        )
+        if created:
+            models.UserAccount.objects.create(
+                user=user, account=stripe_account, customer=cus)
+    else:
+        cus, created = models.Customer.objects.get_or_create(
+            user=user,
+            defaults={
+                "stripe_id": stripe_customer["id"]
+            },
+        )
     if created:
         sync_customer(cus, stripe_customer)
         if plan and charge_immediately:
@@ -63,7 +79,7 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
     return cus
 
 
-def get_customer_for_user(user):
+def get_customer_for_user(user, stripe_account=None):
     """
     Get a customer object for a given user
 
@@ -73,7 +89,10 @@ def get_customer_for_user(user):
     Returns:
         a pinax.stripe.models.Customer object
     """
-    return models.Customer.objects.filter(user=user).first()
+    if stripe_account is not None:
+        return user.customers.get(user_account__account=stripe_account)
+    with suppress(models.Customer.DoesNotExist):
+        return user.customer
 
 
 def purge_local(customer):

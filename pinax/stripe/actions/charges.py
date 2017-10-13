@@ -44,7 +44,7 @@ def create(
     amount, customer, source=None, currency="usd", description=None,
     send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True,
     email=None, destination_account=None, destination_amount=None,
-    application_fee=None
+    application_fee=None, on_behalf_of=None,
 ):
     """
     Create a charge for the given customer.
@@ -60,6 +60,7 @@ def create(
         destination_account: stripe_id of a connected account
         destination_amount: amount to transfer to the `destination_account` without creating an application fee
         application_fee: used with `destination_account` to add a fee destined for the platform account
+        on_behalf_of: Direct Charges to given account, used with stripe connect and connected accounts.
 
     Returns:
         a pinax.stripe.models.Charge object
@@ -80,6 +81,9 @@ def create(
         raise ValueError(
             "You can't specify `application_fee` with `destination_amount`"
         )
+    if destination_account and on_behalf_of:
+        raise ValueError(
+            "`destination_account` and `on_behalf_of` are mutualy exclusive")
     kwargs = dict(
         amount=utils.convert_amount_for_api(amount, currency),  # find the final amount
         currency=currency,
@@ -89,19 +93,18 @@ def create(
         capture=capture,
     )
     if destination_account:
-        kwargs["destination"] = {
-            "account": destination_account
-        }
+        kwargs["destination"] = {"account": destination_account}
         if destination_amount:
             kwargs["destination"]["amount"] = utils.convert_amount_for_api(
                 destination_amount,
                 currency
             )
-
-    if application_fee:
-        kwargs["application_fee"] = utils.convert_amount_for_api(
-            application_fee, currency
-        )
+        if application_fee:
+            kwargs["application_fee"] = utils.convert_amount_for_api(
+                application_fee, currency
+            )
+    elif on_behalf_of:
+        kwargs["on_behalf_of"] = on_behalf_of
     stripe_charge = stripe.Charge.create(
         **kwargs
     )

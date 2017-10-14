@@ -43,39 +43,48 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
     Returns:
         the pinax.stripe.models.Customer object that was created
     """
-    trial_end = hooks.hookset.trial_period(user, plan)
-    stripe_customer = stripe.Customer.create(
-        email=user.email,
-        source=card,
-        plan=plan,
-        quantity=quantity,
-        trial_end=trial_end,
-        stripe_account=getattr(stripe_account, 'stripe_id', None),
-    )
+    def create_stripe_customer():
+        trial_end = hooks.hookset.trial_period(user, plan)
+        return stripe.Customer.create(
+            email=user.email,
+            source=card,
+            plan=plan,
+            quantity=quantity,
+            trial_end=trial_end,
+            stripe_account=getattr(stripe_account, "stripe_id", None),
+        )
+
     if stripe_account is not None:
         # we want to allow several customers per user, for any stripe account
-        cus, created = models.Customer.objects.get_or_create(
-            defaults={
-                "stripe_id": stripe_customer["id"]
-            },
-        )
-        if created:
+        try:
+            cus = models.UserAccount.objects.get(user=user, account=stripe_account).customer
+        except models.UserAccount.DoesNotExist:
+            stripe_customer = create_stripe_customer()
+            cus = models.Customer.objects.create(
+                stripe_id=stripe_customer["id"]
+            )
             models.UserAccount.objects.create(
                 user=user, account=stripe_account, customer=cus)
+            created = True
+        else:
+            created = False
     else:
-        cus, created = models.Customer.objects.get_or_create(
-            user=user,
-            defaults={
-                "stripe_id": stripe_customer["id"]
-            },
-        )
+        try:
+            cus = models.Customer.objects.get(user=user)
+        except models.Customer.DoesNotExist:
+            stripe_customer = create_stripe_customer()
+            cus = models.Customer.objects.create(
+                user=user,
+                stripe_id=stripe_customer["id"]
+            )
+            created = True
+        else:
+            created = False
+
     if created:
         sync_customer(cus, stripe_customer)
         if plan and charge_immediately:
             invoices.create_and_pay(cus)
-    else:
-        # remove this extra customer as it is not needed
-        stripe.Customer.retrieve(stripe_customer["id"]).delete()
     return cus
 
 

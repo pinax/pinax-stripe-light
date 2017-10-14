@@ -234,17 +234,10 @@ class CustomersTests(TestCase):
         self.assertIsNone(kwargs["trial_end"])
         self.assertTrue(SyncMock.called)
 
-    @patch("stripe.Customer.retrieve")
     @patch("stripe.Customer.create")
-    def test_customer_create_user_duplicate(self, CreateMock, RetrieveMock):
+    def test_customer_create_user_duplicate(self, CreateMock):
         # Create an existing database customer for this user
         original = Customer.objects.create(user=self.user, stripe_id="cus_XXXXX")
-
-        new_customer = Mock()
-        RetrieveMock.return_value = new_customer
-
-        # customers.Create will return a new customer instance
-        CreateMock.return_value = dict(id="cus_YYYYY")
 
         customer = customers.create(self.user)
 
@@ -255,15 +248,7 @@ class CustomersTests(TestCase):
         # Check that the customer hasn't been modified
         self.assertEqual(customer.user, self.user)
         self.assertEqual(customer.stripe_id, "cus_XXXXX")
-        _, kwargs = CreateMock.call_args
-        self.assertEqual(kwargs["email"], self.user.email)
-        self.assertIsNone(kwargs["source"])
-        self.assertIsNone(kwargs["plan"])
-        self.assertIsNone(kwargs["trial_end"])
-
-        # But a customer *was* created, retrieved, and then disposed of.
-        RetrieveMock.assert_called_once_with("cus_YYYYY")
-        new_customer.delete.assert_called_once()
+        CreateMock.assert_not_called()
 
     @patch("pinax.stripe.actions.invoices.create_and_pay")
     @patch("pinax.stripe.actions.customers.sync_customer")

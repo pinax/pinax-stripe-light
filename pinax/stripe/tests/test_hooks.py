@@ -14,7 +14,7 @@ class HooksTestCase(TestCase):
         self.User = get_user_model()
         self.user = self.User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         self.customer = Customer.objects.create(
             user=self.user,

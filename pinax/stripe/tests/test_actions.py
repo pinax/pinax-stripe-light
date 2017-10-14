@@ -45,7 +45,7 @@ class ChargesTests(TestCase):
         self.User = get_user_model()
         self.user = self.User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         self.customer = Customer.objects.create(
             user=self.user,
@@ -189,7 +189,7 @@ class CustomersTests(TestCase):
         self.User = get_user_model()
         self.user = self.User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         self.plan = Plan.objects.create(
             stripe_id="p1",
@@ -560,7 +560,7 @@ class SourcesTests(TestCase):
         User = get_user_model()
         user = User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         customer = Customer.objects.create(
             user=user,
@@ -586,7 +586,7 @@ class SourcesTests(TestCase):
         User = get_user_model()
         user = User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         customer = Customer.objects.create(
             user=user,
@@ -615,7 +615,7 @@ class SubscriptionsTests(TestCase):
         self.User = get_user_model()
         self.user = self.User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         self.customer = Customer.objects.create(
             user=self.user,
@@ -818,7 +818,7 @@ class SyncsTests(TestCase):
         self.User = get_user_model()
         self.user = self.User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         self.customer = Customer.objects.create(
             user=self.user,

@@ -40,6 +40,28 @@ def capture(charge, amount=None):
     sync_charge_from_stripe_data(stripe_charge)
 
 
+def _validate_create_params(amount, application_fee, destination_account, destination_amount, on_behalf_of):
+    if not isinstance(amount, decimal.Decimal):
+        raise ValueError(
+            "You must supply a decimal value for `amount`."
+        )
+    if application_fee and not isinstance(application_fee, decimal.Decimal):
+        raise ValueError(
+            "You must supply a decimal value for `application_fee`."
+        )
+    if application_fee and not destination_account:
+        raise ValueError(
+            "You can only specify `application_fee` with `destination_account`"
+        )
+    if application_fee and destination_account and destination_amount:
+        raise ValueError(
+            "You can't specify `application_fee` with `destination_amount`"
+        )
+    if destination_account and on_behalf_of:
+        raise ValueError(
+            "`destination_account` and `on_behalf_of` are mutualy exclusive")
+
+
 def create(
     amount, customer, source=None, currency="usd", description=None,
     send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True,
@@ -65,25 +87,7 @@ def create(
     Returns:
         a pinax.stripe.models.Charge object
     """
-    if not isinstance(amount, decimal.Decimal):
-        raise ValueError(
-            "You must supply a decimal value for `amount`."
-        )
-    if application_fee and not isinstance(application_fee, decimal.Decimal):
-        raise ValueError(
-            "You must supply a decimal value for `application_fee`."
-        )
-    if application_fee and not destination_account:
-        raise ValueError(
-            "You can only specify `application_fee` with `destination_account`"
-        )
-    if application_fee and destination_account and destination_amount:
-        raise ValueError(
-            "You can't specify `application_fee` with `destination_amount`"
-        )
-    if destination_account and on_behalf_of:
-        raise ValueError(
-            "`destination_account` and `on_behalf_of` are mutualy exclusive")
+    _validate_create_params(amount, application_fee, destination_account, destination_amount, on_behalf_of)
     kwargs = dict(
         amount=utils.convert_amount_for_api(amount, currency),  # find the final amount
         currency=currency,

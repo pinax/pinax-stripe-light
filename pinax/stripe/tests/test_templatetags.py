@@ -1,10 +1,10 @@
+from django.template import Context, Template
 from django.test import TestCase, override_settings
-from django.template import Template, Context
 
 
 class TemplateTagTests(TestCase):
 
-    @override_settings(PINAX_STRIPE_PUBLIC_KEY='this-is-the-stripe-public-key')
+    @override_settings(PINAX_STRIPE_PUBLIC_KEY="this-is-the-stripe-public-key")
     def test_stripe_public_key(self):
         self.maxDiff = None
         template = Template("""{% load stripe %}

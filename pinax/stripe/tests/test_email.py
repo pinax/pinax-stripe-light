@@ -1,9 +1,8 @@
 import decimal
 
+from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import TestCase
-
-from django.contrib.auth import get_user_model
 
 from mock import patch
 
@@ -15,7 +14,7 @@ class EmailReceiptTest(TestCase):
 
     def setUp(self):
         User = get_user_model()
-        self.user = User.objects.create_user(username="patrick", email='user@test.com')
+        self.user = User.objects.create_user(username="patrick", email="user@test.com")
         self.customer = Customer.objects.create(
             user=self.user,
             stripe_id="cus_xxxxxxxxxxxxxxx"

@@ -2,13 +2,10 @@ import datetime
 
 from django.db.models import Q
 from django.utils import timezone
-from django.utils.encoding import smart_str
 
 import stripe
 
-from .. import hooks
-from .. import models
-from .. import utils
+from .. import hooks, models, utils
 
 
 def cancel(subscription, at_period_end=True):
@@ -94,7 +91,7 @@ def is_status_current(subscription):
     Args:
         subscription: a pinax.stripe.models.Subscription object to test
     """
-    return subscription.status in ["trialing", "active"]
+    return subscription.status in subscription.STATUS_CURRENT
 
 
 def is_valid(subscription):
@@ -117,12 +114,9 @@ def retrieve(customer, sub_id):
     """
     Retrieve a subscription object from Stripe's API
 
-    Stripe throws an exception if a subscription has been deleted that we are
-    attempting to sync. In this case we want to just silently ignore that
-    exception but pass on any other.
-
     Args:
-        customer: the customer who's subscription you are trying to retrieve
+        customer: a legacy argument, we check that the given
+            subscription belongs to the given customer
         sub_id: the Stripe ID of the subscription you are fetching
 
     Returns:
@@ -130,11 +124,10 @@ def retrieve(customer, sub_id):
     """
     if not sub_id:
         return
-    try:
-        return customer.stripe_customer.subscriptions.retrieve(sub_id)
-    except stripe.InvalidRequestError as e:
-        if smart_str(e).find("does not have a subscription with ID") == -1:
-            raise
+    subscription = stripe.Subscription.retrieve(sub_id)
+    if subscription and subscription.customer != customer.stripe_id:
+        return
+    return subscription
 
 
 def sync_subscription_from_stripe_data(customer, subscription):
@@ -193,8 +186,8 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
     if coupon:
         stripe_subscription.coupon = coupon
     if charge_immediately:
-        if utils.convert_tstamp(stripe_subscription.trial_end) > timezone.now():
-            stripe_subscription.trial_end = 'now'
+        if stripe_subscription.trial_end is not None and utils.convert_tstamp(stripe_subscription.trial_end) > timezone.now():
+            stripe_subscription.trial_end = "now"
     sub = stripe_subscription.save()
     customer = models.Customer.objects.get(pk=subscription.customer.pk)
     sync_subscription_from_stripe_data(customer, sub)

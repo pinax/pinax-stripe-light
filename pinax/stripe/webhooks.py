@@ -3,10 +3,19 @@ import json
 from django.dispatch import Signal
 
 import stripe
-
 from six import with_metaclass
 
-from .actions import charges, customers, exceptions, invoices, transfers, sources, subscriptions
+from .actions import (
+    accounts,
+    charges,
+    customers,
+    exceptions,
+    invoices,
+    plans,
+    sources,
+    subscriptions,
+    transfers
+)
 from .conf import settings
 
 
@@ -64,9 +73,22 @@ class Webhook(with_metaclass(Registerable, object)):
         if event.kind != self.name:
             raise Exception("The Webhook handler ({}) received the wrong type of Event ({})".format(self.name, event.kind))
         self.event = event
+        self.stripe_account = None
 
     def validate(self):
-        evt = stripe.Event.retrieve(self.event.stripe_id)
+        """
+        Validate incoming events.
+
+        We fetch the event data to ensure it's legit. For Connect
+        accounts we must fetch the event using the `stripe_account`
+        parameter, else we won't find it.
+        """
+        self.stripe_account = self.event.webhook_message.get("user_id")
+        self.event.stripe_account = self.stripe_account
+        evt = stripe.Event.retrieve(
+            self.event.stripe_id,
+            stripe_account=self.event.stripe_account
+        )
         self.event.validated_message = json.loads(
             json.dumps(
                 evt.to_dict(),
@@ -92,14 +114,26 @@ class Webhook(with_metaclass(Registerable, object)):
             self.send_signal()
             self.event.processed = True
             self.event.save()
-        except stripe.StripeError as e:
-            exceptions.log_exception(data=e.http_body, exception=e, event=self.event)
+        except Exception as e:
+            data = None
+            if isinstance(e, stripe.StripeError):
+                data = e.http_body
+            exceptions.log_exception(data=data, exception=e, event=self.event)
+            raise
 
     def process_webhook(self):
         return
 
 
-class AccountUpdatedWebhook(Webhook):
+class AccountWebhook(Webhook):
+
+    def process_webhook(self):
+        accounts.sync_account_from_stripe_data(
+            stripe.Account.retrieve(self.event.message["data"]["object"]["id"])
+        )
+
+
+class AccountUpdatedWebhook(AccountWebhook):
     name = "account.updated"
     description = "Occurs whenever an account status or property has changed."
 
@@ -167,8 +201,9 @@ class BitcoinReceiverTransactionCreatedWebhook(Webhook):
 class ChargeWebhook(Webhook):
 
     def process_webhook(self):
-        charges.sync_charge_from_stripe_data(
-            stripe.Charge.retrieve(self.event.message["data"]["object"]["id"])
+        charges.sync_charge(
+            self.event.message["data"]["object"]["id"],
+            stripe_account=self.stripe_account
         )
 
 
@@ -247,7 +282,7 @@ class CustomerDeletedWebhook(Webhook):
     description = "Occurs whenever a customer is deleted."
 
     def process_webhook(self):
-        customers.purge(self.event.customer)
+        customers.purge_local(self.event.customer)
 
 
 class CustomerUpdatedWebhook(Webhook):
@@ -255,7 +290,12 @@ class CustomerUpdatedWebhook(Webhook):
     description = "Occurs whenever any property of a customer changes."
 
     def process_webhook(self):
-        customers.sync_customer(self.event.customer)
+        cu = None
+        try:
+            cu = self.event.message["data"]["object"]
+        except (KeyError, TypeError):
+            pass
+        customers.sync_customer(self.event.customer, cu)
 
 
 class CustomerDiscountCreatedWebhook(Webhook):
@@ -397,7 +437,18 @@ class OrderUpdatedWebhook(Webhook):
     description = "Occurs whenever an order is updated."
 
 
-class PlanCreatedWebhook(Webhook):
+class PaymentCreatedWebhook(Webhook):
+    name = "payment.created"
+    description = "A payment has been received by a Connect account via Transfer from the platform account."
+
+
+class PlanWebhook(Webhook):
+
+    def process_webhook(self):
+        plans.sync_plan(self.event.message["data"]["object"], self.event)
+
+
+class PlanCreatedWebhook(PlanWebhook):
     name = "plan.created"
     description = "Occurs whenever a plan is created."
 
@@ -407,7 +458,7 @@ class PlanDeletedWebhook(Webhook):
     description = "Occurs whenever a plan is deleted."
 
 
-class PlanUpdatedWebhook(Webhook):
+class PlanUpdatedWebhook(PlanWebhook):
     name = "plan.updated"
     description = "Occurs whenever a plan is updated."
 
@@ -450,7 +501,13 @@ class SKUUpdatedWebhook(Webhook):
 class TransferWebhook(Webhook):
 
     def process_webhook(self):
-        transfers.sync_transfer(self.event.message["data"]["object"], self.event)
+        transfers.sync_transfer(
+            stripe.Transfer.retrieve(
+                self.event.message["data"]["object"]["id"],
+                stripe_account=self.stripe_account
+            ),
+            self.event
+        )
 
 
 class TransferCreatedWebhook(TransferWebhook):

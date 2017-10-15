@@ -1,30 +1,32 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Q
+from django.db.models import Count
 
 from .models import (  # @@@ make all these read-only
-    Charge,
-    Subscription,
-    Card,
+    Account,
+    BankAccount,
     BitcoinReceiver,
+    Card,
+    Charge,
+    Coupon,
     Customer,
     Event,
     EventProcessingException,
     Invoice,
     InvoiceItem,
     Plan,
-    Coupon,
+    Subscription,
     Transfer,
     TransferChargeFee
 )
 
 
-def user_search_fields():  # coverage: omit
+def user_search_fields():
     User = get_user_model()
     fields = [
         "user__{0}".format(User.USERNAME_FIELD)
     ]
-    if "email" in [f.name for f in User._meta.fields]:
+    if "email" in [f.name for f in User._meta.fields]:  # pragma: no branch
         fields += ["user__email"]
     return fields
 
@@ -47,11 +49,10 @@ class CustomerHasCardListFilter(admin.SimpleListFilter):
         ]
 
     def queryset(self, request, queryset):
-        no_card = Q(card__fingerprint="") | Q(card=None)
         if self.value() == "yes":
-            return queryset.exclude(no_card)
+            return queryset.filter(card__isnull=True)
         elif self.value() == "no":
-            return queryset.filter(no_card)
+            return queryset.filter(card__isnull=False)
         return queryset.all()
 
 
@@ -66,13 +67,10 @@ class InvoiceCustomerHasCardListFilter(admin.SimpleListFilter):
         ]
 
     def queryset(self, request, queryset):
-        no_card = (Q(customer__card__fingerprint="") | Q(customer__card=None))
-        if self.value() == "yes":  # coverage: omit
-            # Worked when manually tested, getting a weird error otherwise
-            # Better than no tests at all
-            return queryset.exclude(no_card)
+        if self.value() == "yes":
+            return queryset.filter(customer__card__isnull=True)
         elif self.value() == "no":
-            return queryset.filter(no_card)
+            return queryset.filter(customer__card__isnull=False)
         return queryset.all()
 
 
@@ -94,12 +92,12 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value() == "none":
             # Get customers with 0 subscriptions
-            return queryset.annotate(subs=Count('subscription')).filter(subs=0)
+            return queryset.annotate(subs=Count("subscription")).filter(subs=0)
         elif self.value():
             # Get customer pks without a subscription with this status
             customers = Subscription.objects.filter(
                 status=self.value()).values_list(
-                'customer', flat=True).distinct()
+                "customer", flat=True).distinct()
             # Filter by those customers
             return queryset.filter(pk__in=customers)
         return queryset.all()
@@ -197,7 +195,7 @@ class BitcoinReceiverInline(admin.TabularInline):
 
 def subscription_status(obj):
     return ", ".join([subscription.status for subscription in obj.subscription_set.all()])
-subscription_status.short_description = "Subscription Status"
+subscription_status.short_description = "Subscription Status"  # noqa
 
 
 admin.site.register(
@@ -236,8 +234,8 @@ class InvoiceItemInline(admin.TabularInline):
 
 
 def customer_has_card(obj):
-    return obj.customer.card_set.exclude(fingerprint='').exists()
-customer_has_card.short_description = "Customer Has Card"
+    return obj.customer.card_set.exclude(fingerprint="").exists()
+customer_has_card.short_description = "Customer Has Card"  # noqa
 
 
 def customer_user(obj):
@@ -248,7 +246,7 @@ def customer_user(obj):
         username,
         email
     )
-customer_user.short_description = "Customer"
+customer_user.short_description = "Customer"  # noqa
 
 
 admin.site.register(
@@ -375,5 +373,40 @@ admin.site.register(
     ],
     inlines=[
         TransferChargeFeeInline
+    ]
+)
+
+
+admin.site.register(
+    Account,
+    raw_id_fields=["user"],
+    list_display=[
+        "stripe_id",
+        "type",
+        "country",
+        "transfers_enabled",
+        "charges_enabled"
+    ],
+    search_fields=[
+        "stripe_id",
+    ]
+)
+
+admin.site.register(
+    BankAccount,
+    raw_id_fields=["account"],
+    list_display=[
+        "stripe_id",
+        "account",
+        "account_holder_type",
+        "account_holder_name",
+        "currency",
+        "default_for_currency",
+        "bank_name",
+        "country",
+        "last4"
+    ],
+    search_fields=[
+        "stripe_id",
     ]
 )

@@ -1,18 +1,17 @@
+from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.test import TestCase
 from django.utils import timezone
-
-try:
-    from django.urls import reverse
-except ImportError:
-    from django.core.urlresolvers import reverse
-
-from django.contrib.auth import authenticate, login, logout, get_user_model
 
 from mock import Mock
 
 from ..conf import settings
 from ..middleware import ActiveSubscriptionMiddleware
-from ..models import Customer, Subscription, Plan
+from ..models import Customer, Plan, Subscription
+
+try:
+    from django.urls import reverse
+except ImportError:
+    from django.core.urlresolvers import reverse
 
 
 class DummySession(dict):
@@ -25,7 +24,7 @@ class DummySession(dict):
 
 
 class ActiveSubscriptionMiddlewareTests(TestCase):
-    urls = 'pinax.stripe.tests.test_urls'
+    urls = "pinax.stripe.tests.urls"
 
     def setUp(self):
         self.middleware = ActiveSubscriptionMiddleware()
@@ -35,8 +34,8 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
 
         self.old_urls = settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS
         settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS += (
-            'signup',
-            'password_reset'
+            "signup",
+            "password_reset"
         )
 
         user = get_user_model().objects.create_user(username="patrick")

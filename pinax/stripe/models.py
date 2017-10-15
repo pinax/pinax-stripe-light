@@ -2,12 +2,13 @@ from __future__ import unicode_literals
 
 import decimal
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.functional import cached_property
 
 import stripe
-
 from jsonfield.fields import JSONField
 
 from .conf import settings
@@ -17,15 +18,23 @@ from .utils import CURRENCY_SYMBOLS
 
 class StripeObject(models.Model):
 
-    stripe_id = models.CharField(max_length=255, unique=True)
+    stripe_id = models.CharField(max_length=191, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         abstract = True
 
 
+class AccountRelatedStripeObject(StripeObject):
+
+    stripe_account = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+
 @python_2_unicode_compatible
-class Plan(StripeObject):
+class Plan(AccountRelatedStripeObject):
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=15)
     interval = models.CharField(max_length=15)
@@ -77,7 +86,7 @@ class EventProcessingException(models.Model):
 
 
 @python_2_unicode_compatible
-class Event(StripeObject):
+class Event(AccountRelatedStripeObject):
 
     kind = models.CharField(max_length=250)
     livemode = models.BooleanField(default=False)
@@ -98,13 +107,42 @@ class Event(StripeObject):
         return "{} - {}".format(self.kind, self.stripe_id)
 
 
-class Transfer(StripeObject):
-    event = models.ForeignKey(Event, related_name="transfers", on_delete=models.CASCADE)
+class Transfer(AccountRelatedStripeObject):
+
     amount = models.DecimalField(decimal_places=2, max_digits=9)
+    amount_reversed = models.DecimalField(decimal_places=2, max_digits=9, null=True, blank=True)
+    application_fee = models.DecimalField(decimal_places=2, max_digits=9, null=True, blank=True)
+    created = models.DateTimeField(null=True, blank=True)
     currency = models.CharField(max_length=25, default="usd")
-    status = models.CharField(max_length=25)
     date = models.DateTimeField()
     description = models.TextField(null=True, blank=True)
+    destination = models.TextField(null=True, blank=True)
+    destination_payment = models.TextField(null=True, blank=True)
+    event = models.ForeignKey(
+        Event, related_name="transfers",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+    failure_code = models.TextField(null=True, blank=True)
+    failure_message = models.TextField(null=True, blank=True)
+    livemode = models.BooleanField(default=False)
+    metadata = JSONField(null=True, blank=True)
+    method = models.TextField(null=True, blank=True)
+    reversed = models.BooleanField(default=False)
+    source_transaction = models.TextField(null=True, blank=True)
+    source_type = models.TextField(null=True, blank=True)
+    statement_descriptor = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=25)
+    transfer_group = models.TextField(null=True, blank=True)
+    type = models.TextField(null=True, blank=True)
+
+    @property
+    def stripe_transfer(self):
+        return stripe.Transfer.retrieve(
+            self.stripe_id,
+            stripe_account=self.stripe_account
+        )
 
 
 class TransferChargeFee(models.Model):
@@ -119,7 +157,7 @@ class TransferChargeFee(models.Model):
 
 
 @python_2_unicode_compatible
-class Customer(StripeObject):
+class Customer(AccountRelatedStripeObject):
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
     account_balance = models.DecimalField(decimal_places=2, max_digits=9, null=True)
@@ -130,9 +168,12 @@ class Customer(StripeObject):
 
     objects = CustomerManager()
 
-    @property
+    @cached_property
     def stripe_customer(self):
-        return stripe.Customer.retrieve(self.stripe_id)
+        return stripe.Customer.retrieve(
+            self.stripe_id,
+            stripe_account=self.stripe_account
+        )
 
     def __str__(self):
         return str(self.user)
@@ -183,6 +224,8 @@ class BitcoinReceiver(StripeObject):
 
 
 class Subscription(StripeObject):
+
+    STATUS_CURRENT = ["trialing", "active"]
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     application_fee_percent = models.DecimalField(decimal_places=2, max_digits=3, default=None, null=True)
@@ -253,7 +296,14 @@ class Invoice(StripeObject):
 
     @property
     def stripe_invoice(self):
-        return stripe.Invoice.retrieve(self.stripe_id)
+        try:
+            stripe_account = self.customer.stripe_account
+        except ObjectDoesNotExist:
+            stripe_account = None
+        return stripe.Invoice.retrieve(
+            self.stripe_id,
+            stripe_account=stripe_account
+        )
 
 
 class InvoiceItem(models.Model):
@@ -263,7 +313,6 @@ class InvoiceItem(models.Model):
     invoice = models.ForeignKey(Invoice, related_name="items", on_delete=models.CASCADE)
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=10, default="usd")
-    quantity = models.PositiveIntegerField(null=True)
     kind = models.CharField(max_length=25, blank=True)
     subscription = models.ForeignKey(Subscription, null=True, on_delete=models.CASCADE)
     period_start = models.DateTimeField()
@@ -298,8 +347,124 @@ class Charge(StripeObject):
     receipt_sent = models.BooleanField(default=False)
     charge_created = models.DateTimeField(null=True, blank=True)
 
+    # These fields are extracted from the BalanceTransaction for the
+    # charge and help us to know when funds from a charge are added to
+    # our Stripe account's balance.
+    available = models.BooleanField(default=False)
+    available_on = models.DateTimeField(null=True, blank=True)
+    fee = models.DecimalField(
+        decimal_places=2, max_digits=9, null=True, blank=True
+    )
+    fee_currency = models.CharField(max_length=10, null=True, blank=True)
+
+    transfer_group = models.TextField(null=True, blank=True)
+
     objects = ChargeManager()
 
     @property
     def stripe_charge(self):
-        return stripe.Charge.retrieve(self.stripe_id)
+        return stripe.Charge.retrieve(
+            self.stripe_id,
+            stripe_account=(
+                self.customer.stripe_account if self.customer_id else None
+            ),
+            expand=["balance_transaction"]
+        )
+
+    @property
+    def card(self):
+        return Card.objects.filter(stripe_id=self.source).first()
+
+
+class Account(StripeObject):
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
+
+    business_name = models.TextField(blank=True, null=True)
+    business_url = models.TextField(blank=True, null=True)
+
+    charges_enabled = models.BooleanField(default=False)
+    country = models.CharField(max_length=2)
+    debit_negative_balances = models.BooleanField(default=False)
+    decline_charge_on_avs_failure = models.BooleanField(default=False)
+    decline_charge_on_cvc_failure = models.BooleanField(default=False)
+    default_currency = models.CharField(max_length=3)
+    details_submitted = models.BooleanField(default=False)
+    display_name = models.TextField(blank=True, null=True)
+    email = models.TextField(blank=True, null=True)
+
+    legal_entity_address_city = models.TextField(null=True, blank=True)
+    legal_entity_address_country = models.TextField(null=True, blank=True)
+    legal_entity_address_line1 = models.TextField(null=True, blank=True)
+    legal_entity_address_line2 = models.TextField(null=True, blank=True)
+    legal_entity_address_postal_code = models.TextField(null=True, blank=True)
+    legal_entity_address_state = models.TextField(null=True, blank=True)
+    legal_entity_dob = models.DateField(null=True)
+    legal_entity_first_name = models.TextField(null=True, blank=True)
+    legal_entity_gender = models.TextField(null=True, blank=True)
+    legal_entity_last_name = models.TextField(null=True, blank=True)
+    legal_entity_maiden_name = models.TextField(null=True, blank=True)
+    legal_entity_personal_id_number_provided = models.BooleanField(default=False)
+    legal_entity_phone_number = models.TextField(null=True, blank=True)
+    legal_entity_ssn_last_4_provided = models.BooleanField(default=False)
+    legal_entity_type = models.TextField(null=True, blank=True)
+    legal_entity_verification_details = models.TextField(null=True, blank=True)
+    legal_entity_verification_details_code = models.TextField(null=True, blank=True)
+    legal_entity_verification_document = models.TextField(null=True, blank=True)
+    legal_entity_verification_status = models.TextField(null=True, blank=True)
+
+    # The type of the Stripe account. Can be "standard", "express", or "custom".
+    type = models.TextField(null=True, blank=True)
+
+    metadata = JSONField(null=True)
+
+    product_description = models.TextField(null=True, blank=True)
+    statement_descriptor = models.TextField(null=True, blank=True)
+    support_email = models.TextField(null=True, blank=True)
+    support_phone = models.TextField(null=True, blank=True)
+
+    timezone = models.TextField(null=True, blank=True)
+
+    tos_acceptance_date = models.DateField(null=True)
+    tos_acceptance_ip = models.TextField(null=True, blank=True)
+    tos_acceptance_user_agent = models.TextField(null=True, blank=True)
+
+    transfer_schedule_delay_days = models.PositiveSmallIntegerField(null=True)
+    transfer_schedule_interval = models.TextField(null=True, blank=True)
+
+    transfer_schedule_monthly_anchor = models.PositiveSmallIntegerField(null=True)
+    transfer_schedule_weekly_anchor = models.TextField(null=True, blank=True)
+
+    transfer_statement_descriptor = models.TextField(null=True, blank=True)
+    transfers_enabled = models.BooleanField(default=False)
+
+    verification_disabled_reason = models.TextField(null=True, blank=True)
+    verification_due_by = models.DateTimeField(null=True, blank=True)
+    verification_timestamp = models.DateTimeField(null=True, blank=True)
+    verification_fields_needed = JSONField(null=True)
+
+    @property
+    def stripe_account(self):
+        return stripe.Account.retrieve(self.stripe_id)
+
+
+class BankAccount(StripeObject):
+
+    account = models.ForeignKey(Account, related_name="bank_accounts", on_delete=models.CASCADE)
+    account_holder_name = models.TextField()
+    account_holder_type = models.TextField()
+    bank_name = models.TextField(null=True, blank=True)
+    country = models.TextField()
+    currency = models.TextField()
+    default_for_currency = models.BooleanField(default=False)
+    fingerprint = models.TextField()
+    last4 = models.CharField(max_length=4)
+    metadata = JSONField(null=True)
+    routing_number = models.TextField()
+    status = models.TextField()
+
+    @property
+    def stripe_bankaccount(self):
+        return self.account.stripe_account.external_accounts.retrieve(
+            self.stripe_id
+        )

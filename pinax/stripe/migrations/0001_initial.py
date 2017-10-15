@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db import migrations, models
 from decimal import Decimal
+
 import django.utils.timezone
-import jsonfield.fields
 from django.conf import settings
+from django.db import migrations, models
+
+import jsonfield.fields
 
 
 class Migration(migrations.Migration):
@@ -19,7 +21,7 @@ class Migration(migrations.Migration):
             name='BitcoinReceiver',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
-                ('stripe_id', models.CharField(unique=True, max_length=255)),
+                ('stripe_id', models.CharField(unique=True, max_length=191)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('active', models.BooleanField(default=False)),
                 ('amount', models.DecimalField(decimal_places=2, max_digits=9)),
@@ -45,7 +47,7 @@ class Migration(migrations.Migration):
             name='Card',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
-                ('stripe_id', models.CharField(unique=True, max_length=255)),
+                ('stripe_id', models.CharField(unique=True, max_length=191)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('name', models.TextField(blank=True)),
                 ('address_line_1', models.TextField(blank=True)),
@@ -75,7 +77,7 @@ class Migration(migrations.Migration):
             name='Charge',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
-                ('stripe_id', models.CharField(unique=True, max_length=255)),
+                ('stripe_id', models.CharField(unique=True, max_length=191)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('source', models.CharField(max_length=100)),
                 ('currency', models.CharField(max_length=10, default='usd')),
@@ -97,7 +99,7 @@ class Migration(migrations.Migration):
             name='Customer',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
-                ('stripe_id', models.CharField(unique=True, max_length=255)),
+                ('stripe_id', models.CharField(unique=True, max_length=191)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('account_balance', models.DecimalField(null=True, decimal_places=2, max_digits=9)),
                 ('currency', models.CharField(blank=True, max_length=10, default='usd')),
@@ -114,7 +116,7 @@ class Migration(migrations.Migration):
             name='Event',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
-                ('stripe_id', models.CharField(unique=True, max_length=255)),
+                ('stripe_id', models.CharField(unique=True, max_length=191)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('kind', models.CharField(max_length=250)),
                 ('livemode', models.BooleanField(default=False)),
@@ -146,7 +148,7 @@ class Migration(migrations.Migration):
             name='Invoice',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
-                ('stripe_id', models.CharField(unique=True, max_length=255)),
+                ('stripe_id', models.CharField(unique=True, max_length=191)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('amount_due', models.DecimalField(decimal_places=2, max_digits=9)),
                 ('attempted', models.NullBooleanField()),
@@ -192,7 +194,7 @@ class Migration(migrations.Migration):
             name='Plan',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
-                ('stripe_id', models.CharField(unique=True, max_length=255)),
+                ('stripe_id', models.CharField(unique=True, max_length=191)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('amount', models.DecimalField(decimal_places=2, max_digits=9)),
                 ('currency', models.CharField(max_length=15)),
@@ -210,7 +212,7 @@ class Migration(migrations.Migration):
             name='Subscription',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
-                ('stripe_id', models.CharField(unique=True, max_length=255)),
+                ('stripe_id', models.CharField(unique=True, max_length=191)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('application_fee_percent', models.DecimalField(null=True, decimal_places=2, max_digits=3, default=None)),
                 ('cancel_at_period_end', models.BooleanField(default=False)),
@@ -234,7 +236,7 @@ class Migration(migrations.Migration):
             name='Transfer',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
-                ('stripe_id', models.CharField(unique=True, max_length=255)),
+                ('stripe_id', models.CharField(unique=True, max_length=191)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('amount', models.DecimalField(decimal_places=2, max_digits=9)),
                 ('currency', models.CharField(max_length=25, default='usd')),

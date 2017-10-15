@@ -40,10 +40,19 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         the pinax.stripe.models.Customer object that was created
     """
     try:
-        return models.Customer.objects.get(user=user)
+        cus = models.Customer.objects.get(user=user)
     except models.Customer.DoesNotExist:
         pass
+    else:
+        try:
+            stripe.Customer.retrieve(cus.stripe_id)
+        except stripe.error.InvalidRequestError:
+            pass
+        else:
+            return cus
 
+    # At this point we maybe have a local Customer but no stripe customer
+    # let's create one and make the binding
     trial_end = hooks.hookset.trial_period(user, plan)
     stripe_customer = stripe.Customer.create(
         email=user.email,
@@ -52,7 +61,14 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         quantity=quantity,
         trial_end=trial_end
     )
-    cus = models.Customer.objects.create(user=user, stripe_id=stripe_customer["id"])
+    cus, created = models.Customer.objects.get_or_create(
+        user=user,
+        defaults={
+            "stripe_id": stripe_customer["id"]
+        }
+    )
+    if not created:
+        cus.stripe_id = stripe_customer["id"]  # sync_customer will call cus.save()
     sync_customer(cus, stripe_customer)
     if plan and charge_immediately:
         invoices.create_and_pay(cus)

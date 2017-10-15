@@ -1,16 +1,11 @@
-from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
 import stripe
 
-from . import invoices
-from . import sources
-from . import subscriptions
+from . import invoices, sources, subscriptions
+from .. import hooks, models, utils
 from ..conf import settings
-from .. import hooks
-from .. import models
-from .. import utils
 
 
 def can_charge(customer):
@@ -45,7 +40,6 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         the pinax.stripe.models.Customer object that was created
     """
     trial_end = hooks.hookset.trial_period(user, plan)
-
     stripe_customer = stripe.Customer.create(
         email=user.email,
         source=card,
@@ -53,21 +47,19 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         quantity=quantity,
         trial_end=trial_end
     )
-    try:
-        with transaction.atomic():
-            cus = models.Customer.objects.create(
-                user=user,
-                stripe_id=stripe_customer["id"]
-            )
-    except IntegrityError:
-        # There is already a Customer object for this user
+    cus, created = models.Customer.objects.get_or_create(
+        user=user,
+        defaults={
+            "stripe_id": stripe_customer["id"]
+        }
+    )
+    if created:
+        sync_customer(cus, stripe_customer)
+        if plan and charge_immediately:
+            invoices.create_and_pay(cus)
+    else:
+        # remove this extra customer as it is not needed
         stripe.Customer.retrieve(stripe_customer["id"]).delete()
-        return models.Customer.objects.get(user=user)
-
-    sync_customer(cus, stripe_customer)
-
-    if plan and charge_immediately:
-        invoices.create_and_pay(cus)
     return cus
 
 
@@ -81,7 +73,13 @@ def get_customer_for_user(user):
     Returns:
         a pinax.stripe.models.Customer object
     """
-    return next(iter(models.Customer.objects.filter(user=user)), None)
+    return models.Customer.objects.filter(user=user).first()
+
+
+def purge_local(customer):
+    customer.user = None
+    customer.date_purged = timezone.now()
+    customer.save()
 
 
 def purge(customer):
@@ -95,13 +93,11 @@ def purge(customer):
     try:
         customer.stripe_customer.delete()
     except stripe.InvalidRequestError as e:
-        if 'no such customer:' not in smart_str(e).lower():
+        if "no such customer:" not in smart_str(e).lower():
             # The exception was thrown because the customer was already
             # deleted on the stripe side, ignore the exception
             raise
-    customer.user = None
-    customer.date_purged = timezone.now()
-    customer.save()
+    purge_local(customer)
 
 
 def link_customer(event):
@@ -123,7 +119,7 @@ def link_customer(event):
         cus_id = event.message["data"]["object"].get("customer", None)
 
     if cus_id is not None:
-        customer = next(iter(models.Customer.objects.filter(stripe_id=cus_id)), None)
+        customer = models.Customer.objects.filter(stripe_id=cus_id).first()
         if customer is not None:
             event.customer = customer
             event.save()
@@ -145,14 +141,22 @@ def set_default_source(customer, source):
 
 def sync_customer(customer, cu=None):
     """
-    Syncronizes a local Customer object with details from the Stripe API
+    Synchronizes a local Customer object with details from the Stripe API
 
     Args:
         customer: a Customer object
         cu: optionally, data from the Stripe API representing the customer
     """
+    if customer.date_purged is not None:
+        return
+
     if cu is None:
         cu = customer.stripe_customer
+
+    if cu.get("deleted", False):
+        purge_local(customer)
+        return
+
     customer.account_balance = utils.convert_amount_for_db(cu["account_balance"], cu["currency"])
     customer.currency = cu["currency"] or ""
     customer.delinquent = cu["delinquent"]

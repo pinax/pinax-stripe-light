@@ -1,10 +1,9 @@
-from django.core.management.base import BaseCommand
-
 from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
 
 from stripe.error import InvalidRequestError
 
-from ...actions import customers, charges, invoices
+from ...actions import charges, customers, invoices
 
 
 class Command(BaseCommand):
@@ -20,16 +19,17 @@ class Command(BaseCommand):
             count += 1
             perc = int(round(100 * (float(count) / float(total))))
             username = getattr(user, user.USERNAME_FIELD)
-            print(u"[{0}/{1} {2}%] Syncing {3} [{4}]".format(
+            self.stdout.write(u"[{0}/{1} {2}%] Syncing {3} [{4}]\n".format(
                 count, total, perc, username, user.pk
             ))
             customer = customers.get_customer_for_user(user)
             try:
                 customers.sync_customer(customer)
             except InvalidRequestError as e:
-                if e.http_status == 404:
+                if e.http_status == 404:  # pragma: no branch
                     # This user doesn't exist (might be in test mode)
                     continue
 
-            invoices.sync_invoices_for_customer(customer)
-            charges.sync_charges_for_customer(customer)
+            if customer.date_purged is None:
+                invoices.sync_invoices_for_customer(customer)
+                charges.sync_charges_for_customer(customer)

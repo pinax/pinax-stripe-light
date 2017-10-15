@@ -10,7 +10,18 @@ from django.utils import timezone
 from mock import patch
 
 from ..models import (
-    Charge, Customer, Event, EventProcessingException, Invoice, InvoiceItem, Plan, Coupon, Subscription
+    Account,
+    BankAccount,
+    Charge,
+    Coupon,
+    Customer,
+    Event,
+    EventProcessingException,
+    Invoice,
+    InvoiceItem,
+    Plan,
+    Subscription,
+    Transfer
 )
 
 
@@ -54,11 +65,11 @@ class ModelTests(TestCase):
         self.assertEquals(i.plan_display(), "My Plan")
 
     def test_coupon_percent(self):
-        c = Coupon(percent_off=25, duration='repeating', duration_in_months=3)
+        c = Coupon(percent_off=25, duration="repeating", duration_in_months=3)
         self.assertEquals(str(c), "Coupon for 25% off, repeating")
 
     def test_coupon_absolute(self):
-        c = Coupon(amount_off=decimal.Decimal(50.00), duration="once", currency='usd')
+        c = Coupon(amount_off=decimal.Decimal(50.00), duration="once", currency="usd")
         self.assertEquals(str(c), "Coupon for $50, once")
 
     def test_model_table_name(self):
@@ -117,3 +128,13 @@ class StripeObjectTests(TestCase):
     def test_stripe_subscription(self, RetrieveMock):
         Subscription(customer=Customer(stripe_id="foo")).stripe_subscription
         self.assertTrue(RetrieveMock().subscriptions.retrieve.called)
+
+    @patch("stripe.Transfer.retrieve")
+    def test_stripe_transfer(self, RetrieveMock):
+        Transfer(amount=10).stripe_transfer
+        self.assertTrue(RetrieveMock.called)
+
+    @patch("stripe.Account.retrieve")
+    def test_stripe_bankaccount(self, RetrieveMock):
+        BankAccount(account=Account(stripe_id="foo")).stripe_bankaccount
+        self.assertTrue(RetrieveMock.return_value.external_accounts.retrieve.called)

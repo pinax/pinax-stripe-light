@@ -1,12 +1,10 @@
 import decimal
+
 import stripe
 
-from . import charges
-from . import subscriptions
+from . import charges, subscriptions
+from .. import hooks, models, utils
 from ..conf import settings
-from .. import hooks
-from .. import models
-from .. import utils
 
 
 def create(customer):
@@ -129,7 +127,7 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
     sub_id = stripe_invoice.get("subscription")
 
     if stripe_invoice.get("charge"):
-        charge = charges.sync_charge_from_stripe_data(stripe.Charge.retrieve(stripe_invoice["charge"]))
+        charge = charges.sync_charge(stripe_invoice["charge"])
         if send_receipt:
             hooks.hookset.send_receipt(charge)
     else:

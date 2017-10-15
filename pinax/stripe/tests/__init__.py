@@ -7,8 +7,10 @@ TRANSFER_CREATED_TEST_DATA = {
             "date": 1348876800,
             "description": None,
             "id": "tr_XXXXXXXXXXXX",
+            "livemode": True,
             "object": "transfer",
             "other_transfers": [],
+            "reversed": False,
             "status": "paid",
             "summary": {
                 "adjustment_count": 0,
@@ -53,9 +55,11 @@ TRANSFER_CREATED_TEST_DATA2 = {
             "date": 1348876800,
             "description": None,
             "id": "tr_XXXXXXXXXXX2",
+            "livemode": True,
             "object": "transfer",
             "other_transfers": [],
             "status": "paid",
+            "reversed": False,
             "summary": {
                 "adjustment_count": 0,
                 "adjustment_fee_details": [],
@@ -112,6 +116,7 @@ TRANSFER_PENDING_TEST_DATA = {
             "livemode": True,
             "object": "transfer",
             "recipient": None,
+            "reversed": False,
             "statement_descriptor": None,
             "status": "pending"
         }
@@ -122,4 +127,34 @@ TRANSFER_PENDING_TEST_DATA = {
     "pending_webhooks": 1,
     "request": None,
     "type": "transfer.created"
+}
+
+PLAN_CREATED_TEST_DATA = {
+    "data": {
+        "previous_attributes": {
+            "name": "Old name"
+        },
+        "object": {
+            "interval": "month",
+            "amount": 50,
+            "id": "gold1",
+            "trial_period_days": None,
+            "livemode": True,
+            "statement_descriptor": None,
+            "interval_count": 1,
+            "object": "plan",
+            "currency": "usd",
+            "created": 1498573686,
+            "name": "Pro Plan",
+            "metadata": {}
+        }
+    },
+    "type": "plan.updated",
+    "request": None,
+    "api_version": "2017-06-05",
+    "object": "event",
+    "id": "evt_00000000000000",
+    "livemode": True,
+    "pending_webhooks": 1,
+    "created": 1326853478
 }

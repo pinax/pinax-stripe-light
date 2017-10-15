@@ -43,12 +43,6 @@ jobs:
       - image: circleci/python:2.7
         environment:
           TOXENV=py27-dj18
-  py27dj19:
-    <<: *common
-    docker:
-      - image: circleci/python:2.7
-        environment:
-          TOXENV=py27-dj19
   py27dj110:
     <<: *common
     docker:
@@ -73,12 +67,6 @@ jobs:
       - image: circleci/python:3.4
         environment:
           TOXENV=py34-dj18
-  py34dj19:
-    <<: *common
-    docker:
-      - image: circleci/python:3.4
-        environment:
-          TOXENV=py34-dj19
   py34dj110:
     <<: *common
     docker:
@@ -103,12 +91,6 @@ jobs:
       - image: circleci/python:3.5
         environment:
           TOXENV=py35-dj18
-  py35dj19:
-    <<: *common
-    docker:
-      - image: circleci/python:3.5
-        environment:
-          TOXENV=py35-dj19
   py35dj110:
     <<: *common
     docker:
@@ -148,9 +130,6 @@ workflows:
       - py27dj18:
           requires:
             - lint
-      - py27dj19:
-          requires:
-            - lint
       - py27dj110:
           requires:
             - lint
@@ -161,9 +140,6 @@ workflows:
           requires:
             - lint
       - py34dj18:
-          requires:
-            - lint
-      - py34dj19:
           requires:
             - lint
       - py34dj110:
@@ -177,9 +153,6 @@ workflows:
       #     requires:
       #       - lint
       - py35dj18:
-          requires:
-            - lint
-      - py35dj19:
           requires:
             - lint
       - py35dj110:

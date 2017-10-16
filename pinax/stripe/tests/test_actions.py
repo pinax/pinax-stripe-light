@@ -1089,6 +1089,43 @@ class SyncsTests(TestCase):
         sources.sync_payment_source_from_stripe_data(self.customer, source)
         self.assertEquals(Card.objects.get(stripe_id=source["id"]).exp_year, 2022)
 
+    def test_sync_payment_source_from_stripe_data_source_card(self):
+        source = {
+            "id": "src_123",
+            "object": "source",
+            "amount": None,
+            "client_secret": "src_client_secret_123",
+            "created": 1483575790,
+            "currency": None,
+            "flow": "none",
+            "livemode": False,
+            "metadata": {},
+            "owner": {
+                "address": None,
+                "email": None,
+                "name": None,
+                "phone": None,
+                "verified_address": None,
+                "verified_email": None,
+                "verified_name": None,
+                "verified_phone": None,
+            },
+            "status": "chargeable",
+            "type": "card",
+            "usage": "reusable",
+            "card": {
+                "brand": "Visa",
+                "country": "US",
+                "exp_month": 12,
+                "exp_year": 2034,
+                "funding": "debit",
+                "last4": "5556",
+                "three_d_secure": "not_supported"
+            }
+        }
+        sources.sync_payment_source_from_stripe_data(self.customer, source)
+        self.assertFalse(Card.objects.exists())
+
     def test_sync_payment_source_from_stripe_data_bitcoin(self):
         source = {
             "id": "btcrcv_17BE32I10iPhvocMqViUU1w4",

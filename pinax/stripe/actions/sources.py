@@ -42,7 +42,7 @@ def sync_card(customer, source):
 
     Args:
         customer: the customer to create or update a card for
-        source: data reprenting the card from the Stripe API
+        source: data representing the card from the Stripe API
     """
     defaults = dict(
         customer=customer,
@@ -113,9 +113,10 @@ def sync_payment_source_from_stripe_data(customer, source):
         customer: the customer to create or update a Bitcoin receiver for
         source: data reprenting the payment source from the Stripe API
     """
-    if source["id"].startswith("card_"):
+    if source["object"] == "card":
         return sync_card(customer, source)
-    else:
+    # NOTE: this does not seem to be a thing anymore?!
+    if source["object"] == "bitcoin_receiver":
         return sync_bitcoin(customer, source)
 
 

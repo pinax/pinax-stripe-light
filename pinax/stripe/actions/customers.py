@@ -3,13 +3,9 @@ from django.utils.encoding import smart_str
 
 import stripe
 
-from . import invoices
-from . import sources
-from . import subscriptions
+from . import invoices, sources, subscriptions
+from .. import hooks, models, utils
 from ..conf import settings
-from .. import hooks
-from .. import models
-from .. import utils
 
 
 def can_charge(customer):
@@ -77,7 +73,7 @@ def get_customer_for_user(user):
     Returns:
         a pinax.stripe.models.Customer object
     """
-    return next(iter(models.Customer.objects.filter(user=user)), None)
+    return models.Customer.objects.filter(user=user).first()
 
 
 def purge_local(customer):
@@ -123,7 +119,7 @@ def link_customer(event):
         cus_id = event.message["data"]["object"].get("customer", None)
 
     if cus_id is not None:
-        customer = next(iter(models.Customer.objects.filter(stripe_id=cus_id)), None)
+        customer = models.Customer.objects.filter(stripe_id=cus_id).first()
         if customer is not None:
             event.customer = customer
             event.save()

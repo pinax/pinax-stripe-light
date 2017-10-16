@@ -2,20 +2,16 @@ from django.conf.urls import url
 
 from .views import (
     InvoiceListView,
-
-    PaymentMethodListView,
     PaymentMethodCreateView,
     PaymentMethodDeleteView,
+    PaymentMethodListView,
     PaymentMethodUpdateView,
-
-    SubscriptionListView,
     SubscriptionCreateView,
     SubscriptionDeleteView,
+    SubscriptionListView,
     SubscriptionUpdateView,
-
-    Webhook,
+    Webhook
 )
-
 
 urlpatterns = [
     url(r"^subscriptions/$", SubscriptionListView.as_view(), name="pinax_stripe_subscription_list"),

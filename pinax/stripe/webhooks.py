@@ -290,12 +290,13 @@ class CustomerUpdatedWebhook(Webhook):
     description = "Occurs whenever any property of a customer changes."
 
     def process_webhook(self):
-        cu = None
-        try:
-            cu = self.event.message["data"]["object"]
-        except (KeyError, TypeError):
-            pass
-        customers.sync_customer(self.event.customer, cu)
+        if self.event.customer:
+            cu = None
+            try:
+                cu = self.event.message["data"]["object"]
+            except (KeyError, TypeError):
+                pass
+            customers.sync_customer(self.event.customer, cu)
 
 
 class CustomerDiscountCreatedWebhook(Webhook):

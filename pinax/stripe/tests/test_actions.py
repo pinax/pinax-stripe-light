@@ -1,20 +1,42 @@
 import datetime
 import decimal
-from unittest import skipIf
+import json
 import time
+from unittest import skipIf
 
 import django
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
-from django.contrib.auth import get_user_model
-
 import stripe
+from mock import Mock, patch
 
-from mock import patch, Mock
-
-from ..actions import charges, customers, events, invoices, plans, refunds, sources, subscriptions, transfers
-from ..models import BitcoinReceiver, Customer, Charge, Card, Plan, Event, Invoice, Subscription, Transfer
+from ..actions import (
+    accounts,
+    charges,
+    customers,
+    events,
+    externalaccounts,
+    invoices,
+    plans,
+    refunds,
+    sources,
+    subscriptions,
+    transfers
+)
+from ..models import (
+    Account,
+    BitcoinReceiver,
+    Card,
+    Charge,
+    Customer,
+    Event,
+    Invoice,
+    Plan,
+    Subscription,
+    Transfer
+)
 
 
 class ChargesTests(TestCase):
@@ -23,7 +45,7 @@ class ChargesTests(TestCase):
         self.User = get_user_model()
         self.user = self.User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         self.customer = Customer.objects.create(
             user=self.user,
@@ -74,6 +96,70 @@ class ChargesTests(TestCase):
         self.assertTrue(SyncMock.called)
         self.assertTrue(SendReceiptMock.called)
 
+    @patch("pinax.stripe.hooks.hookset.send_receipt")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("stripe.Charge.create")
+    def test_create_with_app_fee(self, CreateMock, SyncMock, SendReceiptMock):
+        charges.create(
+            amount=decimal.Decimal("10"),
+            customer=self.customer,
+            destination_account="xxx",
+            application_fee=decimal.Decimal("25")
+        )
+        self.assertTrue(CreateMock.called)
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["application_fee"], 2500)
+        self.assertEqual(kwargs["destination"]["account"], "xxx")
+        self.assertEqual(kwargs["destination"].get("amount"), None)
+        self.assertTrue(SyncMock.called)
+        self.assertTrue(SendReceiptMock.called)
+
+    @patch("pinax.stripe.hooks.hookset.send_receipt")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("stripe.Charge.create")
+    def test_create_with_destination(self, CreateMock, SyncMock, SendReceiptMock):
+        charges.create(
+            amount=decimal.Decimal("10"),
+            customer=self.customer,
+            destination_account="xxx",
+            destination_amount=decimal.Decimal("45")
+        )
+        self.assertTrue(CreateMock.called)
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["destination"]["account"], "xxx")
+        self.assertEqual(kwargs["destination"]["amount"], 4500)
+        self.assertTrue(SyncMock.called)
+        self.assertTrue(SendReceiptMock.called)
+
+    @patch("stripe.Charge.create")
+    def test_create_not_decimal_raises_exception(self, CreateMock):
+        with self.assertRaises(ValueError):
+            charges.create(
+                amount=decimal.Decimal("100"),
+                customer=self.customer,
+                application_fee=10
+            )
+
+    @patch("stripe.Charge.create")
+    def test_create_app_fee_no_dest_raises_exception(self, CreateMock):
+        with self.assertRaises(ValueError):
+            charges.create(
+                amount=decimal.Decimal("100"),
+                customer=self.customer,
+                application_fee=decimal.Decimal("10")
+            )
+
+    @patch("stripe.Charge.create")
+    def test_create_app_fee_dest_acct_and_dest_amt_raises_exception(self, CreateMock):
+        with self.assertRaises(ValueError):
+            charges.create(
+                amount=decimal.Decimal("100"),
+                customer=self.customer,
+                application_fee=decimal.Decimal("10"),
+                destination_account="xxx",
+                destination_amount=decimal.Decimal("15")
+            )
+
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
     @patch("stripe.Charge.retrieve")
     def test_capture(self, RetrieveMock, SyncMock):
@@ -90,6 +176,12 @@ class ChargesTests(TestCase):
         self.assertEquals(kwargs["amount"], 5000)
         self.assertTrue(SyncMock.called)
 
+    @patch("pinax.stripe.actions.charges.sync_charge")
+    def test_update_availability(self, SyncMock):
+        Charge.objects.create(customer=self.customer, amount=decimal.Decimal("100"), currency="usd", paid=True, captured=True, available=False, refunded=False)
+        charges.update_charge_availability()
+        self.assertTrue(SyncMock.called)
+
 
 class CustomersTests(TestCase):
 
@@ -97,7 +189,7 @@ class CustomersTests(TestCase):
         self.User = get_user_model()
         self.user = self.User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         self.plan = Plan.objects.create(
             stripe_id="p1",
@@ -468,7 +560,7 @@ class SourcesTests(TestCase):
         User = get_user_model()
         user = User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         customer = Customer.objects.create(
             user=user,
@@ -494,7 +586,7 @@ class SourcesTests(TestCase):
         User = get_user_model()
         user = User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         customer = Customer.objects.create(
             user=user,
@@ -523,7 +615,7 @@ class SubscriptionsTests(TestCase):
         self.User = get_user_model()
         self.user = self.User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         self.customer = Customer.objects.create(
             user=self.user,
@@ -726,7 +818,7 @@ class SyncsTests(TestCase):
         self.User = get_user_model()
         self.user = self.User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         self.customer = Customer.objects.create(
             user=self.user,
@@ -1284,6 +1376,100 @@ class SyncsTests(TestCase):
         charge = Charge.objects.get(customer=self.customer, stripe_id=data["id"])
         self.assertEquals(charge.amount, decimal.Decimal("2"))
 
+    def test_sync_charge_from_stripe_data_balance_transaction(self):
+        data = {
+            "id": "ch_17A1dUI10iPhvocMOecpvQlI",
+            "object": "charge",
+            "amount": 200,
+            "amount_refunded": 0,
+            "application_fee": None,
+            "balance_transaction": {
+                "id": "txn_19XJJ02eZvKYlo2ClwuJ1rbA",
+                "object": "balance_transaction",
+                "amount": 999,
+                "available_on": 1483920000,
+                "created": 1483315442,
+                "currency": "usd",
+                "description": None,
+                "fee": 59,
+                "fee_details": [
+                    {
+                        "amount": 59,
+                        "application": None,
+                        "currency": "usd",
+                        "description": "Stripe processing fees",
+                        "type": "stripe_fee"
+                    }
+                ],
+                "net": 940,
+                "source": "ch_19XJJ02eZvKYlo2CHfSUsSpl",
+                "status": "pending",
+                "type": "charge"
+            },
+            "captured": True,
+            "created": 1448213304,
+            "currency": "usd",
+            "customer": self.customer.stripe_id,
+            "description": None,
+            "destination": None,
+            "dispute": None,
+            "failure_code": None,
+            "failure_message": None,
+            "fraud_details": {
+            },
+            "invoice": "in_17A1dUI10iPhvocMSGtIfUDF",
+            "livemode": False,
+            "metadata": {
+            },
+            "paid": True,
+            "receipt_email": None,
+            "receipt_number": None,
+            "refunded": False,
+            "refunds": {
+                "object": "list",
+                "data": [
+
+                ],
+                "has_more": False,
+                "total_count": 0,
+                "url": "/v1/charges/ch_17A1dUI10iPhvocMOecpvQlI/refunds"
+            },
+            "shipping": None,
+            "source": {
+                "id": "card_179o0lI10iPhvocMZgdPiR5M",
+                "object": "card",
+                "address_city": None,
+                "address_country": None,
+                "address_line1": None,
+                "address_line1_check": None,
+                "address_line2": None,
+                "address_state": None,
+                "address_zip": None,
+                "address_zip_check": None,
+                "brand": "Visa",
+                "country": "US",
+                "customer": "cus_7ObCqsp1NGVT6o",
+                "cvc_check": None,
+                "dynamic_last4": None,
+                "exp_month": 10,
+                "exp_year": 2019,
+                "funding": "credit",
+                "last4": "4242",
+                "metadata": {
+                },
+                "name": None,
+                "tokenization_method": None
+            },
+            "statement_descriptor": "A descriptor",
+            "status": "succeeded"
+        }
+        charges.sync_charge_from_stripe_data(data)
+        charge = Charge.objects.get(customer=self.customer, stripe_id=data["id"])
+        self.assertEquals(charge.amount, decimal.Decimal("2"))
+        self.assertEquals(charge.available, False)
+        self.assertEquals(charge.fee, decimal.Decimal("0.59"))
+        self.assertEquals(charge.currency, "usd")
+
     def test_sync_charge_from_stripe_data_description(self):
         data = {
             "id": "ch_17A1dUI10iPhvocMOecpvQlI",
@@ -1573,25 +1759,39 @@ class SyncsTests(TestCase):
         self.assertEqual(charge.amount, decimal.Decimal("2"))
         self.assertEqual(charge.customer, None)
 
-    @patch("stripe.Customer.retrieve")
-    def test_retrieve_stripe_subscription(self, CustomerMock):
-        CustomerMock().subscriptions.retrieve.return_value = "subscription"
+    @patch("stripe.Subscription.retrieve")
+    def test_retrieve_stripe_subscription(self, RetrieveMock):
+        RetrieveMock.return_value = stripe.Subscription(
+            customer="cus_xxxxxxxxxxxxxxx"
+        )
         value = subscriptions.retrieve(self.customer, "sub id")
-        self.assertEquals(value, "subscription")
+        self.assertEquals(value, RetrieveMock.return_value)
 
     def test_retrieve_stripe_subscription_no_sub_id(self):
         value = subscriptions.retrieve(self.customer, None)
         self.assertIsNone(value)
 
-    @patch("stripe.Customer.retrieve")
-    def test_retrieve_stripe_subscription_missing_subscription(self, CustomerMock):
-        CustomerMock().subscriptions.retrieve.side_effect = stripe.InvalidRequestError("does not have a subscription with ID", "error")
+    @patch("stripe.Subscription.retrieve")
+    def test_retrieve_stripe_subscription_diff_customer(self, RetrieveMock):
+        class Subscription:
+            customer = "cus_xxxxxxxxxxxxZZZ"
+
+        RetrieveMock.return_value = Subscription()
+
+        value = subscriptions.retrieve(self.customer, "sub_id")
+        self.assertIsNone(value)
+
+    @patch("stripe.Subscription.retrieve")
+    def test_retrieve_stripe_subscription_missing_subscription(self, RetrieveMock):
+        RetrieveMock.return_value = None
         value = subscriptions.retrieve(self.customer, "sub id")
         self.assertIsNone(value)
 
-    @patch("stripe.Customer.retrieve")
-    def test_retrieve_stripe_subscription_invalid_request(self, CustomerMock):
-        CustomerMock().subscriptions.retrieve.side_effect = stripe.InvalidRequestError("Bad", "error")
+    @patch("stripe.Subscription.retrieve")
+    def test_retrieve_stripe_subscription_invalid_request(self, RetrieveMock):
+        def bad_request(*args, **kwargs):
+            raise stripe.InvalidRequestError("Bad", "error")
+        RetrieveMock.side_effect = bad_request
         with self.assertRaises(stripe.InvalidRequestError):
             subscriptions.retrieve(self.customer, "sub id")
 
@@ -2475,3 +2675,423 @@ class TransfersTests(TestCase):
         )
         transfers.update_status(transfer)
         self.assertEquals(transfer.status, "complete")
+
+    @patch("stripe.Transfer.create")
+    def test_transfer_create(self, CreateMock):
+        CreateMock.return_value = self.data
+        transfers.create(decimal.Decimal("100"), "usd", None, None)
+        self.assertTrue(CreateMock.called)
+
+    @patch("stripe.Transfer.create")
+    def test_transfer_create_with_transfer_group(self, CreateMock):
+        CreateMock.return_value = self.data
+        transfers.create(decimal.Decimal("100"), "usd", None, None, transfer_group="foo")
+        _, kwargs = CreateMock.call_args
+        self.assertEquals(kwargs["transfer_group"], "foo")
+
+    @patch("stripe.Transfer.create")
+    def test_transfer_create_with_stripe_account(self, CreateMock):
+        CreateMock.return_value = self.data
+        transfers.create(decimal.Decimal("100"), "usd", None, None, stripe_account="foo")
+        _, kwargs = CreateMock.call_args
+        self.assertEquals(kwargs["stripe_account"], "foo")
+
+
+class AccountsSyncTestCase(TestCase):
+
+    def setUp(self):
+        self.custom_account_data = json.loads(
+            """{
+      "type":"custom",
+      "tos_acceptance":{
+        "date":1490903452,
+        "ip":"123.107.1.28",
+        "user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36"
+      },
+      "business_logo":null,
+      "email":"operations@someurl.com",
+      "timezone":"Etc/UTC",
+      "statement_descriptor":"SOME COMP",
+      "default_currency":"cad",
+      "transfer_schedule":{
+        "delay_days":3,
+        "interval":"manual"
+      },
+      "display_name":"Some Company",
+      "transfer_statement_descriptor": "For reals",
+      "id":"acct_1A39IGDwqdd5icDO",
+      "transfers_enabled":true,
+      "external_accounts":{
+        "has_more":false,
+        "total_count":1,
+        "object":"list",
+        "data":[
+          {
+            "routing_number":"11000-000",
+            "bank_name":"SOME CREDIT UNION",
+            "account":"acct_1A39IGDwqdd5icDO",
+            "object":"bank_account",
+            "currency":"cad",
+            "country":"CA",
+            "account_holder_name":"Luke Burden",
+            "last4":"6789",
+            "status":"new",
+            "fingerprint":"bZJnuqqS4qIX0SX0",
+            "account_holder_type":"individual",
+            "default_for_currency":true,
+            "id":"ba_1A39IGDwqdd5icDOn9VrFXlQ",
+            "metadata":{}
+          }
+        ],
+        "url":"/v1/accounts/acct_1A39IGDwqdd5icDO/external_accounts"
+      },
+      "support_email":"support@someurl.com",
+      "metadata":{
+        "user_id":"9428"
+      },
+      "support_phone":"7788188181",
+      "business_name":"Woop Woop",
+      "object":"account",
+      "charges_enabled":true,
+      "business_name":"Woop Woop",
+      "debit_negative_balances":false,
+      "country":"CA",
+      "decline_charge_on":{
+        "avs_failure":true,
+        "cvc_failure":true
+      },
+      "product_description":"Monkey Magic",
+      "legal_entity":{
+        "personal_id_number_provided":false,
+        "first_name":"Luke",
+        "last_name":"Baaard",
+        "dob":{
+          "month":2,
+          "day":3,
+          "year":1999
+        },
+        "personal_address":{
+          "city":null,
+          "country":"CA",
+          "line2":null,
+          "line1":null,
+          "state":null,
+          "postal_code":null
+        },
+        "business_tax_id_provided":false,
+        "verification":{
+          "status":"unverified",
+          "details_code":"failed_keyed_identity",
+          "document":null,
+          "details":"Provided identity information could not be verified"
+        },
+        "address":{
+          "city":"Vancouver",
+          "country":"CA",
+          "line2":null,
+          "line1":"14 Alberta St",
+          "state":"BC",
+          "postal_code":"V5Y4Z2"
+        },
+        "business_name":null,
+        "type":"individual"
+      },
+      "details_submitted":true,
+      "verification":{
+        "due_by":null,
+        "fields_needed":[
+          "legal_entity.personal_id_number"
+        ],
+        "disabled_reason":null
+      }
+    }""")
+        self.custom_account_data_no_dob_no_verification_no_tosacceptance = json.loads(
+            """{
+      "type":"custom",
+      "tos_acceptance":{
+        "date":null,
+        "ip":"123.107.1.28",
+        "user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36"
+      },
+      "business_logo":null,
+      "email":"operations@someurl.com",
+      "timezone":"Etc/UTC",
+      "statement_descriptor":"SOME COMP",
+      "default_currency":"cad",
+      "transfer_schedule":{
+        "delay_days":3,
+        "interval":"manual"
+      },
+      "display_name":"Some Company",
+      "transfer_statement_descriptor": "For reals",
+      "id":"acct_1A39IGDwqdd5icDO",
+      "transfers_enabled":true,
+      "external_accounts":{
+        "has_more":false,
+        "total_count":1,
+        "object":"list",
+        "data":[
+          {
+            "routing_number":"11000-000",
+            "bank_name":"SOME CREDIT UNION",
+            "account":"acct_1A39IGDwqdd5icDO",
+            "object":"other",
+            "currency":"cad",
+            "country":"CA",
+            "account_holder_name":"Luke Burden",
+            "last4":"6789",
+            "status":"new",
+            "fingerprint":"bZJnuqqS4qIX0SX0",
+            "account_holder_type":"individual",
+            "default_for_currency":true,
+            "id":"ba_1A39IGDwqdd5icDOn9VrFXlQ",
+            "metadata":{}
+          }
+        ],
+        "url":"/v1/accounts/acct_1A39IGDwqdd5icDO/external_accounts"
+      },
+      "support_email":"support@someurl.com",
+      "metadata":{
+        "user_id":"9428"
+      },
+      "support_phone":"7788188181",
+      "business_name":"Woop Woop",
+      "object":"account",
+      "charges_enabled":true,
+      "business_name":"Woop Woop",
+      "debit_negative_balances":false,
+      "country":"CA",
+      "decline_charge_on":{
+        "avs_failure":true,
+        "cvc_failure":true
+      },
+      "product_description":"Monkey Magic",
+      "legal_entity":{
+        "dob": null,
+        "verification": null,
+        "personal_id_number_provided":false,
+        "first_name":"Luke",
+        "last_name":"Baaard",
+        "personal_address":{
+          "city":null,
+          "country":"CA",
+          "line2":null,
+          "line1":null,
+          "state":null,
+          "postal_code":null
+        },
+        "business_tax_id_provided":false,
+        "address":{
+          "city":"Vancouver",
+          "country":"CA",
+          "line2":null,
+          "line1":"14 Alberta St",
+          "state":"BC",
+          "postal_code":"V5Y4Z2"
+        },
+        "business_name":null,
+        "type":"individual"
+      },
+      "details_submitted":true,
+      "verification":{
+        "due_by":null,
+        "fields_needed":[
+          "legal_entity.personal_id_number"
+        ],
+        "disabled_reason":null
+      }
+    }""")
+        self.not_custom_account_data = json.loads(
+            """{
+      "support_phone":"7788188181",
+      "business_name":"Woop Woop",
+      "business_url":"https://www.someurl.com",
+      "support_url":"https://support.someurl.com",
+      "country":"CA",
+      "object":"account",
+      "business_logo":null,
+      "charges_enabled":true,
+      "support_email":"support@someurl.com",
+      "details_submitted":true,
+      "email":"operations@someurl.com",
+      "transfers_enabled":true,
+      "timezone":"Etc/UTC",
+      "id":"acct_102t2K2m3chDH8uL",
+      "display_name":"Some Company",
+      "statement_descriptor":"SOME COMP",
+      "type":"standard",
+      "default_currency":"cad"
+    }""")
+
+    def assert_common_attributes(self, account):
+        self.assertEqual(account.support_phone, "7788188181")
+        self.assertEqual(account.business_name, "Woop Woop")
+        self.assertEqual(account.country, "CA")
+        self.assertEqual(account.charges_enabled, True)
+        self.assertEqual(account.support_email, "support@someurl.com")
+        self.assertEqual(account.details_submitted, True)
+        self.assertEqual(account.email, "operations@someurl.com")
+        self.assertEqual(account.transfers_enabled, True)
+        self.assertEqual(account.timezone, "Etc/UTC")
+        self.assertEqual(account.display_name, "Some Company")
+        self.assertEqual(account.statement_descriptor, "SOME COMP")
+        self.assertEqual(account.default_currency, "cad")
+
+    def assert_custom_attributes(self, account, dob=None, verification=None, acceptance_date=None, bank_accounts=0):
+
+        # extra top level attributes
+        self.assertEqual(account.debit_negative_balances, False)
+        self.assertEqual(account.product_description, "Monkey Magic")
+        self.assertEqual(account.metadata, {"user_id": "9428"})
+        self.assertEqual(account.transfer_statement_descriptor, "For reals")
+
+        # legal entity
+        self.assertEqual(account.legal_entity_address_city, "Vancouver")
+        self.assertEqual(account.legal_entity_address_country, "CA")
+        self.assertEqual(account.legal_entity_address_line1, "14 Alberta St")
+        self.assertEqual(account.legal_entity_address_line2, None)
+        self.assertEqual(account.legal_entity_address_postal_code, "V5Y4Z2")
+        self.assertEqual(account.legal_entity_address_state, "BC")
+        self.assertEqual(account.legal_entity_dob, dob)
+        self.assertEqual(account.legal_entity_type, "individual")
+        self.assertEqual(account.legal_entity_first_name, "Luke")
+        self.assertEqual(account.legal_entity_last_name, "Baaard")
+        self.assertEqual(account.legal_entity_personal_id_number_provided, False)
+
+        # verification
+        if verification is not None:
+            self.assertEqual(
+                account.legal_entity_verification_details,
+                "Provided identity information could not be verified"
+            )
+            self.assertEqual(
+                account.legal_entity_verification_details_code, "failed_keyed_identity"
+            )
+            self.assertEqual(account.legal_entity_verification_document, None)
+            self.assertEqual(account.legal_entity_verification_status, "unverified")
+
+        self.assertEqual(
+            account.tos_acceptance_date,
+            acceptance_date
+        )
+
+        self.assertEqual(account.tos_acceptance_ip, "123.107.1.28")
+        self.assertEqual(
+            account.tos_acceptance_user_agent,
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36"
+        )
+
+        # decline charge on certain conditions
+        self.assertEqual(account.decline_charge_on_avs_failure, True)
+        self.assertEqual(account.decline_charge_on_cvc_failure, True)
+
+        # transfer schedule
+        self.assertEqual(account.transfer_schedule_interval, "manual")
+        self.assertEqual(account.transfer_schedule_delay_days, 3)
+        self.assertEqual(account.transfer_schedule_weekly_anchor, None)
+        self.assertEqual(account.transfer_schedule_monthly_anchor, None)
+
+        # verification status, key to progressing account setup
+        self.assertEqual(account.verification_disabled_reason, None)
+        self.assertEqual(account.verification_due_by, None)
+        self.assertEqual(
+            account.verification_fields_needed,
+            [
+                "legal_entity.personal_id_number"
+            ]
+        )
+
+        # external accounts should be sync'd - leave the detail check to
+        # its own test
+        self.assertEqual(
+            account.bank_accounts.all().count(), bank_accounts
+        )
+
+    def test_sync_custom_account(self):
+        User = get_user_model()
+        user = User.objects.create_user(
+            username="snuffle",
+            email="upagus@test"
+        )
+        account = accounts.sync_account_from_stripe_data(
+            self.custom_account_data, user=user
+        )
+        self.assertEqual(account.type, "custom")
+        self.assert_common_attributes(account)
+        self.assert_custom_attributes(
+            account,
+            dob=datetime.date(1999, 2, 3),
+            verification="full",
+            acceptance_date=datetime.datetime(2017, 3, 30, 19, 50, 52),
+            bank_accounts=1
+        )
+
+    @patch("pinax.stripe.actions.externalaccounts.sync_bank_account_from_stripe_data")
+    def test_sync_custom_account_no_dob_no_verification(self, SyncMock):
+        User = get_user_model()
+        user = User.objects.create_user(
+            username="snuffle",
+            email="upagus@test"
+        )
+        account = accounts.sync_account_from_stripe_data(
+            self.custom_account_data_no_dob_no_verification_no_tosacceptance, user=user
+        )
+        self.assertEqual(account.type, "custom")
+        self.assert_common_attributes(account)
+        self.assert_custom_attributes(account)
+        self.assertFalse(SyncMock.called)
+
+    def test_sync_not_custom_account(self):
+        account = accounts.sync_account_from_stripe_data(
+            self.not_custom_account_data
+        )
+        self.assertNotEqual(account.type, "custom")
+        self.assert_common_attributes(account)
+
+
+class BankAccountsSyncTestCase(TestCase):
+
+    def setUp(self):
+        self.data = json.loads(
+            """{
+  "id": "ba_19VZfo2m3chDH8uLo0r6WCia",
+  "object": "bank_account",
+  "account": "acct_102t2K2m3chDH8uL",
+  "account_holder_name": "Jane Austen",
+  "account_holder_type": "individual",
+  "bank_name": "STRIPE TEST BANK",
+  "country": "US",
+  "currency": "cad",
+  "default_for_currency": false,
+  "fingerprint": "ObHHcvjOGrhaeWhC",
+  "last4": "6789",
+  "metadata": {
+  },
+  "routing_number": "110000000",
+  "status": "new"
+}
+""")
+
+    def test_sync(self):
+        User = get_user_model()
+        user = User.objects.create_user(
+            username="snuffle",
+            email="upagus@test"
+        )
+        account = Account.objects.create(
+            stripe_id="acct_102t2K2m3chDH8uL",
+            type="custom",
+            user=user
+        )
+        bankaccount = externalaccounts.sync_bank_account_from_stripe_data(
+            self.data
+        )
+        self.assertEqual(bankaccount.account_holder_name, "Jane Austen")
+        self.assertEqual(bankaccount.account, account)
+
+    @patch("pinax.stripe.actions.externalaccounts.sync_bank_account_from_stripe_data")
+    def test_create_bank_account(self, SyncMock):
+        account = Mock()
+        externalaccounts.create_bank_account(account, 123455, "US", "usd")
+        self.assertTrue(account.external_accounts.create.called)
+        self.assertTrue(SyncMock.called)

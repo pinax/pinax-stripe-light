@@ -6,151 +6,121 @@ common: &common
     - checkout
     - restore_cache:
         keys:
-          - v1-deps-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}
-          - v1-deps-
+          - v2-deps-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+          - v2-deps-
     - run:
         name: install dependencies
-        command: pip install --user $DJANGO coverage codecov
+        command: pip install --user tox
     - run:
-        name: run tests
-        command: PATH=~/.local/bin:$PATH coverage run setup.py test
+        name: run tox
+        command: ~/.local/bin/tox
+    - run:
+        name: upload coverage report
+        command: |
+          if [[ "$TOXENV" != checkqa ]]; then
+              PATH=$HOME/.local/bin:$PATH
+              pip install --user codecov
+              ~/.local/bin/codecov --required --flags $CIRCLE_JOB
+          fi
     - save_cache:
         paths:
+          - .tox
+          - ~/.cache/pip
           - ~/.local
           - ./eggs
-        key: v1-deps-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}
-    - run:
-        name: upload coverage results
-        command: PATH=~/.local/bin:$PATH codecov --required --flags $CIRCLE_JOB
+        key: v2-deps-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
 
 jobs:
   lint:
+    <<: *common
     docker:
-      - image: circleci/python:3.6
-    working_directory: ~/repo
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - v2-lint-deps
-      - run:
-          name: install dependencies
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install flake8==3.4.1 flake8-quotes==0.11.0
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-lint-deps
-      - run:
-          name: lint code
-          command: |
-            . venv/bin/activate
-            flake8 pinax
-
+      - image: circleci/python:3.6.1
+        environment:
+          TOXENV=checkqa
   py27dj18:
     <<: *common
     docker:
       - image: circleci/python:2.7
         environment:
-          DJANGO=Django>=1.8,<1.9
-  py27dj19:
-    <<: *common
-    docker:
-      - image: circleci/python:2.7
-        environment:
-          DJANGO=Django>=1.9,<1.10
+          TOXENV=py27-dj18
   py27dj110:
     <<: *common
     docker:
       - image: circleci/python:2.7
         environment:
-          DJANGO=Django>=1.10,<1.11
+          TOXENV=py27-dj110
   py27dj111:
     <<: *common
     docker:
       - image: circleci/python:2.7
         environment:
-          DJANGO=Django>=1.11,<2.0
+          TOXENV=py27-dj111
   py33dj18:
     <<: *common
     docker:
       - image: circleci/python:3.3
         environment:
-          DJANGO=Django>=1.8,<1.9
+          TOXENV=py33-dj18
   py34dj18:
     <<: *common
     docker:
       - image: circleci/python:3.4
         environment:
-          DJANGO=Django>=1.8,<1.9
-  py34dj19:
-    <<: *common
-    docker:
-      - image: circleci/python:3.4
-        environment:
-          DJANGO=Django>=1.9,<1.10
+          TOXENV=py34-dj18
   py34dj110:
     <<: *common
     docker:
       - image: circleci/python:3.4
         environment:
-          DJANGO=Django>=1.10,<1.11
+          TOXENV=py34-dj110
   py34dj111:
     <<: *common
     docker:
       - image: circleci/python:3.4
         environment:
-          DJANGO=Django>=1.11,<2.0
+          TOXENV=py34-dj111
   py34djmaster:
     <<: *common
     docker:
       - image: circleci/python:3.4
         environment:
-          DJANGO=https://github.com/django/django/tarball/master
+          TOXENV=py34-djmaster
   py35dj18:
     <<: *common
     docker:
       - image: circleci/python:3.5
         environment:
-          DJANGO=Django>=1.8,<1.9
-  py35dj19:
-    <<: *common
-    docker:
-      - image: circleci/python:3.5
-        environment:
-          DJANGO=Django>=1.9,<1.10
+          TOXENV=py35-dj18
   py35dj110:
     <<: *common
     docker:
       - image: circleci/python:3.5
         environment:
-          DJANGO=Django>=1.10,<1.11
+          TOXENV=py35-dj110
   py35dj111:
     <<: *common
     docker:
       - image: circleci/python:3.5
         environment:
-          DJANGO=Django>=1.11,<2.0
+          TOXENV=py35-dj111
   py35djmaster:
     <<: *common
     docker:
       - image: circleci/python:3.5
         environment:
-          DJANGO=https://github.com/django/django/tarball/master
+          TOXENV=py35-djmaster
   py36dj111:
     <<: *common
     docker:
       - image: circleci/python:3.6
         environment:
-          DJANGO=Django>=1.11,<2.0
+          TOXENV=py36-dj111
   py36djmaster:
     <<: *common
     docker:
       - image: circleci/python:3.6
         environment:
-          DJANGO=https://github.com/django/django/tarball/master
+          TOXENV=py36-djmaster
 
 workflows:
   version: 2
@@ -158,9 +128,6 @@ workflows:
     jobs:
       - lint
       - py27dj18:
-          requires:
-            - lint
-      - py27dj19:
           requires:
             - lint
       - py27dj110:
@@ -175,9 +142,6 @@ workflows:
       - py34dj18:
           requires:
             - lint
-      - py34dj19:
-          requires:
-            - lint
       - py34dj110:
           requires:
             - lint
@@ -189,9 +153,6 @@ workflows:
       #     requires:
       #       - lint
       - py35dj18:
-          requires:
-            - lint
-      - py35dj19:
           requires:
             - lint
       - py35dj110:

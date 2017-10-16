@@ -7,8 +7,10 @@ TRANSFER_CREATED_TEST_DATA = {
             "date": 1348876800,
             "description": None,
             "id": "tr_XXXXXXXXXXXX",
+            "livemode": True,
             "object": "transfer",
             "other_transfers": [],
+            "reversed": False,
             "status": "paid",
             "summary": {
                 "adjustment_count": 0,
@@ -53,9 +55,11 @@ TRANSFER_CREATED_TEST_DATA2 = {
             "date": 1348876800,
             "description": None,
             "id": "tr_XXXXXXXXXXX2",
+            "livemode": True,
             "object": "transfer",
             "other_transfers": [],
             "status": "paid",
+            "reversed": False,
             "summary": {
                 "adjustment_count": 0,
                 "adjustment_fee_details": [],
@@ -112,6 +116,7 @@ TRANSFER_PENDING_TEST_DATA = {
             "livemode": True,
             "object": "transfer",
             "recipient": None,
+            "reversed": False,
             "statement_descriptor": None,
             "status": "pending"
         }

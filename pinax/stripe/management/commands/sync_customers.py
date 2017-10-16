@@ -1,10 +1,9 @@
-from django.core.management.base import BaseCommand
-
 from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
 
 from stripe.error import InvalidRequestError
 
-from ...actions import customers, charges, invoices
+from ...actions import charges, customers, invoices
 
 
 class Command(BaseCommand):
@@ -27,7 +26,7 @@ class Command(BaseCommand):
             try:
                 customers.sync_customer(customer)
             except InvalidRequestError as e:
-                if e.http_status == 404:
+                if e.http_status == 404:  # pragma: no branch
                     # This user doesn't exist (might be in test mode)
                     continue
 

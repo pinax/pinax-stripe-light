@@ -22,23 +22,7 @@ def can_charge(customer):
     return False
 
 
-def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
-    """
-    Creates a Stripe customer.
-
-    If a customer already exists, the existing customer will be returned.
-
-    Args:
-        user: a user object
-        card: optionally, the token for a new card
-        plan: a plan to subscribe the user to
-        charge_immediately: whether or not the user should be immediately
-                            charged for the subscription
-        quantity: the quantity (multiplier) of the subscription
-
-    Returns:
-        the pinax.stripe.models.Customer object that was created
-    """
+def _create_without_account(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
     try:
         cus = models.Customer.objects.get(user=user)
     except models.Customer.DoesNotExist:
@@ -75,17 +59,83 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
     return cus
 
 
-def get_customer_for_user(user):
+def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
+    try:
+        cus = user.customers.get(user_account__account=stripe_account).get()
+    except models.Customer.DoesNotExist:
+        cus = None
+        pass
+    else:
+        try:
+            stripe.Customer.retrieve(cus.stripe_id)
+        except stripe.error.InvalidRequestError:
+            pass
+        else:
+            return cus
+
+    # At this point we maybe have a local Customer but no stripe customer
+    # let's create one and make the binding
+    trial_end = hooks.hookset.trial_period(user, plan)
+    stripe_customer = stripe.Customer.create(
+        email=user.email,
+        source=card,
+        plan=plan,
+        quantity=quantity,
+        trial_end=trial_end
+    )
+
+    if cus is None:
+        cus = models.Customer.objects.create(stripe_id=stripe_customer["id"])
+        models.UserAccount.objects.create(
+            user=user,
+            account=stripe_account,
+            customer=cus,
+        )
+    else:
+        cus.stripe_id = stripe_customer["id"]  # sync_customer will call cus.save()
+    sync_customer(cus, stripe_customer)
+    if plan and charge_immediately:
+        invoices.create_and_pay(cus)
+    return cus
+
+
+def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None, stripe_account=None):
+    """
+    Creates a Stripe customer.
+
+    If a customer already exists, the existing customer will be returned.
+
+    Args:
+        user: a user object
+        card: optionally, the token for a new card
+        plan: a plan to subscribe the user to
+        charge_immediately: whether or not the user should be immediately
+                            charged for the subscription
+        quantity: the quantity (multiplier) of the subscription
+        stripe_account: An account object. If given, the Customer and User relation will be established for you through UserAccount model.
+        Because a single User might have several Customers, one per Account.
+
+    Returns:
+        the pinax.stripe.models.Customer object that was created
+    """
+    if stripe_account is None:
+        return _create_without_account(user, card=card, plan=plan, charge_immediately=charge_immediately, quantity=quantity)
+    return _create_with_account(user, stripe_account, card=card, plan=plan, charge_immediately=charge_immediately, quantity=quantity)
+
+
+def get_customer_for_user(user, stripe_account=None):
     """
     Get a customer object for a given user
 
     Args:
-        user: a user object
+         user: a user object
 
     Returns:
         a pinax.stripe.models.Customer object
     """
-    return models.Customer.objects.filter(user=user).first()
+    if stripe_account is None:
+        return models.Customer.objects.filter(user=user).first()
+    return user.customers.filter(user_account__account=stripe_account).first()
 
 
 def purge_local(customer):

@@ -3,7 +3,7 @@ from django.utils.encoding import smart_str
 
 import stripe
 
-from . import invoices, sources, subscriptions
+from . import invoices
 from .. import hooks, models, utils
 from ..conf import settings
 
@@ -162,7 +162,3 @@ def sync_customer(customer, cu=None):
     customer.delinquent = cu["delinquent"]
     customer.default_source = cu["default_source"] or ""
     customer.save()
-    for source in cu["sources"]["data"]:
-        sources.sync_payment_source_from_stripe_data(customer, source)
-    for subscription in cu["subscriptions"]["data"]:
-        subscriptions.sync_subscription_from_stripe_data(customer, subscription)

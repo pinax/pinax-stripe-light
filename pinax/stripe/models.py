@@ -223,7 +223,7 @@ class BitcoinReceiver(StripeObject):
     used_for_payment = models.BooleanField(default=False)
 
 
-class Subscription(StripeObject):
+class Subscription(AccountRelatedStripeObject):
 
     STATUS_CURRENT = ["trialing", "active"]
 

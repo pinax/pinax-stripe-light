@@ -239,6 +239,8 @@ customer_has_card.short_description = "Customer Has Card"  # noqa
 
 
 def customer_user(obj):
+    if not obj.customer.user:
+        return ""
     User = get_user_model()
     username = getattr(obj.customer.user, User.USERNAME_FIELD)
     email = getattr(obj, "email", "")

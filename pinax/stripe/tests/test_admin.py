@@ -1,7 +1,7 @@
 import datetime
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client, SimpleTestCase, TestCase
 from django.utils import timezone
 
 from ..models import Customer, Invoice, Plan, Subscription
@@ -137,3 +137,17 @@ class AdminTestCase(TestCase):
         url = reverse("admin:pinax_stripe_charge_changelist")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+
+
+class AdminSimpleTestCase(SimpleTestCase):
+
+    def test_customer_user_without_user(self):
+        from ..admin import customer_user
+
+        class CustomerWithoutUser(object):
+            user = None
+
+        class Obj(object):
+            customer = CustomerWithoutUser()
+
+        self.assertEqual(customer_user(Obj()), "")

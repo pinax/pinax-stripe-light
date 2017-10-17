@@ -673,9 +673,6 @@ class SubscriptionsTests(TestCase):
             user=self.user,
             stripe_id="cus_xxxxxxxxxxxxxxx"
         )
-        self.account = Account.objects.create(
-            stripe_id="acc_1"
-        )
 
     def test_has_active_subscription(self):
         plan = Plan.objects.create(
@@ -816,14 +813,6 @@ class SubscriptionsTests(TestCase):
         subscriptions.create(self.customer, "the-plan")
         sub_create = CustomerMock().subscriptions.create
         self.assertTrue(sub_create.called)
-        self.assertTrue(SyncMock.called)
-
-    @patch("stripe.Customer.retrieve")
-    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
-    def test_subscription_create_with_stripe_account(self, SyncMock, CustomerMock):
-        subscriptions.create(self.customer, "the-plan", stripe_account=self.account)
-        sub_create = CustomerMock().subscriptions.create
-        sub_create.assert_called_with(plan="the-plan", quantity=4, coupon=None, tax_percent=None, stripe_account="acc_1")
         self.assertTrue(SyncMock.called)
 
     @patch("stripe.Customer.retrieve")

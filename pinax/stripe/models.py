@@ -42,7 +42,7 @@ class Plan(AccountRelatedStripeObject):
     name = models.CharField(max_length=150)
     statement_descriptor = models.TextField(blank=True)
     trial_period_days = models.IntegerField(null=True)
-    metadata = JSONField(null=True)
+    metadata = JSONField(null=True, blank=True)
 
     def __str__(self):
         return "{} ({}{})".format(self.name, CURRENCY_SYMBOLS.get(self.currency, ""), self.amount)
@@ -57,7 +57,7 @@ class Coupon(StripeObject):
     duration_in_months = models.PositiveIntegerField(null=True)
     livemode = models.BooleanField(default=False)
     max_redemptions = models.PositiveIntegerField(null=True)
-    metadata = JSONField(null=True)
+    metadata = JSONField(null=True, blank=True)
     percent_off = models.PositiveIntegerField(null=True)
     redeem_by = models.DateTimeField(null=True)
     times_redeemed = models.PositiveIntegerField(null=True)
@@ -92,7 +92,7 @@ class Event(AccountRelatedStripeObject):
     livemode = models.BooleanField(default=False)
     customer = models.ForeignKey("Customer", null=True, on_delete=models.CASCADE)
     webhook_message = JSONField()
-    validated_message = JSONField(null=True)
+    validated_message = JSONField(null=True, blank=True)
     valid = models.NullBooleanField(null=True)
     processed = models.BooleanField(default=False)
     request = models.CharField(max_length=100, blank=True)
@@ -416,7 +416,7 @@ class Account(StripeObject):
     # The type of the Stripe account. Can be "standard", "express", or "custom".
     type = models.TextField(null=True, blank=True)
 
-    metadata = JSONField(null=True)
+    metadata = JSONField(null=True, blank=True)
 
     product_description = models.TextField(null=True, blank=True)
     statement_descriptor = models.TextField(null=True, blank=True)
@@ -441,7 +441,7 @@ class Account(StripeObject):
     verification_disabled_reason = models.TextField(null=True, blank=True)
     verification_due_by = models.DateTimeField(null=True, blank=True)
     verification_timestamp = models.DateTimeField(null=True, blank=True)
-    verification_fields_needed = JSONField(null=True)
+    verification_fields_needed = JSONField(null=True, blank=True)
 
     @property
     def stripe_account(self):
@@ -459,7 +459,7 @@ class BankAccount(StripeObject):
     default_for_currency = models.BooleanField(default=False)
     fingerprint = models.TextField()
     last4 = models.CharField(max_length=4)
-    metadata = JSONField(null=True)
+    metadata = JSONField(null=True, blank=True)
     routing_number = models.TextField()
     status = models.TextField()
 

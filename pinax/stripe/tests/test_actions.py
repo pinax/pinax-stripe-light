@@ -452,6 +452,13 @@ class EventsTests(TestCase):
         self.assertEquals(event.kind, "account.updated")
         self.assertTrue(ProcessMock.called)
 
+    @patch("pinax.stripe.webhooks.AccountUpdatedWebhook.process")
+    def test_add_event_connect(self, ProcessMock):
+        events.add_event(stripe_id="evt_001", kind="account.updated", livemode=True, message={}, stripe_account="acct_001")
+        event = Event.objects.get(stripe_id="evt_001", stripe_account="acct_001")
+        self.assertEquals(event.kind, "account.updated")
+        self.assertTrue(ProcessMock.called)
+
     def test_add_event_new_webhook_kind(self):
         events.add_event(stripe_id="evt_002", kind="patrick.got.coffee", livemode=True, message={})
         event = Event.objects.get(stripe_id="evt_002")

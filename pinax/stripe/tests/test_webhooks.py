@@ -209,20 +209,28 @@ class ChargeWebhookTest(TestCase):
 class CustomerUpdatedWebhookTest(TestCase):
 
     @patch("pinax.stripe.actions.customers.sync_customer")
-    def test_process_webhook(self, SyncMock):
+    def test_process_webhook_without_customer(self, SyncMock):
         event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
         CustomerUpdatedWebhook(event).process_webhook()
-        self.assertEquals(SyncMock.call_count, 1)
-        self.assertEquals(SyncMock.call_args[0], (None, None))
+        self.assertEquals(SyncMock.call_count, 0)
 
     @patch("pinax.stripe.actions.customers.sync_customer")
-    def test_process_webhook_with_data(self, SyncMock):
+    def test_process_webhook_without_customer_with_data(self, SyncMock):
         event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
         obj = object()
         event.validated_message = dict(data=dict(object=obj))
         CustomerUpdatedWebhook(event).process_webhook()
+        self.assertEquals(SyncMock.call_count, 0)
+
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    def test_process_webhook_with_customer_with_data(self, SyncMock):
+        customer = Customer.objects.create()
+        event = Event.objects.create(kind=CustomerUpdatedWebhook.name, customer=customer, webhook_message={}, valid=True, processed=False)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CustomerUpdatedWebhook(event).process_webhook()
         self.assertEquals(SyncMock.call_count, 1)
-        self.assertIsNone(SyncMock.call_args[0][0])
+        self.assertIs(SyncMock.call_args[0][0], customer)
         self.assertIs(SyncMock.call_args[0][1], obj)
 
 

@@ -196,3 +196,8 @@ class CommandTests(TestCase):
         self.assertIsNotNone(Customer.objects.get(stripe_id=customer.stripe_id).date_purged)
         self.assertEqual(SyncChargesMock.call_count, 0)
         self.assertEqual(SyncInvoicesMock.call_count, 0)
+
+    @patch("pinax.stripe.actions.charges.update_charge_availability")
+    def test_update_charge_availability(self, UpdateChargeMock):
+        management.call_command("update_charge_availability")
+        self.assertEqual(UpdateChargeMock.call_count, 1)

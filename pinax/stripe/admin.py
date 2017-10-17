@@ -1,8 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Q
+from django.db.models import Count
 
 from .models import (  # @@@ make all these read-only
+    Account,
+    BankAccount,
     BitcoinReceiver,
     Card,
     Charge,
@@ -19,12 +21,12 @@ from .models import (  # @@@ make all these read-only
 )
 
 
-def user_search_fields():  # coverage: omit
+def user_search_fields():
     User = get_user_model()
     fields = [
         "user__{0}".format(User.USERNAME_FIELD)
     ]
-    if "email" in [f.name for f in User._meta.fields]:
+    if "email" in [f.name for f in User._meta.fields]:  # pragma: no branch
         fields += ["user__email"]
     return fields
 
@@ -47,11 +49,10 @@ class CustomerHasCardListFilter(admin.SimpleListFilter):
         ]
 
     def queryset(self, request, queryset):
-        no_card = Q(card__fingerprint="") | Q(card=None)
         if self.value() == "yes":
-            return queryset.exclude(no_card)
+            return queryset.filter(card__isnull=True)
         elif self.value() == "no":
-            return queryset.filter(no_card)
+            return queryset.filter(card__isnull=False)
         return queryset.all()
 
 
@@ -66,13 +67,10 @@ class InvoiceCustomerHasCardListFilter(admin.SimpleListFilter):
         ]
 
     def queryset(self, request, queryset):
-        no_card = (Q(customer__card__fingerprint="") | Q(customer__card=None))
-        if self.value() == "yes":  # coverage: omit
-            # Worked when manually tested, getting a weird error otherwise
-            # Better than no tests at all
-            return queryset.exclude(no_card)
+        if self.value() == "yes":
+            return queryset.filter(customer__card__isnull=True)
         elif self.value() == "no":
-            return queryset.filter(no_card)
+            return queryset.filter(customer__card__isnull=False)
         return queryset.all()
 
 
@@ -375,5 +373,40 @@ admin.site.register(
     ],
     inlines=[
         TransferChargeFeeInline
+    ]
+)
+
+
+admin.site.register(
+    Account,
+    raw_id_fields=["user"],
+    list_display=[
+        "stripe_id",
+        "type",
+        "country",
+        "transfers_enabled",
+        "charges_enabled"
+    ],
+    search_fields=[
+        "stripe_id",
+    ]
+)
+
+admin.site.register(
+    BankAccount,
+    raw_id_fields=["account"],
+    list_display=[
+        "stripe_id",
+        "account",
+        "account_holder_type",
+        "account_holder_name",
+        "currency",
+        "default_for_currency",
+        "bank_name",
+        "country",
+        "last4"
+    ],
+    search_fields=[
+        "stripe_id",
     ]
 )

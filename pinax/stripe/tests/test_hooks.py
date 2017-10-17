@@ -14,7 +14,7 @@ class HooksTestCase(TestCase):
         self.User = get_user_model()
         self.user = self.User.objects.create_user(
             username="patrick",
-            email="paltman@eldarion.com"
+            email="paltman@example.com"
         )
         self.customer = Customer.objects.create(
             user=self.user,
@@ -61,10 +61,9 @@ class HooksTestCase(TestCase):
             disputed=False,
             receipt_sent=False
         )
-        self.hookset.send_receipt(charge, email="email@override.com")
+        self.hookset.send_receipt(charge, email="goose@topgun.com")
         self.assertTrue(Charge.objects.get(pk=charge.pk).receipt_sent)
-        self.assertTrue(len(mail.outbox), 1)
-        self.assertEquals(mail.outbox[0].to, ["email@override.com"])
+        self.assertEqual(mail.outbox[0].to, ["goose@topgun.com"])
 
     def test_send_receipt_already_sent(self):
         charge = Charge.objects.create(

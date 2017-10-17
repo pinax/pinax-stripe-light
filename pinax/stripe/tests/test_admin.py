@@ -125,6 +125,9 @@ class AdminTestCase(TestCase):
         response = self.client.get(url + "?has_card=no")
         self.assertEqual(response.status_code, 200)
 
+        response = self.client.get(url + "?has_card=yes")
+        self.assertEqual(response.status_code, 200)
+
     def test_plan_admin(self):
         url = reverse("admin:pinax_stripe_plan_changelist")
         response = self.client.get(url)

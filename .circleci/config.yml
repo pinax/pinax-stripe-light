@@ -124,49 +124,21 @@ jobs:
 
 workflows:
   version: 2
-  lint-and-test:
+  test:
     jobs:
       - lint
-      - py27dj18:
-          requires:
-            - lint
-      - py27dj110:
-          requires:
-            - lint
-      - py27dj111:
-          requires:
-            - lint
-      - py33dj18:
-          requires:
-            - lint
-      - py34dj18:
-          requires:
-            - lint
-      - py34dj110:
-          requires:
-            - lint
-      - py34dj111:
-          requires:
-            - lint
+      - py27dj18
+      - py27dj110
+      - py27dj111
+      - py33dj18
+      - py34dj18
+      - py34dj110
+      - py34dj111
       # Failing to start Django Tests for some reason
       # - py34djmaster:
-      #     requires:
-      #       - lint
-      - py35dj18:
-          requires:
-            - lint
-      - py35dj110:
-          requires:
-            - lint
-      - py35dj111:
-          requires:
-            - lint
-      - py35djmaster:
-          requires:
-            - lint
-      - py36dj111:
-          requires:
-            - lint
-      - py36djmaster:
-          requires:
-            - lint
+      - py35dj18
+      - py35dj110
+      - py35dj111
+      - py35djmaster
+      - py36dj111
+      - py36djmaster

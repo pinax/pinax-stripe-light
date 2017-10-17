@@ -16,6 +16,7 @@ from .managers import ChargeManager, CustomerManager
 from .utils import CURRENCY_SYMBOLS
 
 
+@python_2_unicode_compatible
 class StripeObject(models.Model):
 
     stripe_id = models.CharField(max_length=191, unique=True)
@@ -33,7 +34,6 @@ class AccountRelatedStripeObject(StripeObject):
         abstract = True
 
 
-@python_2_unicode_compatible
 class Plan(AccountRelatedStripeObject):
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=15)
@@ -48,7 +48,6 @@ class Plan(AccountRelatedStripeObject):
         return "{} ({}{})".format(self.name, CURRENCY_SYMBOLS.get(self.currency, ""), self.amount)
 
 
-@python_2_unicode_compatible
 class Coupon(StripeObject):
 
     amount_off = models.DecimalField(decimal_places=2, max_digits=9, null=True)
@@ -72,7 +71,6 @@ class Coupon(StripeObject):
         return "Coupon for {}, {}".format(description, self.duration)
 
 
-@python_2_unicode_compatible
 class EventProcessingException(models.Model):
 
     event = models.ForeignKey("Event", null=True, on_delete=models.CASCADE)
@@ -85,7 +83,6 @@ class EventProcessingException(models.Model):
         return "<{}, pk={}, Event={}>".format(self.message, self.pk, self.event)
 
 
-@python_2_unicode_compatible
 class Event(AccountRelatedStripeObject):
 
     kind = models.CharField(max_length=250)
@@ -156,7 +153,6 @@ class TransferChargeFee(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
 
-@python_2_unicode_compatible
 class Customer(AccountRelatedStripeObject):
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)

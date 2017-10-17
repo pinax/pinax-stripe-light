@@ -81,7 +81,8 @@ def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_ST
         source=card,
         plan=plan,
         quantity=quantity,
-        trial_end=trial_end
+        trial_end=trial_end,
+        stripe_account=stripe_account.stripe_id,
     )
 
     if cus is None:

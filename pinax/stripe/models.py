@@ -178,7 +178,7 @@ class Customer(AccountRelatedStripeObject):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
     users = models.ManyToManyField(settings.AUTH_USER_MODEL, through=UserAccount,
                                    related_name="customers",
-                                   related_query_name="customers", null=True)
+                                   related_query_name="customers")
     account_balance = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     currency = models.CharField(max_length=10, default="usd", blank=True)
     delinquent = models.BooleanField(default=False)

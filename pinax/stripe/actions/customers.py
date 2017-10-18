@@ -139,7 +139,7 @@ def get_customer_for_user(user, stripe_account=None):
 
 
 def purge_local(customer):
-    customer.users.all().delete()
+    customer.user_accounts.all().delete()
     customer.user = None
     customer.date_purged = timezone.now()
     customer.save()

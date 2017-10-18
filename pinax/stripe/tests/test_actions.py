@@ -392,6 +392,7 @@ class CustomersTests(TestCase):
         self.assertIsNone(Customer.objects.get(stripe_id=customer.stripe_id).user)
         self.assertIsNotNone(Customer.objects.get(stripe_id=customer.stripe_id).date_purged)
         self.assertFalse(UserAccount.objects.exists())
+        self.assertTrue(self.User.objects.exists())
 
     @patch("stripe.Customer.retrieve")
     def test_purge_already_deleted(self, RetrieveMock):

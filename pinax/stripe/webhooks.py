@@ -291,11 +291,7 @@ class CustomerUpdatedWebhook(Webhook):
 
     def process_webhook(self):
         if self.event.customer:
-            cu = None
-            try:
-                cu = self.event.message["data"]["object"]
-            except (KeyError, TypeError):
-                pass
+            cu = self.event.message["data"]["object"]
             customers.sync_customer(self.event.customer, cu)
 
 

@@ -61,7 +61,7 @@ def _create_without_account(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_
 
 def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
     try:
-        cus = user.customers.get(user_account__account=stripe_account)
+        cus = user.customers.get(user_account__account=stripe_account, stripe_account=stripe_account.stripe_id)
     except models.Customer.DoesNotExist:
         cus = None
         pass

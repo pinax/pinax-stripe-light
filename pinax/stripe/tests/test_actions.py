@@ -35,7 +35,8 @@ from ..models import (
     Invoice,
     Plan,
     Subscription,
-    Transfer
+    Transfer,
+    UserAccount,
 )
 
 
@@ -373,6 +374,24 @@ class CustomersTests(TestCase):
         self.assertTrue(RetrieveMock().delete.called)
         self.assertIsNone(Customer.objects.get(stripe_id=customer.stripe_id).user)
         self.assertIsNotNone(Customer.objects.get(stripe_id=customer.stripe_id).date_purged)
+
+    @patch("stripe.Customer.retrieve")
+    def test_purge_connected(self, RetrieveMock):
+        account = Account.objects.create(
+            stripe_id="acct_X",
+            type="standard",
+        )
+        customer = Customer.objects.create(
+            user=self.user,
+            stripe_account=account.stripe_id,
+            stripe_id="cus_xxxxxxxxxxxxxxx",
+        )
+        UserAccount.objects.create(user=self.user, account=account, customer=customer)
+        customers.purge(customer)
+        self.assertTrue(RetrieveMock().delete.called)
+        self.assertIsNone(Customer.objects.get(stripe_id=customer.stripe_id).user)
+        self.assertIsNotNone(Customer.objects.get(stripe_id=customer.stripe_id).date_purged)
+        self.assertFalse(UserAccount.objects.exists())
 
     @patch("stripe.Customer.retrieve")
     def test_purge_already_deleted(self, RetrieveMock):

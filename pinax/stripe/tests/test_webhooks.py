@@ -1,6 +1,7 @@
 import decimal
 import json
 
+from django.contrib.auth import get_user_model
 from django.dispatch import Signal
 from django.test import TestCase
 from django.test.client import Client
@@ -14,11 +15,19 @@ from . import (
     TRANSFER_CREATED_TEST_DATA,
     TRANSFER_PENDING_TEST_DATA
 )
-from ..models import Customer, Event, EventProcessingException, Plan, Transfer
+from ..models import (
+    Account,
+    Customer,
+    Event,
+    EventProcessingException,
+    Plan,
+    Transfer
+)
 from ..webhooks import (
     AccountApplicationDeauthorizeWebhook,
     AccountUpdatedWebhook,
     ChargeCapturedWebhook,
+    CustomerCreatedWebhook,
     CustomerSourceCreatedWebhook,
     CustomerSourceDeletedWebhook,
     CustomerSubscriptionCreatedWebhook,
@@ -232,6 +241,28 @@ class CustomerUpdatedWebhookTest(TestCase):
         self.assertEquals(SyncMock.call_count, 1)
         self.assertIs(SyncMock.call_args[0][0], customer)
         self.assertIs(SyncMock.call_args[0][1], obj)
+
+
+class CustomerCreatedWebhookTest(TestCase):
+
+    @patch("pinax.stripe.actions.customers.create")
+    def test_process_webhook(self, CreateMock):
+        user = get_user_model().objects.create()
+        event = Event.objects.create(kind=CustomerCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CustomerCreatedWebhook(event).process_webhook()
+        CreateMock.called_once_with_args(user, stripe_account=None)
+
+    @patch("pinax.stripe.actions.customers.create")
+    def test_process_webhook_with_stripe_account(self, CreateMock):
+        user = get_user_model().objects.create()
+        account = Account.objects.create(stripe_id="acc_A")
+        event = Event.objects.create(kind=CustomerCreatedWebhook.name, webhook_message={}, valid=True, processed=False, stripe_account=account.stripe_id)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CustomerCreatedWebhook(event).process_webhook()
+        CreateMock.called_once_with_args(user, stripe_account=account.stripe_id)
 
 
 class CustomerSourceCreatedWebhookTest(TestCase):

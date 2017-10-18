@@ -459,6 +459,74 @@ class CustomersTests(TestCase):
         self.assertIsNone(event.customer)
 
 
+class CustomersWithConnectTests(TestCase):
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            username="patrick",
+            email="paltman@example.com"
+        )
+        self.plan = Plan.objects.create(
+            stripe_id="p1",
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
+        self.account = Account.objects.create(
+            stripe_id="acc_XXX"
+        )
+
+    def test_get_customer_for_user_with_stripe_account(self):
+        expected = Customer.objects.create(stripe_id="x", user=self.user)
+        UserAccount.objects.create(user=self.user,
+                                   customer=expected,
+                                   account=self.account)
+        actual = customers.get_customer_for_user(
+            self.user, stripe_account=self.account.stripe_id)
+        self.assertEquals(expected, actual)
+
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    @patch("stripe.Customer.create")
+    def test_customer_create_with_connect(self, CreateMock, SyncMock):
+        CreateMock.return_value = dict(id="cus_XXXXX")
+        customer = customers.create(self.user, stripe_account=self.account.stripe_id)
+        self.assertIsNone(customer.user)
+        self.assertEqual(customer.stripe_id, "cus_XXXXX")
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["email"], self.user.email)
+        self.assertEqual(kwargs["stripe_account"], self.account.stripe_id)
+        self.assertIsNone(kwargs["source"])
+        self.assertIsNone(kwargs["plan"])
+        self.assertIsNone(kwargs["trial_end"])
+        self.assertTrue(SyncMock.called)
+
+    @patch("stripe.Customer.retrieve")
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    @patch("stripe.Customer.create")
+    def test_customer_create_with_connect_stale_user_account(self, CreateMock, SyncMock, RetrieveMock):
+        CreateMock.return_value = dict(id="cus_XXXXX")
+        RetrieveMock.side_effect = stripe.error.InvalidRequestError(
+            message="Not Found", param="stripe_id"
+        )
+        ua = UserAccount.objects.create(user=self.user,
+                                        account=self.account,
+                                        customer=Customer.objects.create(stripe_id="cus_Z"))
+        customer = customers.create(self.user, stripe_account=self.account.stripe_id)
+        self.assertIsNone(customer.user)
+        self.assertEqual(customer.stripe_id, "cus_XXXXX")
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["email"], self.user.email)
+        self.assertEqual(kwargs["stripe_account"], self.account.stripe_id)
+        self.assertIsNone(kwargs["source"])
+        self.assertIsNone(kwargs["plan"])
+        self.assertIsNone(kwargs["trial_end"])
+        self.assertTrue(SyncMock.called)
+        self.assertEqual(self.user.user_accounts.get(), ua)
+
+
 class EventsTests(TestCase):
 
     def test_dupe_event_exists(self):

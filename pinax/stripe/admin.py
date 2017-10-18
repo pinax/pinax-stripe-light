@@ -17,7 +17,8 @@ from .models import (  # @@@ make all these read-only
     Plan,
     Subscription,
     Transfer,
-    TransferChargeFee
+    TransferChargeFee,
+    UserAccount
 )
 
 
@@ -408,5 +409,16 @@ admin.site.register(
     ],
     search_fields=[
         "stripe_id",
+    ]
+)
+
+admin.site.register(
+    UserAccount,
+    raw_id_fields=["user", "customer", "account"],
+    list_display=["user", "customer", "account"],
+    search_fields=[
+        "=customer__stripe_id",
+        "=account__stripe_id",
+        "=user__email",
     ]
 )

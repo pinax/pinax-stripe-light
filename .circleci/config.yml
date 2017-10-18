@@ -55,12 +55,6 @@ jobs:
       - image: circleci/python:2.7
         environment:
           TOXENV=py27-dj111
-  py33dj18:
-    <<: *common
-    docker:
-      - image: circleci/python:3.3
-        environment:
-          TOXENV=py33-dj18
   py34dj18:
     <<: *common
     docker:
@@ -84,7 +78,7 @@ jobs:
     docker:
       - image: circleci/python:3.4
         environment:
-          TOXENV=py34-djmaster
+          TOXENV=py34-dj20
   py35dj18:
     <<: *common
     docker:
@@ -108,7 +102,7 @@ jobs:
     docker:
       - image: circleci/python:3.5
         environment:
-          TOXENV=py35-djmaster
+          TOXENV=py35-dj20
   py36dj111:
     <<: *common
     docker:
@@ -120,7 +114,7 @@ jobs:
     docker:
       - image: circleci/python:3.6
         environment:
-          TOXENV=py36-djmaster
+          TOXENV=py36-dj20
 
 workflows:
   version: 2
@@ -136,9 +130,6 @@ workflows:
       - py27dj111:
           requires:
             - lint
-      - py33dj18:
-          requires:
-            - lint
       - py34dj18:
           requires:
             - lint
@@ -149,7 +140,7 @@ workflows:
           requires:
             - lint
       # Failing to start Django Tests for some reason
-      # - py34djmaster:
+      # - py34dj20:
       #     requires:
       #       - lint
       - py35dj18:
@@ -161,12 +152,12 @@ workflows:
       - py35dj111:
           requires:
             - lint
-      - py35djmaster:
+      - py35dj20:
           requires:
             - lint
       - py36dj111:
           requires:
             - lint
-      - py36djmaster:
+      - py36dj20:
           requires:
             - lint

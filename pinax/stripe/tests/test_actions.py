@@ -36,7 +36,7 @@ from ..models import (
     Plan,
     Subscription,
     Transfer,
-    UserAccount,
+    UserAccount
 )
 
 

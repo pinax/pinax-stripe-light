@@ -169,7 +169,7 @@ class UserAccount(models.Model):
                                  related_query_name="user_account")
 
     class Meta:
-        unique_together = ("user", "account", "customer")
+        unique_together = ("user", "account")
 
 
 @python_2_unicode_compatible

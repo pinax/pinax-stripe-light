@@ -276,6 +276,9 @@ class CustomerCreatedWebhook(Webhook):
     name = "customer.created"
     description = "Occurs whenever a new customer is created."
 
+    def process_webhook(self):
+        customers.create(self.event.customer, stripe_account=self.stripe_account)
+
 
 class CustomerDeletedWebhook(Webhook):
     name = "customer.deleted"

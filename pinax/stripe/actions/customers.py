@@ -64,7 +64,6 @@ def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_ST
         cus = user.customers.get(user_account__account=stripe_account, stripe_account=stripe_account.stripe_id)
     except models.Customer.DoesNotExist:
         cus = None
-        pass
     else:
         try:
             stripe.Customer.retrieve(cus.stripe_id)

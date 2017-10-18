@@ -86,7 +86,7 @@ def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_ST
     )
 
     if cus is None:
-        cus = models.Customer.objects.create(stripe_id=stripe_customer["id"], stripe_account=stripe_account)
+        cus = models.Customer.objects.create(stripe_id=stripe_customer["id"], stripe_account=stripe_account.stripe_id)
         models.UserAccount.objects.create(
             user=user,
             account=stripe_account,

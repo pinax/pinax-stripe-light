@@ -489,6 +489,11 @@ class CustomersWithConnectTests(TestCase):
             self.user, stripe_account=self.account)
         self.assertEquals(expected, actual)
 
+    def test_get_customer_for_user_with_stripe_account_and_legacy_customer(self):
+        Customer.objects.create(user=self.user, stripe_id="x")
+        self.assertIsNone(customers.get_customer_for_user(
+            self.user, stripe_account=self.account))
+
     @patch("pinax.stripe.actions.customers.sync_customer")
     @patch("stripe.Customer.create")
     def test_customer_create_with_connect(self, CreateMock, SyncMock):
@@ -526,6 +531,7 @@ class CustomersWithConnectTests(TestCase):
         self.assertIsNone(kwargs["trial_end"])
         self.assertTrue(SyncMock.called)
         self.assertEqual(self.user.user_accounts.get(), ua)
+        self.assertEqual(ua.customer, customer)
 
 
 class EventsTests(TestCase):

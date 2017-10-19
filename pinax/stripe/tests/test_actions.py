@@ -2275,6 +2275,38 @@ class InvoiceSyncsTests(TestCase):
         self.assertTrue(SyncChargeMock.called)
         self.assertFalse(SendReceiptMock.called)
 
+    @patch("pinax.stripe.hooks.hookset.send_receipt")
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
+    @patch("stripe.Charge.retrieve")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("pinax.stripe.actions.invoices.sync_invoice_items")
+    @patch("pinax.stripe.actions.subscriptions.retrieve")
+    def test_sync_invoice_from_stripe_data_connect(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock, SyncChargeMock, ChargeFetchMock, SyncSubscriptionMock, SendReceiptMock):
+        self.invoice_data["charge"] = "ch_XXXXXX"
+        self.invoice_data["account"] = "acct_X"
+        charge = Charge.objects.create(
+            stripe_id="ch_XXXXXX",
+            customer=self.customer,
+            source="card_01",
+            amount=decimal.Decimal("10.00"),
+            currency="usd",
+            paid=True,
+            refunded=False,
+            disputed=False
+        )
+        SyncChargeMock.return_value = charge
+        SyncSubscriptionMock.return_value = self.subscription
+        invoices.sync_invoice_from_stripe_data(self.invoice_data)
+        self.assertTrue(SyncInvoiceItemsMock.called)
+        self.assertEquals(Invoice.objects.filter(customer=self.customer).count(), 1)
+        self.assertTrue(ChargeFetchMock.called)
+        args, kwargs = ChargeFetchMock.call_args
+        self.assertEquals(args, ("ch_XXXXXX",))
+        self.assertEquals(kwargs, {"stripe_account": "acct_X",
+                                   "expand": ["balance_transaction"]})
+        self.assertTrue(SyncChargeMock.called)
+        self.assertTrue(SendReceiptMock.called)
+
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     @patch("pinax.stripe.actions.invoices.sync_invoice_items")
     @patch("pinax.stripe.actions.subscriptions.retrieve")

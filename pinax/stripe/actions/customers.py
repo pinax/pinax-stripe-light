@@ -81,15 +81,14 @@ def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_ST
         plan=plan,
         quantity=quantity,
         trial_end=trial_end,
-        stripe_account=stripe_account,
+        stripe_account=stripe_account.stripe_id,
     )
 
     if cus is None:
         cus = models.Customer.objects.create(stripe_id=stripe_customer["id"], stripe_account=stripe_account)
-        account = models.Account.objects.get(stripe_id=stripe_account)
         ua, created = models.UserAccount.objects.get_or_create(
             user=user,
-            account=account,
+            account=stripe_account,
             defaults={"customer": cus},
         )
         if not created:

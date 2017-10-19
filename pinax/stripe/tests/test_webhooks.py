@@ -54,6 +54,9 @@ class WebhookRegistryTest(TestCase):
 
 class WebhookTests(TestCase):
 
+    def setUp(self):
+        self.account = Account.objects.create(stripe_id="acc_XXX")
+
     event_data = {
         "created": 1348360173,
         "data": {
@@ -120,9 +123,8 @@ class WebhookTests(TestCase):
     @patch("stripe.Transfer.retrieve")
     def test_webhook_associated_with_stripe_account(self, TransferMock, StripeEventMock):
         connect_event_data = self.event_data.copy()
-        stripe_account = "acct_123123123"
         # only difference is that we'll have a user_id value
-        connect_event_data["account"] = stripe_account
+        connect_event_data["account"] = self.account.stripe_id
         StripeEventMock.return_value.to_dict.return_value = connect_event_data
         TransferMock.return_value = connect_event_data["data"]["object"]
         msg = json.dumps(connect_event_data)
@@ -135,7 +137,7 @@ class WebhookTests(TestCase):
         self.assertTrue(Event.objects.filter(kind="transfer.created").exists())
         self.assertEqual(
             Event.objects.filter(kind="transfer.created").first().stripe_account,
-            stripe_account
+            self.account
         )
 
     def test_webhook_duplicate_event(self):
@@ -258,7 +260,7 @@ class CustomerCreatedWebhookTest(TestCase):
     def test_process_webhook_with_stripe_account(self, CreateMock):
         user = get_user_model().objects.create()
         account = Account.objects.create(stripe_id="acc_A")
-        event = Event.objects.create(kind=CustomerCreatedWebhook.name, webhook_message={}, valid=True, processed=False, stripe_account=account.stripe_id)
+        event = Event.objects.create(kind=CustomerCreatedWebhook.name, webhook_message={}, valid=True, processed=False, stripe_account=account)
         obj = object()
         event.validated_message = dict(data=dict(object=obj))
         CustomerCreatedWebhook(event).process_webhook()

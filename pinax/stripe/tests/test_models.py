@@ -147,6 +147,12 @@ class StripeObjectTests(TestCase):
         Charge().stripe_charge
         self.assertTrue(RetrieveMock.called)
 
+    @patch("stripe.Charge.retrieve")
+    def test_stripe_charge_with_account(self, RetrieveMock):
+        cu = Customer(stripe_account=Account())
+        Charge(customer=cu).stripe_charge
+        self.assertTrue(RetrieveMock.called)
+
     @patch("stripe.Customer.retrieve")
     def test_stripe_customer(self, RetrieveMock):
         Customer().stripe_customer

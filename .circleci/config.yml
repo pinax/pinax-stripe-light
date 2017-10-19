@@ -4,6 +4,19 @@ common: &common
   working_directory: ~/repo
   steps:
     - checkout
+    - run:
+        name: checkout merge commit for PRs
+        command: |
+          set -x
+          PR_NUMBER=${CI_PULL_REQUEST//*pull\//}
+          if [ -n "$PR_NUMBER" ]; then
+            if ! git pull --ff-only origin "refs/pull/$PR_NUMBER/merge"; then
+                echo
+                echo -e "\033[0;31mERROR: Failed to merge your branch with the latest master."
+                echo -e "Please manually merge master into your branch, and push the changes to GitHub.\033[0m"
+                exit 1
+            fi
+          fi
     - restore_cache:
         keys:
           - v2-deps-{{ .Environment.CIRCLE_JOB }}-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}

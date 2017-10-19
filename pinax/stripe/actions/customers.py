@@ -1,3 +1,5 @@
+import logging
+
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
@@ -6,6 +8,8 @@ import stripe
 from . import invoices, sources, subscriptions
 from .. import hooks, models, utils
 from ..conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 def can_charge(customer):
@@ -63,12 +67,13 @@ def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_ST
     try:
         cus = user.customers.get(user_account__customer__stripe_account=stripe_account)
     except models.Customer.DoesNotExist:
+        logger.debug("customer not found for user %s, and account %s", user, stripe_account)
         cus = None
     else:
         try:
             stripe.Customer.retrieve(cus.stripe_id)
         except stripe.error.InvalidRequestError:
-            pass
+            logger.debug("customer found but failed to retrieve for user %s, and account %s", user, stripe_account)
         else:
             return cus
 
@@ -88,6 +93,8 @@ def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_ST
         cus = models.Customer.objects.create(stripe_id=stripe_customer["id"], stripe_account=stripe_account)
         models.UserAccount.objects.create(user=user, customer=cus)
     else:
+        logger.debug("Update local customer %s with new remote customer %s for user %s, and account %s",
+                     cus.stripe_id, stripe_customer["id"], user, stripe_account)
         cus.stripe_id = stripe_customer["id"]  # sync_customer() will call cus.save()
     sync_customer(cus, stripe_customer)
     if plan and charge_immediately:

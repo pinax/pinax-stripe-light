@@ -104,6 +104,21 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
         return queryset.all()
 
 
+class AccountListFilter(admin.SimpleListFilter):
+    title = "account"
+    parameter_name = "stripe_account"
+
+    def lookups(self, request, model_admin):
+        return [("none", "Without Account")] + [(a.pk, str(a)) for a in Account.objects.all()]
+
+    def queryset(self, request, queryset):
+        if self.value() == "none":
+            return queryset.filter(stripe_account__isnull=True)
+        if self.value():
+            return queryset.filter(stripe_account__pk=self.value())
+        return queryset
+
+
 admin.site.register(
     Charge,
     list_display=[
@@ -115,22 +130,22 @@ admin.site.register(
         "disputed",
         "refunded",
         "receipt_sent",
-        "created_at"
+        "created_at",
     ],
     search_fields=[
         "stripe_id",
         "customer__stripe_id",
-        "invoice__stripe_id"
+        "invoice__stripe_id",
     ] + customer_search_fields(),
     list_filter=[
         "paid",
         "disputed",
         "refunded",
-        "created_at"
+        "created_at",
     ],
     raw_id_fields=[
         "customer",
-        "invoice"
+        "invoice",
     ],
 )
 
@@ -153,25 +168,28 @@ admin.site.register(
 
 admin.site.register(
     Event,
-    raw_id_fields=["customer"],
+    raw_id_fields=["customer", "stripe_account"],
     list_display=[
         "stripe_id",
         "kind",
         "livemode",
         "valid",
         "processed",
-        "created_at"
+        "created_at",
+        "stripe_account",
     ],
     list_filter=[
         "kind",
         "created_at",
         "valid",
-        "processed"
+        "processed",
+        AccountListFilter,
     ],
     search_fields=[
         "stripe_id",
         "customer__stripe_id",
         "validated_message"
+        "=stripe_account__stripe_id",
     ] + customer_search_fields(),
 )
 
@@ -201,7 +219,7 @@ subscription_status.short_description = "Subscription Status"  # noqa
 
 admin.site.register(
     Customer,
-    raw_id_fields=["user"],
+    raw_id_fields=["user", "stripe_account"],
     list_display=[
         "stripe_id",
         "user",
@@ -210,15 +228,18 @@ admin.site.register(
         "delinquent",
         "default_source",
         subscription_status,
-        "date_purged"
+        "date_purged",
+        "stripe_account",
     ],
     list_filter=[
         "delinquent",
         CustomerHasCardListFilter,
-        CustomerSubscriptionStatusListFilter
+        CustomerSubscriptionStatusListFilter,
+        AccountListFilter,
     ],
     search_fields=[
         "stripe_id",
+        "=stripe_account__stripe_id"
     ] + user_search_fields(),
     inlines=[
         SubscriptionInline,
@@ -262,7 +283,7 @@ admin.site.register(
         "period_start",
         "period_end",
         "subtotal",
-        "total"
+        "total",
     ],
     search_fields=[
         "stripe_id",
@@ -277,15 +298,16 @@ admin.site.register(
         "created_at",
         "date",
         "period_end",
-        "total"
+        "total",
     ],
     inlines=[
         InvoiceItemInline
-    ]
+    ],
 )
 
 admin.site.register(
     Plan,
+    raw_id_fields=["stripe_account"],
     list_display=[
         "stripe_id",
         "name",
@@ -294,13 +316,16 @@ admin.site.register(
         "interval",
         "interval_count",
         "trial_period_days",
+        "stripe_account",
     ],
     search_fields=[
         "stripe_id",
         "name",
-    ],
+        "=stripe_account__stripe_id",
+    ] + customer_search_fields(),
     list_filter=[
         "currency",
+        AccountListFilter,
     ],
     readonly_fields=[
         "stripe_id",
@@ -360,21 +385,26 @@ class TransferChargeFeeInline(admin.TabularInline):
 
 admin.site.register(
     Transfer,
-    raw_id_fields=["event"],
+    raw_id_fields=["event", "stripe_account"],
     list_display=[
         "stripe_id",
         "amount",
         "status",
         "date",
-        "description"
+        "description",
+        "stripe_account",
     ],
     search_fields=[
         "stripe_id",
-        "event__stripe_id"
+        "event__stripe_id",
+        "=stripe_account__stripe_id",
     ],
     inlines=[
         TransferChargeFeeInline
-    ]
+    ],
+    list_filter=[
+        AccountListFilter,
+    ],
 )
 
 

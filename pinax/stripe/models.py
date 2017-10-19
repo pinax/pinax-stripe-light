@@ -27,7 +27,12 @@ class StripeObject(models.Model):
 
 class AccountRelatedStripeObject(StripeObject):
 
-    stripe_account = models.CharField(max_length=255, null=True, blank=True)
+    stripe_account = models.ForeignKey(
+        "pinax_stripe.Account",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         abstract = True

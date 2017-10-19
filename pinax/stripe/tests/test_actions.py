@@ -260,7 +260,7 @@ class CustomersTests(TestCase):
 
         # But a customer *was* created, retrieved, and then disposed of.
         RetrieveMock.assert_called_once_with("cus_YYYYY")
-        new_customer.delete.assert_called_once()
+        new_customer.delete.assert_called_once_with()
 
     @patch("pinax.stripe.actions.invoices.create_and_pay")
     @patch("pinax.stripe.actions.customers.sync_customer")
@@ -389,6 +389,11 @@ class CustomersTests(TestCase):
 
 class EventsTests(TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super(EventsTests, cls).setUpClass()
+        cls.account = Account.objects.create(stripe_id="acc_001")
+
     def test_dupe_event_exists(self):
         Event.objects.create(stripe_id="evt_003", kind="foo", livemode=True, webhook_message="{}", api_version="", request="", pending_webhooks=0)
         self.assertTrue(events.dupe_event_exists("evt_003"))
@@ -402,8 +407,8 @@ class EventsTests(TestCase):
 
     @patch("pinax.stripe.webhooks.AccountUpdatedWebhook.process")
     def test_add_event_connect(self, ProcessMock):
-        events.add_event(stripe_id="evt_001", kind="account.updated", livemode=True, message={}, stripe_account="acct_001")
-        event = Event.objects.get(stripe_id="evt_001", stripe_account="acct_001")
+        events.add_event(stripe_id="evt_001", kind="account.updated", livemode=True, message={}, stripe_account=self.account)
+        event = Event.objects.get(stripe_id="evt_001", stripe_account=self.account)
         self.assertEquals(event.kind, "account.updated")
         self.assertTrue(ProcessMock.called)
 

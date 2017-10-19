@@ -228,7 +228,7 @@ class Subscription(StripeObject):
     STATUS_CURRENT = ["trialing", "active"]
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    application_fee_percent = models.DecimalField(decimal_places=2, max_digits=3, default=None, null=True)
+    application_fee_percent = models.DecimalField(decimal_places=2, max_digits=3, default=None, blank=True, null=True)
     cancel_at_period_end = models.BooleanField(default=False)
     canceled_at = models.DateTimeField(blank=True, null=True)
     current_period_end = models.DateTimeField(blank=True, null=True)
@@ -240,6 +240,8 @@ class Subscription(StripeObject):
     status = models.CharField(max_length=25)  # trialing, active, past_due, canceled, or unpaid
     trial_end = models.DateTimeField(blank=True, null=True)
     trial_start = models.DateTimeField(blank=True, null=True)
+    billing = models.CharField(max_length=32, default=u'charge_automatically')  # charge_automatically or send_invoice
+    days_until_due = models.IntegerField(default=None, blank=True, null=True)
 
     @property
     def stripe_subscription(self):
@@ -278,6 +280,7 @@ class Invoice(StripeObject):
     statement_descriptor = models.TextField(blank=True)
     currency = models.CharField(max_length=10, default="usd")
     closed = models.BooleanField(default=False)
+    forgiven = models.BooleanField(default=False)
     description = models.TextField(blank=True)
     paid = models.BooleanField(default=False)
     receipt_number = models.TextField(blank=True)
@@ -289,6 +292,9 @@ class Invoice(StripeObject):
     total = models.DecimalField(decimal_places=2, max_digits=9)
     date = models.DateTimeField()
     webhooks_delivered_at = models.DateTimeField(null=True)
+    billing = models.CharField(max_length=32, default=u'charge_automatically')  # charge_automatically or send_invoice
+    due_date = models.DateTimeField(null=True, blank=True)
+    metadata = JSONField(null=True)
 
     @property
     def status(self):

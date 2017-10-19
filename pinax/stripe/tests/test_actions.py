@@ -383,7 +383,7 @@ class CustomersTests(TestCase):
         )
         customer = Customer.objects.create(
             user=self.user,
-            stripe_account=account.stripe_id,
+            stripe_account=account,
             stripe_id="cus_xxxxxxxxxxxxxxx",
         )
         UserAccount.objects.create(user=self.user, account=account, customer=customer)
@@ -492,7 +492,7 @@ class CustomersWithConnectTests(TestCase):
     @patch("stripe.Customer.create")
     def test_customer_create_with_connect(self, CreateMock, SyncMock):
         CreateMock.return_value = dict(id="cus_XXXXX")
-        customer = customers.create(self.user, stripe_account=self.account.stripe_id)
+        customer = customers.create(self.user, stripe_account=self.account)
         self.assertIsNone(customer.user)
         self.assertEqual(customer.stripe_id, "cus_XXXXX")
         _, kwargs = CreateMock.call_args
@@ -514,7 +514,7 @@ class CustomersWithConnectTests(TestCase):
         ua = UserAccount.objects.create(user=self.user,
                                         account=self.account,
                                         customer=Customer.objects.create(stripe_id="cus_Z"))
-        customer = customers.create(self.user, stripe_account=self.account.stripe_id)
+        customer = customers.create(self.user, stripe_account=self.account)
         self.assertIsNone(customer.user)
         self.assertEqual(customer.stripe_id, "cus_XXXXX")
         _, kwargs = CreateMock.call_args
@@ -528,6 +528,10 @@ class CustomersWithConnectTests(TestCase):
 
 
 class EventsTests(TestCase):
+    def setUp(self):
+        self.account = Account.objects.create(
+            stripe_id="acc_XXX"
+        )
 
     def test_dupe_event_exists(self):
         Event.objects.create(stripe_id="evt_003", kind="foo", livemode=True, webhook_message="{}", api_version="", request="", pending_webhooks=0)
@@ -542,8 +546,8 @@ class EventsTests(TestCase):
 
     @patch("pinax.stripe.webhooks.AccountUpdatedWebhook.process")
     def test_add_event_connect(self, ProcessMock):
-        events.add_event(stripe_id="evt_001", kind="account.updated", livemode=True, message={}, stripe_account="acct_001")
-        event = Event.objects.get(stripe_id="evt_001", stripe_account="acct_001")
+        events.add_event(stripe_id="evt_001", kind="account.updated", livemode=True, message={}, stripe_account=self.account)
+        event = Event.objects.get(stripe_id="evt_001", stripe_account=self.account)
         self.assertEquals(event.kind, "account.updated")
         self.assertTrue(ProcessMock.called)
 

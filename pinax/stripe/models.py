@@ -181,17 +181,13 @@ class UserAccount(models.Model):
                              related_name="user_accounts",
                              related_query_name="user_account",
                              on_delete=models.CASCADE)
-    account = models.ForeignKey("pinax_stripe.Account",
-                                related_name="user_accounts",
-                                related_query_name="user_account",
-                                on_delete=models.CASCADE)
     customer = models.ForeignKey("pinax_stripe.Customer",
                                  related_name="user_accounts",
                                  related_query_name="user_account",
                                  on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ("user", "account")
+        unique_together = ("user", "customer")
 
 
 @python_2_unicode_compatible

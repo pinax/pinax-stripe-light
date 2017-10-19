@@ -444,11 +444,10 @@ admin.site.register(
 
 admin.site.register(
     UserAccount,
-    raw_id_fields=["user", "customer", "account"],
-    list_display=["user", "customer", "account"],
+    raw_id_fields=["user", "customer"],
+    list_display=["user", "customer"],
     search_fields=[
         "=customer__stripe_id",
-        "=account__stripe_id",
         "=user__email",
     ]
 )

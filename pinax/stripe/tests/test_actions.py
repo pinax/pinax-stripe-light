@@ -386,7 +386,7 @@ class CustomersTests(TestCase):
             stripe_account=account,
             stripe_id="cus_xxxxxxxxxxxxxxx",
         )
-        UserAccount.objects.create(user=self.user, account=account, customer=customer)
+        UserAccount.objects.create(user=self.user, customer=customer)
         customers.purge(customer)
         self.assertTrue(RetrieveMock().delete.called)
         self.assertIsNone(Customer.objects.get(stripe_id=customer.stripe_id).user)
@@ -480,12 +480,13 @@ class CustomersWithConnectTests(TestCase):
         )
 
     def test_get_customer_for_user_with_stripe_account(self):
-        expected = Customer.objects.create(stripe_id="x", user=self.user)
+        expected = Customer.objects.create(
+            stripe_id="x",
+            stripe_account=self.account)
         UserAccount.objects.create(user=self.user,
-                                   customer=expected,
-                                   account=self.account)
+                                   customer=expected)
         actual = customers.get_customer_for_user(
-            self.user, stripe_account=self.account.stripe_id)
+            self.user, stripe_account=self.account)
         self.assertEquals(expected, actual)
 
     @patch("pinax.stripe.actions.customers.sync_customer")
@@ -506,14 +507,14 @@ class CustomersWithConnectTests(TestCase):
     @patch("stripe.Customer.retrieve")
     @patch("pinax.stripe.actions.customers.sync_customer")
     @patch("stripe.Customer.create")
-    def test_customer_create_with_connect_stale_user_account(self, CreateMock, SyncMock, RetrieveMock):
+    def test_customer_create_with_connect_and_stale_user_account(self, CreateMock, SyncMock, RetrieveMock):
         CreateMock.return_value = dict(id="cus_XXXXX")
         RetrieveMock.side_effect = stripe.error.InvalidRequestError(
             message="Not Found", param="stripe_id"
         )
-        ua = UserAccount.objects.create(user=self.user,
-                                        account=self.account,
-                                        customer=Customer.objects.create(stripe_id="cus_Z"))
+        ua = UserAccount.objects.create(
+            user=self.user,
+            customer=Customer.objects.create(stripe_id="cus_Z", stripe_account=self.account))
         customer = customers.create(self.user, stripe_account=self.account)
         self.assertIsNone(customer.user)
         self.assertEqual(customer.stripe_id, "cus_XXXXX")
@@ -528,10 +529,10 @@ class CustomersWithConnectTests(TestCase):
 
 
 class EventsTests(TestCase):
-    def setUp(self):
-        self.account = Account.objects.create(
-            stripe_id="acc_XXX"
-        )
+    @classmethod
+    def setUpClass(cls):
+        super(EventsTests, cls).setUpClass()
+        cls.account = Account.objects.create(stripe_id="acc_XXX")
 
     def test_dupe_event_exists(self):
         Event.objects.create(stripe_id="evt_003", kind="foo", livemode=True, webhook_message="{}", api_version="", request="", pending_webhooks=0)

@@ -61,7 +61,7 @@ def _create_without_account(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_
 
 def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
     try:
-        cus = user.customers.get(user_account__account__stripe_id=stripe_account, stripe_account=stripe_account)
+        cus = user.customers.get(user_account__customer__stripe_account=stripe_account)
     except models.Customer.DoesNotExist:
         cus = None
     else:
@@ -86,16 +86,9 @@ def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_ST
 
     if cus is None:
         cus = models.Customer.objects.create(stripe_id=stripe_customer["id"], stripe_account=stripe_account)
-        ua, created = models.UserAccount.objects.get_or_create(
-            user=user,
-            account=stripe_account,
-            defaults={"customer": cus},
-        )
-        if not created:
-            ua.customer = cus
-            ua.save()
+        models.UserAccount.objects.create(user=user, customer=cus)
     else:
-        cus.stripe_id = stripe_customer["id"]  # sync_customer will call cus.save()
+        cus.stripe_id = stripe_customer["id"]  # sync_customer() will call cus.save()
     sync_customer(cus, stripe_customer)
     if plan and charge_immediately:
         invoices.create_and_pay(cus)
@@ -115,7 +108,7 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         charge_immediately: whether or not the user should be immediately
                             charged for the subscription
         quantity: the quantity (multiplier) of the subscription
-        stripe_account: An account id. If given, the Customer and User relation will be established for you through UserAccount model.
+        stripe_account: An account objects. If given, the Customer and User relation will be established for you through UserAccount model.
         Because a single User might have several Customers, one per Account.
 
     Returns:
@@ -139,7 +132,7 @@ def get_customer_for_user(user, stripe_account=None):
     """
     if stripe_account is None:
         return models.Customer.objects.filter(user=user).first()
-    return user.customers.filter(user_account__account__stripe_id=stripe_account).first()
+    return user.customers.filter(user_account__customer__stripe_account=stripe_account).first()
 
 
 def purge_local(customer):

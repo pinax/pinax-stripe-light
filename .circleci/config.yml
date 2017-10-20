@@ -135,4 +135,4 @@ workflows:
     jobs:
       - lint
       - py36dj111
-      - py36djmaster
+      - py36dj20

@@ -10,6 +10,8 @@ import django.db.models.deletion
 def delete_user_accounts(apps, schema_editor):
     UserAccount = apps.get_model("pinax_stripe", "UserAccount")
     UserAccount.objects.all().delete()
+    Customer = apps.get_model("pinax_stripe", "Customer")
+    Customer.objects.all().delete()
 
 
 class Migration(migrations.Migration):

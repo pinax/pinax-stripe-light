@@ -115,7 +115,7 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         charge_immediately: whether or not the user should be immediately
                             charged for the subscription
         quantity: the quantity (multiplier) of the subscription
-        stripe_account: An account objects. If given, the Customer and User relation will be established for you through UserAccount model.
+        stripe_account: An account object. If given, the Customer and User relation will be established for you through the UserAccount model.
         Because a single User might have several Customers, one per Account.
 
     Returns:

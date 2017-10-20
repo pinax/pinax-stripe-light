@@ -188,7 +188,7 @@ admin.site.register(
     search_fields=[
         "stripe_id",
         "customer__stripe_id",
-        "validated_message"
+        "validated_message",
         "=stripe_account__stripe_id",
     ] + customer_search_fields(),
 )

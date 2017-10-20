@@ -121,16 +121,16 @@ workflows:
   test:
     jobs:
       - lint
-      - py27dj18:
-      - py27dj110:
-      - py27dj111:
-      - py34dj18:
-      - py34dj110:
-      - py34dj111:
-      - py34dj20:
-      - py35dj18:
-      - py35dj110:
-      - py35dj111:
-      - py35dj20:
-      - py36dj111:
-      - py36dj20:
+      - py27dj18
+      - py27dj110
+      - py27dj111
+      - py34dj18
+      - py34dj110
+      - py34dj111
+      - py34dj20
+      - py35dj18
+      - py35dj110
+      - py35dj111
+      - py35dj20
+      - py36dj111
+      - py36dj20

@@ -38,7 +38,7 @@ def delete_card_object(source):
 
 def sync_card(customer, source):
     """
-    Syncronizes the data for a card locally for a given customer
+    Synchronizes the data for a card locally for a given customer
 
     Args:
         customer: the customer to create or update a card for
@@ -74,7 +74,7 @@ def sync_card(customer, source):
 
 def sync_bitcoin(customer, source):
     """
-    Syncronizes the data for a Bitcoin receiver locally for a given customer
+    Synchronizes the data for a Bitcoin receiver locally for a given customer
 
     Args:
         customer: the customer to create or update a Bitcoin receiver for
@@ -107,7 +107,7 @@ def sync_bitcoin(customer, source):
 
 def sync_payment_source_from_stripe_data(customer, source):
     """
-    Syncronizes the data for a payment source locally for a given customer
+    Synchronizes the data for a payment source locally for a given customer
 
     Args:
         customer: the customer to create or update a Bitcoin receiver for

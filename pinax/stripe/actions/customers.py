@@ -65,7 +65,7 @@ def _create_without_account(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_
 
 def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
     try:
-        cus = user.customers.get(user_account__customer__stripe_account=stripe_account)
+        cus = user.customers.get(user_account__account=stripe_account)
     except models.Customer.DoesNotExist:
         logger.debug("customer not found for user %s, and account %s", user, stripe_account)
         cus = None
@@ -91,7 +91,7 @@ def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_ST
 
     if cus is None:
         cus = models.Customer.objects.create(stripe_id=stripe_customer["id"], stripe_account=stripe_account)
-        models.UserAccount.objects.create(user=user, customer=cus)
+        models.UserAccount.objects.create(user=user, account=stripe_account, customer=cus)
     else:
         logger.debug("Update local customer %s with new remote customer %s for user %s, and account %s",
                      cus.stripe_id, stripe_customer["id"], user, stripe_account)

@@ -227,6 +227,7 @@ class CustomersTests(TestCase):
             interval_count=1,
             name="Pro"
         )
+        self.account = Account.objects.create(stripe_id="acc_XXX")
 
     def test_get_customer_for_user(self):
         expected = Customer.objects.create(stripe_id="x", user=self.user)
@@ -386,7 +387,7 @@ class CustomersTests(TestCase):
             stripe_account=account,
             stripe_id="cus_xxxxxxxxxxxxxxx",
         )
-        UserAccount.objects.create(user=self.user, customer=customer)
+        UserAccount.objects.create(user=self.user, account=self.account, customer=customer)
         customers.purge(customer)
         self.assertTrue(RetrieveMock().delete.called)
         self.assertIsNone(Customer.objects.get(stripe_id=customer.stripe_id).user)
@@ -483,8 +484,7 @@ class CustomersWithConnectTests(TestCase):
         expected = Customer.objects.create(
             stripe_id="x",
             stripe_account=self.account)
-        UserAccount.objects.create(user=self.user,
-                                   customer=expected)
+        UserAccount.objects.create(user=self.user, account=self.account, customer=expected)
         actual = customers.get_customer_for_user(
             self.user, stripe_account=self.account)
         self.assertEquals(expected, actual)
@@ -519,6 +519,7 @@ class CustomersWithConnectTests(TestCase):
         )
         ua = UserAccount.objects.create(
             user=self.user,
+            account=self.account,
             customer=Customer.objects.create(stripe_id="cus_Z", stripe_account=self.account))
         customer = customers.create(self.user, stripe_account=self.account)
         self.assertIsNone(customer.user)

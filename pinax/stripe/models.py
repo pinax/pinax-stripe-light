@@ -181,13 +181,17 @@ class UserAccount(models.Model):
                              related_name="user_accounts",
                              related_query_name="user_account",
                              on_delete=models.CASCADE)
+    account = models.ForeignKey("pinax_stripe.Account",
+                                related_name="user_accounts",
+                                related_query_name="user_account",
+                                on_delete=models.CASCADE)
     customer = models.ForeignKey("pinax_stripe.Customer",
                                  related_name="user_accounts",
                                  related_query_name="user_account",
                                  on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ("user", "customer")
+        unique_together = ("user", "account")
 
 
 @python_2_unicode_compatible
@@ -207,10 +211,10 @@ class Customer(AccountRelatedStripeObject):
 
     @cached_property
     def stripe_customer(self):
-        stripe_account = getattr(self.stripe_account, "stripe_id", None)
+        stripe_account_id = getattr(self.stripe_account, "stripe_id", None)
         return stripe.Customer.retrieve(
             self.stripe_id,
-            stripe_account=stripe_account
+            stripe_account=stripe_account_id
         )
 
     def __str__(self):
@@ -351,12 +355,12 @@ class Invoice(StripeObject):
     @property
     def stripe_invoice(self):
         try:
-            stripe_account = getattr(self.customer.stripe_account, "stripe_id", None)
+            stripe_account_id = getattr(self.customer.stripe_account, "stripe_id", None)
         except ObjectDoesNotExist:
-            stripe_account = None
+            stripe_account_id = None
         return stripe.Invoice.retrieve(
             self.stripe_id,
-            stripe_account=stripe_account
+            stripe_account=stripe_account_id
         )
 
 
@@ -418,12 +422,12 @@ class Charge(StripeObject):
     @property
     def stripe_charge(self):
         if self.customer is not None:
-            stripe_account = getattr(self.customer.stripe_account, "stripe_id", None)
+            stripe_account_id = getattr(self.customer.stripe_account, "stripe_id", None)
         else:
-            stripe_account = None
+            stripe_account_id = None
         return stripe.Charge.retrieve(
             self.stripe_id,
-            stripe_account=stripe_account,
+            stripe_account=stripe_account_id,
             expand=["balance_transaction"]
         )
 

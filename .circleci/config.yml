@@ -118,45 +118,19 @@ jobs:
 
 workflows:
   version: 2
-  lint-and-test:
+  test:
     jobs:
       - lint
       - py27dj18:
-          requires:
-            - lint
       - py27dj110:
-          requires:
-            - lint
       - py27dj111:
-          requires:
-            - lint
       - py34dj18:
-          requires:
-            - lint
       - py34dj110:
-          requires:
-            - lint
       - py34dj111:
-          requires:
-            - lint
       - py34dj20:
-          requires:
-            - lint
       - py35dj18:
-          requires:
-            - lint
       - py35dj110:
-          requires:
-            - lint
       - py35dj111:
-          requires:
-            - lint
       - py35dj20:
-          requires:
-            - lint
       - py36dj111:
-          requires:
-            - lint
       - py36dj20:
-          requires:
-            - lint

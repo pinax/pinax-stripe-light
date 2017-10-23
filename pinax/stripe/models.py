@@ -47,6 +47,18 @@ class Plan(AccountRelatedStripeObject):
     def __str__(self):
         return "{} ({}{})".format(self.name, CURRENCY_SYMBOLS.get(self.currency, ""), self.amount)
 
+    def __repr__(self):
+        return "Plan(pk={!r}, name={!r}, amount={!r}, currency={!r}, interval={!r}, interval_count={!r}, trial_period_days={!r}, stripe_id={!r})".format(
+            self.pk,
+            str(self.name),
+            self.amount,
+            str(self.currency),
+            str(self.interval),
+            self.interval_count,
+            self.trial_period_days,
+            str(self.stripe_id),
+        )
+
 
 @python_2_unicode_compatible
 class Coupon(StripeObject):
@@ -178,6 +190,13 @@ class Customer(AccountRelatedStripeObject):
     def __str__(self):
         return str(self.user)
 
+    def __repr__(self):
+        return "Customer(pk={!r}, user={!r}, stripe_id={!r})".format(
+            self.pk,
+            self.user,
+            str(self.stripe_id),
+        )
+
 
 class Card(StripeObject):
 
@@ -265,6 +284,15 @@ class Subscription(StripeObject):
         self.status = None
         self.quantity = 0
         self.amount = 0
+
+    def __repr__(self):
+        return "Subscription(pk={!r}, customer={!r}, plan={!r}, status={!r}, stripe_id={!r})".format(
+            self.pk,
+            self.customer if hasattr(self, "customer") else None,
+            self.plan if hasattr(self, "plan") else None,
+            str(self.status),
+            str(self.stripe_id),
+        )
 
 
 class Invoice(StripeObject):
@@ -376,6 +404,7 @@ class Charge(StripeObject):
         return Card.objects.filter(stripe_id=self.source).first()
 
 
+@python_2_unicode_compatible
 class Account(StripeObject):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
@@ -390,7 +419,7 @@ class Account(StripeObject):
     decline_charge_on_cvc_failure = models.BooleanField(default=False)
     default_currency = models.CharField(max_length=3)
     details_submitted = models.BooleanField(default=False)
-    display_name = models.TextField(blank=True, null=True)
+    display_name = models.TextField(blank=False, null=False)
     email = models.TextField(blank=True, null=True)
 
     legal_entity_address_city = models.TextField(null=True, blank=True)
@@ -446,6 +475,17 @@ class Account(StripeObject):
     @property
     def stripe_account(self):
         return stripe.Account.retrieve(self.stripe_id)
+
+    def __str__(self):
+        return "{} - {}".format(self.display_name, self.stripe_id)
+
+    def __repr__(self):
+        return "Account(pk={!r}, display_name={!r}, type={!r}, stripe_id={!r})".format(
+            self.pk,
+            str(self.display_name),
+            self.type,
+            str(self.stripe_id),
+        )
 
 
 class BankAccount(StripeObject):

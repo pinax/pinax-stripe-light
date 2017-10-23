@@ -55,12 +55,6 @@ jobs:
       - image: circleci/python:2.7
         environment:
           TOXENV=py27-dj111
-  py33dj18:
-    <<: *common
-    docker:
-      - image: circleci/python:3.3
-        environment:
-          TOXENV=py33-dj18
   py34dj18:
     <<: *common
     docker:
@@ -79,12 +73,12 @@ jobs:
       - image: circleci/python:3.4
         environment:
           TOXENV=py34-dj111
-  py34djmaster:
+  py34dj20:
     <<: *common
     docker:
       - image: circleci/python:3.4
         environment:
-          TOXENV=py34-djmaster
+          TOXENV=py34-dj20
   py35dj18:
     <<: *common
     docker:
@@ -103,70 +97,40 @@ jobs:
       - image: circleci/python:3.5
         environment:
           TOXENV=py35-dj111
-  py35djmaster:
+  py35dj20:
     <<: *common
     docker:
       - image: circleci/python:3.5
         environment:
-          TOXENV=py35-djmaster
+          TOXENV=py35-dj20
   py36dj111:
     <<: *common
     docker:
       - image: circleci/python:3.6
         environment:
           TOXENV=py36-dj111
-  py36djmaster:
+  py36dj20:
     <<: *common
     docker:
       - image: circleci/python:3.6
         environment:
-          TOXENV=py36-djmaster
+          TOXENV=py36-dj20
 
 workflows:
   version: 2
-  lint-and-test:
+  test:
     jobs:
       - lint
-      - py27dj18:
-          requires:
-            - lint
-      - py27dj110:
-          requires:
-            - lint
-      - py27dj111:
-          requires:
-            - lint
-      - py33dj18:
-          requires:
-            - lint
-      - py34dj18:
-          requires:
-            - lint
-      - py34dj110:
-          requires:
-            - lint
-      - py34dj111:
-          requires:
-            - lint
-      # Failing to start Django Tests for some reason
-      # - py34djmaster:
-      #     requires:
-      #       - lint
-      - py35dj18:
-          requires:
-            - lint
-      - py35dj110:
-          requires:
-            - lint
-      - py35dj111:
-          requires:
-            - lint
-      - py35djmaster:
-          requires:
-            - lint
-      - py36dj111:
-          requires:
-            - lint
-      - py36djmaster:
-          requires:
-            - lint
+      - py27dj18
+      - py27dj110
+      - py27dj111
+      - py34dj18
+      - py34dj110
+      - py34dj111
+      - py34dj20
+      - py35dj18
+      - py35dj110
+      - py35dj111
+      - py35dj20
+      - py36dj111
+      - py36dj20

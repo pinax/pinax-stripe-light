@@ -79,11 +79,11 @@ class Webhook(with_metaclass(Registerable, object)):
         """
         Validate incoming events.
 
-        We fetch the event data to ensure it's legit. For Connect
-        accounts we must fetch the event using the `stripe_account`
-        parameter, else we won't find it.
+        We fetch the event data to ensure it is legit.
+        For Connect accounts we must fetch the event using the `stripe_account`
+        parameter.
         """
-        self.stripe_account = self.event.webhook_message.get("user_id")
+        self.stripe_account = self.event.webhook_message.get("account")
         self.event.stripe_account = self.stripe_account
         evt = stripe.Event.retrieve(
             self.event.stripe_id,

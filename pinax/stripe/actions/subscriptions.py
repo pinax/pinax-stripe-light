@@ -132,7 +132,7 @@ def retrieve(customer, sub_id):
 
 def sync_subscription_from_stripe_data(customer, subscription):
     """
-    Syncronizes data from the Stripe API for a subscription
+    Synchronizes data from the Stripe API for a subscription
 
     Args:
         customer: the customer who's subscription you are syncronizing

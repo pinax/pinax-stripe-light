@@ -20,7 +20,7 @@ def during(year, month):
 
 def sync_transfer(transfer, event=None):
     """
-    Syncronize a transfer from the Stripe API
+    Synchronize a transfer from the Stripe API
 
     Args:
         transfer: data from Stripe API representing transfer

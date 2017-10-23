@@ -46,6 +46,10 @@ class ModelTests(TestCase):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", currency="jpy", interval="monthly", interval_count=1)
         self.assertTrue(u"\u00a5" in _str(p))
 
+    def test_plan_repl(self):
+        p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
+        self.assertEquals(repr(p), "Plan(pk=None, name='My Plan', amount=Decimal('5'), currency='', interval='monthly', interval_count=1, trial_period_days=None, stripe_id='')")
+
     def test_event_processing_exception_str(self):
         e = EventProcessingException(data="hello", message="hi there", traceback="fake")
         self.assertTrue("Event=" in str(e))
@@ -57,6 +61,10 @@ class ModelTests(TestCase):
     def test_customer_str(self):
         e = Customer()
         self.assertTrue("None" in str(e))
+
+    def test_customer_repl(self):
+        c = Customer()
+        self.assertEquals(repr(c), "Customer(pk=None, user=None, stripe_id='')")
 
     def test_plan_display_invoiceitem(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
@@ -85,6 +93,20 @@ class ModelTests(TestCase):
     def test_invoice_status_not_paid(self):
         self.assertEquals(Invoice(paid=False).status, "Open")
 
+    def test_subscription_repr(self):
+        s = Subscription()
+        self.assertEquals(repr(s), "Subscription(pk=None, customer=None, plan=None, status='', stripe_id='')")
+        s.customer = Customer()
+        s.plan = Plan()
+        s.status = "active"
+        s.stripe_id = "sub_X"
+        self.assertEquals(
+            repr(s),
+            "Subscription(pk=None, customer={!r}, plan={!r}, status='active', stripe_id='sub_X')".format(
+                s.customer,
+                s.plan,
+            ))
+
     def test_subscription_total_amount(self):
         sub = Subscription(plan=Plan(name="Pro Plan", amount=decimal.Decimal("100")), quantity=2)
         self.assertEquals(sub.total_amount, decimal.Decimal("200"))
@@ -105,6 +127,17 @@ class ModelTests(TestCase):
         self.assertIsNone(sub.status)
         self.assertEquals(sub.quantity, 0)
         self.assertEquals(sub.amount, 0)
+
+    def test_account_str_and_repr(self):
+        a = Account()
+        self.assertEquals(str(a), " - ")
+        self.assertEquals(repr(a), "Account(pk=None, display_name='', type=None, stripe_id='')")
+        a.stripe_id = "acct_X"
+        self.assertEquals(str(a), " - acct_X")
+        self.assertEquals(repr(a), "Account(pk=None, display_name='', type=None, stripe_id='acct_X')")
+        a.display_name = "Display name"
+        self.assertEquals(str(a), "Display name - acct_X")
+        self.assertEquals(repr(a), "Account(pk=None, display_name='Display name', type=None, stripe_id='acct_X')")
 
 
 class StripeObjectTests(TestCase):

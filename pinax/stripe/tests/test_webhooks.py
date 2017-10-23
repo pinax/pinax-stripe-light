@@ -115,7 +115,7 @@ class WebhookTests(TestCase):
         connect_event_data = self.event_data.copy()
         stripe_account = "acct_123123123"
         # only difference is that we'll have a user_id value
-        connect_event_data["user_id"] = stripe_account
+        connect_event_data["account"] = stripe_account
         StripeEventMock.return_value.to_dict.return_value = connect_event_data
         TransferMock.return_value = connect_event_data["data"]["object"]
         msg = json.dumps(connect_event_data)

@@ -5,7 +5,7 @@ from .. import models, utils
 
 def sync_plans():
     """
-    Syncronizes all plans from the Stripe API
+    Synchronizes all plans from the Stripe API
     """
     try:
         plans = stripe.Plan.auto_paging_iter()
@@ -32,7 +32,7 @@ def sync_plans():
 
 def sync_plan(plan, event=None):
     """
-    Syncronizes a plan from the Stripe API
+    Synchronizes a plan from the Stripe API
 
     Args:
         plan: data from Stripe API representing a plan

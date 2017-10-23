@@ -7,7 +7,7 @@ have one.
 
 #### pinax.stripe.management.commands.sync_customers
 
-Syncronizes customer data from the Stripe API
+Synchronizes customer data from the Stripe API
 
 Utilizes the following actions:
 

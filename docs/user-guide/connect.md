@@ -1,7 +1,7 @@
 # Using Stripe Connect
 
 [Stripe Connect](https://stripe.com/connect) allows you to perform charges on behalf of your
-users and then payout to thier bank accounts.
+users and then payout to their bank accounts.
 
 There are several ways to integrate Connect and these result in the creation of different
 [account types](https://stripe.com/connect/account-types). Before you begin your Connect
@@ -17,6 +17,8 @@ This project allows use of any account type.
     immediately know when an Account has changed. It may also be necessary for Standard and
     Express integrations in order to detect when an Account has been created.
 
+The minimum required Stripe API version for using the Connect integration with
+this project is [version 2017-05-26](https://stripe.com/docs/upgrades#2017-05-25).
 
 ## Standard and Express Accounts
 

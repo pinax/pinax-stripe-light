@@ -15,11 +15,16 @@ from .conf import settings
 from .managers import ChargeManager, CustomerManager
 from .utils import CURRENCY_SYMBOLS
 
+from django.urls import reverse
+
 
 class StripeObject(models.Model):
 
     stripe_id = models.CharField(max_length=191, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
+
+    def get_absolute_url(self):
+        return reverse('admin:%s_%s_change' % (self._meta.app_label, self._meta.model_name), args=[self.id])
 
     class Meta:
         abstract = True
@@ -28,6 +33,9 @@ class StripeObject(models.Model):
 class AccountRelatedStripeObject(StripeObject):
 
     stripe_account = models.CharField(max_length=255, null=True, blank=True)
+
+    def get_absolute_url(self):
+        return reverse('admin:%s_%s_change' % (self._meta.app_label, self._meta.model_name), args=[self.id])
 
     class Meta:
         abstract = True
@@ -92,6 +100,9 @@ class EventProcessingException(models.Model):
     message = models.CharField(max_length=500)
     traceback = models.TextField()
     created_at = models.DateTimeField(default=timezone.now)
+
+    def get_absolute_url(self):
+        return reverse('admin:%s_%s_change' % (self._meta.app_label, self._meta.model_name), args=[self.id])
 
     def __str__(self):
         return "<{}, pk={}, Event={}>".format(self.message, self.pk, self.event)
@@ -166,6 +177,9 @@ class TransferChargeFee(models.Model):
     description = models.TextField(null=True, blank=True)
     kind = models.CharField(max_length=150)
     created_at = models.DateTimeField(default=timezone.now)
+
+    def get_absolute_url(self):
+        return reverse('admin:%s_%s_change' % (self._meta.app_label, self._meta.model_name), args=[self.id])
 
 
 @python_2_unicode_compatible
@@ -353,6 +367,9 @@ class InvoiceItem(models.Model):
 
     def plan_display(self):
         return self.plan.name if self.plan else ""
+
+    def get_absolute_url(self):
+        return reverse('admin:%s_%s_change' % (self._meta.app_label, self._meta.model_name), args=[self.id])
 
 
 class Charge(StripeObject):

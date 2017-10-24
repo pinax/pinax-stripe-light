@@ -2423,11 +2423,12 @@ class SyncsTests(TestCase):
             "type": "subscription"
         }]
         invoices.sync_invoice_items(invoice, items)
-        self.assertTrue(invoice.items.all().count(), 2)
+        self.assertEquals(invoice.items.count(), 2)
+
         items[1].update({"description": "This is your second subscription"})
         invoices.sync_invoice_items(invoice, items)
-        self.assertTrue(invoice.items.all().count(), 2)
-        self.assertEquals(invoice.items.all()[1].description, "This is your second subscription")
+        self.assertEquals(invoice.items.count(), 2)
+        self.assertEquals(invoice.items.get(stripe_id="sub_7Q4BX0HMfqTpN9").description, "This is your second subscription")
 
 
 class InvoiceSyncsTests(TestCase):

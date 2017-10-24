@@ -6,6 +6,7 @@ from django.utils import timezone
 import stripe
 
 from .. import hooks, models, utils
+from .coupons import sync_coupon_from_stripe_data
 
 
 def cancel(subscription, at_period_end=True):
@@ -161,6 +162,18 @@ def sync_subscription_from_stripe_data(customer, subscription):
         defaults=defaults
     )
     sub = utils.update_with_defaults(sub, defaults, created)
+    if subscription.get("discount", None):
+        defaults = {
+            "start": utils.convert_tstamp(subscription["discount"]["start"]),
+            "end": utils.convert_tstamp(subscription["discount"]["end"]) if subscription["discount"]["end"] else None,
+            "coupon": sync_coupon_from_stripe_data(subscription["discount"]["coupon"], stripe_account=customer.stripe_account),
+        }
+
+        obj, created = models.Discount.objects.get_or_create(
+            subscription=sub,
+            defaults=defaults
+        )
+        utils.update_with_defaults(obj, defaults, created)
     return sub
 
 
@@ -171,7 +184,7 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
     Args:
         subscription: the subscription to update
         plan: optionally, the plan to change the subscription to
-        quantity: optionally, the quantiy of the subscription to change
+        quantity: optionally, the quantity of the subscription to change
         prorate: optionally, if the subscription should be prorated or not
         coupon: optionally, a coupon to apply to the subscription
         charge_immediately: optionally, whether or not to charge immediately

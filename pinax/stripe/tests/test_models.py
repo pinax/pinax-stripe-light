@@ -15,6 +15,7 @@ from ..models import (
     Charge,
     Coupon,
     Customer,
+    Discount,
     Event,
     EventProcessingException,
     Invoice,
@@ -72,6 +73,10 @@ class ModelTests(TestCase):
         i = InvoiceItem(plan=p)
         self.assertEquals(i.plan_display(), "My Plan")
 
+    def test_coupon_repr(self):
+        c = Coupon(id="test", percent_off=25, duration="repeating", duration_in_months=3,)
+        self.assertEquals(repr(c), "Coupon(pk='test', valid=False, amount_off=None, percent_off=25, currency='usd', duration='repeating', livemode=False, max_redemptions=None, times_redeemed=None, stripe_id='')")
+
     def test_coupon_percent(self):
         c = Coupon(percent_off=25, duration="repeating", duration_in_months=3)
         self.assertEquals(str(c), "Coupon for 25% off, repeating")
@@ -93,6 +98,25 @@ class ModelTests(TestCase):
     def test_invoice_status_not_paid(self):
         self.assertEquals(Invoice(paid=False).status, "Open")
 
+    def test_discount_repr(self):
+        c = Coupon()
+        d = Discount(coupon=c)
+        self.assertEquals(repr(d), "Discount(coupon=Coupon(pk=None, valid=False, amount_off=None, percent_off=None, currency='usd', duration='once', livemode=False, max_redemptions=None, times_redeemed=None, stripe_id=''), subscription=None)")
+
+    def test_discount_apply_discount(self):
+        c = Coupon(duration="once", currency="usd")
+        d = Discount(coupon=c)
+        self.assertEquals(d.apply_discount(decimal.Decimal(50.00)), decimal.Decimal(50.00))
+        c = Coupon(amount_off=decimal.Decimal(50.00), duration="once", currency="usd")
+        d = Discount(coupon=c)
+        self.assertEquals(d.apply_discount(decimal.Decimal(50.00)), decimal.Decimal(0.00))
+        c = Coupon(percent_off=decimal.Decimal(50.00), duration="once", currency="usd")
+        d.coupon = c
+        self.assertEquals(d.apply_discount(decimal.Decimal(100.00)), decimal.Decimal(50.00))
+        c = Coupon(percent_off=decimal.Decimal(50.00), duration="repeating", currency="usd")
+        d.end = timezone.now() - datetime.timedelta(days=1)
+        self.assertEquals(d.apply_discount(decimal.Decimal(100.00)), decimal.Decimal(100.00))
+
     def test_subscription_repr(self):
         s = Subscription()
         self.assertEquals(repr(s), "Subscription(pk=None, customer=None, plan=None, status='', stripe_id='')")
@@ -110,6 +134,14 @@ class ModelTests(TestCase):
     def test_subscription_total_amount(self):
         sub = Subscription(plan=Plan(name="Pro Plan", amount=decimal.Decimal("100")), quantity=2)
         self.assertEquals(sub.total_amount, decimal.Decimal("200"))
+
+    @patch("pinax.stripe.models.Discount.apply_discount")
+    def test_subscription_total_amount_discount(self, ApplyDiscountMock):
+        c = Coupon(amount_off=decimal.Decimal(50.00), duration="once", currency="usd")
+        sub = Subscription(plan=Plan(name="Pro Plan", amount=decimal.Decimal("100")), quantity=2)
+        Discount(coupon=c, subscription=sub)
+        sub.total_amount()
+        self.assertTrue(ApplyDiscountMock.called)
 
     def test_subscription_plan_display(self):
         sub = Subscription(plan=Plan(name="Pro Plan"))

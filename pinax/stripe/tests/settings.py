@@ -1,3 +1,5 @@
+import os
+
 import django
 
 old = django.VERSION < (1, 8)
@@ -7,7 +9,10 @@ USE_TZ = True
 TIME_ZONE = "UTC"
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
+        "ENGINE": os.environ.get("PINAX_STRIPE_DATABASE_ENGINE", "django.db.backends.sqlite3"),
+        "HOST": os.environ.get("PINAX_STRIPE_DATABASE_HOST", "127.0.0.1"),
+        "NAME": os.environ.get("PINAX_STRIPE_DATABASE_NAME", "pinax_stripe"),
+        "USER": os.environ.get("PINAX_STRIPE_DATABASE_USER", ""),
     }
 }
 MIDDLEWARE = [  # from 2.0 onwards, only MIDDLEWARE is used

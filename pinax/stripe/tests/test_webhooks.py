@@ -25,6 +25,7 @@ from ..models import (
 )
 from ..webhooks import (
     AccountApplicationDeauthorizeWebhook,
+    AccountExternalAccountCreatedWebhook,
     AccountUpdatedWebhook,
     ChargeCapturedWebhook,
     CouponCreatedWebhook,
@@ -186,10 +187,10 @@ class WebhookTests(TestCase):
     @patch("pinax.stripe.webhooks.Webhook.process_webhook")
     def test_process_exception_is_logged(self, ProcessWebhookMock, ValidateMock, LinkMock):
         # note: we choose an event type for which we do no processing
-        event = Event.objects.create(kind="account.application.deauthorized", webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True, processed=False)
         ProcessWebhookMock.side_effect = stripe.StripeError("Message", "error")
         with self.assertRaises(stripe.StripeError):
-            AccountApplicationDeauthorizeWebhook(event).process()
+            AccountExternalAccountCreatedWebhook(event).process()
         self.assertTrue(EventProcessingException.objects.filter(event=event).exists())
 
     @patch("pinax.stripe.actions.customers.link_customer")
@@ -197,18 +198,18 @@ class WebhookTests(TestCase):
     @patch("pinax.stripe.webhooks.Webhook.process_webhook")
     def test_process_exception_is_logged_non_stripeerror(self, ProcessWebhookMock, ValidateMock, LinkMock):
         # note: we choose an event type for which we do no processing
-        event = Event.objects.create(kind="account.application.deauthorized", webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True, processed=False)
         ProcessWebhookMock.side_effect = Exception("generic exception")
         with self.assertRaises(Exception):
-            AccountApplicationDeauthorizeWebhook(event).process()
+            AccountExternalAccountCreatedWebhook(event).process()
         self.assertTrue(EventProcessingException.objects.filter(event=event).exists())
 
     @patch("pinax.stripe.actions.customers.link_customer")
     @patch("pinax.stripe.webhooks.Webhook.validate")
     def test_process_return_none(self, ValidateMock, LinkMock):
         # note: we choose an event type for which we do no processing
-        event = Event.objects.create(kind="account.application.deauthorized", webhook_message={}, valid=True, processed=False)
-        self.assertIsNone(AccountApplicationDeauthorizeWebhook(event).process())
+        event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True, processed=False)
+        self.assertIsNone(AccountExternalAccountCreatedWebhook(event).process())
 
 
 class ChargeWebhookTest(TestCase):
@@ -595,3 +596,16 @@ class AccountWebhookTest(TestCase):
         event.validated_message = dict(data=dict(object=dict(id=1)))
         AccountUpdatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
+
+    @patch("stripe.Account.retrieve")
+    @patch("pinax.stripe.actions.accounts.deauthorize")
+    def test_process_deauthorize(self, DeauthorizeMock, RetrieveMock):
+        event = Event.objects.create(
+            kind=AccountApplicationDeauthorizeWebhook.name,
+            webhook_message={},
+            valid=True,
+            processed=False
+        )
+        event.validated_message = dict(data=dict(object=dict(id=1)))
+        AccountApplicationDeauthorizeWebhook(event).process_webhook()
+        self.assertTrue(DeauthorizeMock.called)

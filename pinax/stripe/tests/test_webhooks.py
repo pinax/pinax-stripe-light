@@ -1,6 +1,7 @@
 import decimal
 import json
 
+from django.contrib.auth import get_user_model
 from django.dispatch import Signal
 from django.test import TestCase
 from django.test.client import Client
@@ -19,6 +20,7 @@ from ..webhooks import (
     AccountApplicationDeauthorizeWebhook,
     AccountUpdatedWebhook,
     ChargeCapturedWebhook,
+    CustomerDeletedWebhook,
     CustomerSourceCreatedWebhook,
     CustomerSourceDeletedWebhook,
     CustomerSubscriptionCreatedWebhook,
@@ -207,23 +209,46 @@ class ChargeWebhookTest(TestCase):
         self.assertTrue(SyncMock.called)
 
 
+class CustomerDeletedWebhookTest(TestCase):
+
+    def test_process_webhook_without_linked_customer(self):
+        event = Event.objects.create(kind=CustomerDeletedWebhook.name, webhook_message={}, valid=True, processed=False)
+        CustomerDeletedWebhook(event).process_webhook()
+
+    def test_process_webhook_with_linked_customer(self):
+        User = get_user_model()
+        customer = Customer.objects.create(user=User.objects.create())
+        self.assertIsNotNone(customer.user)
+        event = Event.objects.create(kind=CustomerDeletedWebhook.name, webhook_message={}, valid=True, processed=False, customer=customer)
+        CustomerDeletedWebhook(event).process_webhook()
+        self.assertIsNone(customer.user)
+
+
 class CustomerUpdatedWebhookTest(TestCase):
 
     @patch("pinax.stripe.actions.customers.sync_customer")
-    def test_process_webhook(self, SyncMock):
+    def test_process_webhook_without_customer(self, SyncMock):
         event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
         CustomerUpdatedWebhook(event).process_webhook()
-        self.assertEquals(SyncMock.call_count, 1)
-        self.assertEquals(SyncMock.call_args[0], (None, None))
+        self.assertEquals(SyncMock.call_count, 0)
 
     @patch("pinax.stripe.actions.customers.sync_customer")
-    def test_process_webhook_with_data(self, SyncMock):
+    def test_process_webhook_without_customer_with_data(self, SyncMock):
         event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
         obj = object()
         event.validated_message = dict(data=dict(object=obj))
         CustomerUpdatedWebhook(event).process_webhook()
+        self.assertEquals(SyncMock.call_count, 0)
+
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    def test_process_webhook_with_customer_with_data(self, SyncMock):
+        customer = Customer.objects.create()
+        event = Event.objects.create(kind=CustomerUpdatedWebhook.name, customer=customer, webhook_message={}, valid=True, processed=False)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CustomerUpdatedWebhook(event).process_webhook()
         self.assertEquals(SyncMock.call_count, 1)
-        self.assertIsNone(SyncMock.call_args[0][0])
+        self.assertIs(SyncMock.call_args[0][0], customer)
         self.assertIs(SyncMock.call_args[0][1], obj)
 
 

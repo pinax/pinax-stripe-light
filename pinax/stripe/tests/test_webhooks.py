@@ -52,9 +52,6 @@ class WebhookRegistryTest(TestCase):
 
 class WebhookTests(TestCase):
 
-    def setUp(self):
-        self.account = Account.objects.create(stripe_id="acc_XXX")
-
     event_data = {
         "api_version": "2017-06-05",
         "created": 1348360173,
@@ -122,8 +119,8 @@ class WebhookTests(TestCase):
     @patch("stripe.Transfer.retrieve")
     def test_webhook_associated_with_stripe_account(self, TransferMock, StripeEventMock):
         connect_event_data = self.event_data.copy()
-        # only difference is that we'll have a user_id value
-        connect_event_data["account"] = self.account.stripe_id
+        account = Account.objects.create(stripe_id="acc_XXX")
+        connect_event_data["account"] = account.stripe_id
         StripeEventMock.return_value.to_dict.return_value = connect_event_data
         TransferMock.return_value = connect_event_data["data"]["object"]
         msg = json.dumps(connect_event_data)
@@ -136,7 +133,7 @@ class WebhookTests(TestCase):
         self.assertTrue(Event.objects.filter(kind="transfer.created").exists())
         self.assertEqual(
             Event.objects.filter(kind="transfer.created").first().stripe_account,
-            self.account
+            account
         )
 
     def test_webhook_duplicate_event(self):

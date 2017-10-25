@@ -131,6 +131,33 @@ class ChargesTests(TestCase):
         self.assertTrue(SyncMock.called)
         self.assertTrue(SendReceiptMock.called)
 
+    @patch("pinax.stripe.hooks.hookset.send_receipt")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("stripe.Charge.create")
+    def test_create_with_on_behalf_of(self, CreateMock, SyncMock, SendReceiptMock):
+        charges.create(
+            amount=decimal.Decimal("10"),
+            customer=self.customer,
+            on_behalf_of="account",
+        )
+        self.assertTrue(CreateMock.called)
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["on_behalf_of"], "account")
+        self.assertTrue(SyncMock.called)
+        self.assertTrue(SendReceiptMock.called)
+
+    @patch("pinax.stripe.hooks.hookset.send_receipt")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("stripe.Charge.create")
+    def test_create_with_destination_and_on_behalf_of(self, CreateMock, SyncMock, SendReceiptMock):
+        with self.assertRaises(ValueError):
+            charges.create(
+                amount=decimal.Decimal("10"),
+                customer=self.customer,
+                destination_account="xxx",
+                on_behalf_of="account",
+            )
+
     @patch("stripe.Charge.create")
     def test_create_not_decimal_raises_exception(self, CreateMock):
         with self.assertRaises(ValueError):
@@ -1090,6 +1117,43 @@ class SyncsTests(TestCase):
         source.update({"exp_year": 2022})
         sources.sync_payment_source_from_stripe_data(self.customer, source)
         self.assertEquals(Card.objects.get(stripe_id=source["id"]).exp_year, 2022)
+
+    def test_sync_payment_source_from_stripe_data_source_card(self):
+        source = {
+            "id": "src_123",
+            "object": "source",
+            "amount": None,
+            "client_secret": "src_client_secret_123",
+            "created": 1483575790,
+            "currency": None,
+            "flow": "none",
+            "livemode": False,
+            "metadata": {},
+            "owner": {
+                "address": None,
+                "email": None,
+                "name": None,
+                "phone": None,
+                "verified_address": None,
+                "verified_email": None,
+                "verified_name": None,
+                "verified_phone": None,
+            },
+            "status": "chargeable",
+            "type": "card",
+            "usage": "reusable",
+            "card": {
+                "brand": "Visa",
+                "country": "US",
+                "exp_month": 12,
+                "exp_year": 2034,
+                "funding": "debit",
+                "last4": "5556",
+                "three_d_secure": "not_supported"
+            }
+        }
+        sources.sync_payment_source_from_stripe_data(self.customer, source)
+        self.assertFalse(Card.objects.exists())
 
     def test_sync_payment_source_from_stripe_data_bitcoin(self):
         source = {

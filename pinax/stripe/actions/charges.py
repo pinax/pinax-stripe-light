@@ -40,30 +40,7 @@ def capture(charge, amount=None):
     sync_charge_from_stripe_data(stripe_charge)
 
 
-def create(
-    amount, customer, source=None, currency="usd", description=None,
-    send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True,
-    email=None, destination_account=None, destination_amount=None,
-    application_fee=None
-):
-    """
-    Create a charge for the given customer.
-
-    Args:
-        amount: should be a decimal.Decimal amount
-        customer: the Stripe id of the customer to charge
-        source: the Stripe id of the source belonging to the customer
-        currency: the currency with which to charge the amount in
-        description: a description of the charge
-        send_receipt: send a receipt upon successful charge
-        capture: immediately capture the charge instead of doing a pre-authorization
-        destination_account: stripe_id of a connected account
-        destination_amount: amount to transfer to the `destination_account` without creating an application fee
-        application_fee: used with `destination_account` to add a fee destined for the platform account
-
-    Returns:
-        a pinax.stripe.models.Charge object
-    """
+def _validate_create_params(amount, application_fee, destination_account, destination_amount, on_behalf_of):
     if not isinstance(amount, decimal.Decimal):
         raise ValueError(
             "You must supply a decimal value for `amount`."
@@ -80,6 +57,37 @@ def create(
         raise ValueError(
             "You can't specify `application_fee` with `destination_amount`"
         )
+    if destination_account and on_behalf_of:
+        raise ValueError(
+            "`destination_account` and `on_behalf_of` are mutualy exclusive")
+
+
+def create(
+    amount, customer, source=None, currency="usd", description=None,
+    send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True,
+    email=None, destination_account=None, destination_amount=None,
+    application_fee=None, on_behalf_of=None,
+):
+    """
+    Create a charge for the given customer.
+
+    Args:
+        amount: should be a decimal.Decimal amount
+        customer: the Stripe id of the customer to charge
+        source: the Stripe id of the source belonging to the customer
+        currency: the currency with which to charge the amount in
+        description: a description of the charge
+        send_receipt: send a receipt upon successful charge
+        capture: immediately capture the charge instead of doing a pre-authorization
+        destination_account: stripe_id of a connected account
+        destination_amount: amount to transfer to the `destination_account` without creating an application fee
+        application_fee: used with `destination_account` to add a fee destined for the platform account
+        on_behalf_of: Direct Charges to given account, used with stripe connect and connected accounts.
+
+    Returns:
+        a pinax.stripe.models.Charge object
+    """
+    _validate_create_params(amount, application_fee, destination_account, destination_amount, on_behalf_of)
     kwargs = dict(
         amount=utils.convert_amount_for_api(amount, currency),  # find the final amount
         currency=currency,
@@ -89,19 +97,18 @@ def create(
         capture=capture,
     )
     if destination_account:
-        kwargs["destination"] = {
-            "account": destination_account
-        }
+        kwargs["destination"] = {"account": destination_account}
         if destination_amount:
             kwargs["destination"]["amount"] = utils.convert_amount_for_api(
                 destination_amount,
                 currency
             )
-
-    if application_fee:
-        kwargs["application_fee"] = utils.convert_amount_for_api(
-            application_fee, currency
-        )
+        if application_fee:
+            kwargs["application_fee"] = utils.convert_amount_for_api(
+                application_fee, currency
+            )
+    elif on_behalf_of:
+        kwargs["on_behalf_of"] = on_behalf_of
     stripe_charge = stripe.Charge.create(
         **kwargs
     )

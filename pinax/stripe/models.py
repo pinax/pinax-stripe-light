@@ -563,6 +563,7 @@ class Account(StripeObject):
     verification_due_by = models.DateTimeField(null=True, blank=True)
     verification_timestamp = models.DateTimeField(null=True, blank=True)
     verification_fields_needed = JSONField(null=True, blank=True)
+    authorized = models.BooleanField(default=True)
 
     @property
     def stripe_account(self):
@@ -572,11 +573,12 @@ class Account(StripeObject):
         return "{} - {}".format(self.display_name, self.stripe_id)
 
     def __repr__(self):
-        return "Account(pk={!r}, display_name={!r}, type={!r}, stripe_id={!r})".format(
+        return "Account(pk={!r}, display_name={!r}, type={!r}, stripe_id={!r}, authorized={!r})".format(
             self.pk,
             str(self.display_name),
             self.type,
             str(self.stripe_id),
+            self.authorized,
         )
 
 

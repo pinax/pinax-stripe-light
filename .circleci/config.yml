@@ -20,7 +20,8 @@ common: &common
           if [[ "$UPLOAD_COVERAGE" != 0 ]]; then
               PATH=$HOME/.local/bin:$PATH
               pip install --user codecov
-              ~/.local/bin/codecov --required --flags $CIRCLE_JOB
+              coverage xml
+              ~/.local/bin/codecov --required -X search gcov pycov -f coverage.xml --flags $CIRCLE_JOB
           fi
     - save_cache:
         paths:

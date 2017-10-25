@@ -32,7 +32,7 @@ def add_event(stripe_id, kind, livemode, message, api_version="",
         webhook.process()
 
 
-def dupe_event_exists(stripe_id, stripe_account=None):
+def dupe_event_exists(stripe_id):
     """
     Checks if a duplicate event exists
 

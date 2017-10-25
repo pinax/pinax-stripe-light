@@ -46,6 +46,7 @@ class WebhookRegistryTest(TestCase):
 class WebhookTests(TestCase):
 
     event_data = {
+        "api_version": "2017-06-05",
         "created": 1348360173,
         "data": {
             "object": {

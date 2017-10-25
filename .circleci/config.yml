@@ -150,6 +150,5 @@ workflows:
   test:
     jobs:
       - lint
-      - py36dj111
-      - py36dj20
+      - py36dj111psql
       - py36dj20psql

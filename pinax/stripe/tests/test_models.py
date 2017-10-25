@@ -131,13 +131,14 @@ class ModelTests(TestCase):
     def test_account_str_and_repr(self):
         a = Account()
         self.assertEquals(str(a), " - ")
-        self.assertEquals(repr(a), "Account(pk=None, display_name='', type=None, stripe_id='')")
+        self.assertEquals(repr(a), "Account(pk=None, display_name='', type=None, stripe_id='', authorized=True)")
         a.stripe_id = "acct_X"
         self.assertEquals(str(a), " - acct_X")
-        self.assertEquals(repr(a), "Account(pk=None, display_name='', type=None, stripe_id='acct_X')")
+        self.assertEquals(repr(a), "Account(pk=None, display_name='', type=None, stripe_id='acct_X', authorized=True)")
         a.display_name = "Display name"
+        a.authorized = False
         self.assertEquals(str(a), "Display name - acct_X")
-        self.assertEquals(repr(a), "Account(pk=None, display_name='Display name', type=None, stripe_id='acct_X')")
+        self.assertEquals(repr(a), "Account(pk=None, display_name='Display name', type=None, stripe_id='acct_X', authorized=False)")
 
 
 class StripeObjectTests(TestCase):

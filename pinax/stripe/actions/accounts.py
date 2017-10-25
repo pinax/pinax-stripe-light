@@ -218,3 +218,8 @@ def delete(account):
     """
     account.stripe_account.delete()
     account.delete()
+
+
+def deauthorize(account):
+    account.authorized = False
+    account.save()

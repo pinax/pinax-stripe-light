@@ -2986,6 +2986,13 @@ class AccountsSyncTestCase(TestCase):
         self.assertNotEqual(account.type, "custom")
         self.assert_common_attributes(account)
 
+    def test_deauthorize_account(self):
+        account = accounts.sync_account_from_stripe_data(
+            self.not_custom_account_data
+        )
+        accounts.deauthorize(account)
+        self.assertFalse(account.authorized)
+
 
 class BankAccountsSyncTestCase(TestCase):
 

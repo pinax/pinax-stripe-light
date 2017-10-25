@@ -128,7 +128,7 @@ jobs:
       - image: circleci/python:3.6
         environment:
           TOXENV=py36-dj111
-  py36dj11psql:
+  py36dj111psql:
     <<: *common
     docker:
       - image: circleci/python:3.6

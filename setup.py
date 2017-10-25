@@ -55,7 +55,6 @@ recurring subscriptions managed by Stripe.
 
 tests_require = [
     "mock",
-    "django_forms_bootstrap",
 ]
 
 setup(

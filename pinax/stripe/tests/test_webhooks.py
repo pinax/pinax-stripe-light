@@ -56,6 +56,7 @@ class WebhookTests(TestCase):
         self.account = Account.objects.create(stripe_id="acc_XXX")
 
     event_data = {
+        "api_version": "2017-06-05",
         "created": 1348360173,
         "data": {
             "object": {

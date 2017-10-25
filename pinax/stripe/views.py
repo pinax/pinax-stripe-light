@@ -209,6 +209,7 @@ class Webhook(View):
                 stripe_id=data["id"],
                 kind=data["type"],
                 livemode=data["livemode"],
+                api_version=data["api_version"],
                 message=data
             )
         return HttpResponse()

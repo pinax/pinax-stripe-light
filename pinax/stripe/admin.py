@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.admin.views.main import ChangeList
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 
@@ -119,8 +120,28 @@ class AccountListFilter(admin.SimpleListFilter):
         return queryset
 
 
+class PrefetchingChangeList(ChangeList):
+    """A custom changelist to prefetch related fields."""
+    def get_queryset(self, request):
+        qs = super(PrefetchingChangeList, self).get_queryset(request)
+
+        if subscription_status in self.list_display:
+            qs = qs.prefetch_related("subscription_set")
+        if "customer" in self.list_display:
+            qs = qs.prefetch_related("customer")
+        if "user" in self.list_display:
+            qs = qs.prefetch_related("user")
+        return qs
+
+
+class ModelAdmin(admin.ModelAdmin):
+    def get_changelist(self, request, **kwargs):
+        return PrefetchingChangeList
+
+
 admin.site.register(
     Charge,
+    admin_class=ModelAdmin,
     list_display=[
         "stripe_id",
         "customer",
@@ -219,6 +240,7 @@ subscription_status.short_description = "Subscription Status"  # noqa
 
 admin.site.register(
     Customer,
+    admin_class=ModelAdmin,
     raw_id_fields=["user", "stripe_account"],
     list_display=[
         "stripe_id",
@@ -261,6 +283,8 @@ customer_has_card.short_description = "Customer Has Card"  # noqa
 
 
 def customer_user(obj):
+    if not obj.customer.user:
+        return ""
     User = get_user_model()
     username = getattr(obj.customer.user, User.USERNAME_FIELD)
     email = getattr(obj, "email", "")

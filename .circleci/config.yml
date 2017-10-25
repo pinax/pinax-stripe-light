@@ -17,10 +17,11 @@ common: &common
     - run:
         name: upload coverage report
         command: |
-          if [[ "$TOXENV" != checkqa ]]; then
+          if [[ "$UPLOAD_COVERAGE" != 0 ]]; then
               PATH=$HOME/.local/bin:$PATH
               pip install --user codecov
-              ~/.local/bin/codecov --required --flags $CIRCLE_JOB
+              coverage xml
+              ~/.local/bin/codecov --required -X search gcov pycov -f coverage.xml --flags $CIRCLE_JOB
           fi
     - save_cache:
         paths:
@@ -36,7 +37,8 @@ jobs:
     docker:
       - image: circleci/python:3.6.1
         environment:
-          TOXENV=checkqa
+          - TOXENV=checkqa,check_migrated
+          - UPLOAD_COVERAGE=0
   py27dj18:
     <<: *common
     docker:
@@ -115,6 +117,16 @@ jobs:
       - image: circleci/python:3.6
         environment:
           TOXENV=py36-dj20
+  py36dj20psql:
+    <<: *common
+    docker:
+      - image: circleci/python:3.6
+        environment:
+          - TOXENV=py36-dj20-postgres
+          - PINAX_STRIPE_DATABASE_HOST=127.0.0.1
+          - PINAX_STRIPE_DATABASE_USER=root
+          - PINAX_STRIPE_DATABASE_NAME=circle_test
+      - image: circleci/postgres:9.6-alpine
 
 workflows:
   version: 2
@@ -134,3 +146,4 @@ workflows:
       - py35dj20
       - py36dj111
       - py36dj20
+      - py36dj20psql

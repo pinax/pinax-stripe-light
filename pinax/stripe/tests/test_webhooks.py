@@ -1,6 +1,7 @@
 import decimal
 import json
 
+from django.contrib.auth import get_user_model
 from django.dispatch import Signal
 from django.test import TestCase
 from django.test.client import Client
@@ -19,6 +20,7 @@ from ..webhooks import (
     AccountApplicationDeauthorizeWebhook,
     AccountUpdatedWebhook,
     ChargeCapturedWebhook,
+    CustomerDeletedWebhook,
     CustomerSourceCreatedWebhook,
     CustomerSourceDeletedWebhook,
     CustomerSubscriptionCreatedWebhook,
@@ -46,6 +48,7 @@ class WebhookRegistryTest(TestCase):
 class WebhookTests(TestCase):
 
     event_data = {
+        "api_version": "2017-06-05",
         "created": 1348360173,
         "data": {
             "object": {
@@ -204,6 +207,21 @@ class ChargeWebhookTest(TestCase):
         event.validated_message = dict(data=dict(object=dict(id=1)))
         ChargeCapturedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
+
+
+class CustomerDeletedWebhookTest(TestCase):
+
+    def test_process_webhook_without_linked_customer(self):
+        event = Event.objects.create(kind=CustomerDeletedWebhook.name, webhook_message={}, valid=True, processed=False)
+        CustomerDeletedWebhook(event).process_webhook()
+
+    def test_process_webhook_with_linked_customer(self):
+        User = get_user_model()
+        customer = Customer.objects.create(user=User.objects.create())
+        self.assertIsNotNone(customer.user)
+        event = Event.objects.create(kind=CustomerDeletedWebhook.name, webhook_message={}, valid=True, processed=False, customer=customer)
+        CustomerDeletedWebhook(event).process_webhook()
+        self.assertIsNone(customer.user)
 
 
 class CustomerUpdatedWebhookTest(TestCase):

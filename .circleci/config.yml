@@ -133,7 +133,7 @@ jobs:
     docker:
       - image: circleci/python:3.6
         environment:
-          - TOXENV=py36-dj11-postgres
+          - TOXENV=py36-dj111-postgres
           - PINAX_STRIPE_DATABASE_HOST=127.0.0.1
           - PINAX_STRIPE_DATABASE_USER=root
           - PINAX_STRIPE_DATABASE_NAME=circle_test

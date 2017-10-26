@@ -19,6 +19,7 @@ from .actions import (
     transfers
 )
 from .conf import settings
+from .utils import obfuscate_secret_key
 
 
 class WebhookRegistry(object):
@@ -144,8 +145,34 @@ class AccountApplicationDeauthorizeWebhook(Webhook):
     name = "account.application.deauthorized"
     description = "Occurs whenever a user deauthorizes an application. Sent to the related application only."
 
+    def validate(self):
+        """
+        Specialized validation of incoming events.
+
+        We try to retrieve the event:
+         - in case of PermissionError exception, everything is perfectly normal.
+           It means the account has been deauthorized.
+         - In case no exception has been caught, then, most likely, the event has been forged
+           to make you believe the account has been disabled despite it is still functioning.
+        """
+        stripe_account_id = self.event.webhook_message["account"]
+        self.stripe_account = models.Account.objects.filter(stripe_id=stripe_account_id).first()
+        try:
+            stripe.Event.retrieve(
+                self.event.stripe_id,
+                stripe_account=stripe_account_id,
+            )
+        except stripe.error.PermissionError as exc:
+            if not(stripe_account_id in str(exc) and obfuscate_secret_key(settings.PINAX_STRIPE_SECRET_KEY) in str(exc)):
+                raise exc
+            self.event.valid = True
+            self.event.validated_message = self.event.webhook_message
+            self.event.stripe_account = self.stripe_account
+        else:
+            raise ValueError("The remote account still valid. this might be an hostile event")
+
     def process_webhook(self):
-        accounts.deauthorize(models.Account.objects.get(stripe_id=self.event.message["data"]["object"]["id"]))
+        accounts.deauthorize(self.stripe_account)
 
 
 class AccountExternalAccountCreatedWebhook(Webhook):

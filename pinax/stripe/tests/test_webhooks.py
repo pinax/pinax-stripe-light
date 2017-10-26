@@ -602,14 +602,42 @@ class AccountWebhookTest(TestCase):
         AccountUpdatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
 
-    @patch("pinax.stripe.actions.accounts.deauthorize")
-    def test_process_deauthorize(self, DeauthorizeMock):
+    @patch("stripe.Event.retrieve")
+    def test_process_deauthorize(self, RetrieveMock):
+        data = {"data": {"object": {"id": "evt_001"}},
+                "account": self.account.stripe_id}
         event = Event.objects.create(
             kind=AccountApplicationDeauthorizeWebhook.name,
-            webhook_message={},
-            valid=True,
-            processed=False
+            webhook_message=data,
         )
-        event.validated_message = dict(data=dict(object=dict(id=self.account.stripe_id)))
-        AccountApplicationDeauthorizeWebhook(event).process_webhook()
-        self.assertTrue(DeauthorizeMock.called)
+        RetrieveMock.side_effect = stripe.error.PermissionError(
+            "The provided key 'sk_test_********************abcd' does not have access to account 'acc_aa'")
+        AccountApplicationDeauthorizeWebhook(event).process()
+        self.assertTrue(event.valid)
+        self.assertTrue(event.processed)
+        self.account.refresh_from_db()
+        self.assertFalse(self.account.authorized)
+
+    @patch("stripe.Event.retrieve")
+    def test_process_deauthorize_fake_response(self, RetrieveMock):
+        data = {"data": {"object": {"id": "evt_001"}},
+                "account": self.account.stripe_id}
+        event = Event.objects.create(
+            kind=AccountApplicationDeauthorizeWebhook.name,
+            webhook_message=data,
+        )
+        RetrieveMock.side_effect = stripe.error.PermissionError(
+            "The provided key 'sk_test_********************ABCD' does not have access to account 'acc_aa'")
+        with self.assertRaises(stripe.error.PermissionError):
+            AccountApplicationDeauthorizeWebhook(event).process()
+
+    @patch("stripe.Event.retrieve")
+    def test_process_deauthorize_with_authorizes_account(self, RetrieveMock):
+        data = {"data": {"object": {"id": "evt_002"}},
+                "account": self.account.stripe_id}
+        event = Event.objects.create(
+            kind=AccountApplicationDeauthorizeWebhook.name,
+            webhook_message=data,
+        )
+        with self.assertRaises(ValueError):
+            AccountApplicationDeauthorizeWebhook(event).process()

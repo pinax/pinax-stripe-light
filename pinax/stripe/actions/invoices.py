@@ -63,7 +63,7 @@ def pay(invoice, send_receipt=True):
     return False
 
 
-def paid(invoice):
+def mark_paid(invoice):
     """
     Sometimes customers may want to pay with payment methods outside of Stripe, such as check.
     In these situations, Stripe still allows you to keep track of the payment status of your invoices.
@@ -76,8 +76,7 @@ def paid(invoice):
     if not invoice.paid:
         stripe_invoice = invoice.stripe_invoice
         stripe_invoice.paid = True
-        stripe_invoice_ = stripe_invoice.save()
-        sync_invoice_from_stripe_data(stripe_invoice_)
+        sync_invoice_from_stripe_data(stripe_invoice.save())
 
 
 def forgive(invoice):
@@ -91,8 +90,7 @@ def forgive(invoice):
     if not invoice.paid:
         stripe_invoice = invoice.stripe_invoice
         stripe_invoice.forgiven = True
-        stripe_invoice_ = stripe_invoice.save()
-        sync_invoice_from_stripe_data(stripe_invoice_)
+        sync_invoice_from_stripe_data(stripe_invoice.save())
 
 
 def close(invoice):
@@ -105,11 +103,10 @@ def close(invoice):
     if not invoice.closed:
         stripe_invoice = invoice.stripe_invoice
         stripe_invoice.closed = True
-        stripe_invoice_ = stripe_invoice.save()
-        sync_invoice_from_stripe_data(stripe_invoice_)
+        sync_invoice_from_stripe_data(stripe_invoice.save())
 
 
-def open(invoice):
+def reopen(invoice):
     """
     (re)-open a closed invoice (which is hold for review)
 
@@ -119,8 +116,7 @@ def open(invoice):
     if invoice.closed:
         stripe_invoice = invoice.stripe_invoice
         stripe_invoice.closed = False
-        stripe_invoice_ = stripe_invoice.save()
-        sync_invoice_from_stripe_data(stripe_invoice_)
+        sync_invoice_from_stripe_data(stripe_invoice.save())
 
 
 def create_invoice_item(customer, invoice, subscription, amount, currency, description, metadata=None):
@@ -169,6 +165,7 @@ def create_invoice_item(customer, invoice, subscription, amount, currency, descr
         defaults=defaults
     )
     return utils.update_with_defaults(inv_item, defaults, inv_item_created)
+
 
 def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
     """

@@ -382,7 +382,10 @@ class InvoiceWebhook(Webhook):
         )
 
 
-class InvoiceUpcomingWebhook(InvoiceWebhook):
+class InvoiceUpcomingWebhook(Webhook):
+    """
+    Notice on invoice.upcoming, the invoice has not been created yet, and therefor we cannot sync it (the payload does not have an id) and so it does not inherit from InvoiceWebhook
+    """
     name = "invoice.upcoming"
     description = "Occurs X number of days before a subscription is scheduled to create an invoice that is charged automatically, where X is determined by your subscriptions settings."
 

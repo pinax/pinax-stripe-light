@@ -74,9 +74,11 @@ class ChargesTests(TestCase):
         with self.assertRaises(ValueError):
             charges.create(customer=self.customer, amount=10)
 
-    def test_create_no_customer_raises_error(self):
-        with self.assertRaises(TypeError):
-            charges.create(amount=decimal.Decimal("10"))
+    def test_create_no_customer_nor_source_raises_error(self):
+        with self.assertRaises(ValueError) as exc:
+            charges.create(amount=decimal.Decimal("10"),
+                           customer=None)
+            self.assertEquals(exc.exception.args, ("Must provide `customer` or `source`.",))
 
     @patch("pinax.stripe.hooks.hookset.send_receipt")
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")

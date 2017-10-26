@@ -82,7 +82,7 @@ def create(
         destination_account: stripe_id of a connected account
         destination_amount: amount to transfer to the `destination_account` without creating an application fee
         application_fee: used with `destination_account` to add a fee destined for the platform account
-        on_behalf_of: stripe_id of a connected account. Direct Charges to given account
+        on_behalf_of: stripe_id of a connected account. Creates direct Charges to this account.
 
     Returns:
         a pinax.stripe.models.Charge object

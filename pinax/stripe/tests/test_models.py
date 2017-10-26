@@ -57,6 +57,14 @@ class ModelTests(TestCase):
     def test_event_str(self):
         e = Event(kind="customer.deleted", webhook_message={})
         self.assertTrue("customer.deleted" in str(e))
+        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer=None, valid=None, stripe_id='')")
+
+        e.stripe_id = "evt_X"
+        e.customer = Customer()
+        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer={!r}, valid=None, stripe_id='{}')".format(
+            e.customer,
+            e.stripe_id,
+        ))
 
     def test_customer_str(self):
         e = Customer()

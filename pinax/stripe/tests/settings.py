@@ -20,7 +20,8 @@ MIDDLEWARE = [  # from 2.0 onwards, only MIDDLEWARE is used
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
 ]
-MIDDLEWARE_CLASSES = MIDDLEWARE
+if django.VERSION < (1, 10):
+    MIDDLEWARE_CLASSES = MIDDLEWARE
 ROOT_URLCONF = "pinax.stripe.tests.urls"
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -37,9 +38,6 @@ PINAX_STRIPE_SECRET_KEY = ""
 PINAX_STRIPE_SUBSCRIPTION_REQUIRED_EXCEPTION_URLS = ["pinax_stripe_subscription_create"]
 PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT = "pinax_stripe_subscription_create"
 PINAX_STRIPE_HOOKSET = "pinax.stripe.tests.hooks.TestHookSet"
-TEMPLATE_DIRS = [
-    "pinax/stripe/tests/templates"
-]
 TEMPLATES = [{
     "BACKEND": "django.template.backends.django.DjangoTemplates",
     "DIRS": [

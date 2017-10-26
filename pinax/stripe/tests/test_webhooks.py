@@ -611,7 +611,7 @@ class AccountWebhookTest(TestCase):
             webhook_message=data,
         )
         RetrieveMock.side_effect = stripe.error.PermissionError(
-            "The provided key 'sk_test_********************abcd' does not have access to account 'acc_aa'")
+            "The provided key 'sk_test_********************abcd' does not have access to account 'acc_aa' (or that account does not exist). Application access may have been revoked.")
         AccountApplicationDeauthorizeWebhook(event).process()
         self.assertTrue(event.valid)
         self.assertTrue(event.processed)
@@ -627,7 +627,7 @@ class AccountWebhookTest(TestCase):
             webhook_message=data,
         )
         RetrieveMock.side_effect = stripe.error.PermissionError(
-            "The provided key 'sk_test_********************ABCD' does not have access to account 'acc_aa'")
+            "The provided key 'sk_test_********************ABCD' does not have access to account 'acc_aa' (or that account does not exist). Application access may have been revoked.")
         with self.assertRaises(stripe.error.PermissionError):
             AccountApplicationDeauthorizeWebhook(event).process()
 
@@ -651,7 +651,7 @@ class AccountWebhookTest(TestCase):
             webhook_message=data,
         )
         RetrieveMock.side_effect = stripe.error.PermissionError(
-            "The provided key 'sk_test_********************abcd' does not have access to account 'acct_bb'")
+            "The provided key 'sk_test_********************abcd' does not have access to account 'acct_bb' (or that account does not exist). Application access may have been revoked.")
         AccountApplicationDeauthorizeWebhook(event).process()
         self.assertTrue(event.valid)
         self.assertTrue(event.processed)

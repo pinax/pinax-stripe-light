@@ -172,7 +172,8 @@ class AccountApplicationDeauthorizeWebhook(Webhook):
             raise ValueError("The remote account is still valid. This might be a hostile event")
 
     def process_webhook(self):
-        accounts.deauthorize(self.stripe_account)
+        if self.stripe_account is not None:
+            accounts.deauthorize(self.stripe_account)
 
 
 class AccountExternalAccountCreatedWebhook(Webhook):

@@ -584,6 +584,11 @@ class TestTransferWebhooks(TestCase):
 
 class AccountWebhookTest(TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super(AccountWebhookTest, cls).setUpClass()
+        cls.account = Account.objects.create(stripe_id="acc_aa")
+
     @patch("stripe.Account.retrieve")
     @patch("pinax.stripe.actions.accounts.sync_account_from_stripe_data")
     def test_process_webhook(self, SyncMock, RetrieveMock):
@@ -597,15 +602,14 @@ class AccountWebhookTest(TestCase):
         AccountUpdatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
 
-    @patch("stripe.Account.retrieve")
     @patch("pinax.stripe.actions.accounts.deauthorize")
-    def test_process_deauthorize(self, DeauthorizeMock, RetrieveMock):
+    def test_process_deauthorize(self, DeauthorizeMock):
         event = Event.objects.create(
             kind=AccountApplicationDeauthorizeWebhook.name,
             webhook_message={},
             valid=True,
             processed=False
         )
-        event.validated_message = dict(data=dict(object=dict(id=1)))
+        event.validated_message = dict(data=dict(object=dict(id=self.account.stripe_id)))
         AccountApplicationDeauthorizeWebhook(event).process_webhook()
         self.assertTrue(DeauthorizeMock.called)

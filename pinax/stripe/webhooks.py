@@ -145,7 +145,7 @@ class AccountApplicationDeauthorizeWebhook(Webhook):
     description = "Occurs whenever a user deauthorizes an application. Sent to the related application only."
 
     def process_webhook(self):
-        accounts.deauthorize(stripe.Account.retrieve(self.event.message["data"]["object"]["id"]))
+        accounts.deauthorize(models.Account.objects.get(stripe_id=self.event.message["data"]["object"]["id"]))
 
 
 class AccountExternalAccountCreatedWebhook(Webhook):

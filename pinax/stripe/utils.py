@@ -62,3 +62,7 @@ CURRENCY_SYMBOLS = {
     "sgd": "\u0024",
     "usd": "\u0024",
 }
+
+
+def obfuscate_secret_key(secret_key):
+    return "*" * 20 + secret_key[-4:]

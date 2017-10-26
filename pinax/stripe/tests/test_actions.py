@@ -803,7 +803,19 @@ class SubscriptionsTests(TestCase):
             user=cls.user,
             stripe_id="cus_xxxxxxxxxxxxxxx"
         )
+        cls.plan = Plan.objects.create(
+            stripe_id="the-plan",
+            amount=2,
+            interval_count=1,
+        )
         cls.account = Account.objects.create(stripe_id="acct_xx")
+        cls.connected_customer = Customer.objects.create(
+            stripe_id="cus_yyyyyyyyyyyyyyy",
+            stripe_account=cls.account,
+        )
+        UserAccount.objects.create(user=cls.user,
+                                   customer=cls.connected_customer,
+                                   account=cls.account)
 
     def test_has_active_subscription(self):
         plan = Plan.objects.create(
@@ -961,18 +973,35 @@ class SubscriptionsTests(TestCase):
         _, kwargs = SubscriptionCreateMock.call_args
         self.assertEquals(kwargs["source"], "token")
 
-    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     @patch("stripe.Subscription.create")
-    def test_subscription_create_with_connect(self, SubscriptionCreateMock, SyncMock):
-        subscriptions.create(self.customer, "the-plan", stripe_account=self.account)
-        self.assertTrue(SyncMock.called)
+    def test_subscription_create_with_connect(self, SubscriptionCreateMock):
+        SubscriptionCreateMock.return_value = {
+            "object": "subscription",
+            "id": "sub_XX",
+            "application_fee_percent": None,
+            "cancel_at_period_end": False,
+            "canceled_at": None,
+            "current_period_start": datetime.datetime.now().timestamp(),
+            "current_period_end": (datetime.datetime.now() + datetime.timedelta(days=30)).timestamp(),
+            "ended_at": None,
+            "quantity": 1,
+            "start": datetime.datetime.now().timestamp(),
+            "status": "active",
+            "trial_start": None,
+            "trial_end": None,
+            "plan": {
+                "id": self.plan.stripe_id,
+            }}
+        subscriptions.create(self.connected_customer, self.plan.stripe_id)
         SubscriptionCreateMock.assert_called_once_with(
             coupon=None,
-            customer=self.customer.stripe_id,
+            customer=self.connected_customer.stripe_id,
             plan="the-plan",
             quantity=4,
             tax_percent=None,
             stripe_account=self.account.stripe_id)
+        subscription = Subscription.objects.get(stripe_account=self.account)
+        self.assertEqual(subscription.customer, self.connected_customer)
 
     def test_is_period_current(self):
         sub = Subscription(current_period_end=(timezone.now() + datetime.timedelta(days=2)))

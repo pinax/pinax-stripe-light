@@ -108,7 +108,8 @@ def create(
                 application_fee, currency
             )
     elif on_behalf_of:
-        kwargs["on_behalf_of"] = on_behalf_of
+        # XXX: cleanup: on_behalf_of is not required likely, but only
+        # stripe_account
         kwargs["stripe_account"] = on_behalf_of
     stripe_charge = stripe.Charge.create(
         **kwargs

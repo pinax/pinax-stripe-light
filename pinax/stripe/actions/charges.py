@@ -95,7 +95,6 @@ def create(
         customer=customer,
         description=description,
         capture=capture,
-        stripe_account=getattr(customer.stripe_account, "stripe_id", None),
     )
     if destination_account:
         kwargs["destination"] = {"account": destination_account}
@@ -110,6 +109,7 @@ def create(
             )
     elif on_behalf_of:
         kwargs["on_behalf_of"] = on_behalf_of
+        kwargs["stripe_account"] = on_behalf_of
     stripe_charge = stripe.Charge.create(
         **kwargs
     )

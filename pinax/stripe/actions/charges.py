@@ -95,6 +95,7 @@ def create(
         customer=customer,
         description=description,
         capture=capture,
+        stripe_account=getattr(customer.stripe_account, "stripe_id", None),
     )
     if destination_account:
         kwargs["destination"] = {"account": destination_account}

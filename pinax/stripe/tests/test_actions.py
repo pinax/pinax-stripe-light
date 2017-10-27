@@ -146,7 +146,7 @@ class ChargesTests(TestCase):
         )
         self.assertTrue(CreateMock.called)
         _, kwargs = CreateMock.call_args
-        self.assertEqual(kwargs["on_behalf_of"], "account")
+        self.assertEqual(kwargs["stripe_account"], "account")
         self.assertTrue(SyncMock.called)
         self.assertTrue(SendReceiptMock.called)
 

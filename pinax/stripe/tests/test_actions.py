@@ -1003,6 +1003,30 @@ class SubscriptionsTests(TestCase):
         subscription = Subscription.objects.get(stripe_account=self.account)
         self.assertEqual(subscription.customer, self.connected_customer)
 
+    @patch("stripe.Subscription.retrieve")
+    @patch("stripe.Subscription.create")
+    def test_retrieve_subscription_with_connect(self, CreateMock, RetrieveMock):
+        CreateMock.return_value = {
+            "object": "subscription",
+            "id": "sub_XX",
+            "application_fee_percent": None,
+            "cancel_at_period_end": False,
+            "canceled_at": None,
+            "current_period_start": datetime.datetime.now().timestamp(),
+            "current_period_end": (datetime.datetime.now() + datetime.timedelta(days=30)).timestamp(),
+            "ended_at": None,
+            "quantity": 1,
+            "start": datetime.datetime.now().timestamp(),
+            "status": "active",
+            "trial_start": None,
+            "trial_end": None,
+            "plan": {
+                "id": self.plan.stripe_id,
+            }}
+        subscriptions.create(self.connected_customer, self.plan.stripe_id)
+        subscriptions.retrieve(self.connected_customer, "sub_XX")
+        RetrieveMock.assert_called_once_with("sub_XX", stripe_account=self.account.stripe_id)
+
     def test_is_period_current(self):
         sub = Subscription(current_period_end=(timezone.now() + datetime.timedelta(days=2)))
         self.assertTrue(subscriptions.is_period_current(sub))

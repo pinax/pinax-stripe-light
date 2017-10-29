@@ -52,21 +52,20 @@ Then:
 ```
 $ CFLAGS="-I$(xcrun --show-sdk-path)/usr/include -I$(brew --prefix openssl)/include" \
 LDFLAGS="-L$(brew --prefix openssl)/lib" \
-pyenv install 2.7.10 3.2.6 3.3.6 3.4.3 3.5.0
+pyenv install 2.7.14 3.4.7 3.5.4 3.6.3
 
-$ pyenv virtualenv 2.7.10 test-2.7.10
-$ pyenv virtualenv 3.2.6 test-3.2.6
-$ pyenv virtualenv 3.3.6 test-3.3.6
-$ pyenv virtualenv 3.4.3 test-3.4.3
-$ pyenv virtualenv 3.5.0 test-3.5.0
-$ pyenv global 2.7.10 test-2.7.10 test-3.2.6 test-3.2.6 test-3.3.6 test-3.4.3 test-3.5.0
+$ pyenv virtualenv 2.7.14
+$ pyenv virtualenv 3.4.7
+$ pyenv virtualenv 3.5.4
+$ pyenv virtualenv 3.6.3
+$ pyenv global 2.7.14 3.4.7 3.5.4 3.6.3
 
 $ pip install detox
 ```
 
 To run test suite:
 
-Make sure you are not inside a `virtualenv` and then:
+Make sure you are NOT inside a `virtualenv` and then:
 
 ```
 $ detox

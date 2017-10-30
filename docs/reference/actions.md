@@ -142,7 +142,6 @@ Args:
 - api_version: the version of the Stripe API used.
 - request_id: the id of the request that initiated the webhook.
 - pending_webhooks: the number of pending webhooks. Defaults to `0`.
-- stripe_account: the stripe_id of a Connect account
 
 #### pinax.stripe.actions.events.dupe_event_exists
 

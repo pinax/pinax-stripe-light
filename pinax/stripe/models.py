@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import decimal
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
@@ -35,8 +34,23 @@ class AccountRelatedStripeObject(StripeObject):
         blank=True,
     )
 
+    @property
+    def stripe_account_stripe_id(self):
+        return getattr(self.stripe_account, "stripe_id", None)
+
     class Meta:
         abstract = True
+
+
+class StripeAccountFromCustomerMixin(object):
+    @property
+    def stripe_account(self):
+        customer = getattr(self, "customer", None)
+        return customer.stripe_account if customer else None
+
+    @property
+    def stripe_account_stripe_id(self):
+        return self.stripe_account.stripe_id if self.stripe_account else None
 
 
 @python_2_unicode_compatible
@@ -190,10 +204,9 @@ class Transfer(AccountRelatedStripeObject):
 
     @property
     def stripe_transfer(self):
-        stripe_account = getattr(self.stripe_account, "stripe_id", None)
         return stripe.Transfer.retrieve(
             self.stripe_id,
-            stripe_account=stripe_account
+            stripe_account=self.stripe_account_stripe_id,
         )
 
 
@@ -244,10 +257,9 @@ class Customer(AccountRelatedStripeObject):
 
     @cached_property
     def stripe_customer(self):
-        stripe_account_id = getattr(self.stripe_account, "stripe_id", None)
         return stripe.Customer.retrieve(
             self.stripe_id,
-            stripe_account=stripe_account_id
+            stripe_account=self.stripe_account_stripe_id,
         )
 
     def __str__(self):
@@ -383,7 +395,7 @@ class Subscription(AccountRelatedStripeObject):
         )
 
 
-class Invoice(StripeObject):
+class Invoice(StripeAccountFromCustomerMixin, StripeObject):
 
     customer = models.ForeignKey(Customer, related_name="invoices", on_delete=models.CASCADE)
     amount_due = models.DecimalField(decimal_places=2, max_digits=9)
@@ -412,13 +424,9 @@ class Invoice(StripeObject):
 
     @property
     def stripe_invoice(self):
-        try:
-            stripe_account_id = getattr(self.customer.stripe_account, "stripe_id", None)
-        except ObjectDoesNotExist:
-            stripe_account_id = None
         return stripe.Invoice.retrieve(
             self.stripe_id,
-            stripe_account=stripe_account_id
+            stripe_account=self.stripe_account_stripe_id,
         )
 
 
@@ -443,7 +451,7 @@ class InvoiceItem(models.Model):
         return self.plan.name if self.plan else ""
 
 
-class Charge(StripeObject):
+class Charge(StripeAccountFromCustomerMixin, StripeObject):
 
     customer = models.ForeignKey(Customer, null=True, related_name="charges", on_delete=models.CASCADE)
     invoice = models.ForeignKey(Invoice, null=True, related_name="charges", on_delete=models.CASCADE)
@@ -479,13 +487,9 @@ class Charge(StripeObject):
 
     @property
     def stripe_charge(self):
-        if self.customer is not None:
-            stripe_account_id = getattr(self.customer.stripe_account, "stripe_id", None)
-        else:
-            stripe_account_id = None
         return stripe.Charge.retrieve(
             self.stripe_id,
-            stripe_account=stripe_account_id,
+            stripe_account=self.stripe_account_stripe_id,
             expand=["balance_transaction"]
         )
 

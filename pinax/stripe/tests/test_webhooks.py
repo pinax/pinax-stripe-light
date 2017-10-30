@@ -142,7 +142,9 @@ class WebhookTests(TestCase):
             content_type="application/json"
         )
         self.assertEquals(resp.status_code, 200)
-        self.assertTrue(EventProcessingException.objects.filter(message="Duplicate event record").exists())
+        dupe_event_exception = EventProcessingException.objects.get()
+        self.assertEqual(dupe_event_exception.message, "Duplicate event record")
+        self.assertEqual(str(dupe_event_exception.data), '{"id": 123}')
 
     def test_webhook_event_mismatch(self):
         event = Event(kind="account.updated")

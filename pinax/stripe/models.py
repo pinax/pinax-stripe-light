@@ -118,6 +118,15 @@ class Event(AccountRelatedStripeObject):
     def __str__(self):
         return "{} - {}".format(self.kind, self.stripe_id)
 
+    def __repr__(self):
+        return "Event(pk={!r}, kind={!r}, customer={!r}, valid={!r}, stripe_id={!r})".format(
+            self.pk,
+            str(self.kind),
+            self.customer,
+            self.valid,
+            str(self.stripe_id),
+        )
+
 
 class Transfer(AccountRelatedStripeObject):
 

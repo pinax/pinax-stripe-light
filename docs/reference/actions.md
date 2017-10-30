@@ -228,7 +228,7 @@ This assumes line items from a Stripe invoice.lines property and not through
 the invoicesitems resource calls. At least according to the documentation
 the data for an invoice item is slightly different between the two calls.
 
-For example, going through the invoiceitems resource you don't get a "type"
+For example, going through the invoiceitems resource you do not get a "type"
 field on the object.
 
 Args:

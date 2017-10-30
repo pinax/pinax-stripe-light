@@ -38,9 +38,9 @@ def dupe_event_exists(stripe_id):
     Checks if a duplicate event exists
 
     Args:
-        stripe_id: the Stripe ID of the event to Checks
+        stripe_id: the Stripe ID of the event to check
 
     Returns:
-        True, if the event already exists, otherwise, False
+        True if the event already exists, False otherwise
     """
     return models.Event.objects.filter(stripe_id=stripe_id).exists()

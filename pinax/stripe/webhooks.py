@@ -5,6 +5,7 @@ from django.dispatch import Signal
 import stripe
 from six import with_metaclass
 
+from . import models
 from .actions import (
     accounts,
     charges,
@@ -83,11 +84,13 @@ class Webhook(with_metaclass(Registerable, object)):
         For Connect accounts we must fetch the event using the `stripe_account`
         parameter.
         """
-        self.stripe_account = self.event.webhook_message.get("account")
+        stripe_account_id = self.event.webhook_message.get("account")
+        if stripe_account_id:
+            self.stripe_account, _ = models.Account.objects.get_or_create(stripe_id=stripe_account_id)
         self.event.stripe_account = self.stripe_account
         evt = stripe.Event.retrieve(
             self.event.stripe_id,
-            stripe_account=self.event.stripe_account
+            stripe_account=getattr(self.stripe_account, "stripe_id", None)
         )
         self.event.validated_message = json.loads(
             json.dumps(
@@ -97,7 +100,6 @@ class Webhook(with_metaclass(Registerable, object)):
             )
         )
         self.event.valid = self.event.webhook_message["data"] == self.event.validated_message["data"]
-        self.event.save()
 
     def send_signal(self):
         signal = registry.get_signal(self.name)
@@ -119,7 +121,7 @@ class Webhook(with_metaclass(Registerable, object)):
             if isinstance(e, stripe.StripeError):
                 data = e.http_body
             exceptions.log_exception(data=data, exception=e, event=self.event)
-            raise
+            raise e
 
     def process_webhook(self):
         return
@@ -203,7 +205,7 @@ class ChargeWebhook(Webhook):
     def process_webhook(self):
         charges.sync_charge(
             self.event.message["data"]["object"]["id"],
-            stripe_account=self.stripe_account
+            stripe_account=self.event.stripe_account_stripe_id,
         )
 
 
@@ -502,7 +504,7 @@ class TransferWebhook(Webhook):
         transfers.sync_transfer(
             stripe.Transfer.retrieve(
                 self.event.message["data"]["object"]["id"],
-                stripe_account=self.stripe_account
+                stripe_account=self.event.stripe_account_stripe_id,
             ),
             self.event
         )

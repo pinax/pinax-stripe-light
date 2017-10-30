@@ -16,8 +16,15 @@ def add_event(stripe_id, kind, livemode, message, api_version="",
         request_id: the id of the request that initiated the webhook
         pending_webhooks: the number of pending webhooks
     """
+    stripe_account_id = message.get("account")
+    if stripe_account_id:
+        stripe_account, _ = models.Account.objects.get_or_create(
+            stripe_id=stripe_account_id
+        )
+    else:
+        stripe_account = None
     event = models.Event.objects.create(
-        stripe_account=message.get("account"),
+        stripe_account=stripe_account,
         stripe_id=stripe_id,
         kind=kind,
         livemode=livemode,

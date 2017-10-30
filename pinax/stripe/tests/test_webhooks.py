@@ -15,7 +15,14 @@ from . import (
     TRANSFER_CREATED_TEST_DATA,
     TRANSFER_PENDING_TEST_DATA
 )
-from ..models import Customer, Event, EventProcessingException, Plan, Transfer
+from ..models import (
+    Account,
+    Customer,
+    Event,
+    EventProcessingException,
+    Plan,
+    Transfer
+)
 from ..webhooks import (
     AccountApplicationDeauthorizeWebhook,
     AccountUpdatedWebhook,
@@ -114,9 +121,8 @@ class WebhookTests(TestCase):
     @patch("stripe.Transfer.retrieve")
     def test_webhook_associated_with_stripe_account(self, TransferMock, StripeEventMock):
         connect_event_data = self.event_data.copy()
-        stripe_account = "acct_123123123"
-        # only difference is that we'll have a user_id value
-        connect_event_data["account"] = stripe_account
+        account = Account.objects.create(stripe_id="acc_XXX")
+        connect_event_data["account"] = account.stripe_id
         StripeEventMock.return_value.to_dict.return_value = connect_event_data
         TransferMock.return_value = connect_event_data["data"]["object"]
         msg = json.dumps(connect_event_data)
@@ -129,8 +135,11 @@ class WebhookTests(TestCase):
         self.assertTrue(Event.objects.filter(kind="transfer.created").exists())
         self.assertEqual(
             Event.objects.filter(kind="transfer.created").first().stripe_account,
-            stripe_account
+            account
         )
+        self.assertEquals(TransferMock.call_args_list, [
+            [("ach_XXXXXXXXXXXX",), {"stripe_account": "acc_XXX"}],
+        ])
 
     def test_webhook_duplicate_event(self):
         data = {"id": 123}
@@ -209,6 +218,21 @@ class ChargeWebhookTest(TestCase):
         event.validated_message = dict(data=dict(object=dict(id=1)))
         ChargeCapturedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
+        _, kwargs = RetrieveMock.call_args
+        self.assertEquals(kwargs["expand"], ["balance_transaction"])
+        self.assertEquals(kwargs["stripe_account"], None)
+
+    @patch("stripe.Charge.retrieve")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    def test_process_webhook_connect(self, SyncMock, RetrieveMock):
+        account = Account.objects.create(stripe_id="acc_A")
+        event = Event.objects.create(kind=ChargeCapturedWebhook.name, webhook_message={}, valid=True, processed=False, stripe_account=account)
+        event.validated_message = dict(data=dict(object=dict(id=1)))
+        ChargeCapturedWebhook(event).process_webhook()
+        self.assertTrue(SyncMock.called)
+        _, kwargs = RetrieveMock.call_args
+        self.assertEquals(kwargs["expand"], ["balance_transaction"])
+        self.assertEquals(kwargs["stripe_account"], "acc_A")
 
 
 class CustomerDeletedWebhookTest(TestCase):

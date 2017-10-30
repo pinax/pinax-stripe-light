@@ -40,7 +40,9 @@ def capture(charge, amount=None):
     sync_charge_from_stripe_data(stripe_charge)
 
 
-def _validate_create_params(amount, application_fee, destination_account, destination_amount, on_behalf_of):
+def _validate_create_params(customer, source, amount, application_fee, destination_account, destination_amount, on_behalf_of):
+    if not customer and not source:
+        raise ValueError("Must provide `customer` or `source`.")
     if not isinstance(amount, decimal.Decimal):
         raise ValueError(
             "You must supply a decimal value for `amount`."
@@ -63,18 +65,23 @@ def _validate_create_params(amount, application_fee, destination_account, destin
 
 
 def create(
-    amount, customer, source=None, currency="usd", description=None,
+    amount, customer=None, source=None, currency="usd", description=None,
     send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True,
     email=None, destination_account=None, destination_amount=None,
     application_fee=None, on_behalf_of=None,
 ):
     """
-    Create a charge for the given customer.
+    Create a charge for the given customer or source.
+
+    If both customer and source are provided, the source must belong to the
+    customer.
+
+    See https://stripe.com/docs/api#create_charge-customer.
 
     Args:
         amount: should be a decimal.Decimal amount
         customer: the Stripe id of the customer to charge
-        source: the Stripe id of the source belonging to the customer
+        source: the Stripe id of the source to charge
         currency: the currency with which to charge the amount in
         description: a description of the charge
         send_receipt: send a receipt upon successful charge
@@ -87,7 +94,7 @@ def create(
     Returns:
         a pinax.stripe.models.Charge object
     """
-    _validate_create_params(amount, application_fee, destination_account, destination_amount, on_behalf_of)
+    _validate_create_params(customer, source, amount, application_fee, destination_account, destination_amount, on_behalf_of)
     kwargs = dict(
         amount=utils.convert_amount_for_api(amount, currency),  # find the final amount
         currency=currency,

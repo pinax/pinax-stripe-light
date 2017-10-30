@@ -348,7 +348,7 @@ class CustomerSubscriptionWebhook(Webhook):
             )
 
         if self.event.customer:
-            customers.sync_customer(self.event.customer, self.event.customer.stripe_customer)
+            customers.sync_customer(self.event.customer)
 
 
 class CustomerSubscriptionCreatedWebhook(CustomerSubscriptionWebhook):

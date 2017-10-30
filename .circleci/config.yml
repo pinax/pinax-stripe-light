@@ -128,22 +128,22 @@ jobs:
       - image: circleci/python:3.6
         environment:
           TOXENV=py36-dj111
+  py36dj111psql:
+    <<: *common
+    docker:
+      - image: circleci/python:3.6
+        environment:
+          - TOXENV=py36-dj111-postgres
+          - PINAX_STRIPE_DATABASE_HOST=127.0.0.1
+          - PINAX_STRIPE_DATABASE_USER=root
+          - PINAX_STRIPE_DATABASE_NAME=circle_test
+      - image: circleci/postgres:9.6-alpine
   py36dj20:
     <<: *common
     docker:
       - image: circleci/python:3.6
         environment:
           TOXENV=py36-dj20
-  py36dj20psql:
-    <<: *common
-    docker:
-      - image: circleci/python:3.6
-        environment:
-          - TOXENV=py36-dj20-postgres
-          - PINAX_STRIPE_DATABASE_HOST=127.0.0.1
-          - PINAX_STRIPE_DATABASE_USER=root
-          - PINAX_STRIPE_DATABASE_NAME=circle_test
-      - image: circleci/postgres:9.6-alpine
 
 workflows:
   version: 2
@@ -153,14 +153,7 @@ workflows:
       - py27dj18
       - py27dj110
       - py27dj111
-      - py34dj18
-      - py34dj110
       - py34dj111
-      - py34dj20
-      - py35dj18
-      - py35dj110
       - py35dj111
-      - py35dj20
-      - py36dj111
+      - py36dj111psql
       - py36dj20
-      - py36dj20psql

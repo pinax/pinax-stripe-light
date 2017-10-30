@@ -6,7 +6,7 @@ from ...actions import customers
 
 class Command(BaseCommand):
 
-    help = "Create customer objects for existing users that don't have one"
+    help = "Create customer objects for existing users that do not have one"
 
     def handle(self, *args, **options):
         User = get_user_model()

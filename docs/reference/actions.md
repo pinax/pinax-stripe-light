@@ -142,7 +142,6 @@ Args:
 - api_version: the version of the Stripe API used.
 - request_id: the id of the request that initiated the webhook.
 - pending_webhooks: the number of pending webhooks. Defaults to `0`.
-- stripe_account: the stripe_id of a Connect account
 
 #### pinax.stripe.actions.events.dupe_event_exists
 
@@ -228,7 +227,7 @@ This assumes line items from a Stripe invoice.lines property and not through
 the invoicesitems resource calls. At least according to the documentation
 the data for an invoice item is slightly different between the two calls.
 
-For example, going through the invoiceitems resource you don't get a "type"
+For example, going through the invoiceitems resource you do not get a "type"
 field on the object.
 
 Args:

@@ -284,7 +284,8 @@ class CustomerDeletedWebhook(Webhook):
     description = "Occurs whenever a customer is deleted."
 
     def process_webhook(self):
-        customers.purge_local(self.event.customer)
+        if self.event.customer:
+            customers.purge_local(self.event.customer)
 
 
 class CustomerUpdatedWebhook(Webhook):
@@ -292,12 +293,9 @@ class CustomerUpdatedWebhook(Webhook):
     description = "Occurs whenever any property of a customer changes."
 
     def process_webhook(self):
-        cu = None
-        try:
+        if self.event.customer:
             cu = self.event.message["data"]["object"]
-        except (KeyError, TypeError):
-            pass
-        customers.sync_customer(self.event.customer, cu)
+            customers.sync_customer(self.event.customer, cu)
 
 
 class CustomerDiscountCreatedWebhook(Webhook):
@@ -352,7 +350,7 @@ class CustomerSubscriptionWebhook(Webhook):
             )
 
         if self.event.customer:
-            customers.sync_customer(self.event.customer, self.event.customer.stripe_customer)
+            customers.sync_customer(self.event.customer)
 
 
 class CustomerSubscriptionCreatedWebhook(CustomerSubscriptionWebhook):

@@ -195,15 +195,12 @@ class Webhook(View):
     def dispatch(self, *args, **kwargs):
         return super(Webhook, self).dispatch(*args, **kwargs)
 
-    def extract_json(self):
-        data = json.loads(smart_str(self.request.body))
-        return data
-
     def post(self, request, *args, **kwargs):
-        data = self.extract_json()
+        body = smart_str(self.request.body)
+        data = json.loads(body)
         event = Event.objects.filter(stripe_id=data["id"]).first()
         if event:
-            exceptions.log_exception(data, "Duplicate event record", event=event)
+            exceptions.log_exception(body, "Duplicate event record", event=event)
         else:
             events.add_event(
                 stripe_id=data["id"],

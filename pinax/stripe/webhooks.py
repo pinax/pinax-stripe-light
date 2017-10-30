@@ -205,7 +205,7 @@ class ChargeWebhook(Webhook):
     def process_webhook(self):
         charges.sync_charge(
             self.event.message["data"]["object"]["id"],
-            stripe_account=self.stripe_account
+            stripe_account=self.event.stripe_account_stripe_id,
         )
 
 
@@ -506,7 +506,7 @@ class TransferWebhook(Webhook):
         transfers.sync_transfer(
             stripe.Transfer.retrieve(
                 self.event.message["data"]["object"]["id"],
-                stripe_account=self.stripe_account
+                stripe_account=self.event.stripe_account_stripe_id,
             ),
             self.event
         )

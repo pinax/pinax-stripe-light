@@ -79,11 +79,11 @@ class Webhook(with_metaclass(Registerable, object)):
         """
         Validate incoming events.
 
-        We fetch the event data to ensure it's legit. For Connect
-        accounts we must fetch the event using the `stripe_account`
-        parameter, else we won't find it.
+        We fetch the event data to ensure it is legit.
+        For Connect accounts we must fetch the event using the `stripe_account`
+        parameter.
         """
-        self.stripe_account = self.event.webhook_message.get("user_id")
+        self.stripe_account = self.event.webhook_message.get("account")
         self.event.stripe_account = self.stripe_account
         evt = stripe.Event.retrieve(
             self.event.stripe_id,
@@ -282,7 +282,8 @@ class CustomerDeletedWebhook(Webhook):
     description = "Occurs whenever a customer is deleted."
 
     def process_webhook(self):
-        customers.purge_local(self.event.customer)
+        if self.event.customer:
+            customers.purge_local(self.event.customer)
 
 
 class CustomerUpdatedWebhook(Webhook):
@@ -290,12 +291,9 @@ class CustomerUpdatedWebhook(Webhook):
     description = "Occurs whenever any property of a customer changes."
 
     def process_webhook(self):
-        cu = None
-        try:
+        if self.event.customer:
             cu = self.event.message["data"]["object"]
-        except (KeyError, TypeError):
-            pass
-        customers.sync_customer(self.event.customer, cu)
+            customers.sync_customer(self.event.customer, cu)
 
 
 class CustomerDiscountCreatedWebhook(Webhook):

@@ -1,7 +1,8 @@
 import datetime
 
+import django
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client, SimpleTestCase, TestCase
 from django.utils import timezone
 
 from ..models import Customer, Invoice, Plan, Subscription
@@ -99,8 +100,16 @@ class AdminTestCase(TestCase):
     def test_customer_admin(self):
         """Make sure we get good responses for all filter options"""
         url = reverse("admin:pinax_stripe_customer_changelist")
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
+
+        # Django 1.10 has the following query twice:
+        # SELECT COUNT(*) AS "__count" FROM "pinax_stripe_customer"
+        # (since https://github.com/django/django/commit/5fa7b592b3f)
+        # We might want to test for "num < 10" here instead, and/or compare the
+        # number to be equal with X and X+1 customers
+        num = 8 if django.VERSION >= (1, 10) else 7
+        with self.assertNumQueries(num):
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
 
         response = self.client.get(url + "?sub_status=active")
         self.assertEqual(response.status_code, 200)
@@ -137,3 +146,17 @@ class AdminTestCase(TestCase):
         url = reverse("admin:pinax_stripe_charge_changelist")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+
+
+class AdminSimpleTestCase(SimpleTestCase):
+
+    def test_customer_user_without_user(self):
+        from ..admin import customer_user
+
+        class CustomerWithoutUser(object):
+            user = None
+
+        class Obj(object):
+            customer = CustomerWithoutUser()
+
+        self.assertEqual(customer_user(Obj()), "")

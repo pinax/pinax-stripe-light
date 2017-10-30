@@ -41,7 +41,6 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
         the data representing the subscription object that was created
     """
     quantity = hooks.hookset.adjust_subscription_quantity(customer=customer, plan=plan, quantity=quantity)
-    cu = customer.stripe_customer
 
     subscription_params = kwargs
     if trial_days:
@@ -49,11 +48,12 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
     if token:
         subscription_params["source"] = token
 
+    subscription_params["customer"] = customer.stripe_id
     subscription_params["plan"] = plan
     subscription_params["quantity"] = quantity
     subscription_params["coupon"] = coupon
     subscription_params["tax_percent"] = tax_percent
-    resp = cu.subscriptions.create(**subscription_params)
+    resp = stripe.Subscription.create(**subscription_params)
 
     return sync_subscription_from_stripe_data(customer, resp)
 
@@ -133,7 +133,7 @@ def retrieve(customer, sub_id):
 
 def sync_subscription_from_stripe_data(customer, subscription):
     """
-    Syncronizes data from the Stripe API for a subscription
+    Synchronizes data from the Stripe API for a subscription
 
     Args:
         customer: the customer who's subscription you are syncronizing

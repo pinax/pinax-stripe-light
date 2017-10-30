@@ -6,6 +6,7 @@
 [![](https://img.shields.io/badge/license-MIT-blue.svg)](https://pypi.python.org/pypi/pinax-stripe/)
 
 [![Codecov](https://img.shields.io/codecov/c/github/pinax/pinax-stripe.svg)](https://codecov.io/gh/pinax/pinax-stripe)
+[![CircleCI](https://circleci.com/gh/pinax/pinax-stripe.svg?style=svg)](https://circleci.com/gh/pinax/pinax-stripe)
 ![](https://img.shields.io/github/contributors/pinax/pinax-stripe.svg)
 ![](https://img.shields.io/github/issues-pr/pinax/pinax-stripe.svg)
 ![](https://img.shields.io/github/issues-pr-closed/pinax/pinax-stripe.svg)

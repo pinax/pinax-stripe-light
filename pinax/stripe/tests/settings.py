@@ -2,8 +2,6 @@ import os
 
 import django
 
-old = django.VERSION < (1, 8)
-
 DEBUG = True
 USE_TZ = True
 TIME_ZONE = "UTC"
@@ -48,12 +46,12 @@ TEMPLATES = [{
         "debug": True,
         "context_processors": [
             "django.contrib.auth.context_processors.auth",
-            "django.{}.context_processors.debug".format("core" if old else "template"),
-            "django.{}.context_processors.i18n".format("core" if old else "template"),
-            "django.{}.context_processors.media".format("core" if old else "template"),
-            "django.{}.context_processors.static".format("core" if old else "template"),
-            "django.{}.context_processors.tz".format("core" if old else "template"),
-            "django.{}.context_processors.request".format("core" if old else "template")
+            "django.template.context_processors.debug",
+            "django.template.context_processors.i18n",
+            "django.template.context_processors.media",
+            "django.template.context_processors.static",
+            "django.template.context_processors.tz",
+            "django.template.context_processors.request",
         ],
     },
 }]

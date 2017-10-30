@@ -178,9 +178,28 @@ class TransferChargeFee(models.Model):
 
 
 @python_2_unicode_compatible
+class UserAccount(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             related_name="user_accounts",
+                             related_query_name="user_account")
+    account = models.ForeignKey("pinax_stripe.Account",
+                                related_name="user_accounts",
+                                related_query_name="user_account")
+    customer = models.ForeignKey("pinax_stripe.Customer",
+                                 related_name="user_accounts",
+                                 related_query_name="user_account")
+
+    class Meta:
+        unique_together = ("user", "account", "customer")
+
+
+@python_2_unicode_compatible
 class Customer(AccountRelatedStripeObject):
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL, through=UserAccount,
+                                   related_name="customers",
+                                   related_query_name="customers", null=True)
     account_balance = models.DecimalField(decimal_places=2, max_digits=9, null=True)
     currency = models.CharField(max_length=10, default="usd", blank=True)
     delinquent = models.BooleanField(default=False)

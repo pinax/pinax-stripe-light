@@ -1,3 +1,5 @@
+from contextlib import suppress
+
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
@@ -22,7 +24,7 @@ def can_charge(customer):
     return False
 
 
-def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
+def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None, stripe_account=None):
     """
     Creates a Stripe customer.
 
@@ -35,35 +37,58 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
         charge_immediately: whether or not the user should be immediately
                             charged for the subscription
         quantity: the quantity (multiplier) of the subscription
+        stripe_account: An account object. If given, the Customer and User relation will be established for you through UserAccount model.
+        Because a single User might have several Customers, one per Account.
 
     Returns:
         the pinax.stripe.models.Customer object that was created
     """
-    trial_end = hooks.hookset.trial_period(user, plan)
-    stripe_customer = stripe.Customer.create(
-        email=user.email,
-        source=card,
-        plan=plan,
-        quantity=quantity,
-        trial_end=trial_end
-    )
-    cus, created = models.Customer.objects.get_or_create(
-        user=user,
-        defaults={
-            "stripe_id": stripe_customer["id"]
-        }
-    )
+    def create_stripe_customer():
+        trial_end = hooks.hookset.trial_period(user, plan)
+        return stripe.Customer.create(
+            email=user.email,
+            source=card,
+            plan=plan,
+            quantity=quantity,
+            trial_end=trial_end,
+            stripe_account=getattr(stripe_account, "stripe_id", None),
+        )
+
+    if stripe_account is not None:
+        # we want to allow several customers per user, for any stripe account
+        try:
+            cus = models.UserAccount.objects.get(user=user, account=stripe_account).customer
+        except models.UserAccount.DoesNotExist:
+            stripe_customer = create_stripe_customer()
+            cus = models.Customer.objects.create(
+                stripe_id=stripe_customer["id"]
+            )
+            models.UserAccount.objects.create(
+                user=user, account=stripe_account, customer=cus)
+            created = True
+        else:
+            created = False
+    else:
+        try:
+            cus = models.Customer.objects.get(user=user)
+        except models.Customer.DoesNotExist:
+            stripe_customer = create_stripe_customer()
+            cus = models.Customer.objects.create(
+                user=user,
+                stripe_id=stripe_customer["id"]
+            )
+            created = True
+        else:
+            created = False
+
     if created:
         sync_customer(cus, stripe_customer)
         if plan and charge_immediately:
             invoices.create_and_pay(cus)
-    else:
-        # remove this extra customer as it is not needed
-        stripe.Customer.retrieve(stripe_customer["id"]).delete()
     return cus
 
 
-def get_customer_for_user(user):
+def get_customer_for_user(user, stripe_account=None):
     """
     Get a customer object for a given user
 
@@ -73,7 +98,10 @@ def get_customer_for_user(user):
     Returns:
         a pinax.stripe.models.Customer object
     """
-    return models.Customer.objects.filter(user=user).first()
+    if stripe_account is not None:
+        return user.customers.get(user_account__account=stripe_account)
+    with suppress(models.Customer.DoesNotExist):
+        return user.customer
 
 
 def purge_local(customer):

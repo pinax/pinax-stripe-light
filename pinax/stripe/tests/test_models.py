@@ -35,9 +35,10 @@ def _str(obj):
 
 class ModelTests(TestCase):
 
-    def test_plan_str(self):
+    def test_plan_str_and_repr(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
         self.assertTrue(p.name in _str(p))
+        self.assertEquals(repr(p), "Plan(pk=None, name='My Plan', amount=Decimal('5'), currency='', interval='monthly', interval_count=1, trial_period_days=None, stripe_id='')")
 
     def test_plan_str_usd(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", currency="usd", interval="monthly", interval_count=1)
@@ -47,24 +48,23 @@ class ModelTests(TestCase):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", currency="jpy", interval="monthly", interval_count=1)
         self.assertTrue(u"\u00a5" in _str(p))
 
-    def test_plan_repl(self):
-        p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
-        self.assertEquals(repr(p), "Plan(pk=None, name='My Plan', amount=Decimal('5'), currency='', interval='monthly', interval_count=1, trial_period_days=None, stripe_id='')")
-
     def test_event_processing_exception_str(self):
         e = EventProcessingException(data="hello", message="hi there", traceback="fake")
         self.assertTrue("Event=" in str(e))
 
-    def test_event_str(self):
+    def test_event_str_and_repr(self):
         e = Event(kind="customer.deleted", webhook_message={})
         self.assertTrue("customer.deleted" in str(e))
+        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer=None, valid=None, stripe_id='')")
 
-    def test_customer_str(self):
-        e = Customer()
-        self.assertTrue("None" in str(e))
+        e.stripe_id = "evt_X"
+        e.customer = Customer()
+        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer={!r}, valid=None, stripe_id='{}')".format(
+            e.customer, e.stripe_id))
 
-    def test_customer_repl(self):
+    def test_customer_str_and_repr(self):
         c = Customer()
+        self.assertTrue("None" in str(c))
         self.assertEquals(repr(c), "Customer(pk=None, user=None, stripe_id='')")
 
     def test_plan_display_invoiceitem(self):

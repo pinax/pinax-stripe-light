@@ -471,6 +471,34 @@ class InvoicesTests(TestCase):
         self.assertFalse(invoices.pay(invoice))
         self.assertFalse(invoice.stripe_invoice.pay.called)
 
+    @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
+    def test_mark_paid(self, SyncMock):
+        invoice = Mock()
+        self.assertTrue(invoices.mark_paid(invoice))
+        self.assertTrue(invoice.stripe_invoice.paid)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
+    def test_forgive(self, SyncMock):
+        invoice = Mock()
+        self.assertTrue(invoices.forgive(invoice))
+        self.assertTrue(invoice.stripe_invoice.forgiven)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
+    def test_close(self, SyncMock):
+        invoice = Mock()
+        self.assertTrue(invoices.close(invoice))
+        self.assertTrue(invoice.stripe_invoice.closed)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
+    def test_reopen(self, SyncMock):
+        invoice = Mock()
+        self.assertTrue(invoices.reopen(invoice))
+        self.assertFalse(invoice.stripe_invoice.closed)
+        self.assertTrue(SyncMock.called)
+
     @patch("stripe.Invoice.create")
     def test_create_and_pay(self, CreateMock):
         invoice = CreateMock()
@@ -497,6 +525,41 @@ class InvoicesTests(TestCase):
     def test_create_and_pay_invalid_request_error_on_create(self, CreateMock):
         CreateMock.side_effect = stripe.InvalidRequestError("Bad", "error")
         self.assertFalse(invoices.create_and_pay(Mock()))
+
+    @patch("stripe.InvoiceItem.create")
+    def test_create_invoice_item(self, CreateMock):
+        customer = Mock()
+        invoice = Mock()
+        invoice.stripe_id = "my_id"
+        invoice.items = Mock()
+        invoice.items.get_or_create.return_value = None, True
+        subscription = Mock()
+        CreateMock.return_value = {
+            "id": "my_id",
+            "object": "invoiceitem",
+            "amount": 100,
+            "currency": "eur",
+            "customer": customer,
+            "date": 1496069416,
+            "description": "my_description",
+            "discountable": True,
+            "invoice": invoice,
+            "livemode": False,
+            "metadata": {
+
+            },
+            "period": {
+                "start": 1496069416,
+                "end": 1496069416
+            },
+            "plan": None,
+            "proration": False,
+            "quantity": None,
+            "subscription": subscription,
+        }
+        self.assertTrue(invoices.create_invoice_item(customer, invoice, subscription, 100, "eur", "my_foo", metadata={}))
+        self.assertTrue(CreateMock.called)
+        self.assertTrue(invoice.items.get_or_create.called)
 
 
 class RefundsTests(TestCase):

@@ -105,6 +105,21 @@ class ChargesTests(TestCase):
     @patch("pinax.stripe.hooks.hookset.send_receipt")
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
     @patch("stripe.Charge.create")
+    def test_create_with_idempotency_key(self, CreateMock, SyncMock, SendReceiptMock):
+        charges.create(amount=decimal.Decimal("10"), customer=self.customer.stripe_id, idempotency_key="a")
+        CreateMock.assert_called_once_with(
+            amount=1000,
+            capture=True,
+            customer=self.customer.stripe_id,
+            idempotency_key="a",
+            description=None,
+            currency="usd",
+            source=None,
+        )
+
+    @patch("pinax.stripe.hooks.hookset.send_receipt")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("stripe.Charge.create")
     def test_create_with_app_fee(self, CreateMock, SyncMock, SendReceiptMock):
         charges.create(
             amount=decimal.Decimal("10"),

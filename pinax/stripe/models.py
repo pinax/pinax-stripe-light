@@ -56,7 +56,7 @@ class StripeAccountFromCustomerMixin(object):
 @python_2_unicode_compatible
 class Plan(AccountRelatedStripeObject):
     amount = models.DecimalField(decimal_places=2, max_digits=9)
-    currency = models.CharField(max_length=15)
+    currency = models.CharField(max_length=15, blank=False)
     interval = models.CharField(max_length=15)
     interval_count = models.IntegerField()
     name = models.CharField(max_length=150)
@@ -170,6 +170,15 @@ class Event(AccountRelatedStripeObject):
 
     def __str__(self):
         return "{} - {}".format(self.kind, self.stripe_id)
+
+    def __repr__(self):
+        return "Event(pk={!r}, kind={!r}, customer={!r}, valid={!r}, stripe_id={!r})".format(
+            self.pk,
+            str(self.kind),
+            self.customer,
+            self.valid,
+            str(self.stripe_id),
+        )
 
 
 class Transfer(AccountRelatedStripeObject):
@@ -501,7 +510,7 @@ class Charge(StripeAccountFromCustomerMixin, StripeObject):
 @python_2_unicode_compatible
 class Account(StripeObject):
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE, related_name="stripe_accounts")
 
     business_name = models.TextField(blank=True, null=True)
     business_url = models.TextField(blank=True, null=True)
@@ -540,6 +549,8 @@ class Account(StripeObject):
     type = models.TextField(null=True, blank=True)
 
     metadata = JSONField(null=True, blank=True)
+
+    stripe_publishable_key = models.CharField(null=True, blank=True, max_length=100)
 
     stripe_publishable_key = models.CharField(null=True, blank=True, max_length=100)
 

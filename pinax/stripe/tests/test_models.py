@@ -172,6 +172,14 @@ class ModelTests(TestCase):
         self.assertEquals(str(a), "Display name - acct_X")
         self.assertEquals(repr(a), "Account(pk=None, display_name='Display name', type=None, stripe_id='acct_X', authorized=False)")
 
+    @patch("stripe.Subscription.retrieve")
+    def test_subscription_stripe_subscription_with_connnect(self, RetrieveMock):
+        a = Account(stripe_id="acc_X")
+        c = Customer(stripe_id="cus_X", stripe_account=a)
+        s = Subscription(stripe_id="sub_X", stripe_account=a, customer=c)
+        s.stripe_subscription
+        RetrieveMock.assert_called_once_with("sub_X", stripe_account="acc_X")
+
 
 class StripeObjectTests(TestCase):
 
@@ -196,10 +204,10 @@ class StripeObjectTests(TestCase):
         Invoice().stripe_invoice
         self.assertTrue(RetrieveMock.called)
 
-    @patch("stripe.Customer.retrieve")
+    @patch("stripe.Subscription.retrieve")
     def test_stripe_subscription(self, RetrieveMock):
-        Subscription(customer=Customer(stripe_id="foo")).stripe_subscription
-        self.assertTrue(RetrieveMock().subscriptions.retrieve.called)
+        Subscription(stripe_id="sub_X", customer=Customer(stripe_id="foo")).stripe_subscription
+        RetrieveMock.assert_called_once_with("sub_X", stripe_account=None)
 
     @patch("stripe.Transfer.retrieve")
     def test_stripe_transfer(self, RetrieveMock):

@@ -108,6 +108,7 @@ class ChargesTests(TestCase):
             "stripe_account": None,
             "description": None,
             "capture": True,
+            "idempotency_key": None,
         })
         self.assertTrue(SyncMock.called)
         self.assertTrue(SendReceiptMock.called)
@@ -127,6 +128,7 @@ class ChargesTests(TestCase):
             "stripe_account": None,
             "description": None,
             "capture": True,
+            "idempotency_key": None,
         })
         self.assertTrue(SyncMock.called)
         self.assertTrue(SendReceiptMock.called)
@@ -146,6 +148,7 @@ class ChargesTests(TestCase):
             "stripe_account": None,
             "description": None,
             "capture": True,
+            "idempotency_key": None,
         })
         self.assertTrue(SyncMock.called)
         self.assertTrue(SendReceiptMock.called)
@@ -160,6 +163,7 @@ class ChargesTests(TestCase):
             amount=1000,
             capture=True,
             customer=self.customer.stripe_id,
+            stripe_account=self.customer.stripe_account_stripe_id,
             idempotency_key="a",
             description=None,
             currency="usd",

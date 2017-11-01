@@ -81,7 +81,7 @@ def create(
 
     Args:
         amount: should be a decimal.Decimal amount
-        customer: the Stripe id of the customer to charge
+        customer: the Customer object to charge
         source: the Stripe id of the source to charge
         currency: the currency with which to charge the amount in
         description: a description of the charge
@@ -90,18 +90,22 @@ def create(
         destination_account: stripe_id of a connected account
         destination_amount: amount to transfer to the `destination_account` without creating an application fee
         application_fee: used with `destination_account` to add a fee destined for the platform account
-        on_behalf_of: stripe_id of a connected account. Creates direct Charges to this account.
+        on_behalf_of: Stripe account ID that these funds are intended for. Automatically set if you use the destination parameter.
         idempotency_key: Any string that allows retries to be performed safely.
 
     Returns:
         a pinax.stripe.models.Charge object
     """
+    # Handle customer as stripe_id for backward compatibility.
+    if customer and not isinstance(customer, models.Customer):
+        customer, _ = models.Customer.objects.get_or_create(stripe_id=customer)
     _validate_create_params(customer, source, amount, application_fee, destination_account, destination_amount, on_behalf_of)
     kwargs = dict(
         amount=utils.convert_amount_for_api(amount, currency),  # find the final amount
         currency=currency,
         source=source,
-        customer=customer,
+        customer=customer.stripe_id,
+        stripe_account=customer.stripe_account_stripe_id,
         description=description,
         capture=capture,
         idempotency_key=idempotency_key,

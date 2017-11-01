@@ -291,7 +291,7 @@ class Subscription(StripeObject):
 
     @property
     def stripe_subscription(self):
-        return stripe.Customer.retrieve(self.customer.stripe_id).subscriptions.retrieve(self.stripe_id)
+        return stripe.Subscription.retrieve(self.stripe_id, stripe_account=self.stripe_account_stripe_id)
 
     @property
     def total_amount(self):

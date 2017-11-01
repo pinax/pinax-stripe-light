@@ -69,7 +69,7 @@ def create(
     amount, customer=None, source=None, currency="usd", description=None,
     send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True,
     email=None, destination_account=None, destination_amount=None,
-    application_fee=None, on_behalf_of=None,
+    application_fee=None, on_behalf_of=None, idempotency_key=None,
 ):
     """
     Create a charge for the given customer or source.
@@ -91,6 +91,7 @@ def create(
         destination_amount: amount to transfer to the `destination_account` without creating an application fee
         application_fee: used with `destination_account` to add a fee destined for the platform account
         on_behalf_of: stripe_id of a connected account. Creates direct Charges to this account.
+        idempotency_key: Any string that allows retries to be performed safely.
 
     Returns:
         a pinax.stripe.models.Charge object
@@ -103,6 +104,7 @@ def create(
         customer=customer,
         description=description,
         capture=capture,
+        idempotency_key=idempotency_key,
     )
     if destination_account:
         kwargs["destination"] = {"account": destination_account}

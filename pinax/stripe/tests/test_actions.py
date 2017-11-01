@@ -96,11 +96,63 @@ class ChargesTests(TestCase):
     @patch("pinax.stripe.hooks.hookset.send_receipt")
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
     @patch("stripe.Charge.create")
-    def test_create(self, CreateMock, SyncMock, SendReceiptMock):
+    def test_create_with_customer(self, CreateMock, SyncMock, SendReceiptMock):
         charges.create(amount=decimal.Decimal("10"), customer=self.customer)
         self.assertTrue(CreateMock.called)
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs, {
+            "amount": 1000,
+            "currency": "usd",
+            "source": None,
+            "customer": "cus_xxxxxxxxxxxxxxx",
+            "stripe_account": None,
+            "description": None,
+            "capture": True,
+            "idempotency_key": None,
+        })
         self.assertTrue(SyncMock.called)
         self.assertTrue(SendReceiptMock.called)
+
+    @patch("pinax.stripe.hooks.hookset.send_receipt")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("stripe.Charge.create")
+    def test_create_with_customer_id(self, CreateMock, SyncMock, SendReceiptMock):
+        charges.create(amount=decimal.Decimal("10"), customer=self.customer.stripe_id)
+        self.assertTrue(CreateMock.called)
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs, {
+            "amount": 1000,
+            "currency": "usd",
+            "source": None,
+            "customer": "cus_xxxxxxxxxxxxxxx",
+            "stripe_account": None,
+            "description": None,
+            "capture": True,
+            "idempotency_key": None,
+        })
+        self.assertTrue(SyncMock.called)
+        self.assertTrue(SendReceiptMock.called)
+
+    @patch("pinax.stripe.hooks.hookset.send_receipt")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("stripe.Charge.create")
+    def test_create_with_new_customer_id(self, CreateMock, SyncMock, SendReceiptMock):
+        charges.create(amount=decimal.Decimal("10"), customer="cus_NEW")
+        self.assertTrue(CreateMock.called)
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs, {
+            "amount": 1000,
+            "currency": "usd",
+            "source": None,
+            "customer": "cus_NEW",
+            "stripe_account": None,
+            "description": None,
+            "capture": True,
+            "idempotency_key": None,
+        })
+        self.assertTrue(SyncMock.called)
+        self.assertTrue(SendReceiptMock.called)
+        self.assertTrue(Customer.objects.get(stripe_id="cus_NEW"))
 
     @patch("pinax.stripe.hooks.hookset.send_receipt")
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
@@ -111,6 +163,7 @@ class ChargesTests(TestCase):
             amount=1000,
             capture=True,
             customer=self.customer.stripe_id,
+            stripe_account=self.customer.stripe_account_stripe_id,
             idempotency_key="a",
             description=None,
             currency="usd",

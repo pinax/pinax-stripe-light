@@ -48,7 +48,7 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
     if token:
         subscription_params["source"] = token
 
-    subscription_params["stripe_account"] = getattr(customer.stripe_account, "stripe_id", None)
+    subscription_params["stripe_account"] = customer.stripe_account_stripe_id
     subscription_params["customer"] = customer.stripe_id
     subscription_params["plan"] = plan
     subscription_params["quantity"] = quantity
@@ -126,7 +126,7 @@ def retrieve(customer, sub_id):
     """
     if not sub_id:
         return
-    subscription = stripe.Subscription.retrieve(sub_id, stripe_account=getattr(customer.stripe_account, "stripe_id", None))
+    subscription = stripe.Subscription.retrieve(sub_id, stripe_account=customer.stripe_account_stripe_id)
     if subscription and subscription.customer != customer.stripe_id:
         return
     return subscription

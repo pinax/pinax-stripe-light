@@ -317,8 +317,8 @@ class Subscription(StripeObject):
     def __repr__(self):
         return "Subscription(pk={!r}, customer={!r}, plan={!r}, status={!r}, stripe_id={!r})".format(
             self.pk,
-            self.customer if hasattr(self, "customer") else None,
-            self.plan if hasattr(self, "plan") else None,
+            getattr(self, "customer", None),
+            getattr(self, "plan", None),
             str(self.status),
             str(self.stripe_id),
         )

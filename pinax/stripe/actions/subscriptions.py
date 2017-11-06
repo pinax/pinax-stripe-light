@@ -37,7 +37,7 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
         tax_percent: if provided, add percentage as tax
 
     Returns:
-        the data representing the subscription object that was created
+        the pinax.stripe.models.Subscription object (created or updated)
     """
     quantity = hooks.hookset.adjust_subscription_quantity(customer=customer, plan=plan, quantity=quantity)
 
@@ -139,7 +139,7 @@ def sync_subscription_from_stripe_data(customer, subscription):
         subscription: data from the Stripe API representing a subscription
 
     Returns:
-        the pinax.stripe.models.Subscription object created or updated
+        the pinax.stripe.models.Subscription object (created or updated)
     """
     defaults = dict(
         customer=customer,

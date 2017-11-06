@@ -48,7 +48,6 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
     if token:
         subscription_params["source"] = token
 
-    subscription_params["stripe_account"] = customer.stripe_account_stripe_id
     subscription_params["customer"] = customer.stripe_id
     subscription_params["plan"] = plan
     subscription_params["quantity"] = quantity
@@ -157,7 +156,6 @@ def sync_subscription_from_stripe_data(customer, subscription):
         status=subscription["status"],
         trial_start=utils.convert_tstamp(subscription["trial_start"]) if subscription["trial_start"] else None,
         trial_end=utils.convert_tstamp(subscription["trial_end"]) if subscription["trial_end"] else None,
-        stripe_account=customer.stripe_account,
     )
     sub, created = models.Subscription.objects.get_or_create(
         stripe_id=subscription["id"],

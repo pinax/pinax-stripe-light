@@ -176,7 +176,7 @@ class ModelTests(TestCase):
     def test_subscription_stripe_subscription_with_connnect(self, RetrieveMock):
         a = Account(stripe_id="acc_X")
         c = Customer(stripe_id="cus_X", stripe_account=a)
-        s = Subscription(stripe_id="sub_X", stripe_account=a, customer=c)
+        s = Subscription(stripe_id="sub_X", customer=c)
         s.stripe_subscription
         RetrieveMock.assert_called_once_with("sub_X", stripe_account="acc_X")
 

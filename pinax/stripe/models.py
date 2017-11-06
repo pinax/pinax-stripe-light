@@ -348,7 +348,7 @@ class Discount(models.Model):
         return amount
 
 
-class Subscription(AccountRelatedStripeObject):
+class Subscription(StripeAccountFromCustomerMixin, StripeObject):
 
     STATUS_CURRENT = ["trialing", "active"]
 

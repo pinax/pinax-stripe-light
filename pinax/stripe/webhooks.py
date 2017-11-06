@@ -9,6 +9,7 @@ from . import models
 from .actions import (
     accounts,
     charges,
+    coupons,
     customers,
     exceptions,
     invoices,
@@ -85,9 +86,8 @@ class Webhook(with_metaclass(Registerable, object)):
         For Connect accounts we must fetch the event using the `stripe_account`
         parameter.
         """
-        stripe_account_id = self.event.webhook_message.get("account")
-        if stripe_account_id:
-            self.stripe_account, _ = models.Account.objects.get_or_create(stripe_id=stripe_account_id)
+        self.stripe_account = models.Account.objects.filter(
+            stripe_id=self.event.webhook_message.get("account")).first()
         self.event.stripe_account = self.stripe_account
         evt = stripe.Event.retrieve(
             self.event.stripe_id,
@@ -169,10 +169,11 @@ class AccountApplicationDeauthorizeWebhook(Webhook):
             self.event.validated_message = self.event.webhook_message
             self.event.stripe_account = self.stripe_account
         else:
-            raise ValueError("The remote account still valid. this might be an hostile event")
+            raise ValueError("The remote account is still valid. This might be a hostile event")
 
     def process_webhook(self):
-        accounts.deauthorize(self.stripe_account)
+        if self.stripe_account is not None:
+            accounts.deauthorize(self.stripe_account)
 
 
 class AccountExternalAccountCreatedWebhook(Webhook):
@@ -293,15 +294,24 @@ class CouponCreatedWebhook(Webhook):
     name = "coupon.created"
     description = "Occurs whenever a coupon is created."
 
+    def process_webhook(self):
+        coupons.sync_coupon_from_stripe_data(self.event.message["data"]["object"], stripe_account=self.event.stripe_account)
+
 
 class CouponDeletedWebhook(Webhook):
     name = "coupon.deleted"
     description = "Occurs whenever a coupon is deleted."
 
+    def process_webhook(self):
+        coupons.purge_local(self.event.message["data"]["object"], stripe_account=self.event.stripe_account)
+
 
 class CouponUpdatedWebhook(Webhook):
     name = "coupon.updated"
     description = "Occurs whenever a coupon is updated."
+
+    def process_webhook(self):
+        coupons.sync_coupon_from_stripe_data(self.event.message["data"]["object"], stripe_account=self.event.stripe_account)
 
 
 class CustomerCreatedWebhook(Webhook):
@@ -376,7 +386,7 @@ class CustomerSubscriptionWebhook(Webhook):
         if self.event.validated_message:
             subscriptions.sync_subscription_from_stripe_data(
                 self.event.customer,
-                self.event.validated_message["data"]["object"]
+                self.event.validated_message["data"]["object"],
             )
 
         if self.event.customer:

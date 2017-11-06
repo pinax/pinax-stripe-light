@@ -79,7 +79,7 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
     period_start = utils.convert_tstamp(stripe_invoice, "period_start")
     date = utils.convert_tstamp(stripe_invoice, "date")
     sub_id = stripe_invoice.get("subscription")
-    stripe_account_id = stripe_invoice.get("account")
+    stripe_account_id = c.stripe_account_stripe_id
 
     if stripe_invoice.get("charge"):
         charge = charges.sync_charge(stripe_invoice["charge"], stripe_account=stripe_account_id)

@@ -317,10 +317,6 @@ class CustomersTests(TestCase):
 
         new_customer = Mock()
         RetrieveMock.return_value = new_customer
-
-        # customers.Create will return a new customer instance
-        CreateMock.return_value = dict(id="cus_YYYYY")
-
         customer = customers.create(self.user)
 
         # But only one customer will exist - the original one
@@ -330,15 +326,44 @@ class CustomersTests(TestCase):
         # Check that the customer hasn't been modified
         self.assertEqual(customer.user, self.user)
         self.assertEqual(customer.stripe_id, "cus_XXXXX")
+        CreateMock.assert_not_called()
+
+    @patch("stripe.Customer.retrieve")
+    @patch("stripe.Customer.create")
+    def test_customer_create_local_customer_but_no_remote(self, CreateMock, RetrieveMock):
+        # Create an existing database customer for this user
+        Customer.objects.create(user=self.user, stripe_id="cus_XXXXX")
+
+        RetrieveMock.side_effect = stripe.error.InvalidRequestError(
+            message="invalid", param=None)
+
+        # customers.Create will return a new customer instance
+        CreateMock.return_value = {
+            "id": "cus_YYYYY",
+            "account_balance": 0,
+            "currency": "us",
+            "delinquent": False,
+            "default_source": "",
+            "sources": {"data": []},
+            "subscriptions": {"data": []},
+        }
+        customer = customers.create(self.user)
+
+        # But a customer *was* retrieved, but not found
+        RetrieveMock.assert_called_once_with("cus_XXXXX")
+
+        # But only one customer will exist - the original one
+        self.assertEqual(Customer.objects.count(), 1)
+        self.assertEqual(customer.stripe_id, "cus_YYYYY")
+
+        # Check that the customer hasn't been modified
+        self.assertEqual(customer.user, self.user)
+        self.assertEqual(customer.stripe_id, "cus_YYYYY")
         _, kwargs = CreateMock.call_args
         self.assertEqual(kwargs["email"], self.user.email)
         self.assertIsNone(kwargs["source"])
         self.assertIsNone(kwargs["plan"])
         self.assertIsNone(kwargs["trial_end"])
-
-        # But a customer *was* created, retrieved, and then disposed of.
-        RetrieveMock.assert_called_once_with("cus_YYYYY")
-        new_customer.delete.assert_called_once_with()
 
     @patch("pinax.stripe.actions.invoices.create_and_pay")
     @patch("pinax.stripe.actions.customers.sync_customer")

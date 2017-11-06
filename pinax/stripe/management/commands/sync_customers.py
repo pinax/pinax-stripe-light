@@ -25,10 +25,11 @@ class Command(BaseCommand):
             customer = customers.get_customer_for_user(user)
             try:
                 customers.sync_customer(customer)
-            except InvalidRequestError as e:
-                if e.http_status == 404:  # pragma: no branch
+            except InvalidRequestError as exc:
+                if exc.http_status == 404:  # pragma: no branch
                     # This user doesn't exist (might be in test mode)
                     continue
+                raise exc
 
             if customer.date_purged is None:
                 invoices.sync_invoices_for_customer(customer)

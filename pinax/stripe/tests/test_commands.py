@@ -161,10 +161,11 @@ class CommandTests(TestCase):
 
         SyncMock.side_effect = InvalidRequestError("Unknown error", None, http_status=500)
 
-        management.call_command("sync_customers")
-        self.assertEqual(SyncChargesMock.call_count, 2)
-        self.assertEqual(SyncInvoicesMock.call_count, 2)
-        self.assertEqual(SyncMock.call_count, 2)
+        with self.assertRaises(InvalidRequestError):
+            management.call_command("sync_customers")
+        self.assertEqual(SyncChargesMock.call_count, 0)
+        self.assertEqual(SyncInvoicesMock.call_count, 0)
+        self.assertEqual(SyncMock.call_count, 1)
 
     @patch("stripe.Customer.retrieve")
     @patch("pinax.stripe.actions.customers.sync_customer")

@@ -96,7 +96,8 @@ class Webhook(with_metaclass(Registerable, object)):
                 cls=stripe.StripeObjectEncoder
             )
         )
-        self.event.valid = self.event.webhook_message["data"] == self.event.validated_message["data"]
+        # Notice "data" may contain a "previous_attributes" section
+        self.event.valid = "object" in self.event.webhook_message["data"] and "object" in self.event.validated_message["data"] and self.event.webhook_message["data"]["object"] == self.event.validated_message["data"]["object"]
         self.event.save()
 
     def send_signal(self):

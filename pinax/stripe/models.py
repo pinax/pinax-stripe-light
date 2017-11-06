@@ -230,7 +230,6 @@ class TransferChargeFee(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
 
-@python_2_unicode_compatible
 class UserAccount(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              related_name="user_accounts",

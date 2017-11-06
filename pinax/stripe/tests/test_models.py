@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import datetime
 import decimal
-import sys
 
 from django.test import TestCase
 from django.utils import timezone
@@ -24,12 +23,10 @@ from ..models import (
     Transfer
 )
 
-
-def _str(obj):
-    if sys.version_info < (3, 0):
-        return str(obj).decode("utf-8")
-    else:
-        return str(obj)
+try:
+    _str = unicode
+except NameError:
+    _str = str
 
 
 class ModelTests(TestCase):

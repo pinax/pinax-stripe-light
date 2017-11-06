@@ -124,7 +124,7 @@ def retrieve(customer, sub_id):
     """
     if not sub_id:
         return
-    subscription = stripe.Subscription.retrieve(sub_id)
+    subscription = stripe.Subscription.retrieve(sub_id, stripe_account=customer.stripe_account_stripe_id)
     if subscription and subscription.customer != customer.stripe_id:
         return
     return subscription

@@ -745,6 +745,16 @@ class SubscriptionsTests(TestCase):
             user=cls.user,
             stripe_id="cus_xxxxxxxxxxxxxxx"
         )
+        cls.plan = Plan.objects.create(
+            stripe_id="the-plan",
+            amount=2,
+            interval_count=1,
+        )
+        cls.account = Account.objects.create(stripe_id="acct_xx")
+        cls.connected_customer = Customer.objects.create(
+            stripe_id="cus_yyyyyyyyyyyyyyy",
+            stripe_account=cls.account,
+        )
 
     def test_has_active_subscription(self):
         plan = Plan.objects.create(
@@ -901,6 +911,30 @@ class SubscriptionsTests(TestCase):
         self.assertTrue(SubscriptionCreateMock.called)
         _, kwargs = SubscriptionCreateMock.call_args
         self.assertEquals(kwargs["source"], "token")
+
+    @patch("stripe.Subscription.retrieve")
+    @patch("stripe.Subscription.create")
+    def test_retrieve_subscription_with_connect(self, CreateMock, RetrieveMock):
+        CreateMock.return_value = {
+            "object": "subscription",
+            "id": "sub_XX",
+            "application_fee_percent": None,
+            "cancel_at_period_end": False,
+            "canceled_at": None,
+            "current_period_start": 1509978774,
+            "current_period_end": 1512570774,
+            "ended_at": None,
+            "quantity": 1,
+            "start": 1509978774,
+            "status": "active",
+            "trial_start": None,
+            "trial_end": None,
+            "plan": {
+                "id": self.plan.stripe_id,
+            }}
+        subscriptions.create(self.connected_customer, self.plan.stripe_id)
+        subscriptions.retrieve(self.connected_customer, "sub_XX")
+        RetrieveMock.assert_called_once_with("sub_XX", stripe_account=self.account.stripe_id)
 
     def test_is_period_current(self):
         sub = Subscription(current_period_end=(timezone.now() + datetime.timedelta(days=2)))

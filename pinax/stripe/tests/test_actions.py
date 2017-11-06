@@ -733,14 +733,16 @@ class SourcesTests(TestCase):
 
 class SubscriptionsTests(TestCase):
 
-    def setUp(self):
-        self.User = get_user_model()
-        self.user = self.User.objects.create_user(
+    @classmethod
+    def setUpClass(cls):
+        super(SubscriptionsTests, cls).setUpClass()
+        cls.User = get_user_model()
+        cls.user = cls.User.objects.create_user(
             username="patrick",
             email="paltman@example.com"
         )
-        self.customer = Customer.objects.create(
-            user=self.user,
+        cls.customer = Customer.objects.create(
+            user=cls.user,
             stripe_id="cus_xxxxxxxxxxxxxxx"
         )
 

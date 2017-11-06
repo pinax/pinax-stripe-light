@@ -139,6 +139,10 @@ class ModelTests(TestCase):
         self.assertEquals(str(a), "Display name - acct_X")
         self.assertEquals(repr(a), "Account(pk=None, display_name='Display name', type=None, stripe_id='acct_X')")
 
+    def test_customer_required_fields(self):
+        c = Customer(stripe_id="cus_A")
+        c.full_clean()
+
 
 class StripeObjectTests(TestCase):
 

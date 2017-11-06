@@ -818,14 +818,20 @@ class SubscriptionsTests(TestCase):
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     def test_cancel_subscription(self, SyncMock):
         SubMock = Mock()
-        subscriptions.cancel(SubMock)
+        obj = object()
+        SyncMock.return_value = obj
+        sub = subscriptions.cancel(SubMock)
+        self.assertIs(sub, obj)
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     def test_update(self, SyncMock):
         SubMock = Mock()
         SubMock.customer = self.customer
-        subscriptions.update(SubMock)
+        obj = object()
+        SyncMock.return_value = obj
+        sub = subscriptions.update(SubMock)
+        self.assertIs(sub, obj)
         self.assertTrue(SubMock.stripe_subscription.save.called)
         self.assertTrue(SyncMock.called)
 
@@ -1371,8 +1377,9 @@ class SyncsTests(TestCase):
             "trial_end": 1448758544,
             "trial_start": 1448499344
         }
-        subscriptions.sync_subscription_from_stripe_data(self.customer, subscription)
-        self.assertEquals(Subscription.objects.get(stripe_id=subscription["id"]).status, "trialing")
+        sub = subscriptions.sync_subscription_from_stripe_data(self.customer, subscription)
+        self.assertEquals(Subscription.objects.get(stripe_id=subscription["id"]), sub)
+        self.assertEquals(sub.status, "trialing")
 
     def test_sync_subscription_from_stripe_data_updated(self):
         Plan.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))

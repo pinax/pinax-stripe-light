@@ -35,7 +35,8 @@ from ..models import (
     Invoice,
     Plan,
     Subscription,
-    Transfer
+    Transfer,
+    UserAccount
 )
 
 
@@ -428,6 +429,22 @@ class CustomersTests(TestCase):
         self.assertIsNotNone(Customer.objects.get(stripe_id=customer.stripe_id).date_purged)
 
     @patch("stripe.Customer.retrieve")
+    def test_purge_connected(self, RetrieveMock):
+        account = Account.objects.create(stripe_id="acc_XXX")
+        customer = Customer.objects.create(
+            user=self.user,
+            stripe_account=account,
+            stripe_id="cus_xxxxxxxxxxxxxxx",
+        )
+        UserAccount.objects.create(user=self.user, account=account, customer=customer)
+        customers.purge(customer)
+        self.assertTrue(RetrieveMock().delete.called)
+        self.assertIsNone(Customer.objects.get(stripe_id=customer.stripe_id).user)
+        self.assertIsNotNone(Customer.objects.get(stripe_id=customer.stripe_id).date_purged)
+        self.assertFalse(UserAccount.objects.exists())
+        self.assertTrue(self.User.objects.exists())
+
+    @patch("stripe.Customer.retrieve")
     def test_purge_already_deleted(self, RetrieveMock):
         RetrieveMock().delete.side_effect = stripe.InvalidRequestError("No such customer:", "error")
         customer = Customer.objects.create(
@@ -490,6 +507,115 @@ class CustomersTests(TestCase):
         event = Event.objects.create(validated_message=message, kind="customer.created")
         customers.link_customer(event)
         self.assertIsNone(event.customer)
+
+
+class CustomersWithConnectTests(TestCase):
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            username="patrick",
+            email="paltman@example.com"
+        )
+        self.plan = Plan.objects.create(
+            stripe_id="p1",
+            amount=10,
+            currency="usd",
+            interval="monthly",
+            interval_count=1,
+            name="Pro"
+        )
+        self.account = Account.objects.create(
+            stripe_id="acc_XXX"
+        )
+
+    def test_get_customer_for_user_with_stripe_account(self):
+        expected = Customer.objects.create(
+            stripe_id="x",
+            stripe_account=self.account)
+        UserAccount.objects.create(user=self.user, account=self.account, customer=expected)
+        actual = customers.get_customer_for_user(
+            self.user, stripe_account=self.account)
+        self.assertEquals(expected, actual)
+
+    def test_get_customer_for_user_with_stripe_account_and_legacy_customer(self):
+        Customer.objects.create(user=self.user, stripe_id="x")
+        self.assertIsNone(customers.get_customer_for_user(
+            self.user, stripe_account=self.account))
+
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    @patch("stripe.Customer.create")
+    def test_customer_create_with_connect(self, CreateMock, SyncMock):
+        CreateMock.return_value = dict(id="cus_XXXXX")
+        customer = customers.create(self.user, stripe_account=self.account)
+        self.assertIsNone(customer.user)
+        self.assertEqual(customer.stripe_id, "cus_XXXXX")
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["email"], self.user.email)
+        self.assertEqual(kwargs["stripe_account"], self.account.stripe_id)
+        self.assertIsNone(kwargs["source"])
+        self.assertIsNone(kwargs["plan"])
+        self.assertIsNone(kwargs["trial_end"])
+        self.assertTrue(SyncMock.called)
+
+    @patch("stripe.Customer.retrieve")
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    @patch("stripe.Customer.create")
+    def test_customer_create_with_connect_and_stale_user_account(self, CreateMock, SyncMock, RetrieveMock):
+        CreateMock.return_value = dict(id="cus_XXXXX")
+        RetrieveMock.side_effect = stripe.error.InvalidRequestError(
+            message="Not Found", param="stripe_id"
+        )
+        ua = UserAccount.objects.create(
+            user=self.user,
+            account=self.account,
+            customer=Customer.objects.create(stripe_id="cus_Z", stripe_account=self.account))
+        customer = customers.create(self.user, stripe_account=self.account)
+        self.assertIsNone(customer.user)
+        self.assertEqual(customer.stripe_id, "cus_XXXXX")
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["email"], self.user.email)
+        self.assertEqual(kwargs["stripe_account"], self.account.stripe_id)
+        self.assertIsNone(kwargs["source"])
+        self.assertIsNone(kwargs["plan"])
+        self.assertIsNone(kwargs["trial_end"])
+        self.assertTrue(SyncMock.called)
+        self.assertEqual(self.user.user_accounts.get(), ua)
+        self.assertEqual(ua.customer, customer)
+        RetrieveMock.assert_called_once_with("cus_Z", stripe_account=self.account.stripe_id)
+
+    @patch("stripe.Customer.retrieve")
+    def test_customer_create_with_connect_with_existing_customer(self, RetrieveMock):
+        expected = Customer.objects.create(
+            stripe_id="x",
+            stripe_account=self.account)
+        UserAccount.objects.create(user=self.user, account=self.account, customer=expected)
+        customer = customers.create(self.user, stripe_account=self.account)
+        self.assertEquals(customer, expected)
+        RetrieveMock.assert_called_once_with("x", stripe_account=self.account.stripe_id)
+
+    @patch("pinax.stripe.actions.invoices.create_and_pay")
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    @patch("stripe.Customer.create")
+    def test_customer_create_user_with_plan(self, CreateMock, SyncMock, CreateAndPayMock):
+        Plan.objects.create(
+            stripe_id="pro-monthly",
+            name="Pro ($19.99/month)",
+            amount=19.99,
+            interval="monthly",
+            interval_count=1,
+            currency="usd"
+        )
+        CreateMock.return_value = dict(id="cus_YYYYYYYYYYYYY")
+        customer = customers.create(self.user, card="token232323", plan=self.plan, stripe_account=self.account)
+        self.assertEqual(customer.stripe_id, "cus_YYYYYYYYYYYYY")
+        _, kwargs = CreateMock.call_args
+        self.assertEqual(kwargs["email"], self.user.email)
+        self.assertEqual(kwargs["source"], "token232323")
+        self.assertEqual(kwargs["plan"], self.plan)
+        self.assertIsNotNone(kwargs["trial_end"])
+        self.assertTrue(SyncMock.called)
+        self.assertTrue(CreateAndPayMock.called)
 
 
 class EventsTests(TestCase):
@@ -757,6 +883,9 @@ class SubscriptionsTests(TestCase):
             stripe_id="cus_yyyyyyyyyyyyyyy",
             stripe_account=cls.account,
         )
+        UserAccount.objects.create(user=cls.user,
+                                   customer=cls.connected_customer,
+                                   account=cls.account)
 
     def test_has_active_subscription(self):
         plan = Plan.objects.create(

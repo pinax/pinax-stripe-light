@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import datetime
 import decimal
 
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -20,7 +22,8 @@ from ..models import (
     InvoiceItem,
     Plan,
     Subscription,
-    Transfer
+    Transfer,
+    UserAccount
 )
 
 try:
@@ -141,9 +144,32 @@ class ModelTests(TestCase):
         self.assertEquals(str(a), "Display name - acct_X")
         self.assertEquals(repr(a), "Account(pk=None, display_name='Display name', type=None, stripe_id='acct_X', authorized=False)")
 
+    @patch("stripe.Subscription.retrieve")
+    def test_subscription_stripe_subscription_with_connnect(self, RetrieveMock):
+        a = Account(stripe_id="acc_X")
+        c = Customer(stripe_id="cus_X", stripe_account=a)
+        s = Subscription(stripe_id="sub_X", customer=c)
+        s.stripe_subscription
+        RetrieveMock.assert_called_once_with("sub_X", stripe_account="acc_X")
+
     def test_customer_required_fields(self):
         c = Customer(stripe_id="cus_A")
         c.full_clean()
+
+    def test_user_account_validation(self):
+        User = get_user_model()
+        a = Account()
+        ua = UserAccount(user=User(), account=a, customer=Customer(stripe_account=Account()))
+        with self.assertRaises(ValidationError):
+            ua.clean()
+
+    def test_user_account_repr(self):
+        User = get_user_model()
+        ua = UserAccount(user=User(), account=Account(), customer=Customer())
+        self.assertEquals(
+            repr(ua),
+            "UserAccount(pk=None, user=<User: >, account=Account(pk=None, display_name='', type=None, stripe_id='', authorized=True)"
+            ", customer=Customer(pk=None, user=None, stripe_id=''))")
 
 
 class StripeObjectTests(TestCase):
@@ -163,10 +189,10 @@ class StripeObjectTests(TestCase):
         Invoice().stripe_invoice
         self.assertTrue(RetrieveMock.called)
 
-    @patch("stripe.Customer.retrieve")
+    @patch("stripe.Subscription.retrieve")
     def test_stripe_subscription(self, RetrieveMock):
-        Subscription(customer=Customer(stripe_id="foo")).stripe_subscription
-        self.assertTrue(RetrieveMock().subscriptions.retrieve.called)
+        Subscription(stripe_id="sub_X", customer=Customer(stripe_id="foo")).stripe_subscription
+        RetrieveMock.assert_called_once_with("sub_X", stripe_account=None)
 
     @patch("stripe.Transfer.retrieve")
     def test_stripe_transfer(self, RetrieveMock):

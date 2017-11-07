@@ -262,19 +262,21 @@ class ChargesTests(TestCase):
             )
 
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
-    @patch("stripe.Charge.retrieve")
-    def test_capture(self, RetrieveMock, SyncMock):
-        charges.capture(Charge(amount=decimal.Decimal("100"), currency="usd"))
-        self.assertTrue(RetrieveMock.return_value.capture.called)
+    @patch("stripe.Charge.capture")
+    def test_capture(self, CaptureMock, SyncMock):
+        charges.capture(Charge(stripe_id="ch_A", amount=decimal.Decimal("100"), currency="usd"))
+        self.assertTrue(CaptureMock.called)
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
-    @patch("stripe.Charge.retrieve")
-    def test_capture_with_amount(self, RetrieveMock, SyncMock):
-        charges.capture(Charge(amount=decimal.Decimal("100"), currency="usd"), amount=decimal.Decimal("50"))
-        self.assertTrue(RetrieveMock.return_value.capture.called)
-        _, kwargs = RetrieveMock.return_value.capture.call_args
+    @patch("stripe.Charge.capture")
+    def test_capture_with_amount(self, CaptureMock, SyncMock):
+        charge = Charge(stripe_id="ch_A", amount=decimal.Decimal("100"), currency="usd")
+        charges.capture(charge, amount=decimal.Decimal("50"), idempotency_key="IDEM")
+        self.assertTrue(CaptureMock.called)
+        _, kwargs = CaptureMock.call_args
         self.assertEquals(kwargs["amount"], 5000)
+        self.assertEquals(kwargs["idempotency_key"], "IDEM")
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.charges.sync_charge")

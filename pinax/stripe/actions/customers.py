@@ -27,17 +27,13 @@ def can_charge(customer):
 
 
 def _create_without_account(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
-    try:
-        cus = models.Customer.objects.get(user=user)
-    except models.Customer.DoesNotExist:
-        pass
-    else:
+    cus = models.Customer.objects.filter(user=user).first()
+    if cus is not None:
         try:
             stripe.Customer.retrieve(cus.stripe_id)
+            return cus
         except stripe.error.InvalidRequestError:
             pass
-        else:
-            return cus
 
     # At this point we maybe have a local Customer but no stripe customer
     # let's create one and make the binding
@@ -64,18 +60,13 @@ def _create_without_account(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_
 
 
 def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
-    try:
-        cus = user.customers.get(user_account__account=stripe_account)
-    except models.Customer.DoesNotExist:
-        logger.debug("customer not found for user %s, and account %s", user, stripe_account)
-        cus = None
-    else:
+    cus = user.customers.filter(user_account__account=stripe_account).first()
+    if cus is not None:
         try:
             stripe.Customer.retrieve(cus.stripe_id, stripe_account=stripe_account.stripe_id)
-        except stripe.error.InvalidRequestError:
-            logger.debug("customer found but failed to retrieve for user %s, and account %s", user, stripe_account)
-        else:
             return cus
+        except stripe.error.InvalidRequestError:
+            pass
 
     # At this point we maybe have a local Customer but no stripe customer
     # let's create one and make the binding

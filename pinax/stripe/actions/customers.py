@@ -71,7 +71,7 @@ def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_ST
         cus = None
     else:
         try:
-            stripe.Customer.retrieve(cus.stripe_id)
+            stripe.Customer.retrieve(cus.stripe_id, stripe_account=stripe_account.stripe_id)
         except stripe.error.InvalidRequestError:
             logger.debug("customer found but failed to retrieve for user %s, and account %s", user, stripe_account)
         else:

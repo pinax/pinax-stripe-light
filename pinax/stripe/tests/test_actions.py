@@ -624,6 +624,7 @@ class CustomersWithConnectTests(TestCase):
         self.assertTrue(SyncMock.called)
         self.assertEqual(self.user.user_accounts.get(), ua)
         self.assertEqual(ua.customer, customer)
+        RetrieveMock.assert_called_once_with("cus_Z", stripe_account=self.account.stripe_id)
 
 
 class EventsTests(TestCase):

@@ -130,7 +130,7 @@ def get_customer_for_user(user, stripe_account=None):
     """
     if stripe_account is None:
         return models.Customer.objects.filter(user=user).first()
-    return user.customers.filter(user_account__customer__stripe_account=stripe_account).first()
+    return user.customers.filter(user_account__account=stripe_account).first()
 
 
 def purge_local(customer):

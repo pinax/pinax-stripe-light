@@ -64,6 +64,10 @@ class ModelTests(TestCase):
         self.assertTrue("None" in str(c))
         self.assertEquals(repr(c), "Customer(pk=None, user=None, stripe_id='')")
 
+    def test_charge_repr(self):
+        charge = Charge()
+        self.assertEquals(repr(charge), "Charge(customer=None, source='', amount=None, captured=None, paid=None, stripe_id='')")
+
     def test_plan_display_invoiceitem(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
         p.save()

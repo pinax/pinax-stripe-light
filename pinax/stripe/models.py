@@ -251,11 +251,11 @@ class UserAccount(models.Model):
 @python_2_unicode_compatible
 class Customer(AccountRelatedStripeObject):
 
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.CASCADE)
     users = models.ManyToManyField(settings.AUTH_USER_MODEL, through=UserAccount,
                                    related_name="customers",
                                    related_query_name="customers")
-    account_balance = models.DecimalField(decimal_places=2, max_digits=9, null=True)
+    account_balance = models.DecimalField(decimal_places=2, max_digits=9, blank=True, null=True)
     currency = models.CharField(max_length=10, default="usd", blank=True)
     delinquent = models.BooleanField(default=False)
     default_source = models.TextField(blank=True)
@@ -396,8 +396,8 @@ class Subscription(StripeAccountFromCustomerMixin, StripeObject):
     def __repr__(self):
         return "Subscription(pk={!r}, customer={!r}, plan={!r}, status={!r}, stripe_id={!r})".format(
             self.pk,
-            self.customer if hasattr(self, "customer") else None,
-            self.plan if hasattr(self, "plan") else None,
+            getattr(self, "customer", None),
+            getattr(self, "plan", None),
             str(self.status),
             str(self.stripe_id),
         )
@@ -509,7 +509,7 @@ class Charge(StripeAccountFromCustomerMixin, StripeObject):
 @python_2_unicode_compatible
 class Account(StripeObject):
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE, related_name="stripe_accounts")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.CASCADE, related_name="stripe_accounts")
 
     business_name = models.TextField(blank=True, null=True)
     business_url = models.TextField(blank=True, null=True)

@@ -1084,6 +1084,7 @@ class SubscriptionsTests(TestCase):
             customer=self.connected_customer.stripe_id,
             plan="the-plan",
             quantity=4,
+            stripe_account="acct_xx",
             tax_percent=None)
         subscription = Subscription.objects.get()
         self.assertEqual(subscription.customer, self.connected_customer)

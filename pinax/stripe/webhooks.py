@@ -108,9 +108,12 @@ class Webhook(with_metaclass(Registerable, object)):
             return signal.send(sender=self.__class__, event=self.event)
 
     def process(self):
-        self.validate()
-        if not self.event.valid or self.event.processed:
+        if self.event.processed:
             return
+        self.validate()
+        if not self.event.valid:
+            return
+
         try:
             customers.link_customer(self.event)
             self.process_webhook()
@@ -373,11 +376,10 @@ class CustomerSourceUpdatedWebhook(CustomerSourceWebhook):
 class CustomerSubscriptionWebhook(Webhook):
 
     def process_webhook(self):
-        if self.event.validated_message:
-            subscriptions.sync_subscription_from_stripe_data(
-                self.event.customer,
-                self.event.validated_message["data"]["object"]
-            )
+        subscriptions.sync_subscription_from_stripe_data(
+            self.event.customer,
+            self.event.validated_message["data"]["object"],
+        )
 
         if self.event.customer:
             customers.sync_customer(self.event.customer)

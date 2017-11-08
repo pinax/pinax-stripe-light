@@ -345,18 +345,30 @@ class PlanUpdatedWebhookTest(TestCase):
 
 class CustomerSubscriptionCreatedWebhookTest(TestCase):
 
-    @patch("stripe.Customer.retrieve")
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     @patch("pinax.stripe.actions.customers.sync_customer")
-    def test_process_webhook(self, SyncMock, RetrieveMock):
-        event = Event.objects.create(kind=CustomerSubscriptionCreatedWebhook.name, customer=Customer.objects.create(), webhook_message={}, valid=True, processed=False)
+    def test_process_webhook(self, SyncMock, SubSyncMock):
+        event = Event.objects.create(
+            kind=CustomerSubscriptionCreatedWebhook.name,
+            customer=Customer.objects.create(),
+            validated_message={"data": {"object": {}}},
+            valid=True,
+            processed=False)
         CustomerSubscriptionCreatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
+        self.assertTrue(SubSyncMock.called)
 
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     @patch("pinax.stripe.actions.customers.sync_customer")
-    def test_process_webhook_no_customer(self, SyncMock):
-        event = Event.objects.create(kind=CustomerSubscriptionCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
+    def test_process_webhook_no_customer(self, SyncMock, SubSyncMock):
+        event = Event.objects.create(
+            kind=CustomerSubscriptionCreatedWebhook.name,
+            validated_message={"data": {"object": {}}},
+            valid=True,
+            processed=False)
         CustomerSubscriptionCreatedWebhook(event).process_webhook()
         self.assertFalse(SyncMock.called)
+        self.assertTrue(SubSyncMock.called)
 
 
 class InvoiceCreatedWebhookTest(TestCase):

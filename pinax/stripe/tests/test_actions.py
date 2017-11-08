@@ -918,6 +918,36 @@ class SubscriptionsTests(TestCase):
         _, kwargs = SubscriptionCreateMock.call_args
         self.assertEquals(kwargs["source"], "token")
 
+    @patch("stripe.Subscription.create")
+    def test_subscription_create_with_connect(self, SubscriptionCreateMock):
+        SubscriptionCreateMock.return_value = {
+            "object": "subscription",
+            "id": "sub_XX",
+            "application_fee_percent": None,
+            "cancel_at_period_end": False,
+            "canceled_at": None,
+            "current_period_start": 1509978774,
+            "current_period_end": 1512570774,
+            "ended_at": None,
+            "quantity": 1,
+            "start": 1509978774,
+            "status": "active",
+            "trial_start": None,
+            "trial_end": None,
+            "plan": {
+                "id": self.plan.stripe_id,
+            }}
+        subscriptions.create(self.connected_customer, self.plan.stripe_id)
+        SubscriptionCreateMock.assert_called_once_with(
+            coupon=None,
+            customer=self.connected_customer.stripe_id,
+            plan="the-plan",
+            quantity=4,
+            stripe_account="acct_xx",
+            tax_percent=None)
+        subscription = Subscription.objects.get()
+        self.assertEqual(subscription.customer, self.connected_customer)
+
     @patch("stripe.Subscription.retrieve")
     @patch("stripe.Subscription.create")
     def test_retrieve_subscription_with_connect(self, CreateMock, RetrieveMock):

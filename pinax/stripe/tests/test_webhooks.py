@@ -34,8 +34,8 @@ from ..webhooks import (
     CustomerSubscriptionCreatedWebhook,
     CustomerUpdatedWebhook,
     InvoiceCreatedWebhook,
-    registry
-)
+    registry,
+    Webhook)
 
 try:
     from django.urls import reverse
@@ -357,6 +357,54 @@ class CustomerSubscriptionCreatedWebhookTest(TestCase):
         event = Event.objects.create(kind=CustomerSubscriptionCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
         CustomerSubscriptionCreatedWebhook(event).process_webhook()
         self.assertFalse(SyncMock.called)
+
+
+class CustomerSubscriptionUpdatedWebhookTest(TestCase):
+    WMD = {u'object': {u'livemode': False, u'id': u'my_sub', u'billing': u'charge_automatically',
+                       u'current_period_end': 1512042391, u'start': 1509363991, u'application_fee_percent': None,
+                       u'metadata': {}, u'status': u'active', u'trial_start': None, u'cancel_at_period_end': False,
+                       u'object': u'subscription', u'discount': None, u'trial_end': None,
+                       u'plan': {u'interval': u'month', u'name': u'Free', u'created': 1508100740, u'object': u'plan',
+                                 u'interval_count': 1, u'statement_descriptor': None, u'currency': u'eur', u'amount': 0,
+                                 u'trial_period_days': None, u'livemode': False, u'id': u'free', u'metadata': {}},
+                       u'tax_percent': 21.0, u'customer': u'my_cus', u'ended_at': None, u'created': 1509363991,
+                       u'canceled_at': None, u'items': {u'has_more': False, u'total_count': 1, u'object': u'list',
+                                                        u'data': [
+                                                            {u'created': 1509363991, u'object': u'subscription_item',
+                                                             u'plan': {u'interval': u'month', u'name': u'Free',
+                                                                       u'created': 1508100740, u'object': u'plan',
+                                                                       u'interval_count': 1,
+                                                                       u'statement_descriptor': None,
+                                                                       u'currency': u'eur', u'amount': 0,
+                                                                       u'trial_period_days': None, u'livemode': False,
+                                                                       u'id': u'free', u'metadata': {}}, u'quantity': 1,
+                                                             u'id': u'my_si', u'metadata': {}}],
+                                                        u'url': u'/v1/subscription_items?subscription=my_sub'},
+                       u'current_period_start': 1509363991, u'quantity': 1}}
+    VMD = {u'previous_attributes': {u'days_until_due': 30, u'billing': u'send_invoice'},
+           u'object': {u'livemode': False, u'id': u'my_sub', u'billing': u'charge_automatically',
+                       u'current_period_end': 1512042391, u'start': 1509363991, u'application_fee_percent': None,
+                       u'metadata': {}, u'status': u'active', u'trial_start': None, u'cancel_at_period_end': False,
+                       u'object': u'subscription', u'discount': None, u'trial_end': None,
+                       u'plan': {u'livemode': False, u'name': u'Free', u'created': 1508100740, u'interval': u'month',
+                                 u'interval_count': 1, u'object': u'plan', u'statement_descriptor': None,
+                                 u'currency': u'eur', u'amount': 0, u'trial_period_days': None, u'id': u'free',
+                                 u'metadata': {}}, u'tax_percent': 21.0, u'customer': u'my_cus', u'ended_at': None,
+                       u'created': 1509363991, u'canceled_at': None,
+                       u'items': {u'has_more': False, u'total_count': 1, u'object': u'list', u'data': [
+                           {u'created': 1509363991, u'object': u'subscription_item',
+                            u'plan': {u'livemode': False, u'name': u'Free', u'created': 1508100740,
+                                      u'interval': u'month', u'interval_count': 1, u'object': u'plan',
+                                      u'statement_descriptor': None, u'currency': u'eur', u'amount': 0,
+                                      u'trial_period_days': None, u'id': u'free', u'metadata': {}}, u'metadata': {},
+                            u'id': u'my_si', u'quantity': 1}], u'url': u'/v1/subscription_items?subscription=my_sub'},
+                       u'current_period_start': 1509363991, u'quantity': 1}}
+
+    def test_is_event_valid_yes(self):
+        self.assertTrue(Webhook.is_event_valid(self.WMD, self.WMD))
+
+    def test_is_event_valid_no(self):
+        self.assertFalse(Webhook.is_event_valid(self.WMD, self.VMD))
 
 
 class InvoiceCreatedWebhookTest(TestCase):

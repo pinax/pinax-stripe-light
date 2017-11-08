@@ -16,6 +16,7 @@ def calculate_refund_amount(charge, amount=None):
     Args:
         charge: a pinax.stripe.models.Charge object
         amount: optionally, the decimal.Decimal amount you wish to refund
+        idempotency_key: Any string that allows retries to be performed safely.
     """
     eligible_to_refund = charge.amount - (charge.amount_refunded or 0)
     if amount:
@@ -23,7 +24,7 @@ def calculate_refund_amount(charge, amount=None):
     return eligible_to_refund
 
 
-def capture(charge, amount=None):
+def capture(charge, amount=None, idempotency_key=None):
     """
     Capture the payment of an existing, uncaptured, charge.
 
@@ -31,12 +32,14 @@ def capture(charge, amount=None):
         charge: a pinax.stripe.models.Charge object
         amount: the decimal.Decimal amount of the charge to capture
     """
-    stripe_charge = charge.stripe_charge.capture(
-        amount=utils.convert_amount_for_api(
-            amount if amount else charge.amount,
-            charge.currency
-        ),
-        expand=["balance_transaction"]
+    amount = utils.convert_amount_for_api(
+        amount if amount else charge.amount,
+        charge.currency
+    )
+    stripe_charge = stripe.Charge(charge.stripe_id).capture(
+        amount=amount,
+        idempotency_key=idempotency_key,
+        expand=["balance_transaction"],
     )
     sync_charge_from_stripe_data(stripe_charge)
 

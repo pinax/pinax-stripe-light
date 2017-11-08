@@ -239,19 +239,21 @@ class ChargesTests(TestCase):
             )
 
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
-    @patch("stripe.Charge.retrieve")
-    def test_capture(self, RetrieveMock, SyncMock):
-        charges.capture(Charge(amount=decimal.Decimal("100"), currency="usd"))
-        self.assertTrue(RetrieveMock.return_value.capture.called)
+    @patch("stripe.Charge.capture")
+    def test_capture(self, CaptureMock, SyncMock):
+        charges.capture(Charge(stripe_id="ch_A", amount=decimal.Decimal("100"), currency="usd"))
+        self.assertTrue(CaptureMock.called)
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
-    @patch("stripe.Charge.retrieve")
-    def test_capture_with_amount(self, RetrieveMock, SyncMock):
-        charges.capture(Charge(amount=decimal.Decimal("100"), currency="usd"), amount=decimal.Decimal("50"))
-        self.assertTrue(RetrieveMock.return_value.capture.called)
-        _, kwargs = RetrieveMock.return_value.capture.call_args
+    @patch("stripe.Charge.capture")
+    def test_capture_with_amount(self, CaptureMock, SyncMock):
+        charge = Charge(stripe_id="ch_A", amount=decimal.Decimal("100"), currency="usd")
+        charges.capture(charge, amount=decimal.Decimal("50"), idempotency_key="IDEM")
+        self.assertTrue(CaptureMock.called)
+        _, kwargs = CaptureMock.call_args
         self.assertEquals(kwargs["amount"], 5000)
+        self.assertEquals(kwargs["idempotency_key"], "IDEM")
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.charges.sync_charge")
@@ -917,6 +919,36 @@ class SubscriptionsTests(TestCase):
         self.assertTrue(SubscriptionCreateMock.called)
         _, kwargs = SubscriptionCreateMock.call_args
         self.assertEquals(kwargs["source"], "token")
+
+    @patch("stripe.Subscription.create")
+    def test_subscription_create_with_connect(self, SubscriptionCreateMock):
+        SubscriptionCreateMock.return_value = {
+            "object": "subscription",
+            "id": "sub_XX",
+            "application_fee_percent": None,
+            "cancel_at_period_end": False,
+            "canceled_at": None,
+            "current_period_start": 1509978774,
+            "current_period_end": 1512570774,
+            "ended_at": None,
+            "quantity": 1,
+            "start": 1509978774,
+            "status": "active",
+            "trial_start": None,
+            "trial_end": None,
+            "plan": {
+                "id": self.plan.stripe_id,
+            }}
+        subscriptions.create(self.connected_customer, self.plan.stripe_id)
+        SubscriptionCreateMock.assert_called_once_with(
+            coupon=None,
+            customer=self.connected_customer.stripe_id,
+            plan="the-plan",
+            quantity=4,
+            stripe_account="acct_xx",
+            tax_percent=None)
+        subscription = Subscription.objects.get()
+        self.assertEqual(subscription.customer, self.connected_customer)
 
     @patch("stripe.Subscription.retrieve")
     @patch("stripe.Subscription.create")

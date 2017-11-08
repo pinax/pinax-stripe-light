@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import datetime
 import decimal
-import sys
 
 from django.test import TestCase
 from django.utils import timezone
@@ -24,19 +23,18 @@ from ..models import (
     Transfer
 )
 
-
-def _str(obj):
-    if sys.version_info < (3, 0):
-        return str(obj).decode("utf-8")
-    else:
-        return str(obj)
+try:
+    _str = unicode
+except NameError:
+    _str = str
 
 
 class ModelTests(TestCase):
 
-    def test_plan_str(self):
+    def test_plan_str_and_repr(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
         self.assertTrue(p.name in _str(p))
+        self.assertEquals(repr(p), "Plan(pk=None, name='My Plan', amount=Decimal('5'), currency='', interval='monthly', interval_count=1, trial_period_days=None, stripe_id='')")
 
     def test_plan_str_usd(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", currency="usd", interval="monthly", interval_count=1)
@@ -50,13 +48,24 @@ class ModelTests(TestCase):
         e = EventProcessingException(data="hello", message="hi there", traceback="fake")
         self.assertTrue("Event=" in str(e))
 
-    def test_event_str(self):
+    def test_event_str_and_repr(self):
         e = Event(kind="customer.deleted", webhook_message={})
         self.assertTrue("customer.deleted" in str(e))
+        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer=None, valid=None, stripe_id='')")
 
-    def test_customer_str(self):
-        e = Customer()
-        self.assertTrue("None" in str(e))
+        e.stripe_id = "evt_X"
+        e.customer = Customer()
+        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer={!r}, valid=None, stripe_id='{}')".format(
+            e.customer, e.stripe_id))
+
+    def test_customer_str_and_repr(self):
+        c = Customer()
+        self.assertTrue("None" in str(c))
+        self.assertEquals(repr(c), "Customer(pk=None, user=None, stripe_id='')")
+
+    def test_charge_repr(self):
+        charge = Charge()
+        self.assertEquals(repr(charge), "Charge(customer=None, source='', amount=None, captured=None, paid=None, stripe_id='')")
 
     def test_plan_display_invoiceitem(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
@@ -85,6 +94,20 @@ class ModelTests(TestCase):
     def test_invoice_status_not_paid(self):
         self.assertEquals(Invoice(paid=False).status, "Open")
 
+    def test_subscription_repr(self):
+        s = Subscription()
+        self.assertEquals(repr(s), "Subscription(pk=None, customer=None, plan=None, status='', stripe_id='')")
+        s.customer = Customer()
+        s.plan = Plan()
+        s.status = "active"
+        s.stripe_id = "sub_X"
+        self.assertEquals(
+            repr(s),
+            "Subscription(pk=None, customer={!r}, plan={!r}, status='active', stripe_id='sub_X')".format(
+                s.customer,
+                s.plan,
+            ))
+
     def test_subscription_total_amount(self):
         sub = Subscription(plan=Plan(name="Pro Plan", amount=decimal.Decimal("100")), quantity=2)
         self.assertEquals(sub.total_amount, decimal.Decimal("200"))
@@ -105,6 +128,22 @@ class ModelTests(TestCase):
         self.assertIsNone(sub.status)
         self.assertEquals(sub.quantity, 0)
         self.assertEquals(sub.amount, 0)
+
+    def test_account_str_and_repr(self):
+        a = Account()
+        self.assertEquals(str(a), " - ")
+        self.assertEquals(repr(a), "Account(pk=None, display_name='', type=None, stripe_id='', authorized=True)")
+        a.stripe_id = "acct_X"
+        self.assertEquals(str(a), " - acct_X")
+        self.assertEquals(repr(a), "Account(pk=None, display_name='', type=None, stripe_id='acct_X', authorized=True)")
+        a.display_name = "Display name"
+        a.authorized = False
+        self.assertEquals(str(a), "Display name - acct_X")
+        self.assertEquals(repr(a), "Account(pk=None, display_name='Display name', type=None, stripe_id='acct_X', authorized=False)")
+
+    def test_customer_required_fields(self):
+        c = Customer(stripe_id="cus_A")
+        c.full_clean()
 
 
 class StripeObjectTests(TestCase):

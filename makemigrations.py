@@ -28,7 +28,6 @@ DEFAULT_SETTINGS = dict(
         "django.contrib.contenttypes",
         "django.contrib.sessions",
         "django.contrib.sites",
-        "django_forms_bootstrap",
         "jsonfield",
         "pinax.stripe",
     ],

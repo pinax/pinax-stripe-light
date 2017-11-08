@@ -1,6 +1,7 @@
 import decimal
 import json
 
+from django.contrib.auth import get_user_model
 from django.dispatch import Signal
 from django.test import TestCase
 from django.test.client import Client
@@ -14,11 +15,20 @@ from . import (
     TRANSFER_CREATED_TEST_DATA,
     TRANSFER_PENDING_TEST_DATA
 )
-from ..models import Customer, Event, EventProcessingException, Plan, Transfer
+from ..models import (
+    Account,
+    Customer,
+    Event,
+    EventProcessingException,
+    Plan,
+    Transfer
+)
 from ..webhooks import (
     AccountApplicationDeauthorizeWebhook,
+    AccountExternalAccountCreatedWebhook,
     AccountUpdatedWebhook,
     ChargeCapturedWebhook,
+    CustomerDeletedWebhook,
     CustomerSourceCreatedWebhook,
     CustomerSourceDeletedWebhook,
     CustomerSubscriptionCreatedWebhook,
@@ -46,6 +56,7 @@ class WebhookRegistryTest(TestCase):
 class WebhookTests(TestCase):
 
     event_data = {
+        "api_version": "2017-06-05",
         "created": 1348360173,
         "data": {
             "object": {
@@ -111,9 +122,8 @@ class WebhookTests(TestCase):
     @patch("stripe.Transfer.retrieve")
     def test_webhook_associated_with_stripe_account(self, TransferMock, StripeEventMock):
         connect_event_data = self.event_data.copy()
-        stripe_account = "acct_123123123"
-        # only difference is that we'll have a user_id value
-        connect_event_data["user_id"] = stripe_account
+        account = Account.objects.create(stripe_id="acc_XXX")
+        connect_event_data["account"] = account.stripe_id
         StripeEventMock.return_value.to_dict.return_value = connect_event_data
         TransferMock.return_value = connect_event_data["data"]["object"]
         msg = json.dumps(connect_event_data)
@@ -126,8 +136,11 @@ class WebhookTests(TestCase):
         self.assertTrue(Event.objects.filter(kind="transfer.created").exists())
         self.assertEqual(
             Event.objects.filter(kind="transfer.created").first().stripe_account,
-            stripe_account
+            account
         )
+        self.assertEquals(TransferMock.call_args_list, [
+            [("ach_XXXXXXXXXXXX",), {"stripe_account": "acc_XXX"}],
+        ])
 
     def test_webhook_duplicate_event(self):
         data = {"id": 123}
@@ -139,7 +152,9 @@ class WebhookTests(TestCase):
             content_type="application/json"
         )
         self.assertEquals(resp.status_code, 200)
-        self.assertTrue(EventProcessingException.objects.filter(message="Duplicate event record").exists())
+        dupe_event_exception = EventProcessingException.objects.get()
+        self.assertEqual(dupe_event_exception.message, "Duplicate event record")
+        self.assertEqual(str(dupe_event_exception.data), '{"id": 123}')
 
     def test_webhook_event_mismatch(self):
         event = Event(kind="account.updated")
@@ -170,10 +185,10 @@ class WebhookTests(TestCase):
     @patch("pinax.stripe.webhooks.Webhook.process_webhook")
     def test_process_exception_is_logged(self, ProcessWebhookMock, ValidateMock, LinkMock):
         # note: we choose an event type for which we do no processing
-        event = Event.objects.create(kind="account.application.deauthorized", webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True, processed=False)
         ProcessWebhookMock.side_effect = stripe.StripeError("Message", "error")
         with self.assertRaises(stripe.StripeError):
-            AccountApplicationDeauthorizeWebhook(event).process()
+            AccountExternalAccountCreatedWebhook(event).process()
         self.assertTrue(EventProcessingException.objects.filter(event=event).exists())
 
     @patch("pinax.stripe.actions.customers.link_customer")
@@ -181,18 +196,18 @@ class WebhookTests(TestCase):
     @patch("pinax.stripe.webhooks.Webhook.process_webhook")
     def test_process_exception_is_logged_non_stripeerror(self, ProcessWebhookMock, ValidateMock, LinkMock):
         # note: we choose an event type for which we do no processing
-        event = Event.objects.create(kind="account.application.deauthorized", webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True, processed=False)
         ProcessWebhookMock.side_effect = Exception("generic exception")
         with self.assertRaises(Exception):
-            AccountApplicationDeauthorizeWebhook(event).process()
+            AccountExternalAccountCreatedWebhook(event).process()
         self.assertTrue(EventProcessingException.objects.filter(event=event).exists())
 
     @patch("pinax.stripe.actions.customers.link_customer")
     @patch("pinax.stripe.webhooks.Webhook.validate")
     def test_process_return_none(self, ValidateMock, LinkMock):
         # note: we choose an event type for which we do no processing
-        event = Event.objects.create(kind="account.application.deauthorized", webhook_message={}, valid=True, processed=False)
-        self.assertIsNone(AccountApplicationDeauthorizeWebhook(event).process())
+        event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True, processed=False)
+        self.assertIsNone(AccountExternalAccountCreatedWebhook(event).process())
 
 
 class ChargeWebhookTest(TestCase):
@@ -204,25 +219,63 @@ class ChargeWebhookTest(TestCase):
         event.validated_message = dict(data=dict(object=dict(id=1)))
         ChargeCapturedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
+        _, kwargs = RetrieveMock.call_args
+        self.assertEquals(kwargs["expand"], ["balance_transaction"])
+        self.assertEquals(kwargs["stripe_account"], None)
+
+    @patch("stripe.Charge.retrieve")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    def test_process_webhook_connect(self, SyncMock, RetrieveMock):
+        account = Account.objects.create(stripe_id="acc_A")
+        event = Event.objects.create(kind=ChargeCapturedWebhook.name, webhook_message={}, valid=True, processed=False, stripe_account=account)
+        event.validated_message = dict(data=dict(object=dict(id=1)))
+        ChargeCapturedWebhook(event).process_webhook()
+        self.assertTrue(SyncMock.called)
+        _, kwargs = RetrieveMock.call_args
+        self.assertEquals(kwargs["expand"], ["balance_transaction"])
+        self.assertEquals(kwargs["stripe_account"], "acc_A")
+
+
+class CustomerDeletedWebhookTest(TestCase):
+
+    def test_process_webhook_without_linked_customer(self):
+        event = Event.objects.create(kind=CustomerDeletedWebhook.name, webhook_message={}, valid=True, processed=False)
+        CustomerDeletedWebhook(event).process_webhook()
+
+    def test_process_webhook_with_linked_customer(self):
+        User = get_user_model()
+        customer = Customer.objects.create(user=User.objects.create())
+        self.assertIsNotNone(customer.user)
+        event = Event.objects.create(kind=CustomerDeletedWebhook.name, webhook_message={}, valid=True, processed=False, customer=customer)
+        CustomerDeletedWebhook(event).process_webhook()
+        self.assertIsNone(customer.user)
 
 
 class CustomerUpdatedWebhookTest(TestCase):
 
     @patch("pinax.stripe.actions.customers.sync_customer")
-    def test_process_webhook(self, SyncMock):
+    def test_process_webhook_without_customer(self, SyncMock):
         event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
         CustomerUpdatedWebhook(event).process_webhook()
-        self.assertEquals(SyncMock.call_count, 1)
-        self.assertEquals(SyncMock.call_args[0], (None, None))
+        self.assertEquals(SyncMock.call_count, 0)
 
     @patch("pinax.stripe.actions.customers.sync_customer")
-    def test_process_webhook_with_data(self, SyncMock):
+    def test_process_webhook_without_customer_with_data(self, SyncMock):
         event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
         obj = object()
         event.validated_message = dict(data=dict(object=obj))
         CustomerUpdatedWebhook(event).process_webhook()
+        self.assertEquals(SyncMock.call_count, 0)
+
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    def test_process_webhook_with_customer_with_data(self, SyncMock):
+        customer = Customer.objects.create()
+        event = Event.objects.create(kind=CustomerUpdatedWebhook.name, customer=customer, webhook_message={}, valid=True, processed=False)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CustomerUpdatedWebhook(event).process_webhook()
         self.assertEquals(SyncMock.call_count, 1)
-        self.assertIsNone(SyncMock.call_args[0][0])
+        self.assertIs(SyncMock.call_args[0][0], customer)
         self.assertIs(SyncMock.call_args[0][1], obj)
 
 
@@ -464,6 +517,11 @@ class TestTransferWebhooks(TestCase):
 
 class AccountWebhookTest(TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super(AccountWebhookTest, cls).setUpClass()
+        cls.account = Account.objects.create(stripe_id="acc_aa")
+
     @patch("stripe.Account.retrieve")
     @patch("pinax.stripe.actions.accounts.sync_account_from_stripe_data")
     def test_process_webhook(self, SyncMock, RetrieveMock):
@@ -476,3 +534,43 @@ class AccountWebhookTest(TestCase):
         event.validated_message = dict(data=dict(object=dict(id=1)))
         AccountUpdatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
+
+    @patch("stripe.Event.retrieve")
+    def test_process_deauthorize(self, RetrieveMock):
+        data = {"data": {"object": {"id": "evt_001"}},
+                "account": self.account.stripe_id}
+        event = Event.objects.create(
+            kind=AccountApplicationDeauthorizeWebhook.name,
+            webhook_message=data,
+        )
+        RetrieveMock.side_effect = stripe.error.PermissionError(
+            "The provided key 'sk_test_********************abcd' does not have access to account 'acc_aa'")
+        AccountApplicationDeauthorizeWebhook(event).process()
+        self.assertTrue(event.valid)
+        self.assertTrue(event.processed)
+        self.account.refresh_from_db()
+        self.assertFalse(self.account.authorized)
+
+    @patch("stripe.Event.retrieve")
+    def test_process_deauthorize_fake_response(self, RetrieveMock):
+        data = {"data": {"object": {"id": "evt_001"}},
+                "account": self.account.stripe_id}
+        event = Event.objects.create(
+            kind=AccountApplicationDeauthorizeWebhook.name,
+            webhook_message=data,
+        )
+        RetrieveMock.side_effect = stripe.error.PermissionError(
+            "The provided key 'sk_test_********************ABCD' does not have access to account 'acc_aa'")
+        with self.assertRaises(stripe.error.PermissionError):
+            AccountApplicationDeauthorizeWebhook(event).process()
+
+    @patch("stripe.Event.retrieve")
+    def test_process_deauthorize_with_authorizes_account(self, RetrieveMock):
+        data = {"data": {"object": {"id": "evt_002"}},
+                "account": self.account.stripe_id}
+        event = Event.objects.create(
+            kind=AccountApplicationDeauthorizeWebhook.name,
+            webhook_message=data,
+        )
+        with self.assertRaises(ValueError):
+            AccountApplicationDeauthorizeWebhook(event).process()

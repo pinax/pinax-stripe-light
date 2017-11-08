@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db.models import Q
 
 import stripe
+from six import string_types
 
 from .. import hooks, models, utils
 
@@ -15,6 +16,7 @@ def calculate_refund_amount(charge, amount=None):
     Args:
         charge: a pinax.stripe.models.Charge object
         amount: optionally, the decimal.Decimal amount you wish to refund
+        idempotency_key: Any string that allows retries to be performed safely.
     """
     eligible_to_refund = charge.amount - (charge.amount_refunded or 0)
     if amount:
@@ -22,7 +24,7 @@ def calculate_refund_amount(charge, amount=None):
     return eligible_to_refund
 
 
-def capture(charge, amount=None):
+def capture(charge, amount=None, idempotency_key=None):
     """
     Capture the payment of an existing, uncaptured, charge.
 
@@ -30,40 +32,21 @@ def capture(charge, amount=None):
         charge: a pinax.stripe.models.Charge object
         amount: the decimal.Decimal amount of the charge to capture
     """
-    stripe_charge = charge.stripe_charge.capture(
-        amount=utils.convert_amount_for_api(
-            amount if amount else charge.amount,
-            charge.currency
-        ),
-        expand=["balance_transaction"]
+    amount = utils.convert_amount_for_api(
+        amount if amount else charge.amount,
+        charge.currency
+    )
+    stripe_charge = stripe.Charge(charge.stripe_id).capture(
+        amount=amount,
+        idempotency_key=idempotency_key,
+        expand=["balance_transaction"],
     )
     sync_charge_from_stripe_data(stripe_charge)
 
 
-def create(
-    amount, customer, source=None, currency="usd", description=None,
-    send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True,
-    email=None, destination_account=None, destination_amount=None,
-    application_fee=None
-):
-    """
-    Create a charge for the given customer.
-
-    Args:
-        amount: should be a decimal.Decimal amount
-        customer: the Stripe id of the customer to charge
-        source: the Stripe id of the source belonging to the customer
-        currency: the currency with which to charge the amount in
-        description: a description of the charge
-        send_receipt: send a receipt upon successful charge
-        capture: immediately capture the charge instead of doing a pre-authorization
-        destination_account: stripe_id of a connected account
-        destination_amount: amount to transfer to the `destination_account` without creating an application fee
-        application_fee: used with `destination_account` to add a fee destined for the platform account
-
-    Returns:
-        a pinax.stripe.models.Charge object
-    """
+def _validate_create_params(customer, source, amount, application_fee, destination_account, destination_amount, on_behalf_of):
+    if not customer and not source:
+        raise ValueError("Must provide `customer` or `source`.")
     if not isinstance(amount, decimal.Decimal):
         raise ValueError(
             "You must supply a decimal value for `amount`."
@@ -80,28 +63,67 @@ def create(
         raise ValueError(
             "You can't specify `application_fee` with `destination_amount`"
         )
+    if destination_account and on_behalf_of:
+        raise ValueError(
+            "`destination_account` and `on_behalf_of` are mutualy exclusive")
+
+
+def create(
+    amount, customer=None, source=None, currency="usd", description=None,
+    send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS, capture=True,
+    email=None, destination_account=None, destination_amount=None,
+    application_fee=None, on_behalf_of=None,
+):
+    """
+    Create a charge for the given customer or source.
+
+    If both customer and source are provided, the source must belong to the
+    customer.
+
+    See https://stripe.com/docs/api#create_charge-customer.
+
+    Args:
+        amount: should be a decimal.Decimal amount
+        customer: the Customer object to charge
+        source: the Stripe id of the source to charge
+        currency: the currency with which to charge the amount in
+        description: a description of the charge
+        send_receipt: send a receipt upon successful charge
+        capture: immediately capture the charge instead of doing a pre-authorization
+        destination_account: stripe_id of a connected account
+        destination_amount: amount to transfer to the `destination_account` without creating an application fee
+        application_fee: used with `destination_account` to add a fee destined for the platform account
+        on_behalf_of: Stripe account ID that these funds are intended for. Automatically set if you use the destination parameter.
+
+    Returns:
+        a pinax.stripe.models.Charge object
+    """
+    # Handle customer as stripe_id for backward compatibility.
+    if customer and not isinstance(customer, models.Customer):
+        customer, _ = models.Customer.objects.get_or_create(stripe_id=customer)
+    _validate_create_params(customer, source, amount, application_fee, destination_account, destination_amount, on_behalf_of)
     kwargs = dict(
         amount=utils.convert_amount_for_api(amount, currency),  # find the final amount
         currency=currency,
         source=source,
-        customer=customer,
+        customer=customer.stripe_id,
+        stripe_account=customer.stripe_account_stripe_id,
         description=description,
         capture=capture,
     )
     if destination_account:
-        kwargs["destination"] = {
-            "account": destination_account
-        }
+        kwargs["destination"] = {"account": destination_account}
         if destination_amount:
             kwargs["destination"]["amount"] = utils.convert_amount_for_api(
                 destination_amount,
                 currency
             )
-
-    if application_fee:
-        kwargs["application_fee"] = utils.convert_amount_for_api(
-            application_fee, currency
-        )
+        if application_fee:
+            kwargs["application_fee"] = utils.convert_amount_for_api(
+                application_fee, currency
+            )
+    elif on_behalf_of:
+        kwargs["on_behalf_of"] = on_behalf_of
     stripe_charge = stripe.Charge.create(
         **kwargs
     )
@@ -166,7 +188,7 @@ def sync_charge_from_stripe_data(data):
     if data["refunded"]:
         obj.amount_refunded = obj.amount
     balance_transaction = data.get("balance_transaction")
-    if balance_transaction and not isinstance(balance_transaction, str):
+    if balance_transaction and not isinstance(balance_transaction, string_types):
         obj.available = balance_transaction["status"] == "available"
         obj.available_on = utils.convert_tstamp(
             balance_transaction, "available_on"

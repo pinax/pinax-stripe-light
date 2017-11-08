@@ -14,10 +14,10 @@ def cancel(subscription, at_period_end=True):
 
     Args:
         subscription: the subscription to cancel
-        at_period_end: True, to cancel at the end, otherwise immediately cancel
+        at_period_end: True to cancel at the end of the period, otherwise cancels immediately
     """
     sub = subscription.stripe_subscription.delete(at_period_end=at_period_end)
-    sync_subscription_from_stripe_data(subscription.customer, sub)
+    return sync_subscription_from_stripe_data(subscription.customer, sub)
 
 
 def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=None, tax_percent=None):
@@ -37,10 +37,9 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
         tax_percent: if provided, add percentage as tax
 
     Returns:
-        the data representing the subscription object that was created
+        the pinax.stripe.models.Subscription object (created or updated)
     """
     quantity = hooks.hookset.adjust_subscription_quantity(customer=customer, plan=plan, quantity=quantity)
-    cu = customer.stripe_customer
 
     subscription_params = {}
     if trial_days:
@@ -48,11 +47,13 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
     if token:
         subscription_params["source"] = token
 
+    subscription_params["stripe_account"] = customer.stripe_account_stripe_id
+    subscription_params["customer"] = customer.stripe_id
     subscription_params["plan"] = plan
     subscription_params["quantity"] = quantity
     subscription_params["coupon"] = coupon
     subscription_params["tax_percent"] = tax_percent
-    resp = cu.subscriptions.create(**subscription_params)
+    resp = stripe.Subscription.create(**subscription_params)
 
     return sync_subscription_from_stripe_data(customer, resp)
 
@@ -124,7 +125,7 @@ def retrieve(customer, sub_id):
     """
     if not sub_id:
         return
-    subscription = stripe.Subscription.retrieve(sub_id)
+    subscription = stripe.Subscription.retrieve(sub_id, stripe_account=customer.stripe_account_stripe_id)
     if subscription and subscription.customer != customer.stripe_id:
         return
     return subscription
@@ -132,14 +133,14 @@ def retrieve(customer, sub_id):
 
 def sync_subscription_from_stripe_data(customer, subscription):
     """
-    Syncronizes data from the Stripe API for a subscription
+    Synchronizes data from the Stripe API for a subscription
 
     Args:
         customer: the customer who's subscription you are syncronizing
         subscription: data from the Stripe API representing a subscription
 
     Returns:
-        the pinax.stripe.models.Subscription object created or updated
+        the pinax.stripe.models.Subscription object (created or updated)
     """
     defaults = dict(
         customer=customer,
@@ -190,4 +191,4 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
             stripe_subscription.trial_end = "now"
     sub = stripe_subscription.save()
     customer = models.Customer.objects.get(pk=subscription.customer.pk)
-    sync_subscription_from_stripe_data(customer, sub)
+    return sync_subscription_from_stripe_data(customer, sub)

@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import decimal
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
@@ -27,25 +26,58 @@ class StripeObject(models.Model):
 
 class AccountRelatedStripeObject(StripeObject):
 
-    stripe_account = models.CharField(max_length=255, null=True, blank=True)
+    stripe_account = models.ForeignKey(
+        "pinax_stripe.Account",
+        on_delete=models.CASCADE,
+        null=True,
+        default=None,
+        blank=True,
+    )
+
+    @property
+    def stripe_account_stripe_id(self):
+        return getattr(self.stripe_account, "stripe_id", None)
 
     class Meta:
         abstract = True
 
 
+class StripeAccountFromCustomerMixin(object):
+    @property
+    def stripe_account(self):
+        customer = getattr(self, "customer", None)
+        return customer.stripe_account if customer else None
+
+    @property
+    def stripe_account_stripe_id(self):
+        return self.stripe_account.stripe_id if self.stripe_account else None
+
+
 @python_2_unicode_compatible
 class Plan(AccountRelatedStripeObject):
     amount = models.DecimalField(decimal_places=2, max_digits=9)
-    currency = models.CharField(max_length=15)
+    currency = models.CharField(max_length=15, blank=False)
     interval = models.CharField(max_length=15)
     interval_count = models.IntegerField()
     name = models.CharField(max_length=150)
     statement_descriptor = models.TextField(blank=True)
     trial_period_days = models.IntegerField(null=True)
-    metadata = JSONField(null=True)
+    metadata = JSONField(null=True, blank=True)
 
     def __str__(self):
         return "{} ({}{})".format(self.name, CURRENCY_SYMBOLS.get(self.currency, ""), self.amount)
+
+    def __repr__(self):
+        return "Plan(pk={!r}, name={!r}, amount={!r}, currency={!r}, interval={!r}, interval_count={!r}, trial_period_days={!r}, stripe_id={!r})".format(
+            self.pk,
+            str(self.name),
+            self.amount,
+            str(self.currency),
+            str(self.interval),
+            self.interval_count,
+            self.trial_period_days,
+            str(self.stripe_id),
+        )
 
 
 @python_2_unicode_compatible
@@ -57,7 +89,7 @@ class Coupon(StripeObject):
     duration_in_months = models.PositiveIntegerField(null=True)
     livemode = models.BooleanField(default=False)
     max_redemptions = models.PositiveIntegerField(null=True)
-    metadata = JSONField(null=True)
+    metadata = JSONField(null=True, blank=True)
     percent_off = models.PositiveIntegerField(null=True)
     redeem_by = models.DateTimeField(null=True)
     times_redeemed = models.PositiveIntegerField(null=True)
@@ -92,7 +124,7 @@ class Event(AccountRelatedStripeObject):
     livemode = models.BooleanField(default=False)
     customer = models.ForeignKey("Customer", null=True, on_delete=models.CASCADE)
     webhook_message = JSONField()
-    validated_message = JSONField(null=True)
+    validated_message = JSONField(null=True, blank=True)
     valid = models.NullBooleanField(null=True)
     processed = models.BooleanField(default=False)
     request = models.CharField(max_length=100, blank=True)
@@ -105,6 +137,15 @@ class Event(AccountRelatedStripeObject):
 
     def __str__(self):
         return "{} - {}".format(self.kind, self.stripe_id)
+
+    def __repr__(self):
+        return "Event(pk={!r}, kind={!r}, customer={!r}, valid={!r}, stripe_id={!r})".format(
+            self.pk,
+            str(self.kind),
+            self.customer,
+            self.valid,
+            str(self.stripe_id),
+        )
 
 
 class Transfer(AccountRelatedStripeObject):
@@ -141,7 +182,7 @@ class Transfer(AccountRelatedStripeObject):
     def stripe_transfer(self):
         return stripe.Transfer.retrieve(
             self.stripe_id,
-            stripe_account=self.stripe_account
+            stripe_account=self.stripe_account_stripe_id,
         )
 
 
@@ -159,8 +200,8 @@ class TransferChargeFee(models.Model):
 @python_2_unicode_compatible
 class Customer(AccountRelatedStripeObject):
 
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
-    account_balance = models.DecimalField(decimal_places=2, max_digits=9, null=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.CASCADE)
+    account_balance = models.DecimalField(decimal_places=2, max_digits=9, blank=True, null=True)
     currency = models.CharField(max_length=10, default="usd", blank=True)
     delinquent = models.BooleanField(default=False)
     default_source = models.TextField(blank=True)
@@ -172,11 +213,18 @@ class Customer(AccountRelatedStripeObject):
     def stripe_customer(self):
         return stripe.Customer.retrieve(
             self.stripe_id,
-            stripe_account=self.stripe_account
+            stripe_account=self.stripe_account_stripe_id,
         )
 
     def __str__(self):
         return str(self.user)
+
+    def __repr__(self):
+        return "Customer(pk={!r}, user={!r}, stripe_id={!r})".format(
+            self.pk,
+            self.user,
+            str(self.stripe_id),
+        )
 
 
 class Card(StripeObject):
@@ -266,8 +314,17 @@ class Subscription(StripeObject):
         self.quantity = 0
         self.amount = 0
 
+    def __repr__(self):
+        return "Subscription(pk={!r}, customer={!r}, plan={!r}, status={!r}, stripe_id={!r})".format(
+            self.pk,
+            getattr(self, "customer", None),
+            getattr(self, "plan", None),
+            str(self.status),
+            str(self.stripe_id),
+        )
 
-class Invoice(StripeObject):
+
+class Invoice(StripeAccountFromCustomerMixin, StripeObject):
 
     customer = models.ForeignKey(Customer, related_name="invoices", on_delete=models.CASCADE)
     amount_due = models.DecimalField(decimal_places=2, max_digits=9)
@@ -296,13 +353,9 @@ class Invoice(StripeObject):
 
     @property
     def stripe_invoice(self):
-        try:
-            stripe_account = self.customer.stripe_account
-        except ObjectDoesNotExist:
-            stripe_account = None
         return stripe.Invoice.retrieve(
             self.stripe_id,
-            stripe_account=stripe_account
+            stripe_account=self.stripe_account_stripe_id,
         )
 
 
@@ -327,7 +380,7 @@ class InvoiceItem(models.Model):
         return self.plan.name if self.plan else ""
 
 
-class Charge(StripeObject):
+class Charge(StripeAccountFromCustomerMixin, StripeObject):
 
     customer = models.ForeignKey(Customer, null=True, related_name="charges", on_delete=models.CASCADE)
     invoice = models.ForeignKey(Invoice, null=True, related_name="charges", on_delete=models.CASCADE)
@@ -361,13 +414,21 @@ class Charge(StripeObject):
 
     objects = ChargeManager()
 
+    def __repr__(self):
+        return "Charge(customer={!r}, source={!r}, amount={!r}, captured={!r}, paid={!r}, stripe_id={!r})".format(
+            self.customer,
+            str(self.source),
+            self.amount,
+            self.captured,
+            self.paid,
+            str(self.stripe_id),
+        )
+
     @property
     def stripe_charge(self):
         return stripe.Charge.retrieve(
             self.stripe_id,
-            stripe_account=(
-                self.customer.stripe_account if self.customer_id else None
-            ),
+            stripe_account=self.stripe_account_stripe_id,
             expand=["balance_transaction"]
         )
 
@@ -376,9 +437,10 @@ class Charge(StripeObject):
         return Card.objects.filter(stripe_id=self.source).first()
 
 
+@python_2_unicode_compatible
 class Account(StripeObject):
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.CASCADE, related_name="stripe_accounts")
 
     business_name = models.TextField(blank=True, null=True)
     business_url = models.TextField(blank=True, null=True)
@@ -390,7 +452,7 @@ class Account(StripeObject):
     decline_charge_on_cvc_failure = models.BooleanField(default=False)
     default_currency = models.CharField(max_length=3)
     details_submitted = models.BooleanField(default=False)
-    display_name = models.TextField(blank=True, null=True)
+    display_name = models.TextField(blank=False, null=False)
     email = models.TextField(blank=True, null=True)
 
     legal_entity_address_city = models.TextField(null=True, blank=True)
@@ -416,7 +478,9 @@ class Account(StripeObject):
     # The type of the Stripe account. Can be "standard", "express", or "custom".
     type = models.TextField(null=True, blank=True)
 
-    metadata = JSONField(null=True)
+    metadata = JSONField(null=True, blank=True)
+
+    stripe_publishable_key = models.CharField(null=True, blank=True, max_length=100)
 
     product_description = models.TextField(null=True, blank=True)
     statement_descriptor = models.TextField(null=True, blank=True)
@@ -441,11 +505,24 @@ class Account(StripeObject):
     verification_disabled_reason = models.TextField(null=True, blank=True)
     verification_due_by = models.DateTimeField(null=True, blank=True)
     verification_timestamp = models.DateTimeField(null=True, blank=True)
-    verification_fields_needed = JSONField(null=True)
+    verification_fields_needed = JSONField(null=True, blank=True)
+    authorized = models.BooleanField(default=True)
 
     @property
     def stripe_account(self):
         return stripe.Account.retrieve(self.stripe_id)
+
+    def __str__(self):
+        return "{} - {}".format(self.display_name, self.stripe_id)
+
+    def __repr__(self):
+        return "Account(pk={!r}, display_name={!r}, type={!r}, stripe_id={!r}, authorized={!r})".format(
+            self.pk,
+            str(self.display_name),
+            self.type,
+            str(self.stripe_id),
+            self.authorized,
+        )
 
 
 class BankAccount(StripeObject):
@@ -459,7 +536,7 @@ class BankAccount(StripeObject):
     default_for_currency = models.BooleanField(default=False)
     fingerprint = models.TextField()
     last4 = models.CharField(max_length=4)
-    metadata = JSONField(null=True)
+    metadata = JSONField(null=True, blank=True)
     routing_number = models.TextField()
     status = models.TextField()
 

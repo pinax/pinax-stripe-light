@@ -45,3 +45,6 @@ coverage.xml
 
 # MkDocs
 site/
+
+# IDEs
+.idea/

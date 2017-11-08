@@ -1,6 +1,6 @@
 # Webhooks
 
-Stripe sends a events for just about everything that happens in it's system as
+Stripe sends a events for just about everything that happens in its system as
 a JSON payload to a webhook.
 
 A webhook is an endpoint running your site that accepts `POST` requests. You
@@ -32,17 +32,15 @@ pictured above is:
 
     https://yourdomain.com/payments/webhook/
 
-
 ## Security
 
-Since this is a wide open URL we don't want to record and react to any data
+Since this is a wide open URL we do not want to record and react to any data
 sent our way.  Therefore, we actually record the data that is sent, but then
 before processing it, we validate it against the Stripe API.  If it validates
 as untampered data, then we continue the processing.
 
 If validation fails, then `Event.valid` will be set to `False` enabling at
 least some data to try and hunt down any malicious activity.
-
 
 ## Signals
 

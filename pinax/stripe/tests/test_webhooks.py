@@ -44,7 +44,6 @@ except ImportError:
 
 
 class WebhookRegistryTest(TestCase):
-
     def test_get_signal(self):
         signal = registry.get_signal("account.updated")
         self.assertTrue(isinstance(signal, Signal))
@@ -54,7 +53,6 @@ class WebhookRegistryTest(TestCase):
 
 
 class WebhookTests(TestCase):
-
     event_data = {
         "api_version": "2017-06-05",
         "created": 1348360173,
@@ -175,6 +173,7 @@ class WebhookTests(TestCase):
 
         def signal_handler(sender, *args, **kwargs):
             self.fail("Should not have been called.")
+
         registry.get_signal("account.application.deauthorized").connect(signal_handler)
         webhook = WH(event)
         webhook.name = "mismatch name"  # Not sure how this ever happens due to the registry
@@ -185,7 +184,8 @@ class WebhookTests(TestCase):
     @patch("pinax.stripe.webhooks.Webhook.process_webhook")
     def test_process_exception_is_logged(self, ProcessWebhookMock, ValidateMock, LinkMock):
         # note: we choose an event type for which we do no processing
-        event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True,
+                                     processed=False)
         ProcessWebhookMock.side_effect = stripe.StripeError("Message", "error")
         with self.assertRaises(stripe.StripeError):
             AccountExternalAccountCreatedWebhook(event).process()
@@ -196,7 +196,8 @@ class WebhookTests(TestCase):
     @patch("pinax.stripe.webhooks.Webhook.process_webhook")
     def test_process_exception_is_logged_non_stripeerror(self, ProcessWebhookMock, ValidateMock, LinkMock):
         # note: we choose an event type for which we do no processing
-        event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True,
+                                     processed=False)
         ProcessWebhookMock.side_effect = Exception("generic exception")
         with self.assertRaises(Exception):
             AccountExternalAccountCreatedWebhook(event).process()
@@ -206,12 +207,12 @@ class WebhookTests(TestCase):
     @patch("pinax.stripe.webhooks.Webhook.validate")
     def test_process_return_none(self, ValidateMock, LinkMock):
         # note: we choose an event type for which we do no processing
-        event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True,
+                                     processed=False)
         self.assertIsNone(AccountExternalAccountCreatedWebhook(event).process())
 
 
 class ChargeWebhookTest(TestCase):
-
     @patch("stripe.Charge.retrieve")
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
     def test_process_webhook(self, SyncMock, RetrieveMock):
@@ -227,7 +228,8 @@ class ChargeWebhookTest(TestCase):
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
     def test_process_webhook_connect(self, SyncMock, RetrieveMock):
         account = Account.objects.create(stripe_id="acc_A")
-        event = Event.objects.create(kind=ChargeCapturedWebhook.name, webhook_message={}, valid=True, processed=False, stripe_account=account)
+        event = Event.objects.create(kind=ChargeCapturedWebhook.name, webhook_message={}, valid=True, processed=False,
+                                     stripe_account=account)
         event.validated_message = dict(data=dict(object=dict(id=1)))
         ChargeCapturedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
@@ -237,7 +239,6 @@ class ChargeWebhookTest(TestCase):
 
 
 class CustomerDeletedWebhookTest(TestCase):
-
     def test_process_webhook_without_linked_customer(self):
         event = Event.objects.create(kind=CustomerDeletedWebhook.name, webhook_message={}, valid=True, processed=False)
         CustomerDeletedWebhook(event).process_webhook()
@@ -246,13 +247,13 @@ class CustomerDeletedWebhookTest(TestCase):
         User = get_user_model()
         customer = Customer.objects.create(user=User.objects.create())
         self.assertIsNotNone(customer.user)
-        event = Event.objects.create(kind=CustomerDeletedWebhook.name, webhook_message={}, valid=True, processed=False, customer=customer)
+        event = Event.objects.create(kind=CustomerDeletedWebhook.name, webhook_message={}, valid=True, processed=False,
+                                     customer=customer)
         CustomerDeletedWebhook(event).process_webhook()
         self.assertIsNone(customer.user)
 
 
 class CustomerUpdatedWebhookTest(TestCase):
-
     @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook_without_customer(self, SyncMock):
         event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
@@ -270,7 +271,8 @@ class CustomerUpdatedWebhookTest(TestCase):
     @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook_with_customer_with_data(self, SyncMock):
         customer = Customer.objects.create()
-        event = Event.objects.create(kind=CustomerUpdatedWebhook.name, customer=customer, webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind=CustomerUpdatedWebhook.name, customer=customer, webhook_message={},
+                                     valid=True, processed=False)
         obj = object()
         event.validated_message = dict(data=dict(object=obj))
         CustomerUpdatedWebhook(event).process_webhook()
@@ -280,27 +282,26 @@ class CustomerUpdatedWebhookTest(TestCase):
 
 
 class CustomerSourceCreatedWebhookTest(TestCase):
-
     @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")
     def test_process_webhook(self, SyncMock):
-        event = Event.objects.create(kind=CustomerSourceCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind=CustomerSourceCreatedWebhook.name, webhook_message={}, valid=True,
+                                     processed=False)
         event.validated_message = dict(data=dict(object=dict()))
         CustomerSourceCreatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
 
 
 class CustomerSourceDeletedWebhookTest(TestCase):
-
     @patch("pinax.stripe.actions.sources.delete_card_object")
     def test_process_webhook(self, SyncMock):
-        event = Event.objects.create(kind=CustomerSourceDeletedWebhook.name, webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind=CustomerSourceDeletedWebhook.name, webhook_message={}, valid=True,
+                                     processed=False)
         event.validated_message = dict(data=dict(object=dict(id=1)))
         CustomerSourceDeletedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
 
 
 class PlanCreatedWebhookTest(TestCase):
-
     @patch("stripe.Event.retrieve")
     def test_plan_created(self, EventMock):
         ev = EventMock()
@@ -318,7 +319,6 @@ class PlanCreatedWebhookTest(TestCase):
 
 
 class PlanUpdatedWebhookTest(TestCase):
-
     @patch("stripe.Event.retrieve")
     def test_plan_created(self, EventMock):
         Plan.objects.create(
@@ -344,81 +344,82 @@ class PlanUpdatedWebhookTest(TestCase):
 
 
 class CustomerSubscriptionCreatedWebhookTest(TestCase):
-
     @patch("stripe.Customer.retrieve")
     @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook(self, SyncMock, RetrieveMock):
-        event = Event.objects.create(kind=CustomerSubscriptionCreatedWebhook.name, customer=Customer.objects.create(), webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind=CustomerSubscriptionCreatedWebhook.name, customer=Customer.objects.create(),
+                                     webhook_message={}, valid=True, processed=False)
         CustomerSubscriptionCreatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook_no_customer(self, SyncMock):
-        event = Event.objects.create(kind=CustomerSubscriptionCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
+        event = Event.objects.create(kind=CustomerSubscriptionCreatedWebhook.name, webhook_message={}, valid=True,
+                                     processed=False)
         CustomerSubscriptionCreatedWebhook(event).process_webhook()
         self.assertFalse(SyncMock.called)
 
 
 class CustomerSubscriptionUpdatedWebhookTest(TestCase):
     WMD = {"object": {"livemode": False, "id": "my_sub", "billing": "charge_automatically",
-                       "current_period_end": 1512042391, "start": 1509363991, "application_fee_percent": None,
-                       "metadata": {}, "status": "active", "trial_start": None, "cancel_at_period_end": False,
-                       "object": "subscription", "discount": None, "trial_end": None,
-                       "plan": {"interval": "month", "name": "Free", "created": 1508100740, "object": "plan",
-                                 "interval_count": 1, "statement_descriptor": None, "currency": "eur", "amount": 0,
-                                 "trial_period_days": None, "livemode": False, "id": "free", "metadata": {}},
-                       "tax_percent": 21.0, "customer": "my_cus", "ended_at": None, "created": 1509363991,
-                       "canceled_at": None, "items": {"has_more": False, "total_count": 1, "object": "list",
-                                                        "data": [
-                                                            {"created": 1509363991, "object": "subscription_item",
-                                                             "plan": {"interval": "month", "name": "Free",
-                                                                       "created": 1508100740, "object": "plan",
-                                                                       "interval_count": 1,
-                                                                       "statement_descriptor": None,
-                                                                       "currency": "eur", "amount": 0,
-                                                                       "trial_period_days": None, "livemode": False,
-                                                                       "id": "free", "metadata": {}}, "quantity": 1,
-                                                             "id": "my_si", "metadata": {}}],
-                                                        "url": "/v1/subscription_items?subscription=my_sub"},
-                       "current_period_start": 1509363991, "quantity": 1}}
+                      "current_period_end": 1512042391, "start": 1509363991, "application_fee_percent": None,
+                      "metadata": {}, "status": "active", "trial_start": None, "cancel_at_period_end": False,
+                      "object": "subscription", "discount": None, "trial_end": None,
+                      "plan": {"interval": "month", "name": "Free", "created": 1508100740, "object": "plan",
+                               "interval_count": 1, "statement_descriptor": None, "currency": "eur", "amount": 0,
+                               "trial_period_days": None, "livemode": False, "id": "free", "metadata": {}},
+                      "tax_percent": 21.0, "customer": "my_cus", "ended_at": None, "created": 1509363991,
+                      "canceled_at": None, "items": {"has_more": False, "total_count": 1, "object": "list",
+                                                     "data": [
+                                                         {"created": 1509363991, "object": "subscription_item",
+                                                          "plan": {"interval": "month", "name": "Free",
+                                                                   "created": 1508100740, "object": "plan",
+                                                                   "interval_count": 1,
+                                                                   "statement_descriptor": None,
+                                                                   "currency": "eur", "amount": 0,
+                                                                   "trial_period_days": None, "livemode": False,
+                                                                   "id": "free", "metadata": {}}, "quantity": 1,
+                                                          "id": "my_si", "metadata": {}}],
+                                                     "url": "/v1/subscription_items?subscription=my_sub"},
+                      "current_period_start": 1509363991, "quantity": 1}}
 
     VMD = {"previous_attributes": {"days_until_due": 30, "billing": "send_invoice"},
            "object": {"livemode": False, "id": "my_sub", "billing": "charge_automatically",
-                       "current_period_end": 1512042391, "start": 1509363991, "application_fee_percent": None,
-                       "metadata": {}, "status": "active", "trial_start": None, "cancel_at_period_end": False,
-                       "object": "subscription", "discount": None, "trial_end": None,
-                       "plan": {"livemode": False, "name": "Free", "created": 1508100740, "interval": "month",
-                                 "interval_count": 1, "object": "plan", "statement_descriptor": None,
-                                 "currency": "eur", "amount": 0, "trial_period_days": None, "id": "free",
-                                 "metadata": {}}, "tax_percent": 21.0, "customer": "my_cus", "ended_at": None,
-                       "created": 1509363991, "canceled_at": None,
-                       "items": {"has_more": False, "total_count": 1, "object": "list", "data": [
-                           {"created": 1509363991, "object": "subscription_item",
-                            "plan": {"livemode": False, "name": "Free", "created": 1508100740,
-                                      "interval": "month", "interval_count": 1, "object": "plan",
-                                      "statement_descriptor": None, "currency": "eur", "amount": 0,
-                                      "trial_period_days": None, "id": "free", "metadata": {}}, "metadata": {},
-                            "id": "my_si", "quantity": 1}], "url": "/v1/subscription_items?subscription=my_sub"},
-                       "current_period_start": 1509363991, "quantity": 1}}
+                      "current_period_end": 1512042391, "start": 1509363991, "application_fee_percent": None,
+                      "metadata": {}, "status": "active", "trial_start": None, "cancel_at_period_end": False,
+                      "object": "subscription", "discount": None, "trial_end": None,
+                      "plan": {"livemode": False, "name": "Free", "created": 1508100740, "interval": "month",
+                               "interval_count": 1, "object": "plan", "statement_descriptor": None,
+                               "currency": "eur", "amount": 0, "trial_period_days": None, "id": "free",
+                               "metadata": {}}, "tax_percent": 21.0, "customer": "my_cus", "ended_at": None,
+                      "created": 1509363991, "canceled_at": None,
+                      "items": {"has_more": False, "total_count": 1, "object": "list", "data": [
+                          {"created": 1509363991, "object": "subscription_item",
+                           "plan": {"livemode": False, "name": "Free", "created": 1508100740,
+                                    "interval": "month", "interval_count": 1, "object": "plan",
+                                    "statement_descriptor": None, "currency": "eur", "amount": 0,
+                                    "trial_period_days": None, "id": "free", "metadata": {}}, "metadata": {},
+                           "id": "my_si", "quantity": 1}], "url": "/v1/subscription_items?subscription=my_sub"},
+                      "current_period_start": 1509363991, "quantity": 1}}
 
     VMD_OFF = {"previous_attributes": {"days_until_due": 30, "billing": "send_invoice"},
-           "object": {"livemode": True, "id": "my_sub", "billing": "charge_automatically",
-                       "current_period_end": 1512042391, "start": 1509363991, "application_fee_percent": None,
-                       "metadata": {}, "status": "active", "trial_start": None, "cancel_at_period_end": False,
-                       "object": "subscription", "discount": None, "trial_end": None,
-                       "plan": {"livemode": False, "name": "Free", "created": 1508100740, "interval": "month",
-                                 "interval_count": 1, "object": "plan", "statement_descriptor": None,
-                                 "currency": "eur", "amount": 0, "trial_period_days": None, "id": "free",
-                                 "metadata": {}}, "tax_percent": 21.0, "customer": "my_cus", "ended_at": None,
-                       "created": 1509363991, "canceled_at": None,
-                       "items": {"has_more": False, "total_count": 1, "object": "list", "data": [
-                           {"created": 1509363991, "object": "subscription_item",
-                            "plan": {"livemode": False, "name": "Free", "created": 1508100740,
-                                      "interval": "month", "interval_count": 1, "object": "plan",
-                                      "statement_descriptor": None, "currency": "eur", "amount": 0,
-                                      "trial_period_days": None, "id": "free", "metadata": {}}, "metadata": {},
-                            "id": "my_si", "quantity": 1}], "url": "/v1/subscription_items?subscription=my_sub"},
-                       "current_period_start": 1509363991, "quantity": 1}}
+               "object": {"livemode": True, "id": "my_sub", "billing": "charge_automatically",
+                          "current_period_end": 1512042391, "start": 1509363991, "application_fee_percent": None,
+                          "metadata": {}, "status": "active", "trial_start": None, "cancel_at_period_end": False,
+                          "object": "subscription", "discount": None, "trial_end": None,
+                          "plan": {"livemode": False, "name": "Free", "created": 1508100740, "interval": "month",
+                                   "interval_count": 1, "object": "plan", "statement_descriptor": None,
+                                   "currency": "eur", "amount": 0, "trial_period_days": None, "id": "free",
+                                   "metadata": {}}, "tax_percent": 21.0, "customer": "my_cus", "ended_at": None,
+                          "created": 1509363991, "canceled_at": None,
+                          "items": {"has_more": False, "total_count": 1, "object": "list", "data": [
+                              {"created": 1509363991, "object": "subscription_item",
+                               "plan": {"livemode": False, "name": "Free", "created": 1508100740,
+                                        "interval": "month", "interval_count": 1, "object": "plan",
+                                        "statement_descriptor": None, "currency": "eur", "amount": 0,
+                                        "trial_period_days": None, "id": "free", "metadata": {}}, "metadata": {},
+                               "id": "my_si", "quantity": 1}], "url": "/v1/subscription_items?subscription=my_sub"},
+                          "current_period_start": 1509363991, "quantity": 1}}
 
     def test_is_event_valid_yes(self):
         self.assertTrue(Webhook.is_event_valid(self.WMD, self.VMD))
@@ -428,7 +429,6 @@ class CustomerSubscriptionUpdatedWebhookTest(TestCase):
 
 
 class InvoiceCreatedWebhookTest(TestCase):
-
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
     def test_process_webhook(self, SyncMock):
         event = Event.objects.create(kind=InvoiceCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
@@ -438,7 +438,6 @@ class InvoiceCreatedWebhookTest(TestCase):
 
 
 class TestTransferWebhooks(TestCase):
-
     @patch("stripe.Event.retrieve")
     @patch("stripe.Transfer.retrieve")
     def test_transfer_created(self, TransferMock, EventMock):
@@ -584,7 +583,6 @@ class TestTransferWebhooks(TestCase):
 
 
 class AccountWebhookTest(TestCase):
-
     @classmethod
     def setUpClass(cls):
         super(AccountWebhookTest, cls).setUpClass()

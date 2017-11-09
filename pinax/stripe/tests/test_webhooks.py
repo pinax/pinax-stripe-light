@@ -34,8 +34,9 @@ from ..webhooks import (
     CustomerSubscriptionCreatedWebhook,
     CustomerUpdatedWebhook,
     InvoiceCreatedWebhook,
-    registry,
-    Webhook)
+    Webhook,
+    registry
+)
 
 try:
     from django.urls import reverse

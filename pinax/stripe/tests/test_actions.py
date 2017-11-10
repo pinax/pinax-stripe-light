@@ -320,7 +320,6 @@ class CustomersTests(TestCase):
             interval_count=1,
             name="Pro"
         )
-        self.account = Account.objects.create(stripe_id="acc_XXX")
 
     def test_get_customer_for_user(self):
         expected = Customer.objects.create(stripe_id="x", user=self.user)

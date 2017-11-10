@@ -123,7 +123,7 @@ def get_customer_for_user(user, stripe_account=None):
 
     Args:
          user: a user object
-         stripe_account: An account id
+         stripe_account: An Account object
 
     Returns:
         a pinax.stripe.models.Customer object

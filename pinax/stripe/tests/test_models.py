@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import datetime
 import decimal
 
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -21,7 +23,8 @@ from ..models import (
     InvoiceItem,
     Plan,
     Subscription,
-    Transfer
+    Transfer,
+    UserAccount
 )
 
 try:
@@ -184,6 +187,21 @@ class ModelTests(TestCase):
     def test_customer_required_fields(self):
         c = Customer(stripe_id="cus_A")
         c.full_clean()
+
+    def test_user_account_validation(self):
+        User = get_user_model()
+        a = Account()
+        ua = UserAccount(user=User(), account=a, customer=Customer(stripe_account=Account()))
+        with self.assertRaises(ValidationError):
+            ua.clean()
+
+    def test_user_account_repr(self):
+        User = get_user_model()
+        ua = UserAccount(user=User(), account=Account(), customer=Customer())
+        self.assertEquals(
+            repr(ua),
+            "UserAccount(pk=None, user=<User: >, account=Account(pk=None, display_name='', type=None, stripe_id='', authorized=True)"
+            ", customer=Customer(pk=None, user=None, stripe_id=''))")
 
 
 class StripeObjectTests(TestCase):

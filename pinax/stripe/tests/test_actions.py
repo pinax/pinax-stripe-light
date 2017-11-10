@@ -630,6 +630,7 @@ class CustomersWithConnectTests(TestCase):
 
 
 class EventsTests(TestCase):
+
     @classmethod
     def setUpClass(cls):
         super(EventsTests, cls).setUpClass()

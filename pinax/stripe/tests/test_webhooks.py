@@ -212,6 +212,7 @@ class WebhookTests(TestCase):
 
 
 class ChargeWebhookTest(TestCase):
+
     @patch("stripe.Charge.retrieve")
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
     def test_process_webhook(self, SyncMock, RetrieveMock):
@@ -237,6 +238,7 @@ class ChargeWebhookTest(TestCase):
 
 
 class CustomerDeletedWebhookTest(TestCase):
+
     def test_process_webhook_without_linked_customer(self):
         event = Event.objects.create(kind=CustomerDeletedWebhook.name, webhook_message={}, valid=True, processed=False)
         CustomerDeletedWebhook(event).process_webhook()
@@ -251,6 +253,7 @@ class CustomerDeletedWebhookTest(TestCase):
 
 
 class CustomerUpdatedWebhookTest(TestCase):
+
     @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook_without_customer(self, SyncMock):
         event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
@@ -278,6 +281,7 @@ class CustomerUpdatedWebhookTest(TestCase):
 
 
 class CustomerSourceCreatedWebhookTest(TestCase):
+
     @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")
     def test_process_webhook(self, SyncMock):
         event = Event.objects.create(kind=CustomerSourceCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
@@ -287,6 +291,7 @@ class CustomerSourceCreatedWebhookTest(TestCase):
 
 
 class CustomerSourceDeletedWebhookTest(TestCase):
+
     @patch("pinax.stripe.actions.sources.delete_card_object")
     def test_process_webhook(self, SyncMock):
         event = Event.objects.create(kind=CustomerSourceDeletedWebhook.name, webhook_message={}, valid=True, processed=False)
@@ -314,7 +319,7 @@ class PlanCreatedWebhookTest(TestCase):
 
 
 class PlanUpdatedWebhookTest(TestCase):
-    
+
     @patch("stripe.Event.retrieve")
     def test_plan_created(self, EventMock):
         Plan.objects.create(
@@ -340,6 +345,7 @@ class PlanUpdatedWebhookTest(TestCase):
 
 
 class CustomerSubscriptionCreatedWebhookTest(TestCase):
+
     @patch("stripe.Customer.retrieve")
     @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook(self, SyncMock, RetrieveMock):
@@ -355,6 +361,7 @@ class CustomerSubscriptionCreatedWebhookTest(TestCase):
 
 
 class CustomerSubscriptionUpdatedWebhookTest(TestCase):
+
     WEBHOOK_MESSAGE_DATA = {
         "object": {"livemode": False}
     }

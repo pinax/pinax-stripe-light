@@ -2,10 +2,12 @@ from __future__ import unicode_literals
 
 import decimal
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import cached_property
+from django.utils.translation import ugettext_lazy as _
 
 import stripe
 from jsonfield.fields import JSONField
@@ -246,6 +248,18 @@ class UserAccount(models.Model):
 
     class Meta:
         unique_together = ("user", "account")
+
+    def clean(self):
+        if not self.customer.stripe_account == self.account:
+            raise ValidationError(_("customer.stripe_account must be account."))
+        return super(UserAccount, self).clean()
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super(UserAccount, self).save(*args, **kwargs)
+
+    def __repr__(self):
+        return "UserAccount(pk={self.pk!r}, user={self.user!r}, account={self.account!r}, customer={self.customer!r})".format(self=self)
 
 
 @python_2_unicode_compatible

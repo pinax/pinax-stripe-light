@@ -108,9 +108,12 @@ class Webhook(with_metaclass(Registerable, object)):
             return signal.send(sender=self.__class__, event=self.event)
 
     def process(self):
-        self.validate()
-        if not self.event.valid or self.event.processed:
+        if self.event.processed:
             return
+        self.validate()
+        if not self.event.valid:
+            return
+
         try:
             customers.link_customer(self.event)
             self.process_webhook()

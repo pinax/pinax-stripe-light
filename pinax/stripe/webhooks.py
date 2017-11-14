@@ -376,10 +376,11 @@ class CustomerSourceUpdatedWebhook(CustomerSourceWebhook):
 class CustomerSubscriptionWebhook(Webhook):
 
     def process_webhook(self):
-        subscriptions.sync_subscription_from_stripe_data(
-            self.event.customer,
-            self.event.validated_message["data"]["object"],
-        )
+        if self.event.validated_message:
+            subscriptions.sync_subscription_from_stripe_data(
+                self.event.customer,
+                self.event.validated_message["data"]["object"],
+            )
 
         if self.event.customer:
             customers.sync_customer(self.event.customer)

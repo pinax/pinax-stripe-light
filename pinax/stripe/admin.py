@@ -261,7 +261,6 @@ admin.site.register(
     ],
     search_fields=[
         "stripe_id",
-        "=stripe_account__stripe_id"
     ] + user_search_fields(),
     inlines=[
         SubscriptionInline,

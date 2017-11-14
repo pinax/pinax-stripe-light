@@ -6,7 +6,7 @@ from django.test import Client, SimpleTestCase, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
-from ..models import Customer, Invoice, Plan, Subscription
+from ..models import Account, Customer, Invoice, Plan, Subscription
 
 try:
     from django.urls import reverse
@@ -95,6 +95,7 @@ class AdminTestCase(TestCase):
         )
         User.objects.create_superuser(
             username="admin", email="admin@test.com", password="admin")
+        self.account = Account.objects.create(stripe_id="acc_abcd")
         self.client = Client()
         self.client.login(username="admin", password="admin")
 
@@ -151,6 +152,13 @@ class AdminTestCase(TestCase):
     def test_charge_admin(self):
         url = reverse("admin:pinax_stripe_charge_changelist")
         response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_account_filter(self):
+        url = reverse("admin:pinax_stripe_customer_changelist")
+        response = self.client.get(url + "?stripe_account={}".format(self.account.pk))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(url + "?stripe_account=none")
         self.assertEqual(response.status_code, 200)
 
 

@@ -2,10 +2,12 @@ from __future__ import unicode_literals
 
 import decimal
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.functional import cached_property
+from django.utils.translation import ugettext_lazy as _
 
 import stripe
 from jsonfield.fields import JSONField
@@ -197,10 +199,43 @@ class TransferChargeFee(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
 
+class UserAccount(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             related_name="user_accounts",
+                             related_query_name="user_account",
+                             on_delete=models.CASCADE)
+    account = models.ForeignKey("pinax_stripe.Account",
+                                related_name="user_accounts",
+                                related_query_name="user_account",
+                                on_delete=models.CASCADE)
+    customer = models.ForeignKey("pinax_stripe.Customer",
+                                 related_name="user_accounts",
+                                 related_query_name="user_account",
+                                 on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ("user", "account")
+
+    def clean(self):
+        if not self.customer.stripe_account == self.account:
+            raise ValidationError(_("customer.stripe_account must be account."))
+        return super(UserAccount, self).clean()
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super(UserAccount, self).save(*args, **kwargs)
+
+    def __repr__(self):
+        return "UserAccount(pk={self.pk!r}, user={self.user!r}, account={self.account!r}, customer={self.customer!r})".format(self=self)
+
+
 @python_2_unicode_compatible
 class Customer(AccountRelatedStripeObject):
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.CASCADE)
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL, through=UserAccount,
+                                   related_name="customers",
+                                   related_query_name="customers")
     account_balance = models.DecimalField(decimal_places=2, max_digits=9, blank=True, null=True)
     currency = models.CharField(max_length=10, default="usd", blank=True)
     delinquent = models.BooleanField(default=False)
@@ -271,7 +306,7 @@ class BitcoinReceiver(StripeObject):
     used_for_payment = models.BooleanField(default=False)
 
 
-class Subscription(StripeObject):
+class Subscription(StripeAccountFromCustomerMixin, StripeObject):
 
     STATUS_CURRENT = ["trialing", "active"]
 
@@ -291,7 +326,7 @@ class Subscription(StripeObject):
 
     @property
     def stripe_subscription(self):
-        return stripe.Customer.retrieve(self.customer.stripe_id).subscriptions.retrieve(self.stripe_id)
+        return stripe.Subscription.retrieve(self.stripe_id, stripe_account=self.stripe_account_stripe_id)
 
     @property
     def total_amount(self):

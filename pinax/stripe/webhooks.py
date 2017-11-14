@@ -85,9 +85,8 @@ class Webhook(with_metaclass(Registerable, object)):
         For Connect accounts we must fetch the event using the `stripe_account`
         parameter.
         """
-        stripe_account_id = self.event.webhook_message.get("account")
-        if stripe_account_id:
-            self.stripe_account, _ = models.Account.objects.get_or_create(stripe_id=stripe_account_id)
+        self.stripe_account = models.Account.objects.filter(
+            stripe_id=self.event.webhook_message.get("account")).first()
         self.event.stripe_account = self.stripe_account
         evt = stripe.Event.retrieve(
             self.event.stripe_id,

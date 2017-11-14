@@ -235,3 +235,27 @@ assert external_transfer.status in ('paid', 'pending')
 In most cases, the transfer (to an external account, these are commonly referred to as `payouts`) will be
 initially in a `pending` state. After several days, this will shift to `paid` and your user should see the
 amount on their bank account statement.
+
+#### Create a Connected Customer
+
+The action `actions.customer.create` accepts a stripe\_account parameter that will automatically
+populate a `UserAccount` entry to maintain the relationship between your user and the Stripe account.
+Note that in the context of stripe Connect a user is allowed to have several customers, one per account.
+This is why the M2M through model `UserAccount` is preferred over `Customer.user` to maintain this
+relationships.
+
+```python
+customer = pinax.stripe.actions.customers.create(user, stripe_account=account)
+UserAccount.filter(user=user, account=account, customer=customer).exists()
+>>> True
+```
+
+### Retrieve a Connected Customer
+
+```python
+customer = pinax.stripe.actions.customer.get_customer_for_user(user, stripe_account=account)
+
+# Under the hood, the M2M through model will be used to filter the relevant customer among all candidates
+
+customer = user.customers.get(user_account__account=stripe_account)
+```

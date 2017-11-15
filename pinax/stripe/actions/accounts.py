@@ -100,12 +100,12 @@ def sync_account_from_stripe_data(data, user=None):
         "business_name", "business_url", "charges_enabled", "country",
         "default_currency", "details_submitted", "display_name",
         "email", "type", "statement_descriptor", "support_email",
-        "support_phone", "timezone", "transfers_enabled"
+        "support_phone", "timezone", "payouts_enabled"
     )
 
     custom_attrs = (
         "debit_negative_balances", "metadata", "product_description",
-        "transfer_statement_descriptor"
+        "payout_statement_descriptor"
     )
 
     if data["type"] == "custom":
@@ -114,7 +114,7 @@ def sync_account_from_stripe_data(data, user=None):
         top_level_attrs = common_attrs
 
     for a in [x for x in top_level_attrs if x in data]:
-        setattr(obj, a, data.get(a))
+        setattr(obj, a, data[a])
 
     # that's all we get for standard and express accounts!
     if data["type"] != "custom":
@@ -188,11 +188,11 @@ def sync_account_from_stripe_data(data, user=None):
     obj.decline_charge_on_cvc_failure = data["decline_charge_on"]["cvc_failure"]
 
     # transfer schedule to external account
-    ts = data["transfer_schedule"]
-    obj.transfer_schedule_interval = ts["interval"]
-    obj.transfer_schedule_delay_days = ts.get("delay_days")
-    obj.transfer_schedule_weekly_anchor = ts.get("weekly_anchor")
-    obj.transfer_schedule_monthly_anchor = ts.get("monthly_anchor")
+    ps = data["payout_schedule"]
+    obj.payout_schedule_interval = ps["interval"]
+    obj.payout_schedule_delay_days = ps.get("delay_days")
+    obj.payout_schedule_weekly_anchor = ps.get("weekly_anchor")
+    obj.payout_schedule_monthly_anchor = ps.get("monthly_anchor")
 
     # verification status, key to progressing account setup
     obj.verification_disabled_reason = data["verification"]["disabled_reason"]

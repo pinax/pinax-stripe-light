@@ -439,7 +439,7 @@ admin.site.register(
         "stripe_id",
         "type",
         "country",
-        "transfers_enabled",
+        "payouts_enabled",
         "charges_enabled"
     ],
     search_fields=[

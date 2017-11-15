@@ -3022,14 +3022,14 @@ class AccountsSyncTestCase(TestCase):
       "timezone":"Etc/UTC",
       "statement_descriptor":"SOME COMP",
       "default_currency":"cad",
-      "transfer_schedule":{
+      "payout_schedule":{
         "delay_days":3,
         "interval":"manual"
       },
       "display_name":"Some Company",
-      "transfer_statement_descriptor": "For reals",
+      "payout_statement_descriptor": "For reals",
       "id":"acct_1A39IGDwqdd5icDO",
-      "transfers_enabled":true,
+      "payouts_enabled":true,
       "external_accounts":{
         "has_more":false,
         "total_count":1,
@@ -3127,14 +3127,14 @@ class AccountsSyncTestCase(TestCase):
       "timezone":"Etc/UTC",
       "statement_descriptor":"SOME COMP",
       "default_currency":"cad",
-      "transfer_schedule":{
+      "payout_schedule":{
         "delay_days":3,
         "interval":"manual"
       },
       "display_name":"Some Company",
-      "transfer_statement_descriptor": "For reals",
+      "payout_statement_descriptor": "For reals",
       "id":"acct_1A39IGDwqdd5icDO",
-      "transfers_enabled":true,
+      "payouts_enabled":true,
       "external_accounts":{
         "has_more":false,
         "total_count":1,
@@ -3259,7 +3259,7 @@ class AccountsSyncTestCase(TestCase):
         self.assertEqual(account.debit_negative_balances, False)
         self.assertEqual(account.product_description, "Monkey Magic")
         self.assertEqual(account.metadata, {"user_id": "9428"})
-        self.assertEqual(account.transfer_statement_descriptor, "For reals")
+        self.assertEqual(account.payout_statement_descriptor, "For reals")
 
         # legal entity
         self.assertEqual(account.legal_entity_address_city, "Vancouver")
@@ -3301,11 +3301,11 @@ class AccountsSyncTestCase(TestCase):
         self.assertEqual(account.decline_charge_on_avs_failure, True)
         self.assertEqual(account.decline_charge_on_cvc_failure, True)
 
-        # transfer schedule
-        self.assertEqual(account.transfer_schedule_interval, "manual")
-        self.assertEqual(account.transfer_schedule_delay_days, 3)
-        self.assertEqual(account.transfer_schedule_weekly_anchor, None)
-        self.assertEqual(account.transfer_schedule_monthly_anchor, None)
+        # Payout schedule
+        self.assertEqual(account.payout_schedule_interval, "manual")
+        self.assertEqual(account.payout_schedule_delay_days, 3)
+        self.assertEqual(account.payout_schedule_weekly_anchor, None)
+        self.assertEqual(account.payout_schedule_monthly_anchor, None)
 
         # verification status, key to progressing account setup
         self.assertEqual(account.verification_disabled_reason, None)

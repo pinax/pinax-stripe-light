@@ -436,6 +436,7 @@ admin.site.register(
     Account,
     raw_id_fields=["user"],
     list_display=[
+        "display_name",
         "stripe_id",
         "type",
         "country",

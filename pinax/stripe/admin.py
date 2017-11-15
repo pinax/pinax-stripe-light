@@ -437,13 +437,15 @@ admin.site.register(
     raw_id_fields=["user"],
     list_display=[
         "display_name",
-        "stripe_id",
         "type",
         "country",
         "transfers_enabled",
-        "charges_enabled"
+        "charges_enabled",
+        "stripe_id",
+        "created_at",
     ],
     search_fields=[
+        "display_name",
         "stripe_id",
     ]
 )

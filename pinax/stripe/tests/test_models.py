@@ -64,8 +64,23 @@ class ModelTests(TestCase):
 
     def test_customer_str_and_repr(self):
         c = Customer()
-        self.assertTrue("None" in str(c))
-        self.assertEquals(repr(c), "Customer(pk=None, user=None, stripe_id='')")
+        self.assertTrue("No User(s)" in str(c))
+        self.assertEquals(repr(c), "Customer(pk=None, stripe_id='')")
+
+    def test_customer_with_user_str_and_repr(self):
+        User = get_user_model()
+        c = Customer(user=User())
+        self.assertEqual(str(c), "")
+        self.assertEqual(repr(c), "Customer(pk=None, user=<User: >, stripe_id='')")
+
+    def test_connected_customer_str_and_repr(self):
+        User = get_user_model()
+        user = User.objects.create()
+        account = Account.objects.create(stripe_id="acc_A")
+        customer = Customer.objects.create(stripe_id="cus_A", stripe_account=account)
+        UserAccount.objects.create(customer=customer, user=user, account=account)
+        self.assertEqual(str(customer), "")
+        self.assertEqual(repr(customer), "Customer(pk={c.pk}, users=<User: >, stripe_id='cus_A')".format(c=customer))
 
     def test_charge_repr(self):
         charge = Charge()
@@ -201,7 +216,7 @@ class ModelTests(TestCase):
         self.assertEquals(
             repr(ua),
             "UserAccount(pk=None, user=<User: >, account=Account(pk=None, display_name='', type=None, stripe_id='', authorized=True)"
-            ", customer=Customer(pk=None, user=None, stripe_id=''))")
+            ", customer=Customer(pk=None, stripe_id=''))")
 
 
 class StripeObjectTests(TestCase):

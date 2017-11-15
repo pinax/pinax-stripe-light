@@ -3130,7 +3130,6 @@ class AccountsSyncTestCase(TestCase):
         self.assertEqual(account.support_email, "support@someurl.com")
         self.assertEqual(account.details_submitted, True)
         self.assertEqual(account.email, "operations@someurl.com")
-        self.assertEqual(account.transfers_enabled, True)
         self.assertEqual(account.timezone, "Etc/UTC")
         self.assertEqual(account.display_name, "Some Company")
         self.assertEqual(account.statement_descriptor, "SOME COMP")

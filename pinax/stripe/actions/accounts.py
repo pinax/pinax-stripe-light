@@ -114,7 +114,8 @@ def sync_account_from_stripe_data(data, user=None):
         top_level_attrs = common_attrs
 
     for a in top_level_attrs:
-        setattr(obj, a, data.get(a))
+        if a in data:
+            setattr(obj, a, data.get(a))
 
     # that's all we get for standard and express accounts!
     if data["type"] != "custom":

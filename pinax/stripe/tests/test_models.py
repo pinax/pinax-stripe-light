@@ -13,6 +13,7 @@ from mock import patch
 from ..models import (
     Account,
     BankAccount,
+    Card,
     Charge,
     Coupon,
     Customer,
@@ -170,6 +171,14 @@ class ModelTests(TestCase):
             repr(ua),
             "UserAccount(pk=None, user=<User: >, account=Account(pk=None, display_name='', type=None, stripe_id='', authorized=True)"
             ", customer=Customer(pk=None, user=None, stripe_id=''))")
+
+    def test_card_repr(self):
+        card = Card(exp_month=1, exp_year=2000)
+        self.assertEquals(repr(card), "Card(pk=None, customer=None)")
+
+        card.customer = Customer.objects.create()
+        card.save()
+        self.assertEquals(repr(card), "Card(pk={c.pk}, customer={c.customer!r})".format(c=card))
 
 
 class StripeObjectTests(TestCase):

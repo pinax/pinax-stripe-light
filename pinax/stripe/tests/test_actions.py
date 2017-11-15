@@ -3105,12 +3105,20 @@ class AccountsSyncTestCase(TestCase):
       "email":"operations@someurl.com",
       "id":"acct_102t2K2m3chDH8uL",
       "object":"account",
+      "payouts_enabled": true,
       "statement_descriptor":"SOME COMP",
+      "support_address": {
+        "city": null,
+        "country": "DE",
+        "line1": null,
+        "line2": null,
+        "postal_code": null,
+        "state": null
+      },
       "support_email":"support@someurl.com",
       "support_phone":"7788188181",
       "support_url":"https://support.someurl.com",
       "timezone":"Etc/UTC",
-      "transfers_enabled":true,
       "type":"standard"
     }""")
 

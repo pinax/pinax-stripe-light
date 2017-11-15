@@ -156,7 +156,7 @@ def sync_subscription_from_stripe_data(customer, subscription):
         start=utils.convert_tstamp(subscription["start"]),
         status=subscription["status"],
         trial_start=utils.convert_tstamp(subscription["trial_start"]) if subscription["trial_start"] else None,
-        trial_end=utils.convert_tstamp(subscription["trial_end"]) if subscription["trial_end"] else None,
+        trial_end=utils.convert_tstamp(subscription["trial_end"]) if subscription["trial_end"] else None
     )
     sub, created = models.Subscription.objects.get_or_create(
         stripe_id=subscription["id"],

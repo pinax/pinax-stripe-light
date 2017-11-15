@@ -2887,8 +2887,11 @@ class TransfersTests(TestCase):
 
 class AccountsSyncTestCase(TestCase):
 
-    def setUp(self):
-        self.custom_account_data = json.loads(
+    @classmethod
+    def setUpClass(cls):
+        super(AccountsSyncTestCase, cls).setUpClass()
+
+        cls.custom_account_data = json.loads(
             """{
       "type":"custom",
       "tos_acceptance":{
@@ -2993,7 +2996,7 @@ class AccountsSyncTestCase(TestCase):
         "disabled_reason":null
       }
     }""")
-        self.custom_account_data_no_dob_no_verification_no_tosacceptance = json.loads(
+        cls.custom_account_data_no_dob_no_verification_no_tosacceptance = json.loads(
             """{
       "type":"custom",
       "tos_acceptance":{
@@ -3089,7 +3092,7 @@ class AccountsSyncTestCase(TestCase):
         "disabled_reason":null
       }
     }""")
-        self.not_custom_account_data = json.loads(
+        cls.not_custom_account_data = json.loads(
             """{
       "support_phone":"7788188181",
       "business_name":"Woop Woop",

@@ -279,6 +279,15 @@ class ChargesTests(TestCase):
         self.assertEquals(kwargs["idempotency_key"], "IDEM")
         self.assertTrue(SyncMock.called)
 
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("stripe.Charge.capture")
+    def test_capture_with_connect(self, CaptureMock, SyncMock):
+        account = Account(stripe_id="acc_001")
+        customer = Customer(stripe_id="cus_001", stripe_account=account)
+        charges.capture(Charge(stripe_id="ch_A", amount=decimal.Decimal("100"), currency="usd", customer=customer))
+        self.assertTrue(CaptureMock.called)
+        self.assertTrue(SyncMock.called)
+
     @patch("pinax.stripe.actions.charges.sync_charge")
     def test_update_availability(self, SyncMock):
         Charge.objects.create(customer=self.customer, amount=decimal.Decimal("100"), currency="usd", paid=True, captured=True, available=False, refunded=False)

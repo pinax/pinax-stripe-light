@@ -36,7 +36,10 @@ def capture(charge, amount=None, idempotency_key=None):
         amount if amount else charge.amount,
         charge.currency
     )
-    stripe_charge = stripe.Charge(charge.stripe_id).capture(
+    stripe_charge = stripe.Charge(
+        charge.stripe_id,
+        stripe_account=charge.stripe_account_stripe_id,
+    ).capture(
         amount=amount,
         idempotency_key=idempotency_key,
         expand=["balance_transaction"],

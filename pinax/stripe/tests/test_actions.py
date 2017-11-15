@@ -663,7 +663,7 @@ class EventsTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super(EventsTests, cls).setUpClass()
-        cls.account = Account.objects.create(stripe_id="acc_XXX")
+        cls.account = Account.objects.create(stripe_id="acc_001")
 
     def test_dupe_event_exists(self):
         Event.objects.create(stripe_id="evt_003", kind="foo", livemode=True, webhook_message="{}", api_version="", request="", pending_webhooks=0)

@@ -306,7 +306,7 @@ admin.site.register(
         "period_start",
         "period_end",
         "subtotal",
-        "total",
+        "total"
     ],
     search_fields=[
         "stripe_id",
@@ -321,11 +321,11 @@ admin.site.register(
         "created_at",
         "date",
         "period_end",
-        "total",
+        "total"
     ],
     inlines=[
         InvoiceItemInline
-    ],
+    ]
 )
 
 admin.site.register(

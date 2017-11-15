@@ -3094,24 +3094,24 @@ class AccountsSyncTestCase(TestCase):
     }""")
         cls.not_custom_account_data = json.loads(
             """{
-      "support_phone":"7788188181",
+      "business_logo":null,
       "business_name":"Woop Woop",
       "business_url":"https://www.someurl.com",
-      "support_url":"https://support.someurl.com",
-      "country":"CA",
-      "object":"account",
-      "business_logo":null,
       "charges_enabled":true,
-      "support_email":"support@someurl.com",
+      "country":"CA",
+      "default_currency":"cad",
       "details_submitted":true,
-      "email":"operations@someurl.com",
-      "transfers_enabled":true,
-      "timezone":"Etc/UTC",
-      "id":"acct_102t2K2m3chDH8uL",
       "display_name":"Some Company",
+      "email":"operations@someurl.com",
+      "id":"acct_102t2K2m3chDH8uL",
+      "object":"account",
       "statement_descriptor":"SOME COMP",
-      "type":"standard",
-      "default_currency":"cad"
+      "support_email":"support@someurl.com",
+      "support_phone":"7788188181",
+      "support_url":"https://support.someurl.com",
+      "timezone":"Etc/UTC",
+      "transfers_enabled":true,
+      "type":"standard"
     }""")
 
     def assert_common_attributes(self, account):

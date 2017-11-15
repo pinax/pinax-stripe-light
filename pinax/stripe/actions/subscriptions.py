@@ -172,7 +172,7 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
     Args:
         subscription: the subscription to update
         plan: optionally, the plan to change the subscription to
-        quantity: optionally, the quantiy of the subscription to change
+        quantity: optionally, the quantity of the subscription to change
         prorate: optionally, if the subscription should be prorated or not
         coupon: optionally, a coupon to apply to the subscription
         charge_immediately: optionally, whether or not to charge immediately

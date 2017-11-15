@@ -2598,6 +2598,7 @@ class InvoiceSyncsTests(TestCase):
             "total": 1999,
             "webhooks_delivered_at": None
         }
+        self.account = Account.objects.create(stripe_id="acct_X")
 
     @patch("pinax.stripe.hooks.hookset.send_receipt")
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
@@ -2661,7 +2662,8 @@ class InvoiceSyncsTests(TestCase):
     @patch("pinax.stripe.actions.subscriptions.retrieve")
     def test_sync_invoice_from_stripe_data_connect(self, RetrieveSubscriptionMock, SyncInvoiceItemsMock, SyncChargeMock, ChargeFetchMock, SyncSubscriptionMock, SendReceiptMock):
         self.invoice_data["charge"] = "ch_XXXXXX"
-        self.invoice_data["account"] = "acct_X"
+        self.customer.stripe_account = self.account
+        self.customer.save()
         charge = Charge.objects.create(
             stripe_id="ch_XXXXXX",
             customer=self.customer,

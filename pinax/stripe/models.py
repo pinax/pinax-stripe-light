@@ -501,6 +501,12 @@ class Charge(StripeAccountFromCustomerMixin, StripeObject):
 @python_2_unicode_compatible
 class Account(StripeObject):
 
+    INTERVAL_CHOICES = (
+        ("Manual", "manual"),
+        ("Daily", "daily"),
+        ("Weekly", "weekly"),
+        ("Monthly", "monthly"),
+    )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.CASCADE, related_name="stripe_accounts")
 
     business_name = models.TextField(blank=True, null=True)
@@ -554,14 +560,12 @@ class Account(StripeObject):
     tos_acceptance_ip = models.TextField(null=True, blank=True)
     tos_acceptance_user_agent = models.TextField(null=True, blank=True)
 
-    transfer_schedule_delay_days = models.PositiveSmallIntegerField(null=True)
-    transfer_schedule_interval = models.TextField(null=True, blank=True)
-
-    transfer_schedule_monthly_anchor = models.PositiveSmallIntegerField(null=True)
-    transfer_schedule_weekly_anchor = models.TextField(null=True, blank=True)
-
-    transfer_statement_descriptor = models.TextField(null=True, blank=True)
-    transfers_enabled = models.BooleanField(default=False)
+    payout_schedule_delay_days = models.PositiveSmallIntegerField(null=True, blank=True)
+    payout_schedule_interval = models.CharField(max_length=7, choices=INTERVAL_CHOICES, null=True, blank=True)
+    payout_schedule_monthly_anchor = models.PositiveSmallIntegerField(null=True, blank=True)
+    payout_schedule_weekly_anchor = models.TextField(null=True, blank=True)
+    payout_statement_descriptor = models.TextField(null=True, blank=True)
+    payouts_enabled = models.BooleanField(default=False)
 
     verification_disabled_reason = models.TextField(null=True, blank=True)
     verification_due_by = models.DateTimeField(null=True, blank=True)

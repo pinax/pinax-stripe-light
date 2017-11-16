@@ -2907,8 +2907,11 @@ class TransfersTests(TestCase):
 
 class AccountsSyncTestCase(TestCase):
 
-    def setUp(self):
-        self.custom_account_data = json.loads(
+    @classmethod
+    def setUpClass(cls):
+        super(AccountsSyncTestCase, cls).setUpClass()
+
+        cls.custom_account_data = json.loads(
             """{
       "type":"custom",
       "tos_acceptance":{
@@ -2921,14 +2924,14 @@ class AccountsSyncTestCase(TestCase):
       "timezone":"Etc/UTC",
       "statement_descriptor":"SOME COMP",
       "default_currency":"cad",
-      "transfer_schedule":{
+      "payout_schedule":{
         "delay_days":3,
         "interval":"manual"
       },
       "display_name":"Some Company",
-      "transfer_statement_descriptor": "For reals",
+      "payout_statement_descriptor": "For reals",
       "id":"acct_1A39IGDwqdd5icDO",
-      "transfers_enabled":true,
+      "payouts_enabled":true,
       "external_accounts":{
         "has_more":false,
         "total_count":1,
@@ -3013,7 +3016,7 @@ class AccountsSyncTestCase(TestCase):
         "disabled_reason":null
       }
     }""")
-        self.custom_account_data_no_dob_no_verification_no_tosacceptance = json.loads(
+        cls.custom_account_data_no_dob_no_verification_no_tosacceptance = json.loads(
             """{
       "type":"custom",
       "tos_acceptance":{
@@ -3026,14 +3029,14 @@ class AccountsSyncTestCase(TestCase):
       "timezone":"Etc/UTC",
       "statement_descriptor":"SOME COMP",
       "default_currency":"cad",
-      "transfer_schedule":{
+      "payout_schedule":{
         "delay_days":3,
         "interval":"manual"
       },
       "display_name":"Some Company",
-      "transfer_statement_descriptor": "For reals",
+      "payout_statement_descriptor": "For reals",
       "id":"acct_1A39IGDwqdd5icDO",
-      "transfers_enabled":true,
+      "payouts_enabled":true,
       "external_accounts":{
         "has_more":false,
         "total_count":1,
@@ -3109,26 +3112,34 @@ class AccountsSyncTestCase(TestCase):
         "disabled_reason":null
       }
     }""")
-        self.not_custom_account_data = json.loads(
+        cls.not_custom_account_data = json.loads(
             """{
-      "support_phone":"7788188181",
+      "business_logo":null,
       "business_name":"Woop Woop",
       "business_url":"https://www.someurl.com",
-      "support_url":"https://support.someurl.com",
-      "country":"CA",
-      "object":"account",
-      "business_logo":null,
       "charges_enabled":true,
-      "support_email":"support@someurl.com",
+      "country":"CA",
+      "default_currency":"cad",
       "details_submitted":true,
-      "email":"operations@someurl.com",
-      "transfers_enabled":true,
-      "timezone":"Etc/UTC",
-      "id":"acct_102t2K2m3chDH8uL",
       "display_name":"Some Company",
+      "email":"operations@someurl.com",
+      "id":"acct_102t2K2m3chDH8uL",
+      "object":"account",
+      "payouts_enabled": true,
       "statement_descriptor":"SOME COMP",
-      "type":"standard",
-      "default_currency":"cad"
+      "support_address": {
+        "city": null,
+        "country": "DE",
+        "line1": null,
+        "line2": null,
+        "postal_code": null,
+        "state": null
+      },
+      "support_email":"support@someurl.com",
+      "support_phone":"7788188181",
+      "support_url":"https://support.someurl.com",
+      "timezone":"Etc/UTC",
+      "type":"standard"
     }""")
 
     def assert_common_attributes(self, account):
@@ -3139,7 +3150,6 @@ class AccountsSyncTestCase(TestCase):
         self.assertEqual(account.support_email, "support@someurl.com")
         self.assertEqual(account.details_submitted, True)
         self.assertEqual(account.email, "operations@someurl.com")
-        self.assertEqual(account.transfers_enabled, True)
         self.assertEqual(account.timezone, "Etc/UTC")
         self.assertEqual(account.display_name, "Some Company")
         self.assertEqual(account.statement_descriptor, "SOME COMP")
@@ -3151,7 +3161,7 @@ class AccountsSyncTestCase(TestCase):
         self.assertEqual(account.debit_negative_balances, False)
         self.assertEqual(account.product_description, "Monkey Magic")
         self.assertEqual(account.metadata, {"user_id": "9428"})
-        self.assertEqual(account.transfer_statement_descriptor, "For reals")
+        self.assertEqual(account.payout_statement_descriptor, "For reals")
 
         # legal entity
         self.assertEqual(account.legal_entity_address_city, "Vancouver")
@@ -3193,11 +3203,11 @@ class AccountsSyncTestCase(TestCase):
         self.assertEqual(account.decline_charge_on_avs_failure, True)
         self.assertEqual(account.decline_charge_on_cvc_failure, True)
 
-        # transfer schedule
-        self.assertEqual(account.transfer_schedule_interval, "manual")
-        self.assertEqual(account.transfer_schedule_delay_days, 3)
-        self.assertEqual(account.transfer_schedule_weekly_anchor, None)
-        self.assertEqual(account.transfer_schedule_monthly_anchor, None)
+        # Payout schedule
+        self.assertEqual(account.payout_schedule_interval, "manual")
+        self.assertEqual(account.payout_schedule_delay_days, 3)
+        self.assertEqual(account.payout_schedule_weekly_anchor, None)
+        self.assertEqual(account.payout_schedule_monthly_anchor, None)
 
         # verification status, key to progressing account setup
         self.assertEqual(account.verification_disabled_reason, None)

@@ -199,6 +199,9 @@ admin.site.register(
         "created_at",
         "stripe_account",
     ],
+    list_select_related=[
+        "stripe_account",
+    ],
     list_filter=[
         "kind",
         "created_at",
@@ -249,6 +252,9 @@ class CustomerAdmin(ModelAdmin):
         "default_source",
         subscription_status,
         "date_purged",
+        "stripe_account",
+    ]
+    list_select_related = [
         "stripe_account",
     ]
     list_filter = [
@@ -338,6 +344,9 @@ admin.site.register(
         "trial_period_days",
         "stripe_account",
     ],
+    list_select_related=[
+        "stripe_account",
+    ],
     search_fields=[
         "stripe_id",
         "name",
@@ -412,6 +421,9 @@ admin.site.register(
         "status",
         "date",
         "description",
+        "stripe_account",
+    ],
+    list_select_related=[
         "stripe_account",
     ],
     search_fields=[

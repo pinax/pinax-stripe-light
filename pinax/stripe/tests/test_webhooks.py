@@ -28,6 +28,10 @@ from ..webhooks import (
     AccountExternalAccountCreatedWebhook,
     AccountUpdatedWebhook,
     ChargeCapturedWebhook,
+    CouponCreatedWebhook,
+    CouponDeletedWebhook,
+    CouponUpdatedWebhook,
+    CustomerCreatedWebhook,
     CustomerDeletedWebhook,
     CustomerSourceCreatedWebhook,
     CustomerSourceDeletedWebhook,
@@ -277,6 +281,86 @@ class CustomerUpdatedWebhookTest(TestCase):
         self.assertEquals(SyncMock.call_count, 1)
         self.assertIs(SyncMock.call_args[0][0], customer)
         self.assertIs(SyncMock.call_args[0][1], obj)
+
+
+class CouponCreatedWebhookTest(TestCase):
+
+    @patch("pinax.stripe.actions.coupons.sync_coupon_from_stripe_data")
+    def test_process_webhook(self, SyncMock):
+        event = Event.objects.create(kind=CouponCreatedWebhook.name, webhook_message={}, valid=True, processed=False, stripe_account=None)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CouponCreatedWebhook(event).process_webhook()
+        SyncMock.assert_called_with(event.message["data"]["object"], stripe_account=None)
+
+    @patch("pinax.stripe.actions.coupons.sync_coupon_from_stripe_data")
+    def test_process_webhook_with_stripe_account(self, SyncMock):
+        account = Account.objects.create(stripe_id="acc_A")
+        event = Event.objects.create(kind=CouponCreatedWebhook.name, webhook_message={}, valid=True, processed=False, stripe_account=account)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CouponCreatedWebhook(event).process_webhook()
+        SyncMock.assert_called_with(event.message["data"]["object"], stripe_account=account)
+
+
+class CouponUpdatedWebhookTest(TestCase):
+
+    @patch("pinax.stripe.actions.coupons.sync_coupon_from_stripe_data")
+    def test_process_webhook(self, SyncMock):
+        event = Event.objects.create(kind=CouponUpdatedWebhook.name, webhook_message={}, valid=True, processed=False, stripe_account=None)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CouponUpdatedWebhook(event).process_webhook()
+        SyncMock.assert_called_with(event.message["data"]["object"], stripe_account=None)
+
+    @patch("pinax.stripe.actions.coupons.sync_coupon_from_stripe_data")
+    def test_process_webhook_with_stripe_account(self, SyncMock):
+        account = Account.objects.create(stripe_id="acc_A")
+        event = Event.objects.create(kind=CouponUpdatedWebhook.name, webhook_message={}, valid=True, processed=False, stripe_account=account)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CouponUpdatedWebhook(event).process_webhook()
+        SyncMock.assert_called_with(event.message["data"]["object"], stripe_account=account)
+
+
+class CouponDeletedWebhookTest(TestCase):
+
+    @patch("pinax.stripe.actions.coupons.purge_local")
+    def test_process_webhook(self, PurgeMock):
+        event = Event.objects.create(kind=CouponDeletedWebhook.name, webhook_message={}, valid=True, processed=False, stripe_account=None)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CouponDeletedWebhook(event).process_webhook()
+        PurgeMock.assert_called_with(event.message["data"]["object"], stripe_account=None)
+
+    @patch("pinax.stripe.actions.coupons.purge_local")
+    def test_process_webhook_with_stripe_account(self, PurgeMock):
+        account = Account.objects.create(stripe_id="acc_A")
+        event = Event.objects.create(kind=CouponDeletedWebhook.name, webhook_message={}, valid=True, processed=False, stripe_account=account)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CouponDeletedWebhook(event).process_webhook()
+        PurgeMock.assert_called_with(event.message["data"]["object"], stripe_account=account)
+
+
+class CustomerCreatedWebhookTest(TestCase):
+
+    @patch("pinax.stripe.actions.customers.create")
+    def test_process_webhook(self, CreateMock):
+        event = Event.objects.create(kind=CustomerCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CustomerCreatedWebhook(event).process_webhook()
+        CreateMock.assert_not_called()
+
+    @patch("pinax.stripe.actions.customers.create")
+    def test_process_webhook_with_stripe_account(self, CreateMock):
+        account = Account.objects.create(stripe_id="acc_A")
+        event = Event.objects.create(kind=CustomerCreatedWebhook.name, webhook_message={}, valid=True, processed=False, stripe_account=account)
+        obj = object()
+        event.validated_message = dict(data=dict(object=obj))
+        CustomerCreatedWebhook(event).process_webhook()
+        CreateMock.assert_not_called()
 
 
 class CustomerSourceCreatedWebhookTest(TestCase):

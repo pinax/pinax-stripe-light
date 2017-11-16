@@ -13,6 +13,10 @@ def sync_coupons():
         coupons = iter(stripe.Coupon.all().data)
 
     for coupon in coupons:
+        sync_coupon_from_stripe_data(coupon)
+
+
+def sync_coupon_from_stripe_data(coupon, stripe_account=None):
         defaults = dict(
             amount_off=(
                 utils.convert_amount_for_db(coupon["amount_off"], coupon["currency"])
@@ -28,9 +32,17 @@ def sync_coupons():
             redeem_by=utils.convert_tstamp(coupon["redeem_by"]) if coupon["redeem_by"] else None,
             times_redeemed=coupon["times_redeemed"],
             valid=coupon["valid"],
+            stripe_account=stripe_account,
         )
         obj, created = models.Coupon.objects.get_or_create(
             stripe_id=coupon["id"],
+            stripe_account=stripe_account,
             defaults=defaults
         )
         utils.update_with_defaults(obj, defaults, created)
+        return obj
+
+
+def purge_local(coupon, stripe_account=None):
+    return models.Coupon.objects.filter(
+        stripe_id=coupon["id"], stripe_account=stripe_account).delete()

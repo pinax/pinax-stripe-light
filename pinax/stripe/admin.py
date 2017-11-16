@@ -238,11 +238,9 @@ def subscription_status(obj):
 subscription_status.short_description = "Subscription Status"  # noqa
 
 
-admin.site.register(
-    Customer,
-    admin_class=ModelAdmin,
-    raw_id_fields=["user", "stripe_account"],
-    list_display=[
+class CustomerAdmin(ModelAdmin):
+    raw_id_fields = ["user", "stripe_account"]
+    list_display = [
         "stripe_id",
         "user",
         "account_balance",
@@ -252,22 +250,21 @@ admin.site.register(
         subscription_status,
         "date_purged",
         "stripe_account",
-    ],
-    list_filter=[
+    ]
+    list_filter = [
         "delinquent",
         CustomerHasCardListFilter,
         CustomerSubscriptionStatusListFilter,
         AccountListFilter,
-    ],
-    search_fields=[
+    ]
+    search_fields = [
         "stripe_id",
-    ] + user_search_fields(),
-    inlines=[
+    ] + user_search_fields()
+    inlines = [
         SubscriptionInline,
         CardInline,
         BitcoinReceiverInline
     ]
-)
 
 
 class InvoiceItemInline(admin.TabularInline):
@@ -431,21 +428,22 @@ admin.site.register(
 )
 
 
-admin.site.register(
-    Account,
-    raw_id_fields=["user"],
-    list_display=[
+class AccountAdmin(ModelAdmin):
+    raw_id_fields = ["user"]
+    list_display = [
         "display_name",
-        "stripe_id",
         "type",
         "country",
         "payouts_enabled",
-        "charges_enabled"
-    ],
-    search_fields=[
+        "charges_enabled",
+        "stripe_id",
+        "created_at",
+    ]
+    search_fields = [
+        "display_name",
         "stripe_id",
     ]
-)
+
 
 admin.site.register(
     BankAccount,
@@ -475,3 +473,7 @@ admin.site.register(
         "=user__email",
     ]
 )
+
+
+admin.site.register(Account, AccountAdmin)
+admin.site.register(Customer, CustomerAdmin)

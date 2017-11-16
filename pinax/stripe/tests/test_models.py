@@ -52,14 +52,17 @@ class ModelTests(TestCase):
         self.assertTrue("Event=" in str(e))
 
     def test_event_str_and_repr(self):
-        e = Event(kind="customer.deleted", webhook_message={})
+        created_at = datetime.datetime.utcnow()
+        created_at_iso = created_at.replace(microsecond=0).isoformat()
+        e = Event(kind="customer.deleted", webhook_message={}, created_at=created_at)
         self.assertTrue("customer.deleted" in str(e))
-        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer=None, valid=None, stripe_id='')")
+        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer=None, valid=None, created_at={}, stripe_id='')".format(
+            created_at_iso))
 
         e.stripe_id = "evt_X"
         e.customer = Customer()
-        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer={!r}, valid=None, stripe_id='{}')".format(
-            e.customer, e.stripe_id))
+        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer={!r}, valid=None, created_at={}, stripe_id='{}')".format(
+            e.customer, created_at_iso, e.stripe_id))
 
     def test_customer_str_and_repr(self):
         c = Customer()

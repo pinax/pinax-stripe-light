@@ -252,14 +252,26 @@ class Customer(AccountRelatedStripeObject):
         )
 
     def __str__(self):
-        return str(self.user)
+        if self.user:
+            return str(self.user)
+        elif self.id:
+            return ", ".join(str(user) for user in self.users.all())
+        return "No User(s)"
 
     def __repr__(self):
-        return "Customer(pk={!r}, user={!r}, stripe_id={!r})".format(
-            self.pk,
-            self.user,
-            str(self.stripe_id),
-        )
+        if self.user:
+            return "Customer(pk={!r}, user={!r}, stripe_id={!r})".format(
+                self.pk,
+                self.user,
+                str(self.stripe_id),
+            )
+        elif self.id:
+            return "Customer(pk={!r}, users={}, stripe_id={!r})".format(
+                self.pk,
+                ", ".join(repr(user) for user in self.users.all()),
+                str(self.stripe_id),
+            )
+        return "Customer(pk={!r}, stripe_id={!r})".format(self.pk, str(self.stripe_id))
 
 
 class Card(StripeObject):

@@ -662,12 +662,14 @@ class AccountWebhookTest(TestCase):
 
     @patch("stripe.Event.retrieve")
     def test_process_deauthorize_with_authorizes_account(self, RetrieveMock):
+        stripe_account_id = self.account.stripe_id
         data = {"data": {"object": {"id": "evt_002"}},
-                "account": self.account.stripe_id}
+                "account": stripe_account_id}
         event = Event.objects.create(
             kind=AccountApplicationDeauthorizeWebhook.name,
             webhook_message=data,
         )
+        RetrieveMock.return_value.to_dict.return_value = data
         with self.assertRaises(ValueError):
             AccountApplicationDeauthorizeWebhook(event).process()
 
@@ -685,3 +687,17 @@ class AccountWebhookTest(TestCase):
         self.assertTrue(event.valid)
         self.assertTrue(event.processed)
         self.assertIsNone(event.stripe_account)
+
+    @patch("stripe.Event.retrieve")
+    def test_process_deauthorize_without_account(self, RetrieveMock):
+        data = {"data": {"object": {"id": "evt_001"}}}
+        event = Event.objects.create(
+            kind=AccountApplicationDeauthorizeWebhook.name,
+            webhook_message=data,
+        )
+        RetrieveMock.return_value.to_dict.return_value = data
+        AccountApplicationDeauthorizeWebhook(event).process()
+        self.assertTrue(event.valid)
+        self.assertTrue(event.processed)
+        self.account.refresh_from_db()
+        self.assertTrue(self.account.authorized)

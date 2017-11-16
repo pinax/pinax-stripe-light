@@ -965,14 +965,25 @@ class SubscriptionsTests(TestCase):
         )
         self.assertTrue(subscriptions.has_active_subscription(self.customer))
 
+    @patch("stripe.Subscription")
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
-    def test_cancel_subscription(self, SyncMock):
-        SubMock = Mock()
+    def test_cancel_subscription(self, SyncMock, StripeSubMock):
+        subscription = Subscription(stripe_id="sub_X", customer=self.customer)
         obj = object()
         SyncMock.return_value = obj
-        sub = subscriptions.cancel(SubMock)
+        sub = subscriptions.cancel(subscription)
         self.assertIs(sub, obj)
         self.assertTrue(SyncMock.called)
+        _, kwargs = StripeSubMock.call_args
+        self.assertEquals(kwargs["stripe_account"], None)
+
+    @patch("stripe.Subscription")
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
+    def test_cancel_subscription_with_account(self, SyncMock, StripeSubMock):
+        subscription = Subscription(stripe_id="sub_X", customer=self.connected_customer)
+        subscriptions.cancel(subscription)
+        _, kwargs = StripeSubMock.call_args
+        self.assertEquals(kwargs["stripe_account"], self.account.stripe_id)
 
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     def test_update(self, SyncMock):

@@ -16,7 +16,6 @@ def calculate_refund_amount(charge, amount=None):
     Args:
         charge: a pinax.stripe.models.Charge object
         amount: optionally, the decimal.Decimal amount you wish to refund
-        idempotency_key: Any string that allows retries to be performed safely.
     """
     eligible_to_refund = charge.amount - (charge.amount_refunded or 0)
     if amount:
@@ -31,6 +30,7 @@ def capture(charge, amount=None, idempotency_key=None):
     Args:
         charge: a pinax.stripe.models.Charge object
         amount: the decimal.Decimal amount of the charge to capture
+        idempotency_key: Any string that allows retries to be performed safely.
     """
     amount = utils.convert_amount_for_api(
         amount if amount else charge.amount,

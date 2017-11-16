@@ -19,7 +19,7 @@ def cancel(subscription, at_period_end=True):
     """
     sub = stripe.Subscription(
         subscription.stripe_id,
-        stripe_account=subscription.stripe_account,
+        stripe_account=subscription.stripe_account_stripe_id,
     ).delete(
         at_period_end=at_period_end,
     )

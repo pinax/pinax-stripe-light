@@ -1013,7 +1013,7 @@ class SubscriptionsTests(TestCase):
         subscription = Subscription(stripe_id="sub_X", customer=self.connected_customer)
         subscriptions.cancel(subscription)
         _, kwargs = StripeSubMock.call_args
-        self.assertEquals(kwargs["stripe_account"], self.account)
+        self.assertEquals(kwargs["stripe_account"], self.account.stripe_id)
 
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     def test_update(self, SyncMock):

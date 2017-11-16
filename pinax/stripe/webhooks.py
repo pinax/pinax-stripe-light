@@ -161,10 +161,6 @@ class AccountApplicationDeauthorizeWebhook(Webhook):
          - In case no exception has been caught, then, most likely, the event has been forged
            to make you believe the account has been disabled despite it is still functioning.
         """
-        # if not stripe_account_id:
-        #     return
-        # self.stripe_account = models.Account.objects.filter(stripe_id=stripe_account_id).first()
-
         try:
             super(AccountApplicationDeauthorizeWebhook, self).validate()
         except stripe.error.PermissionError as exc:

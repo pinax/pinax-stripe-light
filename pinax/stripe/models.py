@@ -86,7 +86,6 @@ class Plan(AccountRelatedStripeObject):
 class Coupon(models.Model):
     stripe_id = models.CharField(max_length=191)
     created_at = models.DateTimeField(default=timezone.now)
-
     stripe_account = models.ForeignKey(
         "pinax_stripe.Account",
         on_delete=models.CASCADE,
@@ -137,6 +136,13 @@ class Coupon(models.Model):
                     self.times_redeemed,
                     str(self.stripe_id),
                 ))
+
+    @property
+    def stripe_coupon(self):
+        return stripe.Coupon.retrieve(
+            self.stripe_id,
+            stripe_account=self.stripe_account.stripe_id,
+        )
 
 
 @python_2_unicode_compatible

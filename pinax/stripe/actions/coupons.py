@@ -26,6 +26,7 @@ def sync_coupon_from_stripe_data(coupon, stripe_account=None):
             currency=coupon["currency"] or "",
             duration=coupon["duration"],
             duration_in_months=coupon["duration_in_months"],
+            livemode=coupon["livemode"],
             max_redemptions=coupon["max_redemptions"],
             metadata=coupon["metadata"],
             percent_off=coupon["percent_off"],

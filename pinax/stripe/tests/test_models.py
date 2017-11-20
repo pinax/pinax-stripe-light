@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
-from mock import patch
+from mock import call, patch
 
 from ..models import (
     Account,
@@ -88,6 +88,13 @@ class ModelTests(TestCase):
     def test_coupon_absolute(self):
         c = Coupon(amount_off=decimal.Decimal(50.00), duration="once", currency="usd")
         self.assertEquals(str(c), "Coupon for $50, once")
+
+    @patch("stripe.Coupon.retrieve")
+    def test_coupon_stripe_coupon(self, RetrieveMock):
+        c = Coupon(stripe_id="coupon", stripe_account=Account(stripe_id="acct_A"))
+        self.assertEqual(c.stripe_coupon, RetrieveMock.return_value)
+        self.assertTrue(RetrieveMock.call_args_list, [
+            call("coupon", stripe_account="acct_A")])
 
     def test_model_table_name(self):
         self.assertEquals(Customer()._meta.db_table, "pinax_stripe_customer")

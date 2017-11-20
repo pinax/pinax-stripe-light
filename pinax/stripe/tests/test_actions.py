@@ -1218,7 +1218,7 @@ class SyncsTests(TestCase):
             "currency": None,
             "duration": "repeating",
             "duration_in_months": 3,
-            "livemode": False,
+            "livemode": True,
             "max_redemptions": None,
             "metadata": {
             },
@@ -1228,9 +1228,11 @@ class SyncsTests(TestCase):
             "valid": True
         }
         cs1 = coupons.sync_coupon_from_stripe_data(coupon)
+        self.assertTrue(cs1.livemode)
         c1 = Coupon.objects.get(stripe_id=coupon["id"], stripe_account=None)
         self.assertEquals(c1, cs1)
         self.assertEquals(c1.percent_off, decimal.Decimal(35.00))
+
         cs2 = coupons.sync_coupon_from_stripe_data(coupon, stripe_account=account)
         c2 = Coupon.objects.get(stripe_id=coupon["id"], stripe_account=account)
         self.assertEquals(c2, cs2)

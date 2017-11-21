@@ -44,6 +44,14 @@ class AccountRelatedStripeObject(StripeObject):
         abstract = True
 
 
+class UniquePerAccountStripeObject(AccountRelatedStripeObject):
+    stripe_id = models.CharField(max_length=191)
+
+    class Meta:
+        abstract = True
+        unique_together = ("stripe_id", "stripe_account")
+
+
 class StripeAccountFromCustomerMixin(object):
     @property
     def stripe_account(self):
@@ -56,7 +64,7 @@ class StripeAccountFromCustomerMixin(object):
 
 
 @python_2_unicode_compatible
-class Plan(AccountRelatedStripeObject):
+class Plan(UniquePerAccountStripeObject):
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=15, blank=False)
     interval = models.CharField(max_length=15)

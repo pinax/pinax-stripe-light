@@ -62,6 +62,12 @@ class ModelTests(TestCase):
         self.assertTrue(RetrieveMock.call_args_list, [
             call("plan", stripe_account="acct_A")])
 
+    def test_plan_per_account(self):
+        Plan.objects.create(stripe_id="plan", amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
+        account = Account.objects.create(stripe_id="acct_A")
+        Plan.objects.create(stripe_id="plan", stripe_account=account, amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
+        self.assertEquals(Plan.objects.count(), 2)
+
     def test_event_processing_exception_str(self):
         e = EventProcessingException(data="hello", message="hi there", traceback="fake")
         self.assertTrue("Event=" in str(e))

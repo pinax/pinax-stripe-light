@@ -26,7 +26,7 @@ class StripeObject(models.Model):
         abstract = True
 
 
-class AccountRelatedStripeObject(StripeObject):
+class AccountRelatedStripeObjectMixin(models.Model):
 
     stripe_account = models.ForeignKey(
         "pinax_stripe.Account",
@@ -44,8 +44,16 @@ class AccountRelatedStripeObject(StripeObject):
         abstract = True
 
 
-class UniquePerAccountStripeObject(AccountRelatedStripeObject):
+class AccountRelatedStripeObject(AccountRelatedStripeObjectMixin, StripeObject):
+    """Uses a mixin to support Django 1.8 (name clash for stripe_id)"""
+
+    class Meta:
+        abstract = True
+
+
+class UniquePerAccountStripeObject(AccountRelatedStripeObjectMixin):
     stripe_id = models.CharField(max_length=191)
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         abstract = True

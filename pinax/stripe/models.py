@@ -91,20 +91,7 @@ class Plan(UniquePerAccountStripeObject):
 
 
 @python_2_unicode_compatible
-class Coupon(models.Model):
-    stripe_id = models.CharField(max_length=191)
-    created_at = models.DateTimeField(default=timezone.now)
-    stripe_account = models.ForeignKey(
-        "pinax_stripe.Account",
-        on_delete=models.CASCADE,
-        null=True,
-        default=None,
-        blank=True,
-    )
-
-    class Meta:
-        unique_together = ("stripe_id", "stripe_account")
-
+class Coupon(UniquePerAccountStripeObject):
     DURATION_CHOICES = (
         ("forever", "forever"),
         ("once", "once"),

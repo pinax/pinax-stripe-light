@@ -2155,6 +2155,7 @@ class SyncsTests(TestCase):
         charge = Charge.objects.get(stripe_id=data["id"])
         self.assertEqual(charge.amount, decimal.Decimal("2"))
         self.assertEqual(charge.customer, None)
+        self.assertEqual(charge.outcome["risk_level"], "normal")
 
     @patch("stripe.Subscription.retrieve")
     def test_retrieve_stripe_subscription(self, RetrieveMock):

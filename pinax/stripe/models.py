@@ -81,6 +81,13 @@ class Plan(AccountRelatedStripeObject):
             str(self.stripe_id),
         )
 
+    @property
+    def stripe_plan(self):
+        return stripe.Plan.retrieve(
+            self.stripe_id,
+            stripe_account=self.stripe_account_stripe_id,
+        )
+
 
 @python_2_unicode_compatible
 class Coupon(StripeObject):

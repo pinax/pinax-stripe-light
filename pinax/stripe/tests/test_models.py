@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
-from mock import patch
+from mock import call, patch
 
 from ..models import (
     Account,
@@ -46,6 +46,20 @@ class ModelTests(TestCase):
     def test_plan_str_jpy(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", currency="jpy", interval="monthly", interval_count=1)
         self.assertTrue(u"\u00a5" in _str(p))
+
+    @patch("stripe.Plan.retrieve")
+    def test_plan_stripe_plan(self, RetrieveMock):
+        c = Plan(stripe_id="plan")
+        self.assertEqual(c.stripe_plan, RetrieveMock.return_value)
+        self.assertTrue(RetrieveMock.call_args_list, [
+            call("plan", stripe_account=None)])
+
+    @patch("stripe.Plan.retrieve")
+    def test_plan_stripe_plan_with_account(self, RetrieveMock):
+        c = Plan(stripe_id="plan", stripe_account=Account(stripe_id="acct_A"))
+        self.assertEqual(c.stripe_plan, RetrieveMock.return_value)
+        self.assertTrue(RetrieveMock.call_args_list, [
+            call("plan", stripe_account="acct_A")])
 
     def test_event_processing_exception_str(self):
         e = EventProcessingException(data="hello", message="hi there", traceback="fake")

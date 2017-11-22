@@ -97,6 +97,13 @@ class Plan(UniquePerAccountStripeObject):
             str(self.stripe_id),
         )
 
+    @property
+    def stripe_plan(self):
+        return stripe.Plan.retrieve(
+            self.stripe_id,
+            stripe_account=self.stripe_account.stripe_id,
+        )
+
 
 @python_2_unicode_compatible
 class Coupon(UniquePerAccountStripeObject):

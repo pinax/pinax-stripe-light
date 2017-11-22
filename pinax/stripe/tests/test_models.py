@@ -54,6 +54,13 @@ class ModelTests(TestCase):
         Plan.objects.create(stripe_id="plan", stripe_account=account, amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
         self.assertEquals(Plan.objects.count(), 2)
 
+    @patch("stripe.Plan.retrieve")
+    def test_plan_stripe_plan(self, RetrieveMock):
+        c = Plan(stripe_id="plan", stripe_account=Account(stripe_id="acct_A"))
+        self.assertEqual(c.stripe_plan, RetrieveMock.return_value)
+        self.assertTrue(RetrieveMock.call_args_list, [
+            call("plan", stripe_account="acct_A")])
+
     def test_event_processing_exception_str(self):
         e = EventProcessingException(data="hello", message="hi there", traceback="fake")
         self.assertTrue("Event=" in str(e))

@@ -63,7 +63,7 @@ setup(
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
-    version="3.4.1",
+    version="4.0.0",
     license="MIT",
     url=URL,
     packages=find_packages(),

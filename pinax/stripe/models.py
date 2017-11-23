@@ -190,11 +190,12 @@ class Event(AccountRelatedStripeObject):
         return "{} - {}".format(self.kind, self.stripe_id)
 
     def __repr__(self):
-        return "Event(pk={!r}, kind={!r}, customer={!r}, valid={!r}, stripe_id={!r})".format(
+        return "Event(pk={!r}, kind={!r}, customer={!r}, valid={!r}, created_at={!s}, stripe_id={!r})".format(
             self.pk,
             str(self.kind),
             self.customer,
             self.valid,
+            self.created_at.replace(microsecond=0).isoformat(),
             str(self.stripe_id),
         )
 
@@ -345,6 +346,12 @@ class Card(StripeObject):
     funding = models.CharField(max_length=15)
     last4 = models.CharField(max_length=4, blank=True)
     fingerprint = models.TextField()
+
+    def __repr__(self):
+        return "Card(pk={!r}, customer={!r})".format(
+            self.pk,
+            getattr(self, "customer", None),
+        )
 
 
 class BitcoinReceiver(StripeObject):

@@ -376,6 +376,9 @@ class Discount(models.Model):
     start = models.DateTimeField(null=True)
     end = models.DateTimeField(null=True)
 
+    def __str__(self):
+        return "{} - {}".format(self.coupon, self.subscription)
+
     def __repr__(self):
         return "Discount(coupon={!r}, subscription={!r})".format(self.coupon, self.subscription)
 

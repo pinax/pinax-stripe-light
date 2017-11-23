@@ -101,7 +101,7 @@ class Plan(UniquePerAccountStripeObject):
     def stripe_plan(self):
         return stripe.Plan.retrieve(
             self.stripe_id,
-            stripe_account=self.stripe_account.stripe_id,
+            stripe_account=self.stripe_account_stripe_id,
         )
 
 

@@ -305,6 +305,12 @@ class Card(StripeObject):
     last4 = models.CharField(max_length=4, blank=True)
     fingerprint = models.TextField()
 
+    def __repr__(self):
+        return "Card(pk={!r}, customer={!r})".format(
+            self.pk,
+            getattr(self, "customer", None),
+        )
+
 
 class BitcoinReceiver(StripeObject):
 

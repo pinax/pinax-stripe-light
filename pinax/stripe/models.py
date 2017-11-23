@@ -140,7 +140,7 @@ class Coupon(UniquePerAccountStripeObject):
                     self.amount_off,
                     self.percent_off,
                     str(self.currency),
-                    self.duration,
+                    str(self.duration),
                     self.livemode,
                     self.max_redemptions,
                     self.times_redeemed,
@@ -312,15 +312,15 @@ class Customer(AccountRelatedStripeObject):
             return "Customer(pk={!r}, user={!r}, stripe_id={!r})".format(
                 self.pk,
                 self.user,
-                self.stripe_id,
+                str(self.stripe_id),
             )
         elif self.id:
             return "Customer(pk={!r}, users={}, stripe_id={!r})".format(
                 self.pk,
                 ", ".join(repr(user) for user in self.users.all()),
-                self.stripe_id,
+                str(self.stripe_id),
             )
-        return "Customer(pk={!r}, stripe_id={!r})".format(self.pk, self.stripe_id)
+        return "Customer(pk={!r}, stripe_id={!r})".format(self.pk, str(self.stripe_id))
 
 
 class Card(StripeObject):

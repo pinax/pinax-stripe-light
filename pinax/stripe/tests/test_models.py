@@ -113,8 +113,8 @@ class ModelTests(TestCase):
         self.assertEquals(i.plan_display(), "My Plan")
 
     def test_coupon_repr(self):
-        c = Coupon(id="test", percent_off=25, duration="repeating", duration_in_months=3,)
-        self.assertEquals(repr(c), "Coupon(pk='test', valid=False, amount_off=None, percent_off=25, currency='usd', duration='repeating', livemode=False, max_redemptions=None, times_redeemed=None, stripe_id='')")
+        c = Coupon(id=1, percent_off=25, duration="repeating", duration_in_months=3,)
+        self.assertEquals(repr(c), "Coupon(pk=1, valid=False, amount_off=None, percent_off=25, currency='usd', duration='repeating', livemode=False, max_redemptions=None, times_redeemed=None, stripe_id='')")
 
     def test_coupon_percent(self):
         c = Coupon(percent_off=25, duration="repeating", duration_in_months=3)

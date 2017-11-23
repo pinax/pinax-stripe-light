@@ -5,6 +5,7 @@ import decimal
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.db import models
 from django.test import TestCase
 from django.utils import timezone
 
@@ -211,6 +212,19 @@ class ModelTests(TestCase):
         card.customer = Customer.objects.create()
         card.save()
         self.assertEquals(repr(card), "Card(pk={c.pk}, customer={c.customer!r})".format(c=card))
+
+    def test_blank_with_null(self):
+        import inspect
+        import pinax.stripe.models
+
+        clsmembers = inspect.getmembers(pinax.stripe.models, inspect.isclass)
+        classes = [x[1] for x in clsmembers
+                   if issubclass(x[1], models.Model)]
+
+        for klass in classes[0:1]:
+            for f in klass._meta.fields:
+                if f.null:
+                    self.assertTrue(f.blank, msg="%s.%s should be blank=True" % (klass.__name__, f.name))
 
 
 class StripeObjectTests(TestCase):

@@ -71,6 +71,8 @@ class Registerable(type):
 
 class Webhook(with_metaclass(Registerable, object)):
 
+    name = None
+
     def __init__(self, event):
         if event.kind != self.name:
             raise Exception("The Webhook handler ({}) received the wrong type of Event ({})".format(self.name, event.kind))

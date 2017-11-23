@@ -38,6 +38,7 @@ from ..webhooks import (
     CustomerSubscriptionCreatedWebhook,
     CustomerUpdatedWebhook,
     InvoiceCreatedWebhook,
+    Webhook,
     registry
 )
 
@@ -107,6 +108,11 @@ class WebhookTests(TestCase):
         "pending_webhooks": 1,
         "type": "transfer.created"
     }
+
+    def test_webhook_init(self):
+        event = Event(kind=None)
+        webhook = Webhook(event)
+        self.assertIsNone(webhook.name)
 
     @patch("stripe.Event.retrieve")
     @patch("stripe.Transfer.retrieve")

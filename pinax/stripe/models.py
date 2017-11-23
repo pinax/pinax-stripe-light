@@ -140,7 +140,7 @@ class Coupon(UniquePerAccountStripeObject):
                     self.amount_off,
                     self.percent_off,
                     str(self.currency),
-                    self.duration,
+                    str(self.duration),
                     self.livemode,
                     self.max_redemptions,
                     self.times_redeemed,
@@ -312,15 +312,15 @@ class Customer(AccountRelatedStripeObject):
             return "Customer(pk={!r}, user={!r}, stripe_id={!r})".format(
                 self.pk,
                 self.user,
-                self.stripe_id,
+                str(self.stripe_id),
             )
         elif self.id:
             return "Customer(pk={!r}, users={}, stripe_id={!r})".format(
                 self.pk,
                 ", ".join(repr(user) for user in self.users.all()),
-                self.stripe_id,
+                str(self.stripe_id),
             )
-        return "Customer(pk={!r}, stripe_id={!r})".format(self.pk, self.stripe_id)
+        return "Customer(pk={!r}, stripe_id={!r})".format(self.pk, str(self.stripe_id))
 
 
 class Card(StripeObject):
@@ -375,6 +375,9 @@ class Discount(models.Model):
     subscription = models.OneToOneField("Subscription", null=True, on_delete=models.CASCADE)
     start = models.DateTimeField(null=True)
     end = models.DateTimeField(null=True)
+
+    def __str__(self):
+        return "{} - {}".format(self.coupon, self.subscription)
 
     def __repr__(self):
         return "Discount(coupon={!r}, subscription={!r})".format(self.coupon, self.subscription)

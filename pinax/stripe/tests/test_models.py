@@ -104,7 +104,7 @@ class ModelTests(TestCase):
         customer = Customer.objects.create(stripe_id="cus_A", stripe_account=account)
         UserAccount.objects.create(customer=customer, user=user, account=account)
         self.assertEqual(str(customer), "")
-        self.assertEqual(repr(customer), "Customer(pk={c.pk}, users=<User: >, stripe_id='cus_A')".format(c=customer))
+        self.assertEqual(repr(customer), "Customer(pk={c.pk}, users=[<User: >], stripe_id='cus_A')".format(c=customer))
 
     def test_charge_repr(self):
         charge = Charge()

@@ -316,9 +316,9 @@ class Customer(AccountRelatedStripeObject):
                 str(self.stripe_id),
             )
         elif self.id:
-            return "Customer(pk={!r}, users={}, stripe_id={!r})".format(
+            return "Customer(pk={!r}, users={!r}, stripe_id={!r})".format(
                 self.pk,
-                ", ".join(repr(user) for user in self.users.all()),
+                list(self.users.all()),
                 str(self.stripe_id),
             )
         return "Customer(pk={!r}, stripe_id={!r})".format(self.pk, str(self.stripe_id))

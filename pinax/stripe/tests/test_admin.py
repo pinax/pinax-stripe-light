@@ -102,7 +102,11 @@ class AdminTestCase(TestCase):
         cls.client = Client()
 
     def setUp(self):
-        self.client.login(username="admin", password="admin")
+        try:
+            self.client.force_login(self.user)
+        except AttributeError:
+            # Django 1.8
+            self.client.login(username="admin", password="admin")
 
     def test_customer_admin(self):
         """Make sure we get good responses for all filter options"""

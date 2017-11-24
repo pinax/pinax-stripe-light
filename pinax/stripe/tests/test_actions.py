@@ -15,6 +15,7 @@ from mock import Mock, patch
 from ..actions import (
     accounts,
     charges,
+    coupons,
     customers,
     events,
     externalaccounts,
@@ -30,7 +31,9 @@ from ..models import (
     BitcoinReceiver,
     Card,
     Charge,
+    Coupon,
     Customer,
+    Discount,
     Event,
     Invoice,
     Plan,
@@ -290,6 +293,24 @@ class ChargesTests(TestCase):
         Charge.objects.create(customer=self.customer, amount=decimal.Decimal("100"), currency="usd", paid=True, captured=True, available=False, refunded=False)
         charges.update_charge_availability()
         self.assertTrue(SyncMock.called)
+
+
+class CouponsTests(TestCase):
+
+    def test_purge_local(self):
+        Coupon.objects.create(stripe_id="100OFF", percent_off=decimal.Decimal(100.00))
+        self.assertTrue(Coupon.objects.filter(stripe_id="100OFF").exists())
+        coupons.purge_local({"id": "100OFF"})
+        self.assertFalse(Coupon.objects.filter(stripe_id="100OFF").exists())
+
+    def test_purge_local_with_account(self):
+        account = Account.objects.create(stripe_id="acc_XXX")
+        Coupon.objects.create(stripe_id="100OFF", percent_off=decimal.Decimal(100.00), stripe_account=account)
+        self.assertTrue(Coupon.objects.filter(stripe_id="100OFF").exists())
+        coupons.purge_local({"id": "100OFF"})
+        self.assertTrue(Coupon.objects.filter(stripe_id="100OFF").exists())
+        coupons.purge_local({"id": "100OFF"}, stripe_account=account)
+        self.assertFalse(Coupon.objects.filter(stripe_id="100OFF").exists())
 
 
 class CustomersTests(TestCase):
@@ -1184,6 +1205,40 @@ class SyncsTests(TestCase):
             stripe_id="cus_xxxxxxxxxxxxxxx"
         )
 
+    def test_sync_coupon_from_stripe_data(self):
+        account = Account.objects.create(
+            stripe_id="acct_X",
+            type="standard",
+        )
+        coupon = {
+            "id": "35OFF",
+            "object": "coupon",
+            "amount_off": None,
+            "created": 1391694467,
+            "currency": None,
+            "duration": "repeating",
+            "duration_in_months": 3,
+            "livemode": True,
+            "max_redemptions": None,
+            "metadata": {
+            },
+            "percent_off": 35,
+            "redeem_by": None,
+            "times_redeemed": 1,
+            "valid": True
+        }
+        cs1 = coupons.sync_coupon_from_stripe_data(coupon)
+        self.assertTrue(cs1.livemode)
+        c1 = Coupon.objects.get(stripe_id=coupon["id"], stripe_account=None)
+        self.assertEquals(c1, cs1)
+        self.assertEquals(c1.percent_off, decimal.Decimal(35.00))
+
+        cs2 = coupons.sync_coupon_from_stripe_data(coupon, stripe_account=account)
+        c2 = Coupon.objects.get(stripe_id=coupon["id"], stripe_account=account)
+        self.assertEquals(c2, cs2)
+        self.assertEquals(c2.percent_off, decimal.Decimal(35.00))
+        self.assertFalse(c1 == c2)
+
     @patch("stripe.Plan.all")
     @patch("stripe.Plan.auto_paging_iter", create=True, side_effect=AttributeError)
     def test_sync_plans_deprecated(self, PlanAutoPagerMock, PlanAllMock):
@@ -1581,6 +1636,34 @@ class SyncsTests(TestCase):
         self.assertEquals(Subscription.objects.get(stripe_id=subscription["id"]), sub)
         self.assertEquals(sub.status, "trialing")
 
+        subscription["discount"] = {
+            "object": "discount",
+            "coupon": {
+                "id": "35OFF",
+                "object": "coupon",
+                "amount_off": None,
+                "created": 1391694467,
+                "currency": None,
+                "duration": "repeating",
+                "duration_in_months": 3,
+                "livemode": False,
+                "max_redemptions": None,
+                "metadata": {
+                },
+                "percent_off": 35,
+                "redeem_by": None,
+                "times_redeemed": 1,
+                "valid": True
+            },
+            "customer": self.customer.stripe_id,
+            "end": 1399384361,
+            "start": 1391694761,
+            "subscription": subscription["id"]
+        }
+        subscriptions.sync_subscription_from_stripe_data(self.customer, subscription)
+        d = Subscription.objects.get(stripe_id=subscription["id"]).discount
+        self.assertEquals(d.coupon.percent_off, decimal.Decimal(35.00))
+
     def test_sync_subscription_from_stripe_data_updated(self):
         Plan.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
         subscription = {
@@ -1592,7 +1675,30 @@ class SyncsTests(TestCase):
             "current_period_end": 1448758544,
             "current_period_start": 1448499344,
             "customer": self.customer.stripe_id,
-            "discount": None,
+            "discount": {
+                "object": "discount",
+                "coupon": {
+                    "id": "35OFF",
+                    "object": "coupon",
+                    "amount_off": None,
+                    "created": 1391694467,
+                    "currency": None,
+                    "duration": "repeating",
+                    "duration_in_months": 3,
+                    "livemode": False,
+                    "max_redemptions": None,
+                    "metadata": {
+                    },
+                    "percent_off": 35,
+                    "redeem_by": None,
+                    "times_redeemed": 1,
+                    "valid": True
+                },
+                "customer": self.customer.stripe_id,
+                "end": 1399384361,
+                "start": 1391694761,
+                "subscription": "sub_7Q4BX0HMfqTpN8"
+            },
             "ended_at": None,
             "metadata": {
             },
@@ -1618,11 +1724,16 @@ class SyncsTests(TestCase):
             "trial_end": 1448758544,
             "trial_start": 1448499344
         }
+        with self.assertRaises(Discount.DoesNotExist):
+            Discount.objects.get(subscription__stripe_id="sub_7Q4BX0HMfqTpN8")
         subscriptions.sync_subscription_from_stripe_data(self.customer, subscription)
         self.assertEquals(Subscription.objects.get(stripe_id=subscription["id"]).status, "trialing")
         subscription.update({"status": "active"})
         subscriptions.sync_subscription_from_stripe_data(self.customer, subscription)
-        self.assertEquals(Subscription.objects.get(stripe_id=subscription["id"]).status, "active")
+        s = Subscription.objects.get(stripe_id=subscription["id"])
+        self.assertEquals(s.status, "active")
+        self.assertTrue(Discount.objects.filter(subscription__stripe_id="sub_7Q4BX0HMfqTpN8").exists())
+        self.assertEquals(s.discount.coupon.stripe_id, "35OFF")
 
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")

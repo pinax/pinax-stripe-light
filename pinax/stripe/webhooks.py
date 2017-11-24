@@ -9,6 +9,7 @@ from . import models
 from .actions import (
     accounts,
     charges,
+    coupons,
     customers,
     exceptions,
     invoices,
@@ -298,15 +299,24 @@ class CouponCreatedWebhook(Webhook):
     name = "coupon.created"
     description = "Occurs whenever a coupon is created."
 
+    def process_webhook(self):
+        coupons.sync_coupon_from_stripe_data(self.event.message["data"]["object"], stripe_account=self.event.stripe_account)
+
 
 class CouponDeletedWebhook(Webhook):
     name = "coupon.deleted"
     description = "Occurs whenever a coupon is deleted."
 
+    def process_webhook(self):
+        coupons.purge_local(self.event.message["data"]["object"], stripe_account=self.event.stripe_account)
+
 
 class CouponUpdatedWebhook(Webhook):
     name = "coupon.updated"
     description = "Occurs whenever a coupon is updated."
+
+    def process_webhook(self):
+        coupons.sync_coupon_from_stripe_data(self.event.message["data"]["object"], stripe_account=self.event.stripe_account)
 
 
 class CustomerCreatedWebhook(Webhook):

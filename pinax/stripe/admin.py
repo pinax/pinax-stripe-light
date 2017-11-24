@@ -250,7 +250,7 @@ class CustomerAdmin(ModelAdmin):
     raw_id_fields = ["user", "stripe_account"]
     list_display = [
         "stripe_id",
-        "user",
+        "__str__",
         "account_balance",
         "currency",
         "delinquent",
@@ -261,6 +261,7 @@ class CustomerAdmin(ModelAdmin):
     ]
     list_select_related = [
         "stripe_account",
+        "user",
     ]
     list_filter = [
         "delinquent",
@@ -276,6 +277,10 @@ class CustomerAdmin(ModelAdmin):
         CardInline,
         BitcoinReceiverInline
     ]
+
+    def get_queryset(self, request):
+        qs = super(CustomerAdmin, self).get_queryset(request)
+        return qs.prefetch_related("users")
 
 
 class InvoiceItemInline(admin.TabularInline):

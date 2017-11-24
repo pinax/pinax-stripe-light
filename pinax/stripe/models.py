@@ -81,6 +81,13 @@ class Plan(AccountRelatedStripeObject):
             str(self.stripe_id),
         )
 
+    @property
+    def stripe_plan(self):
+        return stripe.Plan.retrieve(
+            self.stripe_id,
+            stripe_account=self.stripe_account_stripe_id,
+        )
+
 
 @python_2_unicode_compatible
 class Coupon(models.Model):
@@ -180,11 +187,12 @@ class Event(AccountRelatedStripeObject):
         return "{} - {}".format(self.kind, self.stripe_id)
 
     def __repr__(self):
-        return "Event(pk={!r}, kind={!r}, customer={!r}, valid={!r}, stripe_id={!r})".format(
+        return "Event(pk={!r}, kind={!r}, customer={!r}, valid={!r}, created_at={!s}, stripe_id={!r})".format(
             self.pk,
             str(self.kind),
             self.customer,
             self.valid,
+            self.created_at.replace(microsecond=0).isoformat(),
             str(self.stripe_id),
         )
 
@@ -291,14 +299,26 @@ class Customer(AccountRelatedStripeObject):
         )
 
     def __str__(self):
-        return str(self.user)
+        if self.user:
+            return str(self.user)
+        elif self.id:
+            return ", ".join(str(user) for user in self.users.all())
+        return "No User(s)"
 
     def __repr__(self):
-        return "Customer(pk={!r}, user={!r}, stripe_id={!r})".format(
-            self.pk,
-            self.user,
-            str(self.stripe_id),
-        )
+        if self.user:
+            return "Customer(pk={!r}, user={!r}, stripe_id={!r})".format(
+                self.pk,
+                self.user,
+                str(self.stripe_id),
+            )
+        elif self.id:
+            return "Customer(pk={!r}, users={}, stripe_id={!r})".format(
+                self.pk,
+                ", ".join(repr(user) for user in self.users.all()),
+                str(self.stripe_id),
+            )
+        return "Customer(pk={!r}, stripe_id={!r})".format(self.pk, str(self.stripe_id))
 
 
 class Card(StripeObject):
@@ -323,6 +343,12 @@ class Card(StripeObject):
     funding = models.CharField(max_length=15)
     last4 = models.CharField(max_length=4, blank=True)
     fingerprint = models.TextField()
+
+    def __repr__(self):
+        return "Card(pk={!r}, customer={!r})".format(
+            self.pk,
+            getattr(self, "customer", None),
+        )
 
 
 class BitcoinReceiver(StripeObject):
@@ -542,6 +568,12 @@ class Charge(StripeAccountFromCustomerMixin, StripeObject):
 @python_2_unicode_compatible
 class Account(StripeObject):
 
+    INTERVAL_CHOICES = (
+        ("Manual", "manual"),
+        ("Daily", "daily"),
+        ("Weekly", "weekly"),
+        ("Monthly", "monthly"),
+    )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.CASCADE, related_name="stripe_accounts")
 
     business_name = models.TextField(blank=True, null=True)
@@ -595,14 +627,12 @@ class Account(StripeObject):
     tos_acceptance_ip = models.TextField(null=True, blank=True)
     tos_acceptance_user_agent = models.TextField(null=True, blank=True)
 
-    transfer_schedule_delay_days = models.PositiveSmallIntegerField(null=True)
-    transfer_schedule_interval = models.TextField(null=True, blank=True)
-
-    transfer_schedule_monthly_anchor = models.PositiveSmallIntegerField(null=True)
-    transfer_schedule_weekly_anchor = models.TextField(null=True, blank=True)
-
-    transfer_statement_descriptor = models.TextField(null=True, blank=True)
-    transfers_enabled = models.BooleanField(default=False)
+    payout_schedule_delay_days = models.PositiveSmallIntegerField(null=True, blank=True)
+    payout_schedule_interval = models.CharField(max_length=7, choices=INTERVAL_CHOICES, null=True, blank=True)
+    payout_schedule_monthly_anchor = models.PositiveSmallIntegerField(null=True, blank=True)
+    payout_schedule_weekly_anchor = models.TextField(null=True, blank=True)
+    payout_statement_descriptor = models.TextField(null=True, blank=True)
+    payouts_enabled = models.BooleanField(default=False)
 
     verification_disabled_reason = models.TextField(null=True, blank=True)
     verification_due_by = models.DateTimeField(null=True, blank=True)

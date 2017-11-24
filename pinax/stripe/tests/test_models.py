@@ -13,6 +13,7 @@ from mock import call, patch
 from ..models import (
     Account,
     BankAccount,
+    Card,
     Charge,
     Coupon,
     Customer,
@@ -48,24 +49,56 @@ class ModelTests(TestCase):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", currency="jpy", interval="monthly", interval_count=1)
         self.assertTrue(u"\u00a5" in _str(p))
 
+    @patch("stripe.Plan.retrieve")
+    def test_plan_stripe_plan(self, RetrieveMock):
+        c = Plan(stripe_id="plan")
+        self.assertEqual(c.stripe_plan, RetrieveMock.return_value)
+        self.assertTrue(RetrieveMock.call_args_list, [
+            call("plan", stripe_account=None)])
+
+    @patch("stripe.Plan.retrieve")
+    def test_plan_stripe_plan_with_account(self, RetrieveMock):
+        c = Plan(stripe_id="plan", stripe_account=Account(stripe_id="acct_A"))
+        self.assertEqual(c.stripe_plan, RetrieveMock.return_value)
+        self.assertTrue(RetrieveMock.call_args_list, [
+            call("plan", stripe_account="acct_A")])
+
     def test_event_processing_exception_str(self):
         e = EventProcessingException(data="hello", message="hi there", traceback="fake")
         self.assertTrue("Event=" in str(e))
 
     def test_event_str_and_repr(self):
-        e = Event(kind="customer.deleted", webhook_message={})
+        created_at = datetime.datetime.utcnow()
+        created_at_iso = created_at.replace(microsecond=0).isoformat()
+        e = Event(kind="customer.deleted", webhook_message={}, created_at=created_at)
         self.assertTrue("customer.deleted" in str(e))
-        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer=None, valid=None, stripe_id='')")
+        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer=None, valid=None, created_at={}, stripe_id='')".format(
+            created_at_iso))
 
         e.stripe_id = "evt_X"
         e.customer = Customer()
-        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer={!r}, valid=None, stripe_id='{}')".format(
-            e.customer, e.stripe_id))
+        self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer={!r}, valid=None, created_at={}, stripe_id='{}')".format(
+            e.customer, created_at_iso, e.stripe_id))
 
     def test_customer_str_and_repr(self):
         c = Customer()
-        self.assertTrue("None" in str(c))
-        self.assertEquals(repr(c), "Customer(pk=None, user=None, stripe_id='')")
+        self.assertTrue("No User(s)" in str(c))
+        self.assertEquals(repr(c), "Customer(pk=None, stripe_id='')")
+
+    def test_customer_with_user_str_and_repr(self):
+        User = get_user_model()
+        c = Customer(user=User())
+        self.assertEqual(str(c), "")
+        self.assertEqual(repr(c), "Customer(pk=None, user=<User: >, stripe_id='')")
+
+    def test_connected_customer_str_and_repr(self):
+        User = get_user_model()
+        user = User.objects.create()
+        account = Account.objects.create(stripe_id="acc_A")
+        customer = Customer.objects.create(stripe_id="cus_A", stripe_account=account)
+        UserAccount.objects.create(customer=customer, user=user, account=account)
+        self.assertEqual(str(customer), "")
+        self.assertEqual(repr(customer), "Customer(pk={c.pk}, users=<User: >, stripe_id='cus_A')".format(c=customer))
 
     def test_charge_repr(self):
         charge = Charge()
@@ -217,7 +250,15 @@ class ModelTests(TestCase):
         self.assertEquals(
             repr(ua),
             "UserAccount(pk=None, user=<User: >, account=Account(pk=None, display_name='', type=None, stripe_id='', authorized=True)"
-            ", customer=Customer(pk=None, user=None, stripe_id=''))")
+            ", customer=Customer(pk=None, stripe_id=''))")
+
+    def test_card_repr(self):
+        card = Card(exp_month=1, exp_year=2000)
+        self.assertEquals(repr(card), "Card(pk=None, customer=None)")
+
+        card.customer = Customer.objects.create()
+        card.save()
+        self.assertEquals(repr(card), "Card(pk={c.pk}, customer={c.customer!r})".format(c=card))
 
 
 class StripeObjectTests(TestCase):

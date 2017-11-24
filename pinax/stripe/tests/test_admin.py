@@ -2,7 +2,7 @@ import datetime
 
 from django.contrib.auth import get_user_model
 from django.db import connection
-from django.test import Client, SimpleTestCase, TestCase
+from django.test import Client, RequestFactory, SimpleTestCase, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
@@ -160,6 +160,29 @@ class AdminTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(url + "?stripe_account=none")
         self.assertEqual(response.status_code, 200)
+
+    @classmethod
+    def get_changelist(cls, model_class, data=None):
+        from django.contrib.admin.sites import AdminSite
+        from django.utils.module_loading import import_string
+
+        admin_class = import_string("pinax.stripe.admin.{}Admin".format(
+            model_class.__name__))
+
+        ma = admin_class(model_class, AdminSite())
+
+        info = ma.model._meta.app_label, ma.model._meta.model_name
+        url = reverse("admin:%s_%s_changelist" % info)
+        request = RequestFactory().get(url, data=data)
+        request.user = cls.user
+        return ma.changelist_view(request).context_data["cl"]
+
+    def test_account_search(self):
+        cl = self.get_changelist(Account)
+        self.assertEqual(list(cl.queryset), [self.account])
+
+        cl = self.get_changelist(Account, {"q": "acc_doesnotexist"})
+        self.assertEqual(list(cl.queryset), [])
 
 
 class AdminSimpleTestCase(SimpleTestCase):

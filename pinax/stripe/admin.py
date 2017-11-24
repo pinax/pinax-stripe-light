@@ -139,10 +139,8 @@ class ModelAdmin(admin.ModelAdmin):
         return PrefetchingChangeList
 
 
-admin.site.register(
-    Charge,
-    admin_class=ModelAdmin,
-    list_display=[
+class ChargeAdmin(ModelAdmin):
+    list_display = [
         "stripe_id",
         "customer",
         "amount",
@@ -152,23 +150,30 @@ admin.site.register(
         "refunded",
         "receipt_sent",
         "created_at",
-    ],
-    search_fields=[
+    ]
+    list_select_related = [
+        "customer",
+    ]
+    search_fields = [
         "stripe_id",
         "customer__stripe_id",
         "invoice__stripe_id",
-    ] + customer_search_fields(),
-    list_filter=[
+    ] + customer_search_fields()
+    list_filter = [
         "paid",
         "disputed",
         "refunded",
         "created_at",
-    ],
-    raw_id_fields=[
+    ]
+    raw_id_fields = [
         "customer",
         "invoice",
-    ],
-)
+    ]
+
+    def get_queryset(self, request):
+        qs = super(ChargeAdmin, self).get_queryset(request)
+        return qs.prefetch_related("customer__user", "customer__users")
+
 
 admin.site.register(
     EventProcessingException,
@@ -476,4 +481,5 @@ admin.site.register(
 
 
 admin.site.register(Account, AccountAdmin)
+admin.site.register(Charge, ChargeAdmin)
 admin.site.register(Customer, CustomerAdmin)

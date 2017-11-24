@@ -434,7 +434,7 @@ class AccountAdmin(ModelAdmin):
         "display_name",
         "type",
         "country",
-        "transfers_enabled",
+        "payouts_enabled",
         "charges_enabled",
         "stripe_id",
         "created_at",
@@ -442,7 +442,7 @@ class AccountAdmin(ModelAdmin):
     search_fields = [
         "display_name",
         "stripe_id",
-    ]
+    ],
 
 
 admin.site.register(

@@ -16,7 +16,12 @@ def cancel(subscription, at_period_end=True):
         subscription: the subscription to cancel
         at_period_end: True to cancel at the end of the period, otherwise cancels immediately
     """
-    sub = subscription.stripe_subscription.delete(at_period_end=at_period_end)
+    sub = stripe.Subscription(
+        subscription.stripe_id,
+        stripe_account=subscription.stripe_account_stripe_id,
+    ).delete(
+        at_period_end=at_period_end,
+    )
     return sync_subscription_from_stripe_data(subscription.customer, sub)
 
 
@@ -172,7 +177,7 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
     Args:
         subscription: the subscription to update
         plan: optionally, the plan to change the subscription to
-        quantity: optionally, the quantiy of the subscription to change
+        quantity: optionally, the quantity of the subscription to change
         prorate: optionally, if the subscription should be prorated or not
         coupon: optionally, a coupon to apply to the subscription
         charge_immediately: optionally, whether or not to charge immediately

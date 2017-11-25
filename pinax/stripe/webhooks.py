@@ -71,6 +71,8 @@ class Registerable(type):
 
 class Webhook(with_metaclass(Registerable, object)):
 
+    name = None
+
     def __init__(self, event):
         if event.kind != self.name:
             raise Exception("The Webhook handler ({}) received the wrong type of Event ({})".format(self.name, event.kind))
@@ -85,9 +87,8 @@ class Webhook(with_metaclass(Registerable, object)):
         For Connect accounts we must fetch the event using the `stripe_account`
         parameter.
         """
-        stripe_account_id = self.event.webhook_message.get("account")
-        if stripe_account_id:
-            self.stripe_account, _ = models.Account.objects.get_or_create(stripe_id=stripe_account_id)
+        self.stripe_account = models.Account.objects.filter(
+            stripe_id=self.event.webhook_message.get("account")).first()
         self.event.stripe_account = self.stripe_account
         evt = stripe.Event.retrieve(
             self.event.stripe_id,
@@ -117,9 +118,12 @@ class Webhook(with_metaclass(Registerable, object)):
             return signal.send(sender=self.__class__, event=self.event)
 
     def process(self):
-        self.validate()
-        if not self.event.valid or self.event.processed:
+        if self.event.processed:
             return
+        self.validate()
+        if not self.event.valid:
+            return
+
         try:
             customers.link_customer(self.event)
             self.process_webhook()
@@ -178,10 +182,11 @@ class AccountApplicationDeauthorizeWebhook(Webhook):
             self.event.validated_message = self.event.webhook_message
             self.event.stripe_account = self.stripe_account
         else:
-            raise ValueError("The remote account still valid. this might be an hostile event")
+            raise ValueError("The remote account is still valid. This might be a hostile event")
 
     def process_webhook(self):
-        accounts.deauthorize(self.stripe_account)
+        if self.stripe_account is not None:
+            accounts.deauthorize(self.stripe_account)
 
 
 class AccountExternalAccountCreatedWebhook(Webhook):
@@ -385,7 +390,7 @@ class CustomerSubscriptionWebhook(Webhook):
         if self.event.validated_message:
             subscriptions.sync_subscription_from_stripe_data(
                 self.event.customer,
-                self.event.validated_message["data"]["object"]
+                self.event.validated_message["data"]["object"],
             )
 
         if self.event.customer:

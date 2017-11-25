@@ -377,6 +377,29 @@ class CustomerSubscriptionCreatedWebhookTest(TestCase):
         self.assertTrue(SubSyncMock.called)
 
 
+class CustomerSubscriptionUpdatedWebhookTest(TestCase):
+
+    WEBHOOK_MESSAGE_DATA = {
+        "object": {"livemode": False}
+    }
+
+    VALIDATED_MESSAGE_DATA = {
+        "previous_attributes": {"days_until_due": 30, "billing": "send_invoice"},
+        "object": {"livemode": False}
+    }
+
+    VALIDATED_MESSAGE_DATA_NOT_VALID = {
+        "previous_attributes": {"days_until_due": 30, "billing": "send_invoice"},
+        "object": {"livemode": True}
+    }
+
+    def test_is_event_valid_yes(self):
+        self.assertTrue(Webhook.is_event_valid(self.WEBHOOK_MESSAGE_DATA, self.VALIDATED_MESSAGE_DATA))
+
+    def test_is_event_valid_no(self):
+        self.assertFalse(Webhook.is_event_valid(self.WEBHOOK_MESSAGE_DATA, self.VALIDATED_MESSAGE_DATA_NOT_VALID))
+
+
 class InvoiceCreatedWebhookTest(TestCase):
 
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")

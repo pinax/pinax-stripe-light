@@ -2,8 +2,10 @@ from django.contrib import admin
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.auth import get_user_model
 from django.db.models import Count
+from django.utils.encoding import force_text
+from django.utils.translation import ugettext as _
 
-from .models import (  # @@@ make all these read-only
+from .models import (
     Account,
     BankAccount,
     BitcoinReceiver,
@@ -135,6 +137,24 @@ class PrefetchingChangeList(ChangeList):
 
 
 class ModelAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        """Adjust change_view title ("View" instead of "Change")."""
+        opts = self.model._meta
+
+        extra_context = extra_context or {}
+        extra_context["title"] = _("View %s" % force_text(opts.verbose_name))
+        return super(ModelAdmin, self).change_view(
+            request, object_id, form_url, extra_context=extra_context,
+        )
+
+    def has_change_permission(self, request, obj=None):
+        if request.method == "POST":
+            return False
+        return True
+
     def get_changelist(self, request, **kwargs):
         return PrefetchingChangeList
 
@@ -175,27 +195,25 @@ class ChargeAdmin(ModelAdmin):
         return qs.prefetch_related("customer__user", "customer__users")
 
 
-admin.site.register(
-    EventProcessingException,
-    list_display=[
+class EventProcessingExceptionAdmin(ModelAdmin):
+    list_display = [
         "message",
         "event",
         "created_at"
-    ],
-    search_fields=[
+    ]
+    search_fields = [
         "message",
         "traceback",
         "data"
-    ],
-    raw_id_fields=[
+    ]
+    raw_id_fields = [
         "event"
-    ],
-)
+    ]
 
-admin.site.register(
-    Event,
-    raw_id_fields=["customer", "stripe_account"],
-    list_display=[
+
+class EventAdmin(ModelAdmin):
+    raw_id_fields = ["customer", "stripe_account"]
+    list_display = [
         "stripe_id",
         "kind",
         "livemode",
@@ -203,21 +221,20 @@ admin.site.register(
         "processed",
         "created_at",
         "stripe_account",
-    ],
-    list_filter=[
+    ]
+    list_filter = [
         "kind",
         "created_at",
         "valid",
         "processed",
         AccountListFilter,
-    ],
-    search_fields=[
+    ]
+    search_fields = [
         "stripe_id",
         "customer__stripe_id",
         "validated_message",
         "=stripe_account__stripe_id",
-    ] + customer_search_fields(),
-)
+    ] + customer_search_fields()
 
 
 class SubscriptionInline(admin.TabularInline):
@@ -296,10 +313,9 @@ def customer_user(obj):
 customer_user.short_description = "Customer"  # noqa
 
 
-admin.site.register(
-    Invoice,
-    raw_id_fields=["customer"],
-    list_display=[
+class InvoiceAdmin(ModelAdmin):
+    raw_id_fields = ["customer"]
+    list_display = [
         "stripe_id",
         "paid",
         "closed",
@@ -309,12 +325,12 @@ admin.site.register(
         "period_end",
         "subtotal",
         "total"
-    ],
-    search_fields=[
+    ]
+    search_fields = [
         "stripe_id",
         "customer__stripe_id",
-    ] + customer_search_fields(),
-    list_filter=[
+    ] + customer_search_fields()
+    list_filter = [
         InvoiceCustomerHasCardListFilter,
         "paid",
         "closed",
@@ -324,16 +340,15 @@ admin.site.register(
         "date",
         "period_end",
         "total"
-    ],
-    inlines=[
+    ]
+    inlines = [
         InvoiceItemInline
     ]
-)
 
-admin.site.register(
-    Plan,
-    raw_id_fields=["stripe_account"],
-    list_display=[
+
+class PlanAdmin(ModelAdmin):
+    raw_id_fields = ["stripe_account"]
+    list_display = [
         "stripe_id",
         "name",
         "amount",
@@ -342,33 +357,20 @@ admin.site.register(
         "interval_count",
         "trial_period_days",
         "stripe_account",
-    ],
-    search_fields=[
+    ]
+    search_fields = [
         "stripe_id",
         "name",
         "=stripe_account__stripe_id",
-    ] + customer_search_fields(),
-    list_filter=[
+    ] + customer_search_fields()
+    list_filter = [
         "currency",
         AccountListFilter,
-    ],
-    readonly_fields=[
-        "stripe_id",
-        "name",
-        "amount",
-        "currency",
-        "interval",
-        "interval_count",
-        "trial_period_days",
-        "statement_descriptor",
-        "created_at",
-    ],
-)
+    ]
 
 
-admin.site.register(
-    Coupon,
-    list_display=[
+class CouponAdmin(ModelAdmin):
+    list_display = [
         "stripe_id",
         "amount_off",
         "currency",
@@ -377,29 +379,14 @@ admin.site.register(
         "duration_in_months",
         "redeem_by",
         "valid"
-    ],
-    search_fields=[
+    ]
+    search_fields = [
         "stripe_id",
-    ],
-    list_filter=[
+    ]
+    list_filter = [
         "currency",
         "valid",
-    ],
-    readonly_fields=[
-        "stripe_id",
-        "amount_off",
-        "currency",
-        "duration",
-        "duration_in_months",
-        "max_redemptions",
-        "metadata",
-        "percent_off",
-        "redeem_by",
-        "times_redeemed",
-        "valid",
-        "created_at"
-    ],
-)
+    ]
 
 
 class TransferChargeFeeInline(admin.TabularInline):
@@ -408,29 +395,28 @@ class TransferChargeFeeInline(admin.TabularInline):
     max_num = 0
 
 
-admin.site.register(
-    Transfer,
-    raw_id_fields=["event", "stripe_account"],
-    list_display=[
+class TransferAdmin(ModelAdmin):
+    Transfer
+    raw_id_fields = ["event", "stripe_account"]
+    list_display = [
         "stripe_id",
         "amount",
         "status",
         "date",
         "description",
         "stripe_account",
-    ],
-    search_fields=[
+    ]
+    search_fields = [
         "stripe_id",
         "event__stripe_id",
         "=stripe_account__stripe_id",
-    ],
-    inlines=[
+    ]
+    inlines = [
         TransferChargeFeeInline
-    ],
-    list_filter=[
+    ]
+    list_filter = [
         AccountListFilter,
-    ],
-)
+    ]
 
 
 class AccountAdmin(ModelAdmin):
@@ -450,10 +436,9 @@ class AccountAdmin(ModelAdmin):
     ],
 
 
-admin.site.register(
-    BankAccount,
-    raw_id_fields=["account"],
-    list_display=[
+class BankAccountAdmin(ModelAdmin):
+    raw_id_fields = ["account"]
+    list_display = [
         "stripe_id",
         "account",
         "account_holder_type",
@@ -463,23 +448,28 @@ admin.site.register(
         "bank_name",
         "country",
         "last4"
-    ],
-    search_fields=[
+    ]
+    search_fields = [
         "stripe_id",
     ]
-)
 
-admin.site.register(
-    UserAccount,
-    raw_id_fields=["user", "customer"],
-    list_display=["user", "customer"],
-    search_fields=[
+
+class UserAccountAdmin(ModelAdmin):
+    raw_id_fields = ["user", "customer"]
+    list_display = ["user", "customer"]
+    search_fields = [
         "=customer__stripe_id",
         "=user__email",
     ]
-)
 
 
 admin.site.register(Account, AccountAdmin)
+admin.site.register(BankAccount, BankAccountAdmin)
 admin.site.register(Charge, ChargeAdmin)
+admin.site.register(Coupon, CouponAdmin)
+admin.site.register(Event, EventAdmin)
+admin.site.register(EventProcessingException, EventProcessingExceptionAdmin)
+admin.site.register(Invoice, InvoiceAdmin)
 admin.site.register(Customer, CustomerAdmin)
+admin.site.register(Plan, PlanAdmin)
+admin.site.register(UserAccount, UserAccountAdmin)

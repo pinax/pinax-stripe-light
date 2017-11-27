@@ -73,7 +73,7 @@ class AdminTestCase(TestCase):
             start=start,
             quantity=1
         )
-        customer = Customer.objects.create(
+        cls.customer = Customer.objects.create(
             user=User.objects.create_user(username="patrick{0}".format(12)),
             stripe_id="cus_xxxxxxxxxxxxxx{0}".format(12)
         )
@@ -107,6 +107,14 @@ class AdminTestCase(TestCase):
         except AttributeError:
             # Django 1.8
             self.client.login(username="admin", password="admin")
+
+    def test_readonly_change_form(self):
+        url = reverse("admin:pinax_stripe_customer_change", args=(self.customer.pk,))
+        response = self.client.get(url)
+        self.assertNotContains(response, "submit-row")
+
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 403)
 
     def test_customer_admin(self):
         """Make sure we get good responses for all filter options"""

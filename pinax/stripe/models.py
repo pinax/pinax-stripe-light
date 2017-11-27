@@ -10,7 +10,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
 import stripe
-from jsonfield.fields import JSONField
+from django.contrib.postgres.fields import JSONField
 
 from .conf import settings
 from .managers import ChargeManager, CustomerManager

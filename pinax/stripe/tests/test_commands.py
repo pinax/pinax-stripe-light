@@ -1,14 +1,13 @@
 import decimal
 
+from django.contrib.auth import get_user_model
 from django.core import management
 from django.test import TestCase
 
-from django.contrib.auth import get_user_model
+from mock import patch
 from stripe.error import InvalidRequestError
 
-from mock import patch
-
-from ..models import Customer, Plan, Coupon
+from ..models import Coupon, Customer, Plan
 
 
 class CommandTests(TestCase):
@@ -154,6 +153,24 @@ class CommandTests(TestCase):
     @patch("pinax.stripe.actions.customers.sync_customer")
     @patch("pinax.stripe.actions.invoices.sync_invoices_for_customer")
     @patch("pinax.stripe.actions.charges.sync_charges_for_customer")
+    def test_sync_customers_with_test_customer_unknown_error(self, SyncChargesMock, SyncInvoicesMock, SyncMock, RetrieveMock):
+        user2 = get_user_model().objects.create_user(username="thomas")
+        get_user_model().objects.create_user(username="altman")
+        Customer.objects.create(stripe_id="cus_XXXXX", user=self.user)
+        Customer.objects.create(stripe_id="cus_YYYYY", user=user2)
+
+        SyncMock.side_effect = InvalidRequestError("Unknown error", None, http_status=500)
+
+        with self.assertRaises(InvalidRequestError):
+            management.call_command("sync_customers")
+        self.assertEqual(SyncChargesMock.call_count, 0)
+        self.assertEqual(SyncInvoicesMock.call_count, 0)
+        self.assertEqual(SyncMock.call_count, 1)
+
+    @patch("stripe.Customer.retrieve")
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    @patch("pinax.stripe.actions.invoices.sync_invoices_for_customer")
+    @patch("pinax.stripe.actions.charges.sync_charges_for_customer")
     def test_sync_customers_with_unicode_username(self, SyncChargesMock, SyncInvoicesMock, SyncMock, RetrieveMock):
         user2 = get_user_model().objects.create_user(username=u"tom\xe1s")
         Customer.objects.create(stripe_id="cus_YYYYY", user=user2)
@@ -180,3 +197,8 @@ class CommandTests(TestCase):
         self.assertIsNotNone(Customer.objects.get(stripe_id=customer.stripe_id).date_purged)
         self.assertEqual(SyncChargesMock.call_count, 0)
         self.assertEqual(SyncInvoicesMock.call_count, 0)
+
+    @patch("pinax.stripe.actions.charges.update_charge_availability")
+    def test_update_charge_availability(self, UpdateChargeMock):
+        management.call_command("update_charge_availability")
+        self.assertEqual(UpdateChargeMock.call_count, 1)

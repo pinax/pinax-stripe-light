@@ -1,15 +1,17 @@
 import datetime
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.db import connection
+from django.test import Client, SimpleTestCase, TestCase
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
+
+from ..models import Account, Customer, Invoice, Plan, Subscription
 
 try:
     from django.urls import reverse
 except ImportError:
     from django.core.urlresolvers import reverse
-
-from ..models import Customer, Invoice, Plan, Subscription
 
 
 User = get_user_model()
@@ -93,14 +95,13 @@ class AdminTestCase(TestCase):
         )
         User.objects.create_superuser(
             username="admin", email="admin@test.com", password="admin")
+        self.account = Account.objects.create(stripe_id="acc_abcd")
         self.client = Client()
         self.client.login(username="admin", password="admin")
 
     def test_customer_admin(self):
         """Make sure we get good responses for all filter options"""
         url = reverse("admin:pinax_stripe_customer_changelist")
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
 
         response = self.client.get(url + "?sub_status=active")
         self.assertEqual(response.status_code, 200)
@@ -117,12 +118,30 @@ class AdminTestCase(TestCase):
         response = self.client.get(url + "?has_card=no")
         self.assertEqual(response.status_code, 200)
 
+    def test_customer_admin_prefetch(self):
+        url = reverse("admin:pinax_stripe_customer_changelist")
+
+        with CaptureQueriesContext(connection) as captured:
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+
+        Customer.objects.create(
+            user=User.objects.create_user(username="patrick{0}".format(13)),
+            stripe_id="cus_xxxxxxxxxxxxxx{0}".format(13)
+        )
+        with self.assertNumQueries(len(captured)):
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+
     def test_invoice_admin(self):
         url = reverse("admin:pinax_stripe_invoice_changelist")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
         response = self.client.get(url + "?has_card=no")
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get(url + "?has_card=yes")
         self.assertEqual(response.status_code, 200)
 
     def test_plan_admin(self):
@@ -134,3 +153,24 @@ class AdminTestCase(TestCase):
         url = reverse("admin:pinax_stripe_charge_changelist")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+
+    def test_account_filter(self):
+        url = reverse("admin:pinax_stripe_customer_changelist")
+        response = self.client.get(url + "?stripe_account={}".format(self.account.pk))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(url + "?stripe_account=none")
+        self.assertEqual(response.status_code, 200)
+
+
+class AdminSimpleTestCase(SimpleTestCase):
+
+    def test_customer_user_without_user(self):
+        from ..admin import customer_user
+
+        class CustomerWithoutUser(object):
+            user = None
+
+        class Obj(object):
+            customer = CustomerWithoutUser()
+
+        self.assertEqual(customer_user(Obj()), "")

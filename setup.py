@@ -17,8 +17,8 @@ Pinax Stripe
 .. image:: https://img.shields.io/travis/pinax/pinax-stripe.svg
     :target: https://travis-ci.org/pinax/pinax-stripe
 
-.. image:: https://img.shields.io/coveralls/pinax/pinax-stripe.svg
-    :target: https://coveralls.io/r/pinax/pinax-stripe
+.. image:: https://img.shields.io/codecov/c/github/pinax/pinax-stripe.svg
+    :target: https://codecov.io/gh/pinax/pinax-stripe
 
 .. image:: https://img.shields.io/pypi/dm/pinax-stripe.svg
     :target:  https://pypi.python.org/pypi/pinax-stripe/
@@ -53,13 +53,17 @@ This app allows you to process one off charges as well as signup users for
 recurring subscriptions managed by Stripe.
 """
 
+tests_require = [
+    "mock",
+]
+
 setup(
     name=NAME,
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
-    version="3.4.1",
+    version="4.0.0",
     license="MIT",
     url=URL,
     packages=find_packages(),
@@ -85,14 +89,15 @@ setup(
         "django-appconf>=1.0.1",
         "jsonfield>=1.0.3,<2.0.0",
         "stripe>=1.7.9",
-        "django>=1.7",
+        "django>=1.8",
         "pytz",
         "six",
+        "django-ipware==1.1.6"
     ],
+    extras_require={
+        "pytest": ["pytest", "pytest-django"] + tests_require,
+    },
     test_suite="runtests.runtests",
-    tests_require=[
-        "mock",
-        "django_forms_bootstrap",
-    ],
+    tests_require=tests_require,
     zip_safe=False,
 )

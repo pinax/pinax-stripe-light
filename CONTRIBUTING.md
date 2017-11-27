@@ -93,14 +93,12 @@ Here is an example of these rules applied:
     # non-from imports go first then from style import in their own group
     import csv
 
-    # second set of imports are Django imports with contrib in their own
-    # group.
-    from django.urls import reverse
+    # second set of imports are Django imports
+    from django.contrib.auth.models import User
     from django.db import models
+    from django.urls import reverse
     from django.utils import timezone
     from django.utils.translation import ugettext_lazy as _
-
-    from django.contrib.auth.models import User
 
     # third set of imports are external apps (if applicable)
     from tagging.fields import TagField

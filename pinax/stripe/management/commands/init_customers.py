@@ -1,13 +1,12 @@
-from django.core.management.base import BaseCommand
-
 from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
 
 from ...actions import customers
 
 
 class Command(BaseCommand):
 
-    help = "Create customer objects for existing users that don't have one"
+    help = "Create customer objects for existing users that do not have one"
 
     def handle(self, *args, **options):
         User = get_user_model()

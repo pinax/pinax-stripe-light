@@ -4,17 +4,23 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.utils.encoding import smart_str
-from django.views.generic import TemplateView, DetailView, View, FormView, ListView
-from django.views.generic.edit import FormMixin
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import (
+    DetailView,
+    FormView,
+    ListView,
+    TemplateView,
+    View
+)
+from django.views.generic.edit import FormMixin
 
 import stripe
 
-from .actions import events, exceptions, customers, subscriptions, sources
+from .actions import customers, events, exceptions, sources, subscriptions
 from .conf import settings
-from .forms import PlanForm, PaymentMethodForm
-from .mixins import LoginRequiredMixin, CustomerMixin, PaymentsContextMixin
-from .models import Invoice, Card, Subscription
+from .forms import PaymentMethodForm, PlanForm
+from .mixins import CustomerMixin, LoginRequiredMixin, PaymentsContextMixin
+from .models import Card, Event, Invoice, Subscription
 
 
 class InvoiceListView(LoginRequiredMixin, CustomerMixin, ListView):
@@ -189,19 +195,18 @@ class Webhook(View):
     def dispatch(self, *args, **kwargs):
         return super(Webhook, self).dispatch(*args, **kwargs)
 
-    def extract_json(self):
-        data = json.loads(smart_str(self.request.body))
-        return data
-
     def post(self, request, *args, **kwargs):
-        data = self.extract_json()
-        if events.dupe_event_exists(data["id"]):
-            exceptions.log_exception(data, "Duplicate event record")
+        body = smart_str(self.request.body)
+        data = json.loads(body)
+        event = Event.objects.filter(stripe_id=data["id"]).first()
+        if event:
+            exceptions.log_exception(body, "Duplicate event record", event=event)
         else:
             events.add_event(
                 stripe_id=data["id"],
                 kind=data["type"],
                 livemode=data["livemode"],
+                api_version=data["api_version"],
                 message=data
             )
         return HttpResponse()

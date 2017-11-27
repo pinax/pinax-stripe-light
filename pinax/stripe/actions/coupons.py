@@ -1,12 +1,11 @@
 import stripe
 
-from .. import utils
-from .. import models
+from .. import models, utils
 
 
 def sync_coupons():
     """
-    Syncronizes all coupons from the Stripe API
+    Synchronizes all coupons from the Stripe API
     """
     try:
         coupons = stripe.Coupon.auto_paging_iter()

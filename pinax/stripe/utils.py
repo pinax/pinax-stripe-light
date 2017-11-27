@@ -3,8 +3,8 @@ from __future__ import unicode_literals
 import datetime
 import decimal
 
-from django.utils import timezone
 from django.conf import settings
+from django.utils import timezone
 
 
 def convert_tstamp(response, field_name=None):
@@ -62,3 +62,7 @@ CURRENCY_SYMBOLS = {
     "sgd": "\u0024",
     "usd": "\u0024",
 }
+
+
+def obfuscate_secret_key(secret_key):
+    return "*" * 20 + secret_key[-4:]

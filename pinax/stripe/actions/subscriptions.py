@@ -2,13 +2,10 @@ import datetime
 
 from django.db.models import Q
 from django.utils import timezone
-from django.utils.encoding import smart_str
 
 import stripe
 
-from .. import hooks
-from .. import models
-from .. import utils
+from .. import hooks, models, utils
 
 
 def cancel(subscription, at_period_end=True):
@@ -17,10 +14,15 @@ def cancel(subscription, at_period_end=True):
 
     Args:
         subscription: the subscription to cancel
-        at_period_end: True, to cancel at the end, otherwise immediately cancel
+        at_period_end: True to cancel at the end of the period, otherwise cancels immediately
     """
-    sub = subscription.stripe_subscription.delete(at_period_end=at_period_end)
-    sync_subscription_from_stripe_data(subscription.customer, sub)
+    sub = stripe.Subscription(
+        subscription.stripe_id,
+        stripe_account=subscription.stripe_account_stripe_id,
+    ).delete(
+        at_period_end=at_period_end,
+    )
+    return sync_subscription_from_stripe_data(subscription.customer, sub)
 
 
 def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=None, tax_percent=None):
@@ -40,10 +42,9 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
         tax_percent: if provided, add percentage as tax
 
     Returns:
-        the data representing the subscription object that was created
+        the pinax.stripe.models.Subscription object (created or updated)
     """
     quantity = hooks.hookset.adjust_subscription_quantity(customer=customer, plan=plan, quantity=quantity)
-    cu = customer.stripe_customer
 
     subscription_params = {}
     if trial_days:
@@ -51,11 +52,13 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
     if token:
         subscription_params["source"] = token
 
+    subscription_params["stripe_account"] = customer.stripe_account_stripe_id
+    subscription_params["customer"] = customer.stripe_id
     subscription_params["plan"] = plan
     subscription_params["quantity"] = quantity
     subscription_params["coupon"] = coupon
     subscription_params["tax_percent"] = tax_percent
-    resp = cu.subscriptions.create(**subscription_params)
+    resp = stripe.Subscription.create(**subscription_params)
 
     return sync_subscription_from_stripe_data(customer, resp)
 
@@ -94,7 +97,7 @@ def is_status_current(subscription):
     Args:
         subscription: a pinax.stripe.models.Subscription object to test
     """
-    return subscription.status in ["trialing", "active"]
+    return subscription.status in subscription.STATUS_CURRENT
 
 
 def is_valid(subscription):
@@ -117,12 +120,9 @@ def retrieve(customer, sub_id):
     """
     Retrieve a subscription object from Stripe's API
 
-    Stripe throws an exception if a subscription has been deleted that we are
-    attempting to sync. In this case we want to just silently ignore that
-    exception but pass on any other.
-
     Args:
-        customer: the customer who's subscription you are trying to retrieve
+        customer: a legacy argument, we check that the given
+            subscription belongs to the given customer
         sub_id: the Stripe ID of the subscription you are fetching
 
     Returns:
@@ -130,23 +130,22 @@ def retrieve(customer, sub_id):
     """
     if not sub_id:
         return
-    try:
-        return customer.stripe_customer.subscriptions.retrieve(sub_id)
-    except stripe.InvalidRequestError as e:
-        if smart_str(e).find("does not have a subscription with ID") == -1:
-            raise
+    subscription = stripe.Subscription.retrieve(sub_id, stripe_account=customer.stripe_account_stripe_id)
+    if subscription and subscription.customer != customer.stripe_id:
+        return
+    return subscription
 
 
 def sync_subscription_from_stripe_data(customer, subscription):
     """
-    Syncronizes data from the Stripe API for a subscription
+    Synchronizes data from the Stripe API for a subscription
 
     Args:
         customer: the customer who's subscription you are syncronizing
         subscription: data from the Stripe API representing a subscription
 
     Returns:
-        the pinax.stripe.models.Subscription object created or updated
+        the pinax.stripe.models.Subscription object (created or updated)
     """
     defaults = dict(
         customer=customer,
@@ -179,7 +178,7 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
     Args:
         subscription: the subscription to update
         plan: optionally, the plan to change the subscription to
-        quantity: optionally, the quantiy of the subscription to change
+        quantity: optionally, the quantity of the subscription to change
         prorate: optionally, if the subscription should be prorated or not
         coupon: optionally, a coupon to apply to the subscription
         charge_immediately: optionally, whether or not to charge immediately
@@ -198,4 +197,4 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
             stripe_subscription.trial_end = "now"
     sub = stripe_subscription.save()
     customer = models.Customer.objects.get(pk=subscription.customer.pk)
-    sync_subscription_from_stripe_data(customer, sub)
+    return sync_subscription_from_stripe_data(customer, sub)

@@ -1,12 +1,10 @@
 import decimal
+
 import stripe
 
-from . import charges
-from . import subscriptions
+from . import charges, subscriptions
+from .. import hooks, models, utils
 from ..conf import settings
-from .. import hooks
-from .. import models
-from .. import utils
 
 
 def create(customer):
@@ -67,7 +65,7 @@ def pay(invoice, send_receipt=True):
 
 def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
     """
-    Syncronizes a local invoice with data from the Stripe API
+    Synchronizes a local invoice with data from the Stripe API
 
     Args:
         stripe_invoice: data that represents the invoice from the Stripe API
@@ -81,9 +79,10 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
     period_start = utils.convert_tstamp(stripe_invoice, "period_start")
     date = utils.convert_tstamp(stripe_invoice, "date")
     sub_id = stripe_invoice.get("subscription")
+    stripe_account_id = c.stripe_account_stripe_id
 
     if stripe_invoice.get("charge"):
-        charge = charges.sync_charge_from_stripe_data(stripe.Charge.retrieve(stripe_invoice["charge"]))
+        charge = charges.sync_charge(stripe_invoice["charge"], stripe_account=stripe_account_id)
         if send_receipt:
             hooks.hookset.send_receipt(charge)
     else:
@@ -127,10 +126,10 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
 
 def sync_invoices_for_customer(customer):
     """
-    Syncronizes all invoices for a customer
+    Synchronizes all invoices for a customer
 
     Args:
-        customer: the customer for whom to syncronize all invoices
+        customer: the customer for whom to synchronize all invoices
     """
     for invoice in customer.stripe_customer.invoices().data:
         sync_invoice_from_stripe_data(invoice, send_receipt=False)
@@ -138,7 +137,7 @@ def sync_invoices_for_customer(customer):
 
 def sync_invoice_items(invoice, items):
     """
-    Syncronizes all invoice line items for a particular invoice
+    Synchronizes all invoice line items for a particular invoice
 
     This assumes line items from a Stripe invoice.lines property and not through
     the invoicesitems resource calls. At least according to the documentation
@@ -148,7 +147,7 @@ def sync_invoice_items(invoice, items):
     field on the object.
 
     Args:
-        invoice_: the invoice objects to syncronize
+        invoice_: the invoice objects to synchronize
         items: the data from the Stripe API representing the line items
     """
     for item in items:

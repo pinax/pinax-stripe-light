@@ -29,7 +29,7 @@ class PinaxStripeAppConf(AppConf):
 
     PUBLIC_KEY = None
     SECRET_KEY = None
-    API_VERSION = "2015-10-16"
+    API_VERSION = "2017-01-27"
     INVOICE_FROM_EMAIL = "billing@example.com"
     DEFAULT_PLAN = None
     HOOKSET = "pinax.stripe.hooks.DefaultHookSet"

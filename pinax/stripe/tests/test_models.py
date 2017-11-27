@@ -183,7 +183,7 @@ class ModelTests(TestCase):
     def test_discount_repr(self):
         c = Coupon()
         d = Discount(coupon=c)
-        self.assertEquals(repr(d), "Discount(coupon=Coupon(pk=None, valid=False, amount_off=None, percent_off=None, currency='usd', duration='once', livemode=False, max_redemptions=None, times_redeemed=None, stripe_id=''), subscription=None)")
+        self.assertEquals(repr(d), "Discount(pk=None, coupon=Coupon(pk=None, valid=False, amount_off=None, percent_off=None, currency='usd', duration='once', livemode=False, max_redemptions=None, times_redeemed=None, stripe_id=''), subscription=None)")
 
     def test_discount_apply_discount(self):
         c = Coupon(duration="once", currency="usd")

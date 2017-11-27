@@ -387,7 +387,11 @@ class Discount(models.Model):
         return "{} - {}".format(self.coupon, self.subscription)
 
     def __repr__(self):
-        return "Discount(coupon={!r}, subscription={!r})".format(self.coupon, self.subscription)
+        return "Discount(pk={!r}, coupon={!r}, subscription={!r})".format(
+            self.pk,
+            self.coupon,
+            self.subscription,
+        )
 
     def apply_discount(self, amount):
         if self.end is not None and self.end < timezone.now():

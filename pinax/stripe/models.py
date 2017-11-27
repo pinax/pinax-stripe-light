@@ -88,13 +88,13 @@ class Plan(UniquePerAccountStripeObject):
     def __repr__(self):
         return "Plan(pk={!r}, name={!r}, amount={!r}, currency={!r}, interval={!r}, interval_count={!r}, trial_period_days={!r}, stripe_id={!r})".format(
             self.pk,
-            str(self.name),
+            self.name,
             self.amount,
-            str(self.currency),
-            str(self.interval),
+            self.currency,
+            self.interval,
             self.interval_count,
             self.trial_period_days,
-            str(self.stripe_id),
+            self.stripe_id,
         )
 
     @property
@@ -192,11 +192,11 @@ class Event(AccountRelatedStripeObject):
     def __repr__(self):
         return "Event(pk={!r}, kind={!r}, customer={!r}, valid={!r}, created_at={!s}, stripe_id={!r})".format(
             self.pk,
-            str(self.kind),
+            self.kind,
             self.customer,
             self.valid,
             self.created_at.replace(microsecond=0).isoformat(),
-            str(self.stripe_id),
+            self.stripe_id,
         )
 
 
@@ -313,15 +313,15 @@ class Customer(AccountRelatedStripeObject):
             return "Customer(pk={!r}, user={!r}, stripe_id={!r})".format(
                 self.pk,
                 self.user,
-                str(self.stripe_id),
+                self.stripe_id,
             )
         elif self.id:
             return "Customer(pk={!r}, users={!r}, stripe_id={!r})".format(
                 self.pk,
                 list(self.users.all()),
-                str(self.stripe_id),
+                self.stripe_id,
             )
-        return "Customer(pk={!r}, stripe_id={!r})".format(self.pk, str(self.stripe_id))
+        return "Customer(pk={!r}, stripe_id={!r})".format(self.pk, self.stripe_id)
 
 
 class Card(StripeObject):
@@ -450,8 +450,8 @@ class Subscription(StripeAccountFromCustomerMixin, StripeObject):
             self.pk,
             getattr(self, "customer", None),
             getattr(self, "plan", None),
-            str(self.status),
-            str(self.stripe_id),
+            self.status,
+            self.stripe_id,
         )
 
 
@@ -545,11 +545,11 @@ class Charge(StripeAccountFromCustomerMixin, StripeObject):
     def __repr__(self):
         return "Charge(customer={!r}, source={!r}, amount={!r}, captured={!r}, paid={!r}, stripe_id={!r})".format(
             self.customer,
-            str(self.source),
+            self.source,
             self.amount,
             self.captured,
             self.paid,
-            str(self.stripe_id),
+            self.stripe_id,
         )
 
     @property
@@ -595,7 +595,7 @@ class Account(StripeObject):
     legal_entity_address_line2 = models.TextField(null=True, blank=True)
     legal_entity_address_postal_code = models.TextField(null=True, blank=True)
     legal_entity_address_state = models.TextField(null=True, blank=True)
-    legal_entity_dob = models.DateField(null=True)
+    legal_entity_dob = models.DateField(null=True, blank=True)
     legal_entity_first_name = models.TextField(null=True, blank=True)
     legal_entity_gender = models.TextField(null=True, blank=True)
     legal_entity_last_name = models.TextField(null=True, blank=True)
@@ -648,12 +648,12 @@ class Account(StripeObject):
         return "{} - {}".format(self.display_name, self.stripe_id)
 
     def __repr__(self):
-        return "Account(pk={!r}, display_name={!r}, type={!r}, stripe_id={!r}, authorized={!r})".format(
+        return "Account(pk={!r}, display_name={!r}, type={!r}, authorized={!r}, stripe_id={!r})".format(
             self.pk,
-            str(self.display_name),
+            self.display_name,
             self.type,
-            str(self.stripe_id),
             self.authorized,
+            self.stripe_id,
         )
 
 

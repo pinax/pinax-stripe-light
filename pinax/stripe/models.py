@@ -543,7 +543,8 @@ class Charge(StripeAccountFromCustomerMixin, StripeObject):
     objects = ChargeManager()
 
     def __repr__(self):
-        return "Charge(customer={!r}, source={!r}, amount={!r}, captured={!r}, paid={!r}, stripe_id={!r})".format(
+        return "Charge(pk={!r}, customer={!r}, source={!r}, amount={!r}, captured={!r}, paid={!r}, stripe_id={!r})".format(
+            self.pk,
             self.customer,
             self.source,
             self.amount,

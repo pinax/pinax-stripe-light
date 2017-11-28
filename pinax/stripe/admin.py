@@ -149,6 +149,7 @@ class ChargeAdmin(ModelAdmin):
         "disputed",
         "refunded",
         "receipt_sent",
+        "display_outcome",
         "created_at",
     ]
     list_select_related = [
@@ -169,6 +170,12 @@ class ChargeAdmin(ModelAdmin):
         "customer",
         "invoice",
     ]
+
+    def display_outcome(self, obj):
+        return "{} / {}".format(
+            obj.outcome.get("type", "-"),
+            obj.outcome.get("risk_level", "-")) if obj.outcome else None
+    display_outcome.short_description = "Outcome"
 
     def get_queryset(self, request):
         qs = super(ChargeAdmin, self).get_queryset(request)

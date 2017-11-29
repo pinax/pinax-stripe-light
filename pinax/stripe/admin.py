@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.auth import get_user_model
 from django.db.models import Count
+from django.utils.encoding import force_text
+from django.utils.translation import ugettext as _
 
 from .models import (
     Account,
@@ -138,10 +140,20 @@ class ModelAdmin(admin.ModelAdmin):
     def has_add_permission(self, request, obj=None):
         return False
 
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        """Adjust change_view title ("View" instead of "Change")."""
+        opts = self.model._meta
+
+        extra_context = extra_context or {}
+        extra_context["title"] = _("View %s" % force_text(opts.verbose_name))
+        return super(ModelAdmin, self).change_view(
+            request, object_id, form_url, extra_context=extra_context,
+        )
+
     def has_change_permission(self, request, obj=None):
-        if obj is None:
-            return True
-        return False
+        if request.method == "POST":
+            return False
+        return True
 
     def get_changelist(self, request, **kwargs):
         return PrefetchingChangeList

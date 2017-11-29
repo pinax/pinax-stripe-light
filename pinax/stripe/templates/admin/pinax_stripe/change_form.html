@@ -1,0 +1,5 @@
+{# Custom template to remove submit_row (readonly, POST is forbidden) #}
+{% extends "admin/change_form.html" %}
+
+{% block submit_buttons_top %}{% endblock %}
+{% block submit_buttons_bottom %}{% endblock %}

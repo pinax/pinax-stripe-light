@@ -158,59 +158,59 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - py27dj18
+      - py27dj18:
           filters:
             tags:
               only: /.*/
-      - py27dj110
+      - py27dj110:
           filters:
             tags:
               only: /.*/
-      - py27dj111
+      - py27dj111:
           filters:
             tags:
               only: /.*/
-      - py34dj18
+      - py34dj18:
           filters:
             tags:
               only: /.*/
-      - py34dj110
+      - py34dj110:
           filters:
             tags:
               only: /.*/
-      - py34dj111
+      - py34dj111:
           filters:
             tags:
               only: /.*/
-      - py34dj20
+      - py34dj20:
           filters:
             tags:
               only: /.*/
-      - py35dj18
+      - py35dj18:
           filters:
             tags:
               only: /.*/
-      - py35dj110
+      - py35dj110:
           filters:
             tags:
               only: /.*/
-      - py35dj111
+      - py35dj111:
           filters:
             tags:
               only: /.*/
-      - py35dj20
+      - py35dj20:
           filters:
             tags:
               only: /.*/
-      - py36dj111
+      - py36dj111:
           filters:
             tags:
               only: /.*/
-      - py36dj20
+      - py36dj20:
           filters:
             tags:
               only: /.*/
-      - py36dj20psql
+      - py36dj20psql:
           filters:
             tags:
               only: /.*/

@@ -203,6 +203,7 @@ def sync_charge_from_stripe_data(data):
         )
         obj.fee_currency = balance_transaction["currency"]
     obj.transfer_group = data.get("transfer_group")
+    obj.outcome = data.get("outcome")
     obj.save()
     return obj
 

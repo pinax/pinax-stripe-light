@@ -484,6 +484,7 @@ class Charge(StripeAccountFromCustomerMixin, StripeObject):
     fee_currency = models.CharField(max_length=10, null=True, blank=True)
 
     transfer_group = models.TextField(null=True, blank=True)
+    outcome = JSONField(null=True, blank=True)
 
     objects = ChargeManager()
 

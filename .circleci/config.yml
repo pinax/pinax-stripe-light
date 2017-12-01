@@ -132,8 +132,8 @@ workflows:
   version: 2
   test:
     jobs:
-      - lint
-        - context: org-global
+      - lint:
+          context: org-global
       - py27dj18
       - py27dj110
       - py27dj111

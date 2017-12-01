@@ -137,9 +137,9 @@ class ModelTests(TestCase):
     def test_charge_repr(self):
         charge = Charge()
         if PY2:
-            self.assertEquals(repr(charge), "Charge(customer=None, source=u'', amount=None, captured=None, paid=None, stripe_id=u'')")
+            self.assertEquals(repr(charge), "Charge(pk=None, customer=None, source=u'', amount=None, captured=None, paid=None, stripe_id=u'')")
         else:
-            self.assertEquals(repr(charge), "Charge(customer=None, source='', amount=None, captured=None, paid=None, stripe_id='')")
+            self.assertEquals(repr(charge), "Charge(pk=None, customer=None, source='', amount=None, captured=None, paid=None, stripe_id='')")
 
     def test_plan_display_invoiceitem(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)

@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pinax_stripe', '0010_connect'),
+        ('pinax_stripe', '0011_auto_20171121_1648'),
     ]
 
     operations = [

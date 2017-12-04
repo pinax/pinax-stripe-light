@@ -171,16 +171,22 @@ def link_customer(event):
         "customer.updated",
         "customer.deleted"
     ]
+    event_data_object = event.message["data"]["object"]
     if event.kind in customer_crud_events:
-        cus_id = event.message["data"]["object"]["id"]
+        cus_id = event_data_object["id"]
     else:
-        cus_id = event.message["data"]["object"].get("customer", None)
+        cus_id = event_data_object.get("customer", None)
 
     if cus_id is not None:
-        customer = models.Customer.objects.filter(stripe_id=cus_id).first()
-        if customer is not None:
-            event.customer = customer
-            event.save()
+        customer, created = models.Customer.objects.get_or_create(
+            stripe_id=cus_id,
+            stripe_account=event.stripe_account,
+        )
+        if event.kind in customer_crud_events:
+            sync_customer(customer, event_data_object)
+
+        event.customer = customer
+        event.save()
 
 
 def set_default_source(customer, source):

@@ -530,12 +530,14 @@ class CustomersTests(TestCase):
         customer = Customer()
         self.assertFalse(customers.can_charge(customer))
 
-    def test_link_customer(self):
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    def test_link_customer(self, SyncMock):
         Customer.objects.create(stripe_id="cu_123")
         message = dict(data=dict(object=dict(id="cu_123")))
         event = Event.objects.create(validated_message=message, kind="customer.created")
         customers.link_customer(event)
         self.assertEquals(event.customer.stripe_id, "cu_123")
+        self.assertTrue(SyncMock.called)
 
     def test_link_customer_non_customer_event(self):
         Customer.objects.create(stripe_id="cu_123")
@@ -544,18 +546,29 @@ class CustomersTests(TestCase):
         customers.link_customer(event)
         self.assertEquals(event.customer.stripe_id, "cu_123")
 
-    def test_link_customer_no_customer(self):
+    def test_link_customer_non_customer_event_no_customer(self):
         Customer.objects.create(stripe_id="cu_123")
         message = dict(data=dict(object=dict()))
         event = Event.objects.create(validated_message=message, kind="transfer.created")
         customers.link_customer(event)
         self.assertIsNone(event.customer, "cu_123")
 
-    def test_link_customer_does_not_exist(self):
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    def test_link_customer_does_not_exist(self, SyncMock):
         message = dict(data=dict(object=dict(id="cu_123")))
-        event = Event.objects.create(validated_message=message, kind="customer.created")
+        event = Event.objects.create(stripe_id="evt_1", validated_message=message, kind="customer.created")
         customers.link_customer(event)
-        self.assertIsNone(event.customer)
+        Customer.objects.get(stripe_id="cu_123")
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.customers.sync_customer")
+    def test_link_customer_does_not_exist_connected(self, SyncMock):
+        message = dict(data=dict(object=dict(id="cu_123")))
+        account = Account.objects.create(stripe_id="acc_XXX")
+        event = Event.objects.create(stripe_id="evt_1", validated_message=message, kind="customer.created", stripe_account=account)
+        customers.link_customer(event)
+        Customer.objects.get(stripe_id="cu_123", stripe_account=account)
+        self.assertTrue(SyncMock.called)
 
 
 class CustomersWithConnectTests(TestCase):

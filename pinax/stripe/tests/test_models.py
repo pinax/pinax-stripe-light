@@ -61,12 +61,6 @@ class ModelTests(TestCase):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", currency="jpy", interval="monthly", interval_count=1)
         self.assertTrue(u"\u00a5" in _str(p))
 
-    def test_plan_per_account(self):
-        Plan.objects.create(stripe_id="plan", amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
-        account = Account.objects.create(stripe_id="acct_A")
-        Plan.objects.create(stripe_id="plan", stripe_account=account, amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
-        self.assertEquals(Plan.objects.count(), 2)
-
     @patch("stripe.Plan.retrieve")
     def test_plan_stripe_plan(self, RetrieveMock):
         c = Plan(stripe_id="plan")
@@ -80,6 +74,12 @@ class ModelTests(TestCase):
         self.assertEqual(c.stripe_plan, RetrieveMock.return_value)
         self.assertTrue(RetrieveMock.call_args_list, [
             call("plan", stripe_account="acct_A")])
+
+    def test_plan_per_account(self):
+        Plan.objects.create(stripe_id="plan", amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
+        account = Account.objects.create(stripe_id="acct_A")
+        Plan.objects.create(stripe_id="plan", stripe_account=account, amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
+        self.assertEquals(Plan.objects.count(), 2)
 
     def test_event_processing_exception_str(self):
         e = EventProcessingException(data="hello", message="hi there", traceback="fake")

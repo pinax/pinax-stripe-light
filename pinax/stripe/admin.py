@@ -18,7 +18,8 @@ from .models import (  # @@@ make all these read-only
     Plan,
     Subscription,
     Transfer,
-    TransferChargeFee
+    TransferChargeFee,
+    UserAccount
 )
 
 
@@ -104,6 +105,21 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
         return queryset.all()
 
 
+class AccountListFilter(admin.SimpleListFilter):
+    title = "account"
+    parameter_name = "stripe_account"
+
+    def lookups(self, request, model_admin):
+        return [("none", "Without Account")] + [(a.pk, str(a)) for a in Account.objects.all()]
+
+    def queryset(self, request, queryset):
+        if self.value() == "none":
+            return queryset.filter(stripe_account__isnull=True)
+        if self.value():
+            return queryset.filter(stripe_account__pk=self.value())
+        return queryset
+
+
 class PrefetchingChangeList(ChangeList):
     """A custom changelist to prefetch related fields."""
     def get_queryset(self, request):
@@ -123,10 +139,8 @@ class ModelAdmin(admin.ModelAdmin):
         return PrefetchingChangeList
 
 
-admin.site.register(
-    Charge,
-    admin_class=ModelAdmin,
-    list_display=[
+class ChargeAdmin(ModelAdmin):
+    list_display = [
         "stripe_id",
         "customer",
         "amount",
@@ -135,24 +149,31 @@ admin.site.register(
         "disputed",
         "refunded",
         "receipt_sent",
-        "created_at"
-    ],
-    search_fields=[
+        "created_at",
+    ]
+    list_select_related = [
+        "customer",
+    ]
+    search_fields = [
         "stripe_id",
         "customer__stripe_id",
-        "invoice__stripe_id"
-    ] + customer_search_fields(),
-    list_filter=[
+        "invoice__stripe_id",
+    ] + customer_search_fields()
+    list_filter = [
         "paid",
         "disputed",
         "refunded",
-        "created_at"
-    ],
-    raw_id_fields=[
+        "created_at",
+    ]
+    raw_id_fields = [
         "customer",
-        "invoice"
-    ],
-)
+        "invoice",
+    ]
+
+    def get_queryset(self, request):
+        qs = super(ChargeAdmin, self).get_queryset(request)
+        return qs.prefetch_related("customer__user", "customer__users")
+
 
 admin.site.register(
     EventProcessingException,
@@ -173,25 +194,28 @@ admin.site.register(
 
 admin.site.register(
     Event,
-    raw_id_fields=["customer"],
+    raw_id_fields=["customer", "stripe_account"],
     list_display=[
         "stripe_id",
         "kind",
         "livemode",
         "valid",
         "processed",
-        "created_at"
+        "created_at",
+        "stripe_account",
     ],
     list_filter=[
         "kind",
         "created_at",
         "valid",
-        "processed"
+        "processed",
+        AccountListFilter,
     ],
     search_fields=[
         "stripe_id",
         "customer__stripe_id",
-        "validated_message"
+        "validated_message",
+        "=stripe_account__stripe_id",
     ] + customer_search_fields(),
 )
 
@@ -219,11 +243,9 @@ def subscription_status(obj):
 subscription_status.short_description = "Subscription Status"  # noqa
 
 
-admin.site.register(
-    Customer,
-    admin_class=ModelAdmin,
-    raw_id_fields=["user"],
-    list_display=[
+class CustomerAdmin(ModelAdmin):
+    raw_id_fields = ["user", "stripe_account"]
+    list_display = [
         "stripe_id",
         "user",
         "account_balance",
@@ -231,22 +253,23 @@ admin.site.register(
         "delinquent",
         "default_source",
         subscription_status,
-        "date_purged"
-    ],
-    list_filter=[
+        "date_purged",
+        "stripe_account",
+    ]
+    list_filter = [
         "delinquent",
         CustomerHasCardListFilter,
-        CustomerSubscriptionStatusListFilter
-    ],
-    search_fields=[
+        CustomerSubscriptionStatusListFilter,
+        AccountListFilter,
+    ]
+    search_fields = [
         "stripe_id",
-    ] + user_search_fields(),
-    inlines=[
+    ] + user_search_fields()
+    inlines = [
         SubscriptionInline,
         CardInline,
         BitcoinReceiverInline
     ]
-)
 
 
 class InvoiceItemInline(admin.TabularInline):
@@ -309,6 +332,7 @@ admin.site.register(
 
 admin.site.register(
     Plan,
+    raw_id_fields=["stripe_account"],
     list_display=[
         "stripe_id",
         "name",
@@ -317,13 +341,16 @@ admin.site.register(
         "interval",
         "interval_count",
         "trial_period_days",
+        "stripe_account",
     ],
     search_fields=[
         "stripe_id",
         "name",
-    ],
+        "=stripe_account__stripe_id",
+    ] + customer_search_fields(),
     list_filter=[
         "currency",
+        AccountListFilter,
     ],
     readonly_fields=[
         "stripe_id",
@@ -383,38 +410,45 @@ class TransferChargeFeeInline(admin.TabularInline):
 
 admin.site.register(
     Transfer,
-    raw_id_fields=["event"],
+    raw_id_fields=["event", "stripe_account"],
     list_display=[
         "stripe_id",
         "amount",
         "status",
         "date",
-        "description"
+        "description",
+        "stripe_account",
     ],
     search_fields=[
         "stripe_id",
-        "event__stripe_id"
+        "event__stripe_id",
+        "=stripe_account__stripe_id",
     ],
     inlines=[
         TransferChargeFeeInline
-    ]
+    ],
+    list_filter=[
+        AccountListFilter,
+    ],
 )
 
 
-admin.site.register(
-    Account,
-    raw_id_fields=["user"],
-    list_display=[
-        "stripe_id",
+class AccountAdmin(ModelAdmin):
+    raw_id_fields = ["user"]
+    list_display = [
+        "display_name",
         "type",
         "country",
-        "transfers_enabled",
-        "charges_enabled"
-    ],
-    search_fields=[
+        "payouts_enabled",
+        "charges_enabled",
         "stripe_id",
+        "created_at",
     ]
-)
+    search_fields = [
+        "display_name",
+        "stripe_id",
+    ],
+
 
 admin.site.register(
     BankAccount,
@@ -434,3 +468,18 @@ admin.site.register(
         "stripe_id",
     ]
 )
+
+admin.site.register(
+    UserAccount,
+    raw_id_fields=["user", "customer"],
+    list_display=["user", "customer"],
+    search_fields=[
+        "=customer__stripe_id",
+        "=user__email",
+    ]
+)
+
+
+admin.site.register(Account, AccountAdmin)
+admin.site.register(Charge, ChargeAdmin)
+admin.site.register(Customer, CustomerAdmin)

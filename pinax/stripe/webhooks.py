@@ -71,6 +71,8 @@ class Registerable(type):
 
 class Webhook(with_metaclass(Registerable, object)):
 
+    name = None
+
     def __init__(self, event):
         if event.kind != self.name:
             raise Exception("The Webhook handler ({}) received the wrong type of Event ({})".format(self.name, event.kind))
@@ -85,9 +87,8 @@ class Webhook(with_metaclass(Registerable, object)):
         For Connect accounts we must fetch the event using the `stripe_account`
         parameter.
         """
-        stripe_account_id = self.event.webhook_message.get("account")
-        if stripe_account_id:
-            self.stripe_account, _ = models.Account.objects.get_or_create(stripe_id=stripe_account_id)
+        self.stripe_account = models.Account.objects.filter(
+            stripe_id=self.event.webhook_message.get("account")).first()
         self.event.stripe_account = self.stripe_account
         evt = stripe.Event.retrieve(
             self.event.stripe_id,
@@ -100,7 +101,16 @@ class Webhook(with_metaclass(Registerable, object)):
                 cls=stripe.StripeObjectEncoder
             )
         )
-        self.event.valid = self.event.webhook_message["data"] == self.event.validated_message["data"]
+        self.event.valid = self.is_event_valid(self.event.webhook_message["data"], self.event.validated_message["data"])
+        self.event.save()
+
+    @staticmethod
+    def is_event_valid(webhook_message_data, validated_message_data):
+        """
+        Notice "data" may contain a "previous_attributes" section
+        """
+        return "object" in webhook_message_data and "object" in validated_message_data and \
+               webhook_message_data["object"] == validated_message_data["object"]
 
     def send_signal(self):
         signal = registry.get_signal(self.name)
@@ -108,9 +118,12 @@ class Webhook(with_metaclass(Registerable, object)):
             return signal.send(sender=self.__class__, event=self.event)
 
     def process(self):
-        self.validate()
-        if not self.event.valid or self.event.processed:
+        if self.event.processed:
             return
+        self.validate()
+        if not self.event.valid:
+            return
+
         try:
             customers.link_customer(self.event)
             self.process_webhook()
@@ -149,30 +162,31 @@ class AccountApplicationDeauthorizeWebhook(Webhook):
         """
         Specialized validation of incoming events.
 
-        We try to retrieve the event:
+        When this event is for a connected account we should not be able to
+        fetch the event anymore (since we have been disconnected).
+
+        Therefore we try to retrieve the event:
          - in case of PermissionError exception, everything is perfectly normal.
            It means the account has been deauthorized.
          - In case no exception has been caught, then, most likely, the event has been forged
            to make you believe the account has been disabled despite it is still functioning.
         """
-        stripe_account_id = self.event.webhook_message["account"]
-        self.stripe_account = models.Account.objects.filter(stripe_id=stripe_account_id).first()
         try:
-            stripe.Event.retrieve(
-                self.event.stripe_id,
-                stripe_account=stripe_account_id,
-            )
+            super(AccountApplicationDeauthorizeWebhook, self).validate()
         except stripe.error.PermissionError as exc:
-            if not(stripe_account_id in str(exc) and obfuscate_secret_key(settings.PINAX_STRIPE_SECRET_KEY) in str(exc)):
-                raise exc
-            self.event.valid = True
-            self.event.validated_message = self.event.webhook_message
-            self.event.stripe_account = self.stripe_account
+            if self.stripe_account:
+                stripe_account_id = self.stripe_account.stripe_id
+                if not(stripe_account_id in str(exc) and obfuscate_secret_key(settings.PINAX_STRIPE_SECRET_KEY) in str(exc)):
+                    raise exc
         else:
-            raise ValueError("The remote account still valid. this might be an hostile event")
+            if self.stripe_account:
+                raise ValueError("The remote account is still valid. This might be a hostile event")
+        self.event.valid = True
+        self.event.validated_message = self.event.webhook_message
 
     def process_webhook(self):
-        accounts.deauthorize(self.stripe_account)
+        if self.stripe_account is not None:
+            accounts.deauthorize(self.stripe_account)
 
 
 class AccountExternalAccountCreatedWebhook(Webhook):
@@ -376,7 +390,7 @@ class CustomerSubscriptionWebhook(Webhook):
         if self.event.validated_message:
             subscriptions.sync_subscription_from_stripe_data(
                 self.event.customer,
-                self.event.validated_message["data"]["object"]
+                self.event.validated_message["data"]["object"],
             )
 
         if self.event.customer:

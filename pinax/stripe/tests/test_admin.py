@@ -6,7 +6,7 @@ from django.test import Client, SimpleTestCase, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
-from ..models import Customer, Invoice, Plan, Subscription
+from ..models import Account, Customer, Invoice, Plan, Subscription
 
 try:
     from django.urls import reverse
@@ -19,12 +19,15 @@ User = get_user_model()
 
 class AdminTestCase(TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        super(AdminTestCase, cls).setUpClass()
+
         # create customers and current subscription records
         period_start = datetime.datetime(2013, 4, 1, tzinfo=timezone.utc)
         period_end = datetime.datetime(2013, 4, 30, tzinfo=timezone.utc)
         start = datetime.datetime(2013, 1, 1, tzinfo=timezone.utc)
-        self.plan = Plan.objects.create(
+        cls.plan = Plan.objects.create(
             stripe_id="p1",
             amount=10,
             currency="usd",
@@ -32,7 +35,7 @@ class AdminTestCase(TestCase):
             interval_count=1,
             name="Pro"
         )
-        self.plan2 = Plan.objects.create(
+        cls.plan2 = Plan.objects.create(
             stripe_id="p2",
             amount=5,
             currency="usd",
@@ -48,7 +51,7 @@ class AdminTestCase(TestCase):
             Subscription.objects.create(
                 stripe_id="sub_{}".format(i),
                 customer=customer,
-                plan=self.plan,
+                plan=cls.plan,
                 current_period_start=period_start,
                 current_period_end=period_end,
                 status="active",
@@ -62,7 +65,7 @@ class AdminTestCase(TestCase):
         Subscription.objects.create(
             stripe_id="sub_{}".format(11),
             customer=customer,
-            plan=self.plan,
+            plan=cls.plan,
             current_period_start=period_start,
             current_period_end=period_end,
             status="canceled",
@@ -77,7 +80,7 @@ class AdminTestCase(TestCase):
         Subscription.objects.create(
             stripe_id="sub_{}".format(12),
             customer=customer,
-            plan=self.plan2,
+            plan=cls.plan2,
             current_period_start=period_start,
             current_period_end=period_end,
             status="active",
@@ -93,10 +96,17 @@ class AdminTestCase(TestCase):
             period_end=period_end,
             period_start=period_start
         )
-        User.objects.create_superuser(
+        cls.user = User.objects.create_superuser(
             username="admin", email="admin@test.com", password="admin")
-        self.client = Client()
-        self.client.login(username="admin", password="admin")
+        cls.account = Account.objects.create(stripe_id="acc_abcd")
+        cls.client = Client()
+
+    def setUp(self):
+        try:
+            self.client.force_login(self.user)
+        except AttributeError:
+            # Django 1.8
+            self.client.login(username="admin", password="admin")
 
     def test_customer_admin(self):
         """Make sure we get good responses for all filter options"""
@@ -151,6 +161,13 @@ class AdminTestCase(TestCase):
     def test_charge_admin(self):
         url = reverse("admin:pinax_stripe_charge_changelist")
         response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_account_filter(self):
+        url = reverse("admin:pinax_stripe_customer_changelist")
+        response = self.client.get(url + "?stripe_account={}".format(self.account.pk))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(url + "?stripe_account=none")
         self.assertEqual(response.status_code, 200)
 
 

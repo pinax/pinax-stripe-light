@@ -718,6 +718,7 @@ class InvoicesTests(TestCase):
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
     def test_mark_paid(self, SyncMock):
         invoice = Mock()
+        invoice.paid = False
         invoices.mark_paid(invoice)
         self.assertTrue(invoice.stripe_invoice.paid)
         self.assertTrue(SyncMock.called)
@@ -725,6 +726,7 @@ class InvoicesTests(TestCase):
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
     def test_forgive(self, SyncMock):
         invoice = Mock()
+        invoice.paid = False
         invoices.forgive(invoice)
         self.assertTrue(invoice.stripe_invoice.forgiven)
         self.assertTrue(SyncMock.called)
@@ -732,6 +734,7 @@ class InvoicesTests(TestCase):
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
     def test_close(self, SyncMock):
         invoice = Mock()
+        invoice.closed = False
         invoices.close(invoice)
         self.assertTrue(invoice.stripe_invoice.closed)
         self.assertTrue(SyncMock.called)
@@ -739,6 +742,7 @@ class InvoicesTests(TestCase):
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
     def test_reopen(self, SyncMock):
         invoice = Mock()
+        invoice.closed = True
         invoices.reopen(invoice)
         self.assertFalse(invoice.stripe_invoice.closed)
         self.assertTrue(SyncMock.called)

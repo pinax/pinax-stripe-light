@@ -718,28 +718,28 @@ class InvoicesTests(TestCase):
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
     def test_mark_paid(self, SyncMock):
         invoice = Mock()
-        self.assertTrue(invoices.mark_paid(invoice))
+        invoices.mark_paid(invoice)
         self.assertTrue(invoice.stripe_invoice.paid)
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
     def test_forgive(self, SyncMock):
         invoice = Mock()
-        self.assertTrue(invoices.forgive(invoice))
+        invoices.forgive(invoice)
         self.assertTrue(invoice.stripe_invoice.forgiven)
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
     def test_close(self, SyncMock):
         invoice = Mock()
-        self.assertTrue(invoices.close(invoice))
+        invoices.close(invoice)
         self.assertTrue(invoice.stripe_invoice.closed)
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
     def test_reopen(self, SyncMock):
         invoice = Mock()
-        self.assertTrue(invoices.reopen(invoice))
+        invoices.reopen(invoice)
         self.assertFalse(invoice.stripe_invoice.closed)
         self.assertTrue(SyncMock.called)
 
@@ -801,7 +801,7 @@ class InvoicesTests(TestCase):
             "quantity": None,
             "subscription": subscription,
         }
-        self.assertTrue(invoices.create_invoice_item(customer, invoice, subscription, 100, "eur", "my_foo", metadata={}))
+        self.assertIsNone(invoices.create_invoice_item(customer, invoice, subscription, 100, "eur", "my_foo", metadata={}))
         self.assertTrue(CreateMock.called)
         self.assertTrue(invoice.items.get_or_create.called)
 

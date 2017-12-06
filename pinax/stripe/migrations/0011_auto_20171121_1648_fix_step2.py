@@ -33,25 +33,21 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='customer',
             name='stripe_account',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                                    to='pinax_stripe.Account'),
+            field=models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.CASCADE, to='pinax_stripe.Account'),
         ),
         migrations.AddField(
             model_name='event',
             name='stripe_account',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                                    to='pinax_stripe.Account'),
+            field=models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.CASCADE, to='pinax_stripe.Account'),
         ),
         migrations.AddField(
             model_name='plan',
             name='stripe_account',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                                    to='pinax_stripe.Account'),
+            field=models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.CASCADE, to='pinax_stripe.Account'),
         ),
         migrations.AddField(
             model_name='transfer',
             name='stripe_account',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                                    to='pinax_stripe.Account'),
+            field=models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.CASCADE, to='pinax_stripe.Account'),
         ),
     ]

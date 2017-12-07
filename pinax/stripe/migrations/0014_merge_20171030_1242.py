@@ -8,7 +8,6 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pinax_stripe', '0013_auto_20171025_2153'),
         ('pinax_stripe', '0012_auto_20171026_1544'),
     ]
 

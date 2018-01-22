@@ -679,7 +679,7 @@ class Sku(StripeObject):
 
         return rep
 
-class Order(StripeObject):
+class Order(StripeAccountFromCustomerMixin, StripeObject):
 
     amount = models.DecimalField(decimal_places=2, max_digits=9, blank=True, null=True)
     amount_returned = models.DecimalField(decimal_places=2, max_digits=9, default=decimal.Decimal("0"), blank=True, null=True)

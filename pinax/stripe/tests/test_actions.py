@@ -758,13 +758,33 @@ class InvoicesTests(TestCase):
     def test_create_and_pay_invalid_request_error(self, CreateMock):
         invoice = CreateMock()
         invoice.amount_due = 100
+        invoice.pay.side_effect = stripe.InvalidRequestError("bad", "error")
+        try:
+            invoices.create_and_pay(Mock())
+            self.assertTrue(False)
+        except stripe.InvalidRequestError:
+            self.assertTrue(True)
+
+    @patch("stripe.Invoice.create")
+    def test_create_and_pay_nothing_to_invoice_error(self, CreateMock):
+        invoice = CreateMock()
+        invoice.amount_due = 100
         invoice.pay.side_effect = stripe.InvalidRequestError("Nothing to invoice for customer", "error")
         self.assertFalse(invoices.create_and_pay(Mock()))
         self.assertTrue(invoice.pay.called)
 
     @patch("stripe.Invoice.create")
     def test_create_and_pay_invalid_request_error_on_create(self, CreateMock):
-        CreateMock.side_effect = stripe.InvalidRequestError("Bad", "error")
+        CreateMock.side_effect = stripe.InvalidRequestError("bad", "error")
+        try:
+            invoices.create_and_pay(Mock())
+            self.assertTrue(False)
+        except stripe.InvalidRequestError:
+            self.assertTrue(True)
+
+    @patch("stripe.Invoice.create")
+    def test_create_and_pay_nothing_to_invoice_on_create(self, CreateMock):
+        CreateMock.side_effect = stripe.InvalidRequestError("Nothing to invoice for customer", "error")
         self.assertFalse(invoices.create_and_pay(Mock()))
 
 
@@ -3346,3 +3366,12 @@ class BankAccountsSyncTestCase(TestCase):
         externalaccounts.create_bank_account(account, 123455, "US", "usd")
         self.assertTrue(account.external_accounts.create.called)
         self.assertTrue(SyncMock.called)
+
+class OrdersTestCase(TestCase):
+    pass
+
+class ProductsTestCase(TestCase):
+    pass
+
+class SkusTestCase(TestCase):
+    pass

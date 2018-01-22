@@ -100,11 +100,12 @@ def retrieve(order_id):
     try:
         return stripe.Order.retrieve(order_id)
     except stripe.InvalidRequestError as e:
-        if smart_str(e).find("No such order") == -1:
-            raise
-        else:
+        if smart_str(e).find("No such order") >= 0:
             # Not Found
-            return None
+            return
+        else:
+            raise e
+
 
 def pay(order, source=None):
     """

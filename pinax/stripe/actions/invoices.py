@@ -29,7 +29,7 @@ def create(customer):
 
 def create_and_pay(customer):
     """
-    Creates and and immediately pays an invoice for a customer
+    Creates and immediately pays an invoice for a customer
 
     Args:
         customer: the customer to create the invoice for (Customer)

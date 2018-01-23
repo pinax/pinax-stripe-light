@@ -80,25 +80,25 @@ def update(order, coupon=None, metadata=None, selected_shipping_method=None, shi
     stripe_order.save()
     return sync_order_from_stripe_data(stripe_order)
 
-def retrieve(order_id):
+def retrieve(stripe_order_id):
     """
-    Retrieve a sku object from Stripe's API
+    Retrieve a Order object from Stripe's API
 
     Stripe throws an exception if the order has been deleted that we are
     attempting to sync. In this case we want to just silently ignore that
     exception but pass on any other.
 
     Args:
-        order_id: the Stripe ID of the order you are fetching
+        stripe_order_id: the Stripe ID of the order you are fetching
 
     Returns:
         the data for a order object from the Stripe API
     """
-    if not order_id:
+    if not stripe_order_id:
         return
 
     try:
-        return stripe.Order.retrieve(order_id)
+        return stripe.Order.retrieve(stripe_order_id)
     except stripe.InvalidRequestError as e:
         if smart_str(e).find("No such order") >= 0:
             # Not Found
@@ -154,7 +154,8 @@ def sync_orders():
         customer = models.Customer.objects.get(stripe_id=stripe_order.get("customer"))
 
         if stripe_order.get("charge"):
-            charge = charges.sync_charge_from_stripe_data(stripe.Charge.retrieve(stripe_order.get("charge")))
+            stripe_charge = stripe.Charge.retrieve(stripe_order.get("charge"))
+            charge = charges.sync_charge_from_stripe_data(stripe_charge)
         else:
             charge = None
 
@@ -168,7 +169,7 @@ def sync_orders():
             charge=charge,
             currency=currency,
             customer=customer,
-            livemode=stripe_order.get("livemode"),
+            livemode=stripe_order.get("livemode", False),
             metadata=stripe_order.get("metadata"),
             selected_shipping_method=stripe_order.get("selected_shipping_method"),
             shipping=stripe_order.get("shipping"),
@@ -232,10 +233,10 @@ def sync_order_from_stripe_data(stripe_order):
 
 def sync_orders_from_customer(customer):
     """
-    Syncronizes all orders for a customer
+    Synchronizes all orders for a customer
 
     Args:
-        customer: the customer for whom to syncronize all invoices
+        customer: the customer for whom to synchronize the invoices
     """
 
     stripe_customer = customer.stripe_customer

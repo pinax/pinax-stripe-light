@@ -2575,6 +2575,193 @@ class SyncsTests(TestCase):
         self.assertEquals(invoice.items.count(), 2)
         self.assertEquals(invoice.items.get(stripe_id="sub_7Q4BX0HMfqTpN9").description, "This is your second subscription")
 
+    def test_sync_order_from_stripe_data(self):
+
+        order_source = {
+            "id": "or_1Bm4hUEPrwWxVuSQYVCuZg1K",
+            "object": "order",
+            "amount": 0,
+            "amount_returned": None,
+            "application": None,
+            "application_fee": None,
+            "charge": None,
+            "created": 1516386892,
+            "currency": "usd",
+            "customer": self.customer.stripe_id,
+            "email": "contact@email.com",
+            "items": [
+                {
+                    "object": "order_item",
+                    "amount": 2500,
+                    "currency": "usd",
+                    "description": "Some Stuff",
+                    "parent": "sku_Aj0Dq2cAHjqx9A",
+                    "quantity": 1,
+                    "type": "sku"
+                }
+            ],
+            "livemode": False,
+            "metadata": {
+                "free_highlights": "1"
+            },
+            "returns": {
+                "object": "list",
+                "data": [],
+                "has_more": False,
+                "total_count": 0,
+                "url": "/v1/order_returns?order=or_1Bm4hUEPrwWxVuSQYVCuZg1K"
+            },
+            "selected_shipping_method": "ship_free-shipping",
+            "shipping": None,
+            "shipping_methods": [
+                {
+                    "id": "ship_free-shipping",
+                    "amount": 0,
+                    "currency": "usd",
+                    "delivery_estimate": None,
+                    "description": "Free shipping"
+                }
+            ],
+            "status": "created",
+                "status_transitions": {
+                "canceled": None,
+                "fulfiled": None,
+                "paid": None,
+                "returned": None
+            },
+            "updated": 1516386892
+        }
+        order = orders.sync_order_from_stripe_data(order_source)
+        self.assertEquals(Order.objects.get(stripe_id=order_source["id"]), order)
+
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("stripe.Order.auto_paging_iter")
+    @patch("stripe.Charge.retrieve")
+    def test_sync_orders_from_auto_paging_iter(self, ChargeRetrieveMock, AutoPagingIterMock, SyncChargesMock):
+        stripe_charge_id = 'ch_1234'
+        stripe_order_id = 'or_from_auto_p_123456'
+
+        charge = Charge(stripe_id=stripe_charge_id, amount=decimal.Decimal("100"),
+                        amount_refunded=decimal.Decimal("50"))
+        charge.save()
+
+        stripe_order = dict(
+            id=stripe_order_id,
+            customer=self.customer.stripe_id,
+            charge=stripe_charge_id,
+            amount=10,
+            amount_returned=0,
+            currency='usd',
+            selected_shipping_method='chocobo',
+            status='created'
+        )
+
+        stripe_orders = [stripe_order]
+
+        AutoPagingIterMock.return_value = stripe_orders
+        SyncChargesMock.return_value = charge
+
+        orders.sync_orders()
+
+        self.assertEqual(SyncChargesMock.call_count, 1)
+        self.assertEqual(ChargeRetrieveMock.call_count, 1)
+        self.assertTrue(Order.objects.filter(stripe_id=stripe_order_id).exists())
+
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("stripe.Order.auto_paging_iter")
+    @patch("stripe.Order.list")
+    @patch("stripe.Charge.retrieve")
+    def test_sync_orders_from_list(self, ChargeRetrieveMock, OrderListMock, AutoPagingIterMock, SyncChargesMock):
+        stripe_charge_id = 'ch_1234'
+        stripe_order_id = 'or_from_auto_p_123456'
+
+        charge = Charge(stripe_id=stripe_charge_id, amount=decimal.Decimal("100"),
+                        amount_refunded=decimal.Decimal("50"))
+        charge.save()
+
+        stripe_order = dict(
+            id=stripe_order_id,
+            customer=self.customer.stripe_id,
+            charge=stripe_charge_id,
+            amount=10,
+            amount_returned=0,
+            currency='usd',
+            selected_shipping_method='chocobo',
+            status='created'
+        )
+
+        stripe_orders = [stripe_order]
+
+        AutoPagingIterMock.side_effect = AttributeError()
+        mock_data = Mock()
+        mock_data.data = stripe_orders
+
+        OrderListMock.return_value = mock_data
+        SyncChargesMock.return_value = charge
+
+        orders.sync_orders()
+
+        self.assertEqual(SyncChargesMock.call_count, 1)
+        self.assertEqual(ChargeRetrieveMock.call_count, 1)
+        self.assertTrue(Order.objects.filter(stripe_id=stripe_order_id).exists())
+
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    @patch("stripe.Order.auto_paging_iter")
+    @patch("stripe.Charge.retrieve")
+    def test_sync_orders_with_no_charge(self, ChargeRetrieveMock, AutoPagingIterMock, SyncChargesMock):
+        stripe_order_id = 'or_from_auto_p_123456'
+
+        stripe_order = dict(
+            id=stripe_order_id,
+            customer=self.customer.stripe_id,
+            amount=10,
+            amount_returned=0,
+            currency='usd',
+            selected_shipping_method='chocobo',
+            status='created'
+        )
+
+        stripe_orders = [stripe_order]
+
+        AutoPagingIterMock.return_value = stripe_orders
+
+        orders.sync_orders()
+
+        self.assertFalse(SyncChargesMock.called)
+        self.assertFalse(ChargeRetrieveMock.call_count, 1)
+        self.assertTrue(Order.objects.filter(stripe_id=stripe_order_id).exists())
+
+    @patch("pinax.stripe.actions.orders.sync_order_from_stripe_data")
+    @patch("stripe.Order.auto_paging_iter")
+    def test_sync_orders_from_customer(self, AutoPagingIterMock, SyncOrderMock):
+
+        stripe_order_id = "or_123_456"
+        stripe_customer_id = "cus_1234567"
+
+        stripe_order = dict(
+            id=stripe_order_id,
+            customer=stripe_customer_id,
+            amount=10,
+            amount_returned=0,
+            currency='usd',
+            selected_shipping_method='chocobo',
+            status='created'
+        )
+
+        stripe_customer = dict(id=stripe_customer_id)
+        customer_mock = Mock()
+        customer_mock.stripe_customer = stripe_customer
+        stripe_orders = [stripe_order]
+        AutoPagingIterMock.return_value = stripe_orders
+
+        orders.sync_orders_from_customer(customer_mock)
+
+        _, kwargs = AutoPagingIterMock.call_args
+        self.assertEqual(kwargs['customer'], stripe_customer)
+
+        args, _ = SyncOrderMock.call_args
+        self.assertEqual(SyncOrderMock.call_count, 1)
+        self.assertEqual(args[0], stripe_order)
 
 class InvoiceSyncsTests(TestCase):
 
@@ -3474,6 +3661,100 @@ class OrdersTestCase(TestCase):
         self.assertEqual(args[0], returned_order)
         self.assertEqual(args[1], stripe_token)
         self.assertTrue(CreateOrderMock.called)
+        self.assertTrue(SyncOrderMock.called)
+
+    @patch("pinax.stripe.actions.orders.sync_order_from_stripe_data")
+    def test_update_order(self, SyncMock):
+        order_mock = Mock()
+        StripeOrderMock = order_mock.stripe_order
+        result = orders.update(order_mock)
+        self.assertTrue(result is not None)
+        self.assertTrue(StripeOrderMock.save.called)
+        self.assertTrue(SyncMock.called)
+
+    @patch("stripe.Order.retrieve")
+    def test_retrieve_order(self, RetrieveMock):
+        order_id = "or_123XYZ"
+
+        orders.retrieve(order_id)
+
+        args, _ = RetrieveMock.call_args
+        self.assertEquals(args[0], order_id)
+
+    @patch("stripe.Order.retrieve")
+    def test_retrieve_order_not_found(self, RetrieveMock):
+        order_id = "or_123XYZ"
+
+        RetrieveMock.side_effect = stripe.InvalidRequestError("No such order", "error")
+
+        result = orders.retrieve(order_id)
+
+        args, _ = RetrieveMock.call_args
+        self.assertEquals(args[0], order_id)
+        self.assertIsNone(result)
+
+    @patch("stripe.Order.retrieve")
+    def test_retrieve_order_with_error(self, RetrieveMock):
+        order_id = "or_123XYZ"
+
+        RetrieveMock.side_effect = stripe.InvalidRequestError("bad", "error")
+
+        try:
+            orders.retrieve(order_id)
+            self.assertTrue(False)
+        except stripe.InvalidRequestError:
+            args, _ = RetrieveMock.call_args
+            self.assertEquals(args[0], order_id)
+
+    @patch("pinax.stripe.actions.orders.sync_order_from_stripe_data")
+    def test_pay_order(self, SyncOrderMock):
+        order_mock = Mock()
+        StripeOrderMock = order_mock.stripe_order
+
+        result = orders.pay(order_mock)
+
+        self.assertTrue(result is not None)
+        self.assertTrue(StripeOrderMock.pay.called)
+        self.assertTrue(SyncOrderMock.called)
+
+    @patch("pinax.stripe.actions.orders.sync_order_from_stripe_data")
+    def test_pay_order_with_source(self, SyncOrderMock):
+        stripe_token = 'tok_123'
+        order_mock = Mock()
+        StripeOrderMock = order_mock.stripe_order
+
+        result = orders.pay(order_mock, source=stripe_token)
+
+        _, kwargs = StripeOrderMock.pay.call_args
+        self.assertTrue(result is not None)
+        self.assertEqual(kwargs['source'], stripe_token)
+        self.assertTrue(StripeOrderMock.pay.called)
+        self.assertTrue(SyncOrderMock.called)
+
+    @patch("pinax.stripe.actions.orders.sync_order_from_stripe_data")
+    def test_create_return_order(self, SyncOrderMock):
+
+        order_mock = Mock()
+        StripeOrderMock = order_mock.stripe_order
+
+        result = orders.create_return(order_mock)
+
+        self.assertTrue(result is not None)
+        self.assertTrue(StripeOrderMock.return_order.called)
+        self.assertTrue(SyncOrderMock.called)
+
+    @patch("pinax.stripe.actions.orders.sync_order_from_stripe_data")
+    def test_create_return_order_with_items(self, SyncOrderMock):
+        items = ['item1', 'items2']
+        order_mock = Mock()
+        StripeOrderMock = order_mock.stripe_order
+
+        result = orders.create_return(order_mock, items=items)
+
+        _, kwargs = StripeOrderMock.return_order.call_args
+        self.assertTrue(result is not None)
+        self.assertEqual(kwargs['items'], items)
+        self.assertTrue(StripeOrderMock.return_order.called)
         self.assertTrue(SyncOrderMock.called)
 
 class ProductsTestCase(TestCase):

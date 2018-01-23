@@ -39,6 +39,7 @@ class AccountRelatedStripeObjectMixin(models.Model):
     @property
     def stripe_account_stripe_id(self):
         return getattr(self.stripe_account, "stripe_id", None)
+    stripe_account_stripe_id.fget.short_description = "Stripe Account"
 
     class Meta:
         abstract = True
@@ -69,6 +70,7 @@ class StripeAccountFromCustomerMixin(object):
     @property
     def stripe_account_stripe_id(self):
         return self.stripe_account.stripe_id if self.stripe_account else None
+    stripe_account_stripe_id.fget.short_description = "Stripe Account"
 
 
 @python_2_unicode_compatible

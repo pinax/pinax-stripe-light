@@ -169,6 +169,9 @@ class ChargeAdmin(ModelAdmin):
         "customer",
         "invoice",
     ]
+    readonly_fields = [
+        "stripe_account_stripe_id",
+    ]
 
     def get_queryset(self, request):
         qs = super(ChargeAdmin, self).get_queryset(request)
@@ -327,6 +330,9 @@ admin.site.register(
     ],
     inlines=[
         InvoiceItemInline
+    ],
+    readonly_fields=[
+        "stripe_account_stripe_id",
     ]
 )
 

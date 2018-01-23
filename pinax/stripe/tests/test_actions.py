@@ -1056,8 +1056,8 @@ class SubscriptionsTests(TestCase):
     def test_update_plan_metadata(self, SyncMock):
         SubMock = Mock()
         SubMock.customer = self.customer
-        subscriptions.update(SubMock, metadata={"test_value":"test_value"})
-        self.assertEquals(SubMock.stripe_subscription.metadata, {"test_value":"test_value"})
+        subscriptions.update(SubMock, metadata={"test_value": "test_value"})
+        self.assertEquals(SubMock.stripe_subscription.metadata, {"test_value": "test_value"})
         self.assertTrue(SubMock.stripe_subscription.save.called)
         self.assertTrue(SyncMock.called)
 

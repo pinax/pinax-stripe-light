@@ -141,6 +141,25 @@ class ModelTests(TestCase):
         else:
             self.assertEquals(repr(charge), "Charge(pk=None, customer=None, source='', amount=None, captured=None, paid=None, stripe_id='')")
 
+    def test_charge_str(self):
+        charge = Charge()
+        self.assertEquals(str(charge), "$0 (unpaid, uncaptured)")
+        charge.stripe_id = "ch_XXX"
+        charge.captured = True
+        charge.paid = True
+        charge.amount = decimal.Decimal(5)
+        self.assertEquals(str(charge), "$5")
+        charge.refunded = True
+        self.assertEquals(str(charge), "$5 (refunded)")
+
+    def test_charge_total_amount(self):
+        charge = Charge()
+        self.assertEquals(charge.total_amount, 0)
+        charge.amount = decimal.Decimal(17)
+        self.assertEquals(charge.total_amount, 17)
+        charge.amount_refunded = decimal.Decimal(15.5)
+        self.assertEquals(charge.total_amount, 1.5)
+
     def test_plan_display_invoiceitem(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
         p.save()

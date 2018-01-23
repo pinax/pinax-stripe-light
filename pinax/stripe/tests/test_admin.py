@@ -6,7 +6,7 @@ from django.test import Client, SimpleTestCase, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
-from ..models import Account, Customer, Invoice, Plan, Subscription
+from ..models import Account, Customer, Invoice, Plan, Subscription, Sku, Order, Product
 
 try:
     from django.urls import reverse
@@ -96,6 +96,24 @@ class AdminTestCase(TestCase):
             period_end=period_end,
             period_start=period_start
         )
+
+        product = Product.objects.create(
+            stripe_id="pr_123_xxx"
+        )
+
+        Sku.objects.create(
+            stripe_id="sku_xxx_111",
+            product=product,
+            price=100,
+        )
+
+        Order.objects.create(
+            stripe_id="or_123_xxx",
+            customer=customer,
+            amount=100,
+
+        )
+
         cls.user = User.objects.create_superuser(
             username="admin", email="admin@test.com", password="admin")
         cls.account = Account.objects.create(stripe_id="acc_abcd")
@@ -170,6 +188,27 @@ class AdminTestCase(TestCase):
         response = self.client.get(url + "?stripe_account=none")
         self.assertEqual(response.status_code, 200)
 
+    def test_sku_admin(self):
+        url = reverse("admin:pinax_stripe_sku_changelist")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        sku = Sku.objects.first()
+
+        url =  reverse('admin:pinax_stripe_sku_change', args=(sku.pk,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_order_admin(self):
+        url = reverse("admin:pinax_stripe_order_changelist")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        order = Order.objects.first()
+
+        url = reverse('admin:pinax_stripe_order_change', args=(order.pk,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
 
 class AdminSimpleTestCase(SimpleTestCase):
 

@@ -210,3 +210,13 @@ class CommandTests(TestCase):
     def test_update_charge_availability(self, UpdateChargeMock):
         management.call_command("update_charge_availability")
         self.assertEqual(UpdateChargeMock.call_count, 1)
+
+    @patch("pinax.stripe.actions.orders.sync_orders")
+    def test_sync_orders(self, SyncOrdersMock):
+        management.call_command("sync_orders")
+        self.assertEqual(SyncOrdersMock.call_count, 1)
+
+    @patch("pinax.stripe.actions.products.sync_products")
+    def test_sync_orders(self, SyncProductsMock):
+        management.call_command("sync_products")
+        self.assertEqual(SyncProductsMock.call_count, 1)

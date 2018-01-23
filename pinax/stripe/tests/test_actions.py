@@ -23,7 +23,10 @@ from ..actions import (
     refunds,
     sources,
     subscriptions,
-    transfers
+    transfers,
+    orders,
+    products,
+    skus,
 )
 from ..models import (
     Account,
@@ -36,7 +39,10 @@ from ..models import (
     Plan,
     Subscription,
     Transfer,
-    UserAccount
+    UserAccount,
+    Order,
+    Product,
+    Sku,
 )
 
 
@@ -3368,7 +3374,107 @@ class BankAccountsSyncTestCase(TestCase):
         self.assertTrue(SyncMock.called)
 
 class OrdersTestCase(TestCase):
-    pass
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            username="luis",
+            email="castillo@example.com"
+        )
+        self.customer = Customer.objects.create(
+            user=self.user,
+            stripe_id="cus_xxx_123"
+        )
+
+    @patch("pinax.stripe.actions.orders.sync_order_from_stripe_data")
+    @patch("stripe.Order.create")
+    def test_create_order(self, OrderCreateMock, SyncOrderMock):
+
+        product = Product.objects.create(stripe_id="pr_123_xxx")
+        sku = Sku.objects.create(stripe_id="sku_xxx_111", product=product, price=100, metadata={'somebody': 'told me'})
+
+        orders.create(self.customer, [sku])
+
+        self.assertTrue(OrderCreateMock.called)
+        self.assertTrue(SyncOrderMock.called)
+
+    @patch("pinax.stripe.actions.orders.sync_order_from_stripe_data")
+    @patch("stripe.Order.create")
+    def test_create_order_with_coupon(self, CreateOrderMock, SyncOrderMock):
+
+        coupon = "CouponX"
+        product = Product.objects.create(stripe_id="pr_123_xxx")
+        sku = Sku.objects.create(stripe_id="sku_xxx_111", product=product, price=100)
+
+        orders.create(self.customer, [sku], coupon=coupon)
+
+        _, kwargs = CreateOrderMock.call_args
+        self.assertEqual(kwargs["customer"], self.customer.stripe_id)
+        self.assertEqual(kwargs["items"], [sku.convert_to_order_item()])
+        self.assertEqual(kwargs["coupon"], coupon)
+
+    @patch("pinax.stripe.actions.orders.pay")
+    @patch("pinax.stripe.actions.orders.sync_order_from_stripe_data")
+    @patch("stripe.Order.create")
+    def test_create_order_with_pay_immediately(self, CreateOrderMock, SyncOrderMock, PayOrderMock):
+
+        stripe_order_id = "or_1234567"
+        stripe_token = "token12345"
+        returned_order = dict(id=stripe_order_id)
+
+        product = Product.objects.create(stripe_id="pr_123_xxx")
+        sku = Sku.objects.create(stripe_id="sku_xxx_111", product=product, price=100)
+
+        CreateOrderMock.return_value = returned_order
+
+        orders.create(self.customer, [sku], source=stripe_token, pay_immediately=True)
+
+        args, _ = PayOrderMock.call_args
+
+        self.assertEqual(args[0], returned_order)
+        self.assertEqual(args[1], stripe_token)
+        self.assertTrue(CreateOrderMock.called)
+        self.assertTrue(SyncOrderMock.called)
+
+    @patch("pinax.stripe.actions.orders.pay")
+    @patch("pinax.stripe.actions.orders.sync_order_from_stripe_data")
+    @patch("stripe.Order.create")
+    def test_create_order_pay_immediately_with_no_source(self, CreateOrderMock, SyncOrderMock, PayOrderMock):
+
+        product = Product.objects.create(stripe_id="pr_123_xxx")
+        sku = Sku.objects.create(stripe_id="sku_xxx_111", product=product, price=100)
+
+        try:
+            orders.create(self.customer, [sku], source=None, pay_immediately=True)
+            self.assertTrue(False)
+        except ValueError:
+            self.assertFalse(CreateOrderMock.called)
+            self.assertFalse(SyncOrderMock.called)
+            self.assertFalse(PayOrderMock.called)
+
+    @patch("pinax.stripe.actions.orders.pay")
+    @patch("pinax.stripe.actions.orders.sync_order_from_stripe_data")
+    @patch("stripe.Order.create")
+    def test_create_order_failing_payment(self, CreateOrderMock, SyncOrderMock, PayOrderMock):
+
+        stripe_order_id = "or_1234567"
+        stripe_token = "token12345"
+        returned_order = dict(id=stripe_order_id)
+
+        product = Product.objects.create(stripe_id="pr_123_xxx")
+        sku = Sku.objects.create(stripe_id="sku_xxx_111", product=product, price=100)
+
+        PayOrderMock.side_effect = stripe.InvalidRequestError("Bad", "error")
+        CreateOrderMock.return_value = returned_order
+
+        orders.create(self.customer, [sku], source=stripe_token, pay_immediately=True)
+
+        args, _ = PayOrderMock.call_args
+
+        self.assertEqual(args[0], returned_order)
+        self.assertEqual(args[1], stripe_token)
+        self.assertTrue(CreateOrderMock.called)
+        self.assertTrue(SyncOrderMock.called)
 
 class ProductsTestCase(TestCase):
     pass

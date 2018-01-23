@@ -107,7 +107,7 @@ class ModelTests(TestCase):
 
     def test_customer_str_and_repr(self):
         c = Customer()
-        self.assertTrue("No User(s)" in str(c))
+        self.assertEquals(str(c), "No User(s)")
         if PY2:
             self.assertEquals(repr(c), "Customer(pk=None, stripe_id=u'')")
         else:
@@ -121,6 +121,12 @@ class ModelTests(TestCase):
             self.assertEqual(repr(c), "Customer(pk=None, user=<User: >, stripe_id=u'')")
         else:
             self.assertEqual(repr(c), "Customer(pk=None, user=<User: >, stripe_id='')")
+
+    def test_customer_saved_without_users_str(self):
+        c = Customer.objects.create()
+        self.assertEqual(str(c), "No User(s)")
+        c.stripe_id = "cu_XXX"
+        self.assertEqual(str(c), "No User(s) (cu_XXX)")
 
     def test_connected_customer_str_and_repr(self):
         User = get_user_model()

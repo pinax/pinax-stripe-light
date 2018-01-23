@@ -1104,6 +1104,7 @@ class SubscriptionsTests(TestCase):
             "status": "active",
             "trial_start": None,
             "trial_end": None,
+            "metadata": None,
             "plan": {
                 "id": self.plan.stripe_id,
             }}
@@ -1111,6 +1112,7 @@ class SubscriptionsTests(TestCase):
         SubscriptionCreateMock.assert_called_once_with(
             coupon=None,
             customer=self.connected_customer.stripe_id,
+            metadata=None,
             plan="the-plan",
             quantity=4,
             stripe_account="acct_xx",
@@ -1135,6 +1137,7 @@ class SubscriptionsTests(TestCase):
             "status": "active",
             "trial_start": None,
             "trial_end": None,
+            "metadata": None,
             "plan": {
                 "id": self.plan.stripe_id,
             }}

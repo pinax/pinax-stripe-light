@@ -190,6 +190,9 @@ class ChargeAdmin(ModelAdmin):
         "customer",
         "invoice",
     ]
+    readonly_fields = [
+        "stripe_account_stripe_id",
+    ]
 
     def display_outcome(self, obj):
         return "{} / {}".format(
@@ -362,6 +365,9 @@ class InvoiceAdmin(ModelAdmin):
     inlines = [
         InvoiceItemInline
     ]
+    readonly_fields = [
+        "stripe_account_stripe_id",
+    ]
 
 
 class PlanAdmin(ModelAdmin):
@@ -391,6 +397,7 @@ class PlanAdmin(ModelAdmin):
 
 
 class CouponAdmin(ModelAdmin):
+    raw_id_fields = ["stripe_account"]
     list_display = [
         "stripe_id",
         "amount_off",

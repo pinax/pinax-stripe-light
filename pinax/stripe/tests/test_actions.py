@@ -1053,6 +1053,15 @@ class SubscriptionsTests(TestCase):
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
+    def test_update_plan_metadata(self, SyncMock):
+        SubMock = Mock()
+        SubMock.customer = self.customer
+        subscriptions.update(SubMock, metadata={"test_value":"test_value"})
+        self.assertEquals(SubMock.stripe_subscription.metadata, {"test_value":"test_value"})
+        self.assertTrue(SubMock.stripe_subscription.save.called)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     def test_update_plan_charge_now_old_trial(self, SyncMock):
         trial_end = time.time() - 1000000.0
         SubMock = Mock()

@@ -143,7 +143,7 @@ class ChargeAdmin(ModelAdmin):
     list_display = [
         "stripe_id",
         "customer",
-        "amount",
+        "total_amount",
         "description",
         "paid",
         "disputed",

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 import decimal
@@ -519,6 +520,7 @@ class Charge(StripeAccountFromCustomerMixin, StripeObject):
         amount = self.amount if self.amount else 0
         amount_refunded = self.amount_refunded if self.amount_refunded else 0
         return amount - amount_refunded
+    total_amount.fget.short_description = "Σ amount"
 
     @property
     def stripe_charge(self):

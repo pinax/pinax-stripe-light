@@ -15,23 +15,7 @@ def sync_products():
         products = iter(stripe.Product.list().data)
 
     for product in products:
-        defaults = dict(
-            name=product["name"],
-            active=product["active"],
-            caption=product["caption"],
-            description=product["description"],
-            images=product["images"],
-            livemode=product["livemode"],
-            metadata=product["metadata"],
-            package_dimensions=product["package_dimensions"],
-            shippable=product["shippable"]
-        )
-        obj, created = models.Product.objects.get_or_create(
-            stripe_id=product["id"],
-            defaults=defaults
-        )
-        utils.update_with_defaults(obj, defaults, created)
-        skus.sync_skus_from_product(obj)
+        sync_product_from_stripe_data(product)
 
 def sync_product_from_stripe_data(stripe_product):
     """
@@ -44,19 +28,24 @@ def sync_product_from_stripe_data(stripe_product):
         a pinax.stripe.models.Product object
     """
 
-    obj, _ = models.Product.objects.get_or_create(stripe_id=stripe_product["id"])
-    obj.active = stripe_product["active"]
-    obj.attributes = stripe_product["attributes"]
-    obj.caption = stripe_product["caption"]
-    obj.description = stripe_product["description"]
-    obj.images = stripe_product["images"]
-    obj.livemode = stripe_product["livemode"]
-    obj.metadata = stripe_product["metadata"]
-    obj.name = stripe_product["name"]
-    obj.package_dimensions = stripe_product["package_dimensions"]
-    obj.shippable = stripe_product["shippable"]
+    stripe_product_id = stripe_product["id"]
 
-    obj.save()
+    defaults = {
+        'active': stripe_product.get("active"),
+        'attributes': stripe_product.get("attributes"),
+        'caption': stripe_product.get("caption"),
+        'description': stripe_product.get("description"),
+        'images': stripe_product.get("images"),
+        'livemode': stripe_product.get("livemode"),
+        'metadata': stripe_product.get("metadata"),
+        'name': stripe_product.get("name"),
+        'package_dimensions': stripe_product.get("package_dimensions"),
+        'shippable': stripe_product.get("shippable")
+    }
+
+    obj, created = models.Product.objects.get_or_create(stripe_id=stripe_product_id)
+    obj = utils.update_with_defaults(obj, defaults, created)
+    skus.sync_skus_from_product(obj)
     return obj
 
 def create(name, p_id="", caption="", description="", active=True, shippable=False, attributes=None, images=None, metadata=None, package_dimensions=None):
@@ -176,7 +165,7 @@ def retrieve(product_id):
     try:
         return stripe.Product.retrieve(product_id)
     except stripe.InvalidRequestError as e:
-        if smart_str(e).find("No such order") == -1:
+        if smart_str(e).find("No such product") == -1:
             raise
         else:
             # Not Found

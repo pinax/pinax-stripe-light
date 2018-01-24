@@ -217,6 +217,6 @@ class CommandTests(TestCase):
         self.assertEqual(SyncOrdersMock.call_count, 1)
 
     @patch("pinax.stripe.actions.products.sync_products")
-    def test_sync_orders(self, SyncProductsMock):
+    def test_sync_products(self, SyncProductsMock):
         management.call_command("sync_products")
         self.assertEqual(SyncProductsMock.call_count, 1)

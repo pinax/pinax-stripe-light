@@ -2860,6 +2860,128 @@ class SyncsTests(TestCase):
         coupon = coupons.sync_coupon_from_stripe_data(coupon_source)
         self.assertEquals(Coupon.objects.get(stripe_id=coupon_source["id"]), coupon)
 
+    @patch("pinax.stripe.actions.skus.sync_skus_from_product")
+    @patch("stripe.Product.auto_paging_iter")
+    def test_sync_sync_products_from_auto_paging_iter(self, AutoPagingIterMock, SyncSkusMock):
+
+        product_id = "3KXIR214I5OTHOS7MKXFVDGEE1624A"
+        stripe_product = {
+            "id": product_id,
+            "object": "product",
+            "active": True,
+            "attributes": ["headline","body","length"],
+            "caption": None,
+            "created": 1516300029,
+            "deactivate_on": [],
+            "description": None,
+            "images": [],
+            "livemode": False,
+            "metadata": {},
+            "name": "Product X",
+            "package_dimensions": None,
+            "shippable": False,
+            "skus": {
+                "object": "list",
+                "data": [],
+                "has_more": False,
+                "total_count": 0,
+                "url": "/v1/skus?product=3KXIR214I5OTHOS7MKXFVDGEE1624A&active=true"
+            },
+            "updated": 1516300029,
+            "url": None
+        }
+
+        AutoPagingIterMock.return_value = [stripe_product]
+
+        products.sync_products()
+
+        self.assertTrue(SyncSkusMock.called)
+        self.assertTrue(SyncSkusMock.call_count, 1)
+        self.assertTrue(Product.objects.filter(stripe_id=product_id).exists())
+
+    @patch("pinax.stripe.actions.skus.sync_skus_from_product")
+    @patch("stripe.Product.auto_paging_iter")
+    @patch("stripe.Product.list")
+    def test_sync_sync_products_from_list(self, ListMock, AutoPagingIterMock, SyncSkusMock):
+        product_id = "3KXIR214I5OTHOS7MKXFVDGEE1624A"
+        stripe_product = {
+            "id": product_id,
+            "object": "product",
+            "active": True,
+            "attributes": ["headline", "body", "length"],
+            "caption": None,
+            "created": 1516300029,
+            "deactivate_on": [],
+            "description": None,
+            "images": [],
+            "livemode": False,
+            "metadata": {},
+            "name": "Product X",
+            "package_dimensions": None,
+            "shippable": False,
+            "skus": {
+                "object": "list",
+                "data": [],
+                "has_more": False,
+                "total_count": 0,
+                "url": "/v1/skus?product=3KXIR214I5OTHOS7MKXFVDGEE1624A&active=true"
+            },
+            "updated": 1516300029,
+            "url": None
+        }
+
+        AutoPagingIterMock.side_effect = AttributeError()
+
+        DataMock = Mock()
+        DataMock.data = [stripe_product]
+        ListMock.return_value = DataMock
+
+        products.sync_products()
+
+        product = Product.objects.get(stripe_id=product_id)
+        args, _ = SyncSkusMock.call_args
+        self.assertTrue(SyncSkusMock.called)
+        self.assertTrue(SyncSkusMock.call_count, 1)
+        self.assertTrue(args[0], product)
+
+    @patch("pinax.stripe.actions.skus.sync_skus_from_product")
+    def test_sync_product_from_stripe_data(self, SyncSkusMock):
+        product_id = "3KXIR214I5OTHOS7MKXFVDGEE1624A"
+        stripe_product = {
+            "id": product_id,
+            "object": "product",
+            "active": True,
+            "attributes": ["headline", "body", "length"],
+            "caption": None,
+            "created": 1516300029,
+            "deactivate_on": [],
+            "description": None,
+            "images": [],
+            "livemode": False,
+            "metadata": {},
+            "name": "Product X",
+            "package_dimensions": None,
+            "shippable": False,
+            "skus": {
+                "object": "list",
+                "data": [],
+                "has_more": False,
+                "total_count": 0,
+                "url": "/v1/skus?product=3KXIR214I5OTHOS7MKXFVDGEE1624A&active=true"
+            },
+            "updated": 1516300029,
+            "url": None
+        }
+
+        products.sync_product_from_stripe_data(stripe_product)
+
+        product = Product.objects.get(stripe_id=product_id)
+        args, _ = SyncSkusMock.call_args
+        self.assertTrue(SyncSkusMock.called)
+        self.assertTrue(SyncSkusMock.call_count, 1)
+        self.assertTrue(args[0], product)
+
+
 class InvoiceSyncsTests(TestCase):
 
     def setUp(self):
@@ -3855,7 +3977,95 @@ class OrdersTestCase(TestCase):
         self.assertTrue(SyncOrderMock.called)
 
 class ProductsTestCase(TestCase):
-    pass
+
+    @patch("pinax.stripe.actions.products.sync_product_from_stripe_data")
+    @patch("stripe.Product.create")
+    def test_create_product(self, CreateProductMock, SyncProductMock):
+
+        product_id = 'pro_12345'
+
+        product_params = {
+            'name': 'Product X',
+            'p_id': product_id,
+            'caption': '',
+            'description': '',
+            'active': True,
+            'shippable': False,
+            'attributes': None,
+            'images': None,
+            'metadata': None,
+            'package_dimensions': None
+        }
+
+        products.create(**product_params)
+
+        _, kwargs = CreateProductMock.call_args
+        self.assertTrue(kwargs, product_params)
+        self.assertEqual(SyncProductMock.call_count, 1)
+
+    @patch("pinax.stripe.actions.products.sync_product_from_stripe_data")
+    def test_update_product(self, SyncProductMock):
+        product_mock = Mock
+        stripe_product_mock = Mock()
+        product_mock.stripe_product = stripe_product_mock
+        description = "ABC"
+
+        products.update(product_mock, description=description)
+
+        args, _ = SyncProductMock.call_args
+        self.assertTrue(stripe_product_mock.save.called)
+        self.assertEqual(stripe_product_mock.description, description)
+        self.assertTrue(args[0], stripe_product_mock)
+
+    @patch("stripe.Product.retrieve")
+    def test_retrieve_product(self, RetrieveMock):
+        product_id = 'pr_12345'
+
+        value = products.retrieve(product_id)
+
+        args, _ = RetrieveMock.call_args
+        self.assertTrue(args[0], product_id)
+        self.assertIsNotNone(value)
+
+    @patch("stripe.Product.retrieve")
+    def test_retrieve_product_not_found(self, RetrieveMock):
+        product_id = 'pr_12345'
+        RetrieveMock.side_effect = stripe.InvalidRequestError("bla bla No such product", "error")
+
+        value = products.retrieve(product_id)
+
+        args, _ = RetrieveMock.call_args
+        self.assertTrue(args[0], product_id)
+        self.assertIsNone(value)
+
+    @patch("stripe.Product.retrieve")
+    def test_retrieve_product_with_error(self, RetrieveMock):
+        product_id = 'pr_12345'
+        RetrieveMock.side_effect = stripe.InvalidRequestError("bad", "error")
+
+        try:
+            products.retrieve(product_id)
+            self.assertTrue(False)
+        except stripe.InvalidRequestError:
+            self.assertTrue(True)
+
+        args, _ = RetrieveMock.call_args
+        self.assertTrue(args[0], product_id)
+
+    @patch("stripe.Product.retrieve")
+    def test_delete_product(self, RetrieveMock):
+
+        product_id = 'pr_1234567'
+        product_mock = Mock()
+        product_mock.stripe_id = product_id
+        stripe_product_mock = Mock()
+        RetrieveMock.return_value = stripe_product_mock
+
+        products.delete(product_mock)
+
+        args, _ = RetrieveMock.call_args
+        self.assertEqual(args[0], product_id)
+        self.assertTrue(stripe_product_mock.delete.called)
 
 class SkusTestCase(TestCase):
     pass

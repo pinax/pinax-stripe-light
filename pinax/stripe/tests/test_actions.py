@@ -27,6 +27,8 @@ from ..actions import (
     orders,
     products,
     skus,
+    coupons,
+    invoiceitems,
 )
 from ..models import (
     Account,
@@ -43,6 +45,7 @@ from ..models import (
     Order,
     Product,
     Sku,
+    Coupon,
 )
 
 
@@ -794,6 +797,32 @@ class InvoicesTests(TestCase):
         self.assertFalse(invoices.create_and_pay(Mock()))
 
 
+class InvoiceItemsTestCase(TestCase):
+
+    @patch("stripe.InvoiceItem.create")
+    def test_create_invoice_item(self, IICreateMock):
+        customer_id = 'cus_12345'
+        customer_mock = Mock()
+        customer_mock.stripe_id = customer_id
+
+        invoice_item_params = {
+            'customer': customer_mock,
+            'amount': '10',
+            'description': 'meh',
+            'currency': 'usd',
+            'discountable': False,
+            'invoice': None,
+            'metadata': None,
+            'subscription': None
+        }
+
+        invoiceitems.create(**invoice_item_params)
+
+        _, kwargs = IICreateMock.call_args
+
+        invoice_item_params['customer'] = customer_id
+        self.assertEqual(invoice_item_params, kwargs)
+
 class RefundsTests(TestCase):
 
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
@@ -1220,6 +1249,53 @@ class SubscriptionsTests(TestCase):
     def test_is_valid_false_canceled(self):
         sub = Subscription(status="trialing", cancel_at_period_end=True, current_period_end=(timezone.now() - datetime.timedelta(days=2)))
         self.assertFalse(subscriptions.is_valid(sub))
+
+
+class CouponsTestCase(TestCase):
+
+    @patch("pinax.stripe.actions.coupons.sync_coupon_from_stripe_data")
+    @patch("stripe.Coupon.create")
+    def test_create_coupon(self, CreateCouponMock, SyncCouponMock):
+        coupon_id = 'CX1'
+
+        coupon_params = {
+            'c_id': coupon_id,
+            'duration': 'once',
+            'currency': 'usd',
+            'amount_off': None,
+            'duration_in_months': None,
+            'max_redemptions': None,
+            'metadata': {},
+            'percent_off': 10
+        }
+
+        stripe_coupon = dict(id=coupon_id)
+        CreateCouponMock.return_value = stripe_coupon
+
+        coupons.create(**coupon_params)
+
+        _, kwargs = CreateCouponMock.call_args
+        self.assertTrue(SyncCouponMock.called)
+
+        args, _ = SyncCouponMock.call_args
+        self.assertEqual(args[0], stripe_coupon)
+
+    @patch("stripe.Coupon.retrieve")
+    def test_delete_coupon(self, CouponRetrieveMock):
+        coupon_id = 'CX123'
+        coupon_mock = Mock()
+        coupon_mock.stripe_id = coupon_id
+        stripe_coupon_mock = Mock()
+        CouponRetrieveMock.return_value = stripe_coupon_mock
+
+        coupons.delete(coupon_mock)
+
+        args, _ = CouponRetrieveMock.call_args
+        self.assertTrue(CouponRetrieveMock.called)
+        self.assertTrue(args[0], coupon_id)
+
+        self.assertTrue(coupon_mock.delete.called)
+        self.assertTrue(stripe_coupon_mock.delete.called)
 
 
 class SyncsTests(TestCase):
@@ -2762,6 +2838,27 @@ class SyncsTests(TestCase):
         args, _ = SyncOrderMock.call_args
         self.assertEqual(SyncOrderMock.call_count, 1)
         self.assertEqual(args[0], stripe_order)
+
+    def test_sync_coupon_from_stripe_data(self):
+
+        coupon_source = {
+            "id": "mia10",
+            "object": "coupon",
+            "amount_off": None,
+            "created": 1516641145,
+            "currency": None,
+            "duration": "once",
+            "duration_in_months": None,
+            "livemode": False,
+            "max_redemptions": None,
+            "metadata": {},
+            "percent_off": 10,
+            "redeem_by": None,
+            "times_redeemed": 0,
+            "valid": True
+        }
+        coupon = coupons.sync_coupon_from_stripe_data(coupon_source)
+        self.assertEquals(Coupon.objects.get(stripe_id=coupon_source["id"]), coupon)
 
 class InvoiceSyncsTests(TestCase):
 

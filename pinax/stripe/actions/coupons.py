@@ -49,17 +49,20 @@ def sync_coupon_from_stripe_data(stripe_coupon):
 
     obj, _ = models.Coupon.objects.get_or_create(stripe_id=stripe_coupon["id"])
 
-    obj.amount_off = utils.convert_amount_for_db(stripe_coupon["amount_off"], stripe_coupon["currency"])
-    obj.currency = stripe_coupon["currency"]
-    obj.duration = stripe_coupon["duration"]
-    obj.duration_in_months = stripe_coupon["duration_in_months"]
-    obj.livemode = stripe_coupon["livemode"]
-    obj.max_redemptions = stripe_coupon["max_redemptions"]
-    obj.metadata = stripe_coupon["metadata"]
-    obj.percent_off = stripe_coupon["percent_off"]
+    currency = stripe_coupon.get("currency") or "usd"
+    amount_off = stripe_coupon.get("amount_off") or 0
+
+    obj.amount_off = utils.convert_amount_for_db(amount_off, currency)
+    obj.currency = currency
+    obj.duration = stripe_coupon.get("duration")
+    obj.duration_in_months = stripe_coupon.get("duration_in_months")
+    obj.livemode = stripe_coupon.get("livemode")
+    obj.max_redemptions = stripe_coupon.get("max_redemptions")
+    obj.metadata = stripe_coupon.get("metadata")
+    obj.percent_off = stripe_coupon.get("percent_off")
     obj.redeem_by = utils.convert_tstamp(stripe_coupon, "times_redeemed")
-    obj.times_redeemed = stripe_coupon["times_redeemed"]
-    obj.valid = stripe_coupon["valid"]
+    obj.times_redeemed = stripe_coupon.get("times_redeemed")
+    obj.valid = stripe_coupon.get("valid")
 
     obj.save()
     return obj

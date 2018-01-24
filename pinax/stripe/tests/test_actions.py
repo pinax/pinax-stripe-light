@@ -2729,7 +2729,8 @@ class SyncsTests(TestCase):
             amount_returned=0,
             currency='usd',
             selected_shipping_method='chocobo',
-            status='created'
+            status='created',
+            livemode=False
         )
 
         stripe_orders = [stripe_order]
@@ -2763,7 +2764,8 @@ class SyncsTests(TestCase):
             amount_returned=0,
             currency='usd',
             selected_shipping_method='chocobo',
-            status='created'
+            status='created',
+            livemode=False
         )
 
         stripe_orders = [stripe_order]
@@ -2794,7 +2796,8 @@ class SyncsTests(TestCase):
             amount_returned=0,
             currency='usd',
             selected_shipping_method='chocobo',
-            status='created'
+            status='created',
+            livemode=False
         )
 
         stripe_orders = [stripe_order]

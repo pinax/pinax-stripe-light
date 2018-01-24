@@ -151,39 +151,7 @@ def sync_orders():
         orders = iter(stripe.Order.list().data)
 
     for stripe_order in orders:
-        customer = models.Customer.objects.get(stripe_id=stripe_order.get("customer"))
-
-        if stripe_order.get("charge"):
-            stripe_charge = stripe.Charge.retrieve(stripe_order.get("charge"))
-            charge = charges.sync_charge_from_stripe_data(stripe_charge)
-        else:
-            charge = None
-
-        amount = stripe_order.get("amount")
-        amount_returned = stripe_order.get("amount_returned")
-        currency = stripe_order.get("currency")
-
-        defaults = dict(
-            amount=utils.convert_amount_for_db(amount, currency),
-            amount_returned=utils.convert_amount_for_db(amount_returned, currency) if amount_returned else None,
-            charge=charge,
-            currency=currency,
-            customer=customer,
-            livemode=stripe_order.get("livemode", False),
-            metadata=stripe_order.get("metadata"),
-            selected_shipping_method=stripe_order.get("selected_shipping_method"),
-            shipping=stripe_order.get("shipping"),
-            shipping_methods=stripe_order.get("shipping_methods"),
-            status=stripe_order.get("status"),
-            status_transitions=stripe_order.get("status_transitions"),
-            items=stripe_order.get("items")
-        )
-
-        obj, created = models.Order.objects.get_or_create(
-            stripe_id=stripe_order.get("id"),
-            defaults=defaults
-        )
-        utils.update_with_defaults(obj, defaults, created)
+        sync_order_from_stripe_data(stripe_order)
 
 def sync_order_from_stripe_data(stripe_order):
     """
@@ -196,16 +164,15 @@ def sync_order_from_stripe_data(stripe_order):
         a pinax.stripe.models.Order object
     """
 
-    customer = models.Customer.objects.get(stripe_id=stripe_order["customer"])
+    customer = models.Customer.objects.get(stripe_id=stripe_order.get("customer"))
 
-    if stripe_order.get("charge"):
-        charge = charges.sync_charge_from_stripe_data(stripe.Charge.retrieve(stripe_order["charge"]))
-    else:
-        charge = None
+    charge = stripe_order.get("charge")
+    if charge:
+        charge = charges.sync_charge_from_stripe_data(stripe.Charge.retrieve(charge))
 
-    amount = stripe_order["amount"]
-    amount_returned = stripe_order["amount_returned"]
-    currency = stripe_order["currency"]
+    amount = stripe_order.get("amount")
+    amount_returned = stripe_order.get("amount_returned")
+    currency = stripe_order.get("currency")
 
     defaults = dict(
         amount=utils.convert_amount_for_db(amount, currency),
@@ -213,18 +180,18 @@ def sync_order_from_stripe_data(stripe_order):
         charge=charge,
         currency=currency,
         customer=customer,
-        livemode=stripe_order["livemode"],
-        metadata = stripe_order["metadata"],
-        selected_shipping_method = stripe_order["selected_shipping_method"],
-        shipping = stripe_order["shipping"],
-        shipping_methods = stripe_order["shipping_methods"],
-        status = stripe_order["status"],
-        status_transitions = stripe_order["status_transitions"],
-        items = stripe_order["items"]
+        livemode=stripe_order.get("livemode"),
+        metadata = stripe_order.get("metadata"),
+        selected_shipping_method = stripe_order.get("selected_shipping_method"),
+        shipping = stripe_order.get("shipping"),
+        shipping_methods = stripe_order.get("shipping_methods"),
+        status = stripe_order.get("status"),
+        status_transitions = stripe_order.get("status_transitions"),
+        items = stripe_order.get("items")
     )
 
     order, created = models.Order.objects.get_or_create(
-        stripe_id=stripe_order["id"],
+        stripe_id=stripe_order.get("id"),
         defaults=defaults
     )
 

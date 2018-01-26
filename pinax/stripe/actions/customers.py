@@ -117,6 +117,10 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, coupon=None
         return _create_without_account(user, card=card, plan=plan, coupon=coupon, charge_immediately=charge_immediately, quantity=quantity)
     return _create_with_account(user, stripe_account, card=card, plan=plan, coupon=coupon, charge_immediately=charge_immediately, quantity=quantity)
 
+def update(customer, **kwargs):
+    stripe_customer = customer.stripe_customer
+    stripe_customer.update(kwargs)
+    stripe_customer.save()
 
 def get_customer_for_user(user, stripe_account=None):
     """

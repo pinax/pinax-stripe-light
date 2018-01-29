@@ -229,6 +229,34 @@ class SubscriptionInline(admin.TabularInline):
     extra = 0
     max_num = 0
 
+class SubscriptionAdmin(admin.ModelAdmin):
+    model = Order
+
+    raw_id_fields = [
+        "customer"
+    ]
+
+    readonly_fields = [
+        "current_period_end",
+        "current_period_start",
+        "trial_end",
+        "trial_start"
+    ]
+
+    list_display = [
+        "customer",
+        "plan",
+        "quantity",
+        "start",
+        "ended_at",
+        "status"
+    ]
+
+    search_fields = [
+        "customer__user__email",
+        "customer__user__username",
+        "stripe_id",
+    ]
 
 class CardInline(admin.TabularInline):
     model = Card
@@ -579,6 +607,7 @@ class OrderAdmin(admin.ModelAdmin):
         return "%s %s" % (obj.customer.user.first_name, obj.customer.user.last_name)
 
 admin.site.register(Sku,SkuAdmin)
+admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Account, AccountAdmin)
 admin.site.register(Charge, ChargeAdmin)
 admin.site.register(Customer, CustomerAdmin)

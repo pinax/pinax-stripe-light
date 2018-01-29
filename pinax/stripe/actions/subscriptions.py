@@ -1,9 +1,9 @@
 import datetime
 
+import stripe
 from django.db.models import Q
 from django.utils import timezone
-
-import stripe
+from django.utils.encoding import smart_str
 
 from .. import hooks, models, utils
 
@@ -135,7 +135,15 @@ def retrieve(customer, sub_id):
     """
     if not sub_id:
         return
-    subscription = stripe.Subscription.retrieve(sub_id, stripe_account=customer.stripe_account_stripe_id)
+
+    try:
+        subscription = stripe.Subscription.retrieve(sub_id, stripe_account=customer.stripe_account_stripe_id)
+    except stripe.InvalidRequestError as e:
+        if smart_str(e).find("No such subscription") >= 0:
+            return
+        else:
+            raise e
+
     if subscription and subscription.customer != customer.stripe_id:
         return
     return subscription

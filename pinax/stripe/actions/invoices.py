@@ -93,8 +93,13 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
     else:
         charge = None
 
-    stripe_subscription = subscriptions.retrieve(c, sub_id)
-    subscription = subscriptions.sync_subscription_from_stripe_data(c, stripe_subscription) if stripe_subscription else None
+    subscription = None
+    try:
+        stripe_subscription = subscriptions.retrieve(c, sub_id)
+        if stripe_subscription:
+            subscription = subscriptions.sync_subscription_from_stripe_data(c, stripe_subscription)
+    except stripe.InvalidRequestError:
+        pass
 
     defaults = dict(
         customer=c,

@@ -27,6 +27,20 @@ def create(customer):
     return stripe.Invoice.create(customer=customer.stripe_id)
 
 
+def retrieve(invoice_id):
+
+    if not invoice_id:
+        return
+
+    try:
+        return stripe.Invoice.retrieve(invoice_id)
+    except stripe.InvalidRequestError as e:
+        if smart_str(e).find("No such invoice") == -1:
+            raise
+        else:
+            # Not Found
+            return None
+
 def create_and_pay(customer):
     """
     Creates and immediately pays an invoice for a customer
@@ -159,7 +173,12 @@ def sync_invoice_items(invoice, items):
     Args:
         invoice_: the invoice objects to synchronize
         items: the data from the Stripe API representing the line items
+        :param invoice:
     """
+
+    # clear any existing invoice item
+    invoice.items.all().delete()
+
     for item in items:
         period_end = utils.convert_tstamp(item["period"], "end")
         period_start = utils.convert_tstamp(item["period"], "start")

@@ -12,7 +12,33 @@ import jsonfield.fields
 
 class Migration(migrations.Migration):
 
-    replaces = [('pinax_stripe', '0010_connect'), ('pinax_stripe', '0011_subscription_connect'), ('pinax_stripe', '0012_user_account'), ('pinax_stripe', '0013_revert_0011'), ('pinax_stripe', '0014_auto_20171018_1024'), ('pinax_stripe', '0015_account-as-foreign-key'), ('pinax_stripe', '0016_remove-user-account-account'), ('pinax_stripe', '0017_user-account-account'), ('pinax_stripe', '0018_add_discounts'), ('pinax_stripe', '0011_auto_20171024_1209'), ('pinax_stripe', '0011_auto_20171017_1234'), ('pinax_stripe', '0012_merge_20171025_1443'), ('pinax_stripe', '0019_merge_20171025_1519'), ('pinax_stripe', '0020_account-publishablke-key'), ('pinax_stripe', '0021_account-authorized'), ('pinax_stripe', '0022_sub-account-related'), ('pinax_stripe', '0011_account-as-foreign-key'), ('pinax_stripe', '0012_merge_20171026_1310'), ('pinax_stripe', '0013_auto_20171027_1443'), ('pinax_stripe', '0023_merge_20171027_1626'), ('pinax_stripe', '0013_auto_20171025_2153'), ('pinax_stripe', '0011_account_publishable_key'), ('pinax_stripe', '0014_merge_20171030_1554'), ('pinax_stripe', '0015_merge_20171030_1852'), ('pinax_stripe', '0024_merge_20171030_1941'), ('pinax_stripe', '0025_remove_subscription_stripe_account'), ('pinax_stripe', '0016_auto_20171106_1234'), ('pinax_stripe', '0014_auto_20171026_1304'), ('pinax_stripe', '0017_merge_20171106_2201'), ('pinax_stripe', '0026_merge_20171106_2259')]
+    replaces = [
+        ('pinax_stripe', '0010_connect'),
+        ('pinax_stripe', '0011_subscription_connect'),
+        ('pinax_stripe', '0012_user_account'),
+        ('pinax_stripe', '0013_revert_0011'),
+        ('pinax_stripe', '0014_auto_20171018_1024'),
+        ('pinax_stripe', '0015_account-as-foreign-key'),
+        ('pinax_stripe', '0016_remove-user-account-account'),
+        ('pinax_stripe', '0017_user-account-account'),
+        ('pinax_stripe', '0018_add_discounts'),
+        ('pinax_stripe', '0011_auto_20171024_1209'),
+        ('pinax_stripe', '0011_auto_20171017_1234'),
+        ('pinax_stripe', '0012_merge_20171025_1443'),
+        ('pinax_stripe', '0019_merge_20171025_1519'),
+        ('pinax_stripe', '0020_account-publishablke-key'),
+        ('pinax_stripe', '0021_account-authorized'),
+        ('pinax_stripe', '0022_sub-account-related'),
+        ('pinax_stripe', '0011_account-as-foreign-key'),
+        ('pinax_stripe', '0012_merge_20171026_1310'),
+        ('pinax_stripe', '0013_auto_20171027_1443'),
+        ('pinax_stripe', '0023_merge_20171027_1626'),
+        ('pinax_stripe', '0013_auto_20171025_2153'),
+        ('pinax_stripe', '0011_account_publishable_key'),
+        ('pinax_stripe', '0014_merge_20171030_1554'),
+        ('pinax_stripe', '0015_merge_20171030_1852'),
+        ('pinax_stripe', '0024_merge_20171030_1941'),
+    ]
 
     dependencies = [
         ('pinax_stripe', '0009_auto_20170825_1841'),

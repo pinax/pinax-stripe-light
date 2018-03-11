@@ -102,6 +102,9 @@ class Webhook(with_metaclass(Registerable, object)):
             )
         )
         self.event.valid = self.is_event_valid(self.event.webhook_message["data"], self.event.validated_message["data"])
+        if settings.PINAX_STRIPE_HOOKS_LIVEMODE_REQUISITE is not None:
+            if settings.PINAX_STRIPE_HOOKS_LIVEMODE_REQUISITE != self.event.livemode:
+                self.event.valid = False
         self.event.save()
 
     @staticmethod

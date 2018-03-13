@@ -1,5 +1,6 @@
 import stripe
 from django.utils.encoding import smart_str
+from ..models import InvoiceItem
 
 def create(customer, amount, description, currency="usd", discountable=False, invoice=None, metadata=None, subscription=None):
     """
@@ -65,6 +66,12 @@ def delete(invoiceitem):
     Args:
         invoiceitem: the invoiceitem to delete
     """
-    invoiceitem = retrieve(invoiceitem.id)
+    invoice_item_id = invoiceitem.id
+    invoiceitem = retrieve(invoice_item_id)
     if invoiceitem:
         invoiceitem.delete()
+        try:
+            ii = InvoiceItem.objects.get(sttipe_id=invoice_item_id)
+            ii.delete()
+        except InvoiceItem.DoesNotExist:
+            pass

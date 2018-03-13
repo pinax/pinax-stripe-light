@@ -359,8 +359,8 @@ class Subscription(StripeAccountFromCustomerMixin, StripeObject):
     current_period_end = models.DateTimeField(null=True, blank=True)
     current_period_start = models.DateTimeField(null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)
-    plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
-    quantity = models.IntegerField()
+    plan = models.ForeignKey(Plan, null=True, blank=True, on_delete=models.CASCADE)
+    quantity = models.IntegerField(null=True, blank=True)
     start = models.DateTimeField()
     status = models.CharField(max_length=25)  # trialing, active, past_due, canceled, or unpaid
     trial_end = models.DateTimeField(null=True, blank=True)
@@ -399,6 +399,37 @@ class Subscription(StripeAccountFromCustomerMixin, StripeObject):
             self.status,
             self.stripe_id,
         )
+
+class SubscriptionItem(StripeObject):
+
+    def __str__(self):
+        return "SubscriptionItem(object={!r}, plan={!r}, subscription={!r})".format(
+            self.get_object_display(),
+            self.plan.name,
+            self.subscription.stripe_id
+        )
+
+    def __repr__(self):
+        return self.__str__()
+
+    SUBSCRIPTION_ITEM = 'subscription_item'
+    PLAN = 'plan'
+
+    OBJECT_TYPES = (
+        (SUBSCRIPTION_ITEM, SUBSCRIPTION_ITEM),
+        (PLAN, PLAN),
+    )
+
+    plan = models.ForeignKey(Plan, related_name="subscription_items", on_delete=models.CASCADE)
+    subscription = models.ForeignKey(Subscription, related_name="items", on_delete=models.CASCADE)
+
+    metadata = JSONField(null=True, blank=True)
+    object = models.CharField(max_length=20, choices=OBJECT_TYPES, default=SUBSCRIPTION_ITEM)
+    quantity = models.IntegerField(null=True, blank=True)
+
+    @property
+    def stripe_subscription_item(self):
+        return stripe.SubscriptionItem.retrieve(self.stripe_id)
 
 
 class Invoice(StripeAccountFromCustomerMixin, StripeObject):

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 import decimal
@@ -494,6 +495,21 @@ class Charge(StripeAccountFromCustomerMixin, StripeObject):
 
     objects = ChargeManager()
 
+    def __str__(self):
+        info = []
+        if not self.paid:
+            info += ["unpaid"]
+        if not self.captured:
+            info += ["uncaptured"]
+        if self.refunded:
+            info += ["refunded"]
+        currency = CURRENCY_SYMBOLS.get(self.currency, "")
+        return "{}{}{}".format(
+            currency,
+            self.total_amount,
+            " ({})".format(", ".join(info)) if info else "",
+        )
+
     def __repr__(self):
         return "Charge(pk={!r}, customer={!r}, source={!r}, amount={!r}, captured={!r}, paid={!r}, stripe_id={!r})".format(
             self.pk,
@@ -504,6 +520,13 @@ class Charge(StripeAccountFromCustomerMixin, StripeObject):
             self.paid,
             self.stripe_id,
         )
+
+    @property
+    def total_amount(self):
+        amount = self.amount if self.amount else 0
+        amount_refunded = self.amount_refunded if self.amount_refunded else 0
+        return amount - amount_refunded
+    total_amount.fget.short_description = "Σ amount"
 
     @property
     def stripe_charge(self):

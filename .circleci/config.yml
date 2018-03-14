@@ -127,23 +127,113 @@ jobs:
           - PINAX_STRIPE_DATABASE_USER=root
           - PINAX_STRIPE_DATABASE_NAME=circle_test
       - image: circleci/postgres:9.6-alpine
+  release:
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      - checkout
+      - run:
+          name: verify git tag vs. version
+          command: |
+            if [[ `python setup.py --version` == $CIRCLE_TAG ]]; then
+              echo "Tag matches version, proceed with the release!";
+            else
+              echo "Fix version in setup.py and re-tag so they match!"; exit 1
+            fi
+      - run:
+          name: init .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = $PYPI_USERNAME" >> ~/.pypirc
+            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+      - run:
+          name: create and upload packages
+          command: python setup.py sdist bdist_wheel upload
 
 workflows:
   version: 2
   test:
     jobs:
-      - lint
-      - py27dj18
-      - py27dj110
-      - py27dj111
-      - py34dj18
-      - py34dj110
-      - py34dj111
-      - py34dj20
-      - py35dj18
-      - py35dj110
-      - py35dj111
-      - py35dj20
-      - py36dj111
-      - py36dj20
-      - py36dj20psql
+      - lint:
+          filters:
+            tags:
+              only: /.*/
+      - py27dj18:
+          filters:
+            tags:
+              only: /.*/
+      - py27dj110:
+          filters:
+            tags:
+              only: /.*/
+      - py27dj111:
+          filters:
+            tags:
+              only: /.*/
+      - py34dj18:
+          filters:
+            tags:
+              only: /.*/
+      - py34dj110:
+          filters:
+            tags:
+              only: /.*/
+      - py34dj111:
+          filters:
+            tags:
+              only: /.*/
+      - py34dj20:
+          filters:
+            tags:
+              only: /.*/
+      - py35dj18:
+          filters:
+            tags:
+              only: /.*/
+      - py35dj110:
+          filters:
+            tags:
+              only: /.*/
+      - py35dj111:
+          filters:
+            tags:
+              only: /.*/
+      - py35dj20:
+          filters:
+            tags:
+              only: /.*/
+      - py36dj111:
+          filters:
+            tags:
+              only: /.*/
+      - py36dj20:
+          filters:
+            tags:
+              only: /.*/
+      - py36dj20psql:
+          filters:
+            tags:
+              only: /.*/
+      - release:
+          context: org-global
+          requires:
+            - lint
+            - py27dj18
+            - py27dj110
+            - py27dj111
+            - py34dj18
+            - py34dj110
+            - py34dj111
+            - py34dj20
+            - py35dj18
+            - py35dj110
+            - py35dj111
+            - py35dj20
+            - py36dj111
+            - py36dj20
+            - py36dj20psql
+          filters:
+            tags:
+              only: /[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/

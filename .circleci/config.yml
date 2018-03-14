@@ -135,7 +135,7 @@ jobs:
       - run:
           name: verify git tag vs. version
           command: |
-            if [[ `python setup.py --version` == $CIRCLE_TAG ]]; then
+            if [[ `python setup.py --version` == ${CIRCLE_TAG/v/} ]]; then
               echo "Tag matches version, proceed with the release!";
             else
               echo "Fix version in setup.py and re-tag so they match!"; exit 1

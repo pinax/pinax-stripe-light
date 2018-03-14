@@ -107,6 +107,7 @@ def create(
     if customer and not isinstance(customer, models.Customer):
         customer, _ = models.Customer.objects.get_or_create(stripe_id=customer)
     _validate_create_params(customer, source, amount, application_fee, destination_account, destination_amount, on_behalf_of)
+    stripe_account_stripe_id = None
     if stripe_account:
         stripe_account_stripe_id = stripe_account.stripe_id
     if customer and customer.stripe_account_stripe_id:

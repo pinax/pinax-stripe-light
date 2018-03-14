@@ -453,7 +453,7 @@ class AccountAdmin(ModelAdmin):
     search_fields = [
         "display_name",
         "stripe_id",
-    ],
+    ]
 
 
 admin.site.register(

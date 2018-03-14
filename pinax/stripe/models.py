@@ -279,7 +279,11 @@ class Customer(AccountRelatedStripeObject):
         if self.user:
             return str(self.user)
         elif self.id:
-            return ", ".join(str(user) for user in self.users.all())
+            users = self.users.all()
+            if users:
+                return ", ".join(str(user) for user in users)
+        if self.stripe_id:
+            return "No User(s) ({})".format(self.stripe_id)
         return "No User(s)"
 
     def __repr__(self):

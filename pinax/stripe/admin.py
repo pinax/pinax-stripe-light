@@ -346,8 +346,8 @@ class InvoiceAdmin(ModelAdmin):
     ]
     inlines = [
         InvoiceItemInline
-    ],
-    readonly_fields=[
+    ]
+    readonly_fields = [
         "stripe_account_stripe_id",
     ]
 

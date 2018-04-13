@@ -167,6 +167,7 @@ def sync_subscription_from_stripe_data(customer, subscription):
     from .subscriptionitems import sync_subscription_items
 
     plan = subscription['plan']
+    plan = models.Plan.objects.get(stripe_id=subscription["plan"]["id"]) if plan else None
 
     defaults = dict(
         customer=customer,
@@ -176,7 +177,7 @@ def sync_subscription_from_stripe_data(customer, subscription):
         current_period_start=utils.convert_tstamp(subscription["current_period_start"]),
         current_period_end=utils.convert_tstamp(subscription["current_period_end"]),
         ended_at=utils.convert_tstamp(subscription["ended_at"]),
-        plan=plan['id'] if plan else None,
+        plan=plan,
         quantity=subscription["quantity"],
         start=utils.convert_tstamp(subscription["start"]),
         status=subscription["status"],
@@ -189,8 +190,7 @@ def sync_subscription_from_stripe_data(customer, subscription):
         defaults=defaults
     )
     sub = utils.update_with_defaults(sub, defaults, created)
-
-    sub = sync_subscription_items(sub)
+    sub = sync_subscription_items(sub) or sub
     return sub
 
 def get_subscription_item_by_plan_id(stripe_subscription, plan_id):

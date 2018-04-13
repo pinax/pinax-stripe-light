@@ -31,15 +31,19 @@ def sync_subscriptionitem_from_stripe_data(subscriptionitem):
 
 
 def sync_subscription_items(subscription):
-
-    resp = stripe.SubscriptionItem.list(subscription=subscription.stripe_id)
-    subscriptionitem_ids = []
-    for item in resp.get('data', []):
-        subscriptionitem = sync_subscriptionitem_from_stripe_data(item)
-        subscriptionitem_ids.append(subscriptionitem.stripe_id)
-    SubscriptionItem.objects.exclude(stripe_id__in=subscriptionitem_ids).delete()
-
-    return subscription
+    try:
+        resp = stripe.SubscriptionItem.list(subscription=subscription.stripe_id)
+        subscriptionitem_ids = []
+        for item in resp.get('data', []):
+            subscriptionitem = sync_subscriptionitem_from_stripe_data(item)
+            subscriptionitem_ids.append(subscriptionitem.stripe_id)
+        SubscriptionItem.objects.exclude(stripe_id__in=subscriptionitem_ids).delete()
+        return subscription
+    except stripe.InvalidRequestError as e:
+        if smart_str(e).find("No such subscription") >= 0:
+            return
+        else:
+            raise e
 
 def retrieve(subitem_id):
 

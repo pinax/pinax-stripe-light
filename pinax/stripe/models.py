@@ -562,7 +562,7 @@ class Account(StripeObject):
     decline_charge_on_cvc_failure = models.BooleanField(default=False)
     default_currency = models.CharField(max_length=3)
     details_submitted = models.BooleanField(default=False)
-    display_name = models.TextField(blank=False, null=False)
+    display_name = models.TextField(blank=True, null=True)
     email = models.TextField(null=True, blank=True)
 
     legal_entity_address_city = models.TextField(null=True, blank=True)

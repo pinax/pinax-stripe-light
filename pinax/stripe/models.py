@@ -621,12 +621,12 @@ class Account(StripeObject):
         return stripe.Account.retrieve(self.stripe_id)
 
     def __str__(self):
-        return "{} - {}".format(self.display_name, self.stripe_id)
+        return "{} - {}".format(self.display_name or "", self.stripe_id)
 
     def __repr__(self):
         return "Account(pk={!r}, display_name={!r}, type={!r}, authorized={!r}, stripe_id={!r})".format(
             self.pk,
-            self.display_name,
+            self.display_name or "",
             self.type,
             self.authorized,
             self.stripe_id,

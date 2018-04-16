@@ -620,7 +620,7 @@ class Account(StripeObject):
     decline_charge_on_cvc_failure = models.BooleanField(default=False)
     default_currency = models.CharField(max_length=3)
     details_submitted = models.BooleanField(default=False)
-    display_name = models.TextField(blank=False, null=False)
+    display_name = models.TextField(blank=True, null=True)
     email = models.TextField(null=True, blank=True)
 
     legal_entity_address_city = models.TextField(null=True, blank=True)
@@ -679,12 +679,12 @@ class Account(StripeObject):
         return stripe.Account.retrieve(self.stripe_id)
 
     def __str__(self):
-        return "{} - {}".format(self.display_name, self.stripe_id)
+        return "{} - {}".format(self.display_name or "", self.stripe_id)
 
     def __repr__(self):
         return "Account(pk={!r}, display_name={!r}, type={!r}, authorized={!r}, stripe_id={!r})".format(
             self.pk,
-            self.display_name,
+            self.display_name or "",
             self.type,
             self.authorized,
             self.stripe_id,

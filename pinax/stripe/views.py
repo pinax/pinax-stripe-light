@@ -16,7 +16,7 @@ from django.views.generic.edit import FormMixin
 
 import stripe
 
-from .actions import customers, events, exceptions, sources, subscriptions
+from .actions import customers, events, exceptions, sources, subscriptions, invoices
 from .conf import settings
 from .forms import PaymentMethodForm, PlanForm
 from .mixins import CustomerMixin, LoginRequiredMixin, PaymentsContextMixin
@@ -119,6 +119,7 @@ class SubscriptionCreateView(LoginRequiredMixin, PaymentsContextMixin, CustomerM
 
     def subscribe(self, customer, plan, token):
         subscriptions.create(customer, plan, token=token, tax_percent=self.tax_percent)
+        invoices.sync_invoices_for_customer(customer)
 
     def form_valid(self, form):
         self.set_customer()
@@ -165,6 +166,7 @@ class SubscriptionUpdateView(LoginRequiredMixin, CustomerMixin, FormMixin, Detai
 
     def update_subscription(self, plan_id):
         subscriptions.update(self.object, plan_id)
+        invoices.sync_invoices_for_customer(customer)
 
     def get_initial(self):
         initial = super(SubscriptionUpdateView, self).get_initial()

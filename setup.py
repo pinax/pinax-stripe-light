@@ -92,7 +92,7 @@ setup(
         "django>=1.8",
         "pytz",
         "six",
-        "django-ipware==1.1.6"
+        "django-ipware==2.1.0"
     ],
     extras_require={
         "pytest": ["pytest", "pytest-django"] + tests_require,

@@ -86,12 +86,10 @@ class CreateCustomAccountView(FormView):
     form_class = InitialCustomAccountForm
     template_name = '<path to your template>'
 
-    def get_form_kwargs(self, *args, **kwargs):
+    def get_form_kwargs(self):
         form_kwargs = super(
-            CreateBankAccountView, self
-        ).get_form_kwargs(
-            *args, **kwargs
-        )
+            CreateCustomAccountView, self
+        ).get_form_kwargs()
         initial = form_kwargs.pop('initial', {})
         form_kwargs['request'] = self.request
         form_kwargs['country'] = 'US'

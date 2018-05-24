@@ -25,7 +25,7 @@ def cancel(subscription, at_period_end=True):
     return sync_subscription_from_stripe_data(subscription.customer, sub)
 
 
-def create(customer, plan=None, items=None, quantity=None, trial_days=None, token=None, coupon=None, tax_percent=None, charge_immediately=False):
+def create(customer, plan=None, items=None, quantity=None, trial_days=None, token=None, coupon=None, tax_percent=None, charge_immediately=False, **kwargs):
     """
     Creates a subscription for the given customer
 
@@ -42,10 +42,14 @@ def create(customer, plan=None, items=None, quantity=None, trial_days=None, toke
         coupon: if provided, a coupon to apply towards the subscription
         tax_percent: if provided, add percentage as tax
         charge_immediately: optionally, whether or not to charge immediately
+        kwargs: any other parameter you need to pass to the stripe api
 
     Returns:
         the pinax.stripe.models.Subscription object (created or updated)
     """
+
+    if items and plan:
+        ValueError("You can pass either items or plans but not both")
 
     quantity = hooks.hookset.adjust_subscription_quantity(customer=customer, plan=plan, quantity=quantity)
 
@@ -66,6 +70,12 @@ def create(customer, plan=None, items=None, quantity=None, trial_days=None, toke
     subscription_params["quantity"] = quantity
     subscription_params["coupon"] = coupon
     subscription_params["tax_percent"] = tax_percent
+
+    if items:
+        del subscription_params['plan']
+        del subscription_params['quantity']
+
+    subscription_params.update(kwargs)
 
     resp = stripe.Subscription.create(**subscription_params)
 
@@ -232,37 +242,30 @@ def add_plan(subscription, plan, **kwargs):
     if not subscription_item:
         create_subscription_item(stripe_subscription, plan, **kwargs)
 
-def update(subscription, plan=None, old_plan=None, quantity=None, prorate=True, coupon=None, charge_immediately=False):
+def update(subscription, plan=None, quantity=None, items=None, prorate=True, coupon=None, charge_immediately=False):
     """
     Updates a subscription
 
     Args:
         subscription: the subscription to update
         plan: optionally, the plan to change the subscription to
-        old_plan: optionally, the plan we want to replace/update, useful for subscriptions with multiple plans
         quantity: optionally, the quantity of the subscription to change
+        items: optionally, List of subscription items, each with an attached plan.
         prorate: optionally, if the subscription should be prorated or not
         coupon: optionally, a coupon to apply to the subscription
         charge_immediately: optionally, whether or not to charge immediately
     """
 
+    if items and plan:
+        ValueError("You can pass either items or plans but not both")
 
     stripe_subscription = subscription.stripe_subscription
 
     prorate = False if not prorate else prorate
 
-    if subscription.plan and plan:
-        # If subscription.plan is present it means the subscription has only one plan
+    if plan:
         stripe_subscription.plan = plan
         stripe_subscription.quantity = quantity
-    elif not subscription.plan:
-        # multiple plan subscription
-        if plan and not old_plan:
-            add_plan(stripe_subscription, plan, prorate=prorate)
-        elif plan and old_plan:
-            update_plan(stripe_subscription, plan, old_plan, prorate=prorate)
-        elif not plan and old_plan:
-            remove_plan(stripe_subscription, old_plan)
 
     stripe_subscription.prorate = prorate
 
@@ -275,5 +278,40 @@ def update(subscription, plan=None, old_plan=None, quantity=None, prorate=True, 
             stripe_subscription.trial_end = 'now'
 
     sub = stripe_subscription.save()
+
+    if items:
+        # sync is done inside the replace_items
+        subscription = replace_items(subscription, items)
+    else:
+        customer = models.Customer.objects.get(pk=subscription.customer.pk)
+        subscription = sync_subscription_from_stripe_data(customer, sub)
+
+    return subscription
+
+def replace_items(subscription, items):
+
+    """
+    :param subscription: the subscription to update
+    :param items: List of subscription items, each with an attached plan.
+    :return: a subscription instance
+    """
+
+    # Add any new plan
+    for i in items:
+        add_plan(subscription, i)
+
+    stripe_subscription = subscription.stripe_subscription
+    # retrieve the remote subscription
+
+    # remove anything that is not in the items
+    subscription_items = stripe_subscription['items']['data']
+    for subscription_item in subscription_items:
+        si_plan_id = subscription_item['plan']['id']
+        if si_plan_id not in items:
+            remove_plan(subscription, si_plan_id)
+
+    # Retrieve the subscription
+    stripe_subscription = subscription.stripe_subscription
     customer = models.Customer.objects.get(pk=subscription.customer.pk)
-    return sync_subscription_from_stripe_data(customer, sub)
+    return sync_subscription_from_stripe_data(customer, stripe_subscription)
+

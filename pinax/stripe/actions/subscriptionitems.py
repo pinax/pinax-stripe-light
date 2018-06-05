@@ -37,7 +37,7 @@ def sync_subscription_items(subscription):
         for item in resp.get('data', []):
             subscriptionitem = sync_subscriptionitem_from_stripe_data(item)
             subscriptionitem_ids.append(subscriptionitem.stripe_id)
-        subscription.objects.exclude(stripe_id__in=subscriptionitem_ids).delete()
+        subscription.items.exclude(stripe_id__in=subscriptionitem_ids).delete()
         return subscription
     except stripe.InvalidRequestError as e:
         if smart_str(e).find("No such subscription") >= 0:

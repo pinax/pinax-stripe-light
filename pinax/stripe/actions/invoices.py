@@ -183,10 +183,12 @@ def sync_invoice_items(invoice, items):
         period_end = utils.convert_tstamp(item["period"], "end")
         period_start = utils.convert_tstamp(item["period"], "start")
 
+        plan = None
         if item.get("plan"):
-            plan = models.Plan.objects.get(stripe_id=item["plan"]["id"])
-        else:
-            plan = None
+            try:
+                plan = models.Plan.objects.get(stripe_id=item["plan"]["id"])
+            except models.Plan.DoesNotExist:
+                pass
 
         if item["type"] == "subscription":
             if invoice.subscription and invoice.subscription.stripe_id == item["id"]:

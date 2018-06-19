@@ -5,7 +5,7 @@ from django.utils.encoding import smart_str
 
 import stripe
 
-from . import invoices, sources, subscriptions
+from . import invoices, sources, subscriptions, discounts
 from .. import hooks, models, utils
 from ..conf import settings
 
@@ -229,3 +229,8 @@ def sync_customer(customer, cu=None):
         sources.sync_payment_source_from_stripe_data(customer, source)
     for subscription in cu["subscriptions"]["data"]:
         subscriptions.sync_subscription_from_stripe_data(customer, subscription)
+
+    discount = cu.discount
+    if discount:
+        discounts.sync_discounts_from_stripe_data(discount, customer)
+

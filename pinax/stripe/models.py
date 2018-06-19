@@ -734,3 +734,18 @@ class Order(StripeAccountFromCustomerMixin, StripeObject):
     @property
     def skus(self):
         return Sku.objects.filter(stripe_id__in=[s['parent'] for s in self.items if s['type'] == "sku"])
+
+
+class Discount(models.Model):
+
+    class Meta:
+        unique_together = ("customer", "coupon")
+
+    def __str__(self):
+        return "%s, %s" % (self.coupon.stripe_id, self.customer)
+
+    start = models.DateTimeField(null=True, blank=True)
+    end = models.DateTimeField(null=True, blank=True)
+    customer = models.OneToOneField(Customer)
+    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE)
+    subscription = models.ForeignKey(Subscription, null=True, blank=True)

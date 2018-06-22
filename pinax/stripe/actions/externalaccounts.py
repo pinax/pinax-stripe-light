@@ -1,5 +1,6 @@
-from .. import models
 import stripe
+
+from .. import models
 
 
 def create_bank_account(account, account_number, country, currency, **kwargs):
@@ -65,10 +66,9 @@ def sync_bank_account_from_stripe_data(data):
     return obj
 
 
-
 def delete_bank_account(account, bank_account):
     """
-    Create or update using the account object from a Stripe API query.
+    Deletes an external bank account from Stripe and Updates DB
 
     Important: The user must have another bank account with default_for_currency set to True
 
@@ -96,9 +96,3 @@ def delete_bank_account(account, bank_account):
         print(E)
 
     return False
-
-
-
-
-
-

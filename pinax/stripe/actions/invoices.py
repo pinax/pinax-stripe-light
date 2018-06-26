@@ -129,6 +129,7 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         tax_percent=decimal.Decimal(stripe_invoice["tax_percent"]) if stripe_invoice["tax_percent"] is not None else None,
         total=utils.convert_amount_for_db(stripe_invoice["total"], stripe_invoice["currency"]),
         currency=stripe_invoice["currency"],
+        metadata=stripe_invoice["metadata"],
         date=date,
         charge=charge,
         subscription=subscription,

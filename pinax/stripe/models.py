@@ -454,6 +454,7 @@ class Invoice(StripeAccountFromCustomerMixin, StripeObject):
     total = models.DecimalField(decimal_places=2, max_digits=9)
     date = models.DateTimeField()
     webhooks_delivered_at = models.DateTimeField(null=True, blank=True)
+    metadata = JSONField(null=True, blank=True)
 
     @property
     def status(self):

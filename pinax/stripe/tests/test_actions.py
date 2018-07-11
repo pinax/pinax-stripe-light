@@ -495,7 +495,7 @@ class CustomersTests(TestCase):
 
     @patch("stripe.Customer.retrieve")
     def test_purge_already_deleted(self, RetrieveMock):
-        RetrieveMock().delete.side_effect = stripe.InvalidRequestError("No such customer:", "error")
+        RetrieveMock().delete.side_effect = stripe.error.InvalidRequestError("No such customer:", "error")
         customer = Customer.objects.create(
             user=self.user,
             stripe_id="cus_xxxxxxxxxxxxxxx"
@@ -507,12 +507,12 @@ class CustomersTests(TestCase):
 
     @patch("stripe.Customer.retrieve")
     def test_purge_already_some_other_error(self, RetrieveMock):
-        RetrieveMock().delete.side_effect = stripe.InvalidRequestError("Bad", "error")
+        RetrieveMock().delete.side_effect = stripe.error.InvalidRequestError("Bad", "error")
         customer = Customer.objects.create(
             user=self.user,
             stripe_id="cus_xxxxxxxxxxxxxxx"
         )
-        with self.assertRaises(stripe.InvalidRequestError):
+        with self.assertRaises(stripe.error.InvalidRequestError):
             customers.purge(customer)
         self.assertTrue(RetrieveMock().delete.called)
         self.assertIsNotNone(Customer.objects.get(stripe_id=customer.stripe_id).user)
@@ -767,13 +767,13 @@ class InvoicesTests(TestCase):
     def test_create_and_pay_invalid_request_error(self, CreateMock):
         invoice = CreateMock()
         invoice.amount_due = 100
-        invoice.pay.side_effect = stripe.InvalidRequestError("Bad", "error")
+        invoice.pay.side_effect = stripe.error.InvalidRequestError("Bad", "error")
         self.assertFalse(invoices.create_and_pay(Mock()))
         self.assertTrue(invoice.pay.called)
 
     @patch("stripe.Invoice.create")
     def test_create_and_pay_invalid_request_error_on_create(self, CreateMock):
-        CreateMock.side_effect = stripe.InvalidRequestError("Bad", "error")
+        CreateMock.side_effect = stripe.error.InvalidRequestError("Bad", "error")
         self.assertFalse(invoices.create_and_pay(Mock()))
 
 
@@ -1251,43 +1251,6 @@ class SyncsTests(TestCase):
         self.assertEquals(c2, cs2)
         self.assertEquals(c2.percent_off, decimal.Decimal(35.00))
         self.assertFalse(c1 == c2)
-
-    @patch("stripe.Plan.all")
-    @patch("stripe.Plan.auto_paging_iter", create=True, side_effect=AttributeError)
-    def test_sync_plans_deprecated(self, PlanAutoPagerMock, PlanAllMock):
-        PlanAllMock().data = [
-            {
-                "id": "pro2",
-                "object": "plan",
-                "amount": 1999,
-                "created": 1448121054,
-                "currency": "usd",
-                "interval": "month",
-                "interval_count": 1,
-                "livemode": False,
-                "metadata": {},
-                "name": "The Pro Plan",
-                "statement_descriptor": "ALTMAN",
-                "trial_period_days": 3
-            },
-            {
-                "id": "simple1",
-                "object": "plan",
-                "amount": 999,
-                "created": 1448121054,
-                "currency": "usd",
-                "interval": "month",
-                "interval_count": 1,
-                "livemode": False,
-                "metadata": {},
-                "name": "The Simple Plan",
-                "statement_descriptor": "ALTMAN",
-                "trial_period_days": 3
-            },
-        ]
-        plans.sync_plans()
-        self.assertTrue(Plan.objects.all().count(), 2)
-        self.assertEquals(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
 
     @patch("stripe.Plan.auto_paging_iter", create=True)
     def test_sync_plans(self, PlanAutoPagerMock):
@@ -2312,9 +2275,9 @@ class SyncsTests(TestCase):
     @patch("stripe.Subscription.retrieve")
     def test_retrieve_stripe_subscription_invalid_request(self, RetrieveMock):
         def bad_request(*args, **kwargs):
-            raise stripe.InvalidRequestError("Bad", "error")
+            raise stripe.error.InvalidRequestError("Bad", "error")
         RetrieveMock.side_effect = bad_request
-        with self.assertRaises(stripe.InvalidRequestError):
+        with self.assertRaises(stripe.error.InvalidRequestError):
             subscriptions.retrieve(self.customer, "sub id")
 
     def test_sync_invoice_items(self):

@@ -1,8 +1,13 @@
 # Release Notes
 
+## 4.4.0 - 2018-08-04
+
+* Pin `python-stripe` to `>2.0` after the merge of [PR 574](https://github.com/pinax/pinax-stripe/pull/574) which fixed compatibility.
+
+
 ## 4.3.1 - 2018-08-04
 
-* Pin `python-stripe` to `>2.0` as that major release broke things in `pinax-stripe` [PR 580](https://github.com/pinax/pinax-stripe/pull/580)
+* Pin `python-stripe` to `<2.0` as that major release broke things in `pinax-stripe` [PR 580](https://github.com/pinax/pinax-stripe/pull/580)
 
 
 ## 3.4.1 - 2017-04-21

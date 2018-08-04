@@ -63,7 +63,7 @@ setup(
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
-    version="4.3.0",
+    version="4.3.1",
     license="MIT",
     url=URL,
     packages=find_packages(),
@@ -88,7 +88,7 @@ setup(
     install_requires=[
         "django-appconf>=1.0.1",
         "jsonfield>=1.0.3",
-        "stripe>=1.7.9",
+        "stripe>=1.7.9, <2.0",
         "django>=1.8",
         "pytz",
         "six",

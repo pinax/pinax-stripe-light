@@ -11,5 +11,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         User = get_user_model()
         for user in User.objects.filter(customer__isnull=True):
-            customers.create(user=user)
+            customers.create(user=user, charge_immediately=False)
             self.stdout.write("Created customer for {0}\n".format(user.email))

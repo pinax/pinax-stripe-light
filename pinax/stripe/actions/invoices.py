@@ -41,7 +41,7 @@ def create_and_pay(customer):
         if invoice.amount_due > 0:
             invoice.pay()
         return True
-    except stripe.InvalidRequestError:
+    except stripe.error.InvalidRequestError:
         return False  # There was nothing to Invoice
 
 

@@ -192,8 +192,8 @@ class WebhookTests(TestCase):
     def test_process_exception_is_logged(self, ProcessWebhookMock, ValidateMock, LinkMock):
         # note: we choose an event type for which we do no processing
         event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True, processed=False)
-        ProcessWebhookMock.side_effect = stripe.StripeError("Message", "error")
-        with self.assertRaises(stripe.StripeError):
+        ProcessWebhookMock.side_effect = stripe.error.StripeError("Message", "error")
+        with self.assertRaises(stripe.error.StripeError):
             AccountExternalAccountCreatedWebhook(event).process()
         self.assertTrue(EventProcessingException.objects.filter(event=event).exists())
 

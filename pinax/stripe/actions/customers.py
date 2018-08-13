@@ -230,7 +230,7 @@ def sync_customer(customer, cu=None):
     for subscription in cu["subscriptions"]["data"]:
         subscriptions.sync_subscription_from_stripe_data(customer, subscription)
 
-    discount = cu.discount
+    discount = cu["discount"]
     if discount:
         discounts.sync_discounts_from_stripe_data(discount, customer)
 

@@ -63,7 +63,7 @@ setup(
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
-    version="4.3.0",
+    version="4.4.0",
     license="MIT",
     url=URL,
     packages=find_packages(),
@@ -88,11 +88,11 @@ setup(
     install_requires=[
         "django-appconf>=1.0.1",
         "jsonfield>=1.0.3",
-        "stripe>=1.7.9",
+        "stripe>=2.0",
         "django>=1.8",
         "pytz",
         "six",
-        "django-ipware==1.1.6"
+        "django-ipware==2.1.0"
     ],
     extras_require={
         "pytest": ["pytest", "pytest-django"] + tests_require,

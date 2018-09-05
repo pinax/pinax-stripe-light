@@ -28,10 +28,11 @@ from .models import (
 def user_search_fields():
     User = get_user_model()
     fields = [
-        "user__{0}".format(User.USERNAME_FIELD)
+        "user__{0}".format(User.USERNAME_FIELD),
+        "users__{0}".format(User.USERNAME_FIELD),
     ]
     if "email" in [f.name for f in User._meta.fields]:  # pragma: no branch
-        fields += ["user__email"]
+        fields += ["user__email", "users__email"]
     return fields
 
 

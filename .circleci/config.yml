@@ -123,7 +123,7 @@ jobs:
         environment:
           - TOXENV=py36-dj20-postgres
           - PINAX_STRIPE_DATABASE_HOST=127.0.0.1
-          - PINAX_STRIPE_DATABASE_USER=root
+          - PINAX_STRIPE_DATABASE_USER=postgres
           - PINAX_STRIPE_DATABASE_NAME=circle_test
       - image: circleci/postgres:9.6-alpine
   release:
@@ -153,86 +153,6 @@ workflows:
   version: 2
   test:
     jobs:
-      - lint:
-          filters:
-            tags:
-              only: /.*/
-      - py27dj18:
-          filters:
-            tags:
-              only: /.*/
-      - py27dj110:
-          filters:
-            tags:
-              only: /.*/
-      - py27dj111:
-          filters:
-            tags:
-              only: /.*/
-      - py34dj18:
-          filters:
-            tags:
-              only: /.*/
-      - py34dj110:
-          filters:
-            tags:
-              only: /.*/
-      - py34dj111:
-          filters:
-            tags:
-              only: /.*/
-      - py34dj20:
-          filters:
-            tags:
-              only: /.*/
-      - py35dj18:
-          filters:
-            tags:
-              only: /.*/
-      - py35dj110:
-          filters:
-            tags:
-              only: /.*/
-      - py35dj111:
-          filters:
-            tags:
-              only: /.*/
-      - py35dj20:
-          filters:
-            tags:
-              only: /.*/
-      - py36dj111:
-          filters:
-            tags:
-              only: /.*/
-      - py36dj20:
-          filters:
-            tags:
-              only: /.*/
-      - py36dj20psql:
-          filters:
-            tags:
-              only: /.*/
-      - release:
-          context: org-global
-          requires:
-            - lint
-            - py27dj18
-            - py27dj110
-            - py27dj111
-            - py34dj18
-            - py34dj110
-            - py34dj111
-            - py34dj20
-            - py35dj18
-            - py35dj110
-            - py35dj111
-            - py35dj20
-            - py36dj111
-            - py36dj20
-            - py36dj20psql
-          filters:
-            tags:
-              only: /[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
+      - lint
+      - py27dj111
+      - py36dj20psql

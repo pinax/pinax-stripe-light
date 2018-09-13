@@ -28,10 +28,11 @@ from .models import (
 def user_search_fields():
     User = get_user_model()
     fields = [
-        "user__{0}".format(User.USERNAME_FIELD)
+        "user__{0}".format(User.USERNAME_FIELD),
+        "users__{0}".format(User.USERNAME_FIELD),
     ]
     if "email" in [f.name for f in User._meta.fields]:  # pragma: no branch
-        fields += ["user__email"]
+        fields += ["user__email", "users__email"]
     return fields
 
 
@@ -169,6 +170,7 @@ class ChargeAdmin(ModelAdmin):
         "disputed",
         "refunded",
         "receipt_sent",
+        "display_outcome",
         "created_at",
     ]
     list_select_related = [
@@ -192,6 +194,12 @@ class ChargeAdmin(ModelAdmin):
     readonly_fields = [
         "stripe_account_stripe_id",
     ]
+
+    def display_outcome(self, obj):
+        return "{} / {}".format(
+            obj.outcome.get("type", "-"),
+            obj.outcome.get("risk_level", "-")) if obj.outcome else None
+    display_outcome.short_description = "Outcome"
 
     def get_queryset(self, request):
         qs = super(ChargeAdmin, self).get_queryset(request)
@@ -223,6 +231,9 @@ class EventAdmin(ModelAdmin):
         "valid",
         "processed",
         "created_at",
+        "stripe_account",
+    ]
+    list_select_related = [
         "stripe_account",
     ]
     list_filter = [
@@ -267,7 +278,7 @@ class CustomerAdmin(ModelAdmin):
     raw_id_fields = ["user", "stripe_account"]
     list_display = [
         "stripe_id",
-        "user",
+        "__str__",
         "account_balance",
         "currency",
         "delinquent",
@@ -275,6 +286,10 @@ class CustomerAdmin(ModelAdmin):
         subscription_status,
         "date_purged",
         "stripe_account",
+    ]
+    list_select_related = [
+        "stripe_account",
+        "user",
     ]
     list_filter = [
         "delinquent",
@@ -290,6 +305,10 @@ class CustomerAdmin(ModelAdmin):
         CardInline,
         BitcoinReceiverInline
     ]
+
+    def get_queryset(self, request):
+        qs = super(CustomerAdmin, self).get_queryset(request)
+        return qs.prefetch_related("users")
 
 
 class InvoiceItemInline(admin.TabularInline):
@@ -364,6 +383,9 @@ class PlanAdmin(ModelAdmin):
         "trial_period_days",
         "stripe_account",
     ]
+    list_select_related = [
+        "stripe_account",
+    ]
     search_fields = [
         "stripe_id",
         "name",
@@ -376,6 +398,7 @@ class PlanAdmin(ModelAdmin):
 
 
 class CouponAdmin(ModelAdmin):
+    raw_id_fields = ["stripe_account"]
     list_display = [
         "stripe_id",
         "amount_off",
@@ -410,6 +433,9 @@ class TransferAdmin(ModelAdmin):
         "status",
         "date",
         "description",
+        "stripe_account",
+    ]
+    list_select_related = [
         "stripe_account",
     ]
     search_fields = [

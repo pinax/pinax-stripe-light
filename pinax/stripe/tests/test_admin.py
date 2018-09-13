@@ -6,7 +6,7 @@ from django.test import Client, RequestFactory, SimpleTestCase, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
-from ..models import Account, Customer, Invoice, Plan, Subscription
+from ..models import Account, Charge, Customer, Invoice, Plan, Subscription
 
 try:
     from django.urls import reverse
@@ -167,6 +167,8 @@ class AdminTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_charge_admin(self):
+        Charge.objects.create(stripe_id="ch_1")
+        Charge.objects.create(stripe_id="ch_2", outcome={"risk_level": "normal"})
         url = reverse("admin:pinax_stripe_charge_changelist")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)

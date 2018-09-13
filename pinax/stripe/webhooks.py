@@ -9,6 +9,7 @@ from . import models
 from .actions import (
     accounts,
     charges,
+    coupons,
     customers,
     exceptions,
     invoices,
@@ -240,10 +241,15 @@ class BitcoinReceiverTransactionCreatedWebhook(Webhook):
 
 
 class ChargeWebhook(Webhook):
-
     def process_webhook(self):
+        message = self.event.message
+        if message["data"]["object"].get("object", "charge") == "charge":
+            stripe_id = message["data"]["object"]["id"]
+        else:
+            stripe_id = message["data"]["object"]["charge"]
+
         charges.sync_charge(
-            self.event.message["data"]["object"]["id"],
+            stripe_id,
             stripe_account=self.event.stripe_account_stripe_id,
         )
 
@@ -302,15 +308,24 @@ class CouponCreatedWebhook(Webhook):
     name = "coupon.created"
     description = "Occurs whenever a coupon is created."
 
+    def process_webhook(self):
+        coupons.sync_coupon_from_stripe_data(self.event.message["data"]["object"], stripe_account=self.event.stripe_account)
+
 
 class CouponDeletedWebhook(Webhook):
     name = "coupon.deleted"
     description = "Occurs whenever a coupon is deleted."
 
+    def process_webhook(self):
+        coupons.purge_local(self.event.message["data"]["object"], stripe_account=self.event.stripe_account)
+
 
 class CouponUpdatedWebhook(Webhook):
     name = "coupon.updated"
     description = "Occurs whenever a coupon is updated."
+
+    def process_webhook(self):
+        coupons.sync_coupon_from_stripe_data(self.event.message["data"]["object"], stripe_account=self.event.stripe_account)
 
 
 class CustomerCreatedWebhook(Webhook):

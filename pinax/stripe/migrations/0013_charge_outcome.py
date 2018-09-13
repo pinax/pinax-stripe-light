@@ -9,7 +9,7 @@ import jsonfield.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pinax_stripe', '0014_blank_with_null'),
+        ('pinax_stripe', '0012_merge_20171121_1652'),
     ]
 
     operations = [

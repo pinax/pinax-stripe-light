@@ -28,6 +28,7 @@ from ..webhooks import (
     AccountExternalAccountCreatedWebhook,
     AccountUpdatedWebhook,
     ChargeCapturedWebhook,
+    ChargeDisputeFundsWithdrawnWebhook,
     CustomerDeletedWebhook,
     CustomerSourceCreatedWebhook,
     CustomerSourceDeletedWebhook,
@@ -238,6 +239,29 @@ class ChargeWebhookTest(TestCase):
         ChargeCapturedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
         _, kwargs = RetrieveMock.call_args
+        self.assertEquals(kwargs["expand"], ["balance_transaction"])
+        self.assertEquals(kwargs["stripe_account"], "acc_A")
+
+    @patch("stripe.Charge.retrieve")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    def test_process_webhook_dispute(self, SyncMock, RetrieveMock):
+        account = Account.objects.create(stripe_id="acc_A")
+        event = Event.objects.create(
+            kind=ChargeDisputeFundsWithdrawnWebhook.name,
+            webhook_message={},
+            valid=True,
+            processed=False,
+            stripe_account=account
+        )
+        event.validated_message = dict(data=dict(object=dict(
+            id=1,
+            object="dispute",
+            charge="ch_XXX",
+        )))
+        ChargeDisputeFundsWithdrawnWebhook(event).process_webhook()
+        self.assertTrue(SyncMock.called)
+        args, kwargs = RetrieveMock.call_args
+        self.assertEquals(args, ("ch_XXX",))
         self.assertEquals(kwargs["expand"], ["balance_transaction"])
         self.assertEquals(kwargs["stripe_account"], "acc_A")
 

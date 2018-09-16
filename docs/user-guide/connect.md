@@ -251,7 +251,7 @@ UserAccount.filter(user=user, account=account, customer=customer).exists()
 ### Retrieve a Connected Customer
 
 ```python
-customer = pinax.stripe.actions.customer.get_customer_for_user(user, stripe_account=account)
+customer = pinax.stripe.actions.customers.get_customer_for_user(user, stripe_account=account)
 
 # Under the hood, the M2M through model will be used to filter the relevant customer among all candidates
 

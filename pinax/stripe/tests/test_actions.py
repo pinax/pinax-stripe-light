@@ -57,19 +57,19 @@ class ChargesTests(TestCase):
         charge = Charge(amount=decimal.Decimal("100"), amount_refunded=decimal.Decimal("50"))
         expected = decimal.Decimal("50")
         actual = charges.calculate_refund_amount(charge)
-        self.assertEquals(expected, actual)
+        self.assertEqual(expected, actual)
 
     def test_calculate_refund_amount_with_amount_under(self):
         charge = Charge(amount=decimal.Decimal("100"), amount_refunded=decimal.Decimal("50"))
         expected = decimal.Decimal("25")
         actual = charges.calculate_refund_amount(charge, amount=decimal.Decimal("25"))
-        self.assertEquals(expected, actual)
+        self.assertEqual(expected, actual)
 
     def test_calculate_refund_amount_with_amount_over(self):
         charge = Charge(amount=decimal.Decimal("100"), amount_refunded=decimal.Decimal("50"))
         expected = decimal.Decimal("50")
         actual = charges.calculate_refund_amount(charge, amount=decimal.Decimal("100"))
-        self.assertEquals(expected, actual)
+        self.assertEqual(expected, actual)
 
     def test_create_amount_not_decimal_raises_error(self):
         with self.assertRaises(ValueError):
@@ -79,7 +79,7 @@ class ChargesTests(TestCase):
         with self.assertRaises(ValueError) as exc:
             charges.create(amount=decimal.Decimal("10"),
                            customer=None)
-            self.assertEquals(exc.exception.args, ("Must provide `customer` or `source`.",))
+            self.assertEqual(exc.exception.args, ("Must provide `customer` or `source`.",))
 
     @patch("pinax.stripe.hooks.hookset.send_receipt")
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
@@ -272,8 +272,8 @@ class ChargesTests(TestCase):
         charges.capture(charge, amount=decimal.Decimal("50"), idempotency_key="IDEM")
         self.assertTrue(CaptureMock.called)
         _, kwargs = CaptureMock.call_args
-        self.assertEquals(kwargs["amount"], 5000)
-        self.assertEquals(kwargs["idempotency_key"], "IDEM")
+        self.assertEqual(kwargs["amount"], 5000)
+        self.assertEqual(kwargs["idempotency_key"], "IDEM")
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
@@ -312,7 +312,7 @@ class CustomersTests(TestCase):
     def test_get_customer_for_user(self):
         expected = Customer.objects.create(stripe_id="x", user=self.user)
         actual = customers.get_customer_for_user(self.user)
-        self.assertEquals(expected, actual)
+        self.assertEqual(expected, actual)
 
     def test_get_customer_for_user_not_exists(self):
         actual = customers.get_customer_for_user(self.user)
@@ -322,7 +322,7 @@ class CustomersTests(TestCase):
     @patch("stripe.Customer.retrieve")
     def test_set_default_source(self, RetrieveMock, SyncMock):
         customers.set_default_source(Customer(), "the source")
-        self.assertEquals(RetrieveMock().default_source, "the source")
+        self.assertEqual(RetrieveMock().default_source, "the source")
         self.assertTrue(RetrieveMock().save.called)
         self.assertTrue(SyncMock.called)
 
@@ -515,7 +515,7 @@ class CustomersTests(TestCase):
         message = dict(data=dict(object=dict(id="cu_123")))
         event = Event.objects.create(validated_message=message, kind="customer.created")
         customers.link_customer(event)
-        self.assertEquals(event.customer.stripe_id, "cu_123")
+        self.assertEqual(event.customer.stripe_id, "cu_123")
         self.assertTrue(SyncMock.called)
 
     def test_link_customer_non_customer_event(self):
@@ -523,7 +523,7 @@ class CustomersTests(TestCase):
         message = dict(data=dict(object=dict(customer="cu_123")))
         event = Event.objects.create(validated_message=message, kind="invoice.created")
         customers.link_customer(event)
-        self.assertEquals(event.customer.stripe_id, "cu_123")
+        self.assertEqual(event.customer.stripe_id, "cu_123")
 
     def test_link_customer_non_customer_event_no_customer(self):
         Customer.objects.create(stripe_id="cu_123")
@@ -577,7 +577,7 @@ class CustomersWithConnectTests(TestCase):
         UserAccount.objects.create(user=self.user, account=self.account, customer=expected)
         actual = customers.get_customer_for_user(
             self.user, stripe_account=self.account)
-        self.assertEquals(expected, actual)
+        self.assertEqual(expected, actual)
 
     def test_get_customer_for_user_with_stripe_account_and_legacy_customer(self):
         Customer.objects.create(user=self.user, stripe_id="x")
@@ -632,7 +632,7 @@ class CustomersWithConnectTests(TestCase):
             stripe_account=self.account)
         UserAccount.objects.create(user=self.user, account=self.account, customer=expected)
         customer = customers.create(self.user, stripe_account=self.account)
-        self.assertEquals(customer, expected)
+        self.assertEqual(customer, expected)
         RetrieveMock.assert_called_once_with("x", stripe_account=self.account.stripe_id)
 
     @patch("pinax.stripe.actions.invoices.create_and_pay")
@@ -674,27 +674,27 @@ class EventsTests(TestCase):
     def test_add_event(self, ProcessMock):
         events.add_event(stripe_id="evt_001", kind="account.updated", livemode=True, message={})
         event = Event.objects.get(stripe_id="evt_001")
-        self.assertEquals(event.kind, "account.updated")
+        self.assertEqual(event.kind, "account.updated")
         self.assertTrue(ProcessMock.called)
 
     @patch("pinax.stripe.webhooks.AccountUpdatedWebhook.process")
     def test_add_event_connect(self, ProcessMock):
         events.add_event(stripe_id="evt_001", kind="account.updated", livemode=True, message={"account": self.account.stripe_id})
         event = Event.objects.get(stripe_id="evt_001", stripe_account=self.account)
-        self.assertEquals(event.kind, "account.updated")
+        self.assertEqual(event.kind, "account.updated")
         self.assertTrue(ProcessMock.called)
 
     @patch("pinax.stripe.webhooks.AccountUpdatedWebhook.process")
     def test_add_event_missing_account_connect(self, ProcessMock):
         events.add_event(stripe_id="evt_001", kind="account.updated", livemode=True, message={"account": "acc_NEW"})
         event = Event.objects.get(stripe_id="evt_001", stripe_account=Account.objects.get(stripe_id="acc_NEW"))
-        self.assertEquals(event.kind, "account.updated")
+        self.assertEqual(event.kind, "account.updated")
         self.assertTrue(ProcessMock.called)
 
     def test_add_event_new_webhook_kind(self):
         events.add_event(stripe_id="evt_002", kind="patrick.got.coffee", livemode=True, message={})
         event = Event.objects.get(stripe_id="evt_002")
-        self.assertEquals(event.processed, False)
+        self.assertEqual(event.processed, False)
         self.assertIsNone(event.validated_message)
 
 
@@ -777,7 +777,7 @@ class RefundsTests(TestCase):
         self.assertTrue(RefundMock.called)
         _, kwargs = RefundMock.call_args
         self.assertTrue("amount" in kwargs)
-        self.assertEquals(kwargs["amount"], 1000)
+        self.assertEqual(kwargs["amount"], 1000)
         self.assertTrue(SyncMock.called)
 
 
@@ -790,7 +790,7 @@ class SourcesTests(TestCase):
         self.assertTrue(result is not None)
         self.assertTrue(CustomerMock.stripe_customer.sources.create.called)
         _, kwargs = CustomerMock.stripe_customer.sources.create.call_args
-        self.assertEquals(kwargs["source"], "token")
+        self.assertEqual(kwargs["source"], "token")
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")
@@ -810,7 +810,7 @@ class SourcesTests(TestCase):
         sources.update_card(CustomerMock, "", name="My Visa")
         self.assertTrue(CustomerMock.stripe_customer.sources.retrieve.called)
         self.assertTrue(SourceMock.save.called)
-        self.assertEquals(SourceMock.name, "My Visa")
+        self.assertEqual(SourceMock.name, "My Visa")
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")
@@ -820,7 +820,7 @@ class SourcesTests(TestCase):
         sources.update_card(CustomerMock, "", exp_month="My Visa")
         self.assertTrue(CustomerMock.stripe_customer.sources.retrieve.called)
         self.assertTrue(SourceMock.save.called)
-        self.assertEquals(SourceMock.exp_month, "My Visa")
+        self.assertEqual(SourceMock.exp_month, "My Visa")
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")
@@ -830,7 +830,7 @@ class SourcesTests(TestCase):
         sources.update_card(CustomerMock, "", exp_year="My Visa")
         self.assertTrue(CustomerMock.stripe_customer.sources.retrieve.called)
         self.assertTrue(SourceMock.save.called)
-        self.assertEquals(SourceMock.exp_year, "My Visa")
+        self.assertEqual(SourceMock.exp_year, "My Visa")
         self.assertTrue(SyncMock.called)
 
     @skipIf(django.VERSION < (1, 9), "Only for django 1.9+")
@@ -997,7 +997,7 @@ class SubscriptionsTests(TestCase):
         self.assertIs(sub, obj)
         self.assertTrue(SyncMock.called)
         _, kwargs = StripeSubMock.call_args
-        self.assertEquals(kwargs["stripe_account"], None)
+        self.assertEqual(kwargs["stripe_account"], None)
 
     @patch("stripe.Subscription")
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
@@ -1005,7 +1005,7 @@ class SubscriptionsTests(TestCase):
         subscription = Subscription(stripe_id="sub_X", customer=self.connected_customer)
         subscriptions.cancel(subscription)
         _, kwargs = StripeSubMock.call_args
-        self.assertEquals(kwargs["stripe_account"], self.account.stripe_id)
+        self.assertEqual(kwargs["stripe_account"], self.account.stripe_id)
 
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     def test_update(self, SyncMock):
@@ -1023,7 +1023,7 @@ class SubscriptionsTests(TestCase):
         SubMock = Mock()
         SubMock.customer = self.customer
         subscriptions.update(SubMock, plan="test_value")
-        self.assertEquals(SubMock.stripe_subscription.plan, "test_value")
+        self.assertEqual(SubMock.stripe_subscription.plan, "test_value")
         self.assertTrue(SubMock.stripe_subscription.save.called)
         self.assertTrue(SyncMock.called)
 
@@ -1032,7 +1032,7 @@ class SubscriptionsTests(TestCase):
         SubMock = Mock()
         SubMock.customer = self.customer
         subscriptions.update(SubMock, quantity="test_value")
-        self.assertEquals(SubMock.stripe_subscription.quantity, "test_value")
+        self.assertEqual(SubMock.stripe_subscription.quantity, "test_value")
         self.assertTrue(SubMock.stripe_subscription.save.called)
         self.assertTrue(SyncMock.called)
 
@@ -1041,7 +1041,7 @@ class SubscriptionsTests(TestCase):
         SubMock = Mock()
         SubMock.customer = self.customer
         subscriptions.update(SubMock, prorate=False)
-        self.assertEquals(SubMock.stripe_subscription.prorate, False)
+        self.assertEqual(SubMock.stripe_subscription.prorate, False)
         self.assertTrue(SubMock.stripe_subscription.save.called)
         self.assertTrue(SyncMock.called)
 
@@ -1050,7 +1050,7 @@ class SubscriptionsTests(TestCase):
         SubMock = Mock()
         SubMock.customer = self.customer
         subscriptions.update(SubMock, coupon="test_value")
-        self.assertEquals(SubMock.stripe_subscription.coupon, "test_value")
+        self.assertEqual(SubMock.stripe_subscription.coupon, "test_value")
         self.assertTrue(SubMock.stripe_subscription.save.called)
         self.assertTrue(SyncMock.called)
 
@@ -1061,7 +1061,7 @@ class SubscriptionsTests(TestCase):
         SubMock.stripe_subscription.trial_end = time.time() + 1000000.0
 
         subscriptions.update(SubMock, charge_immediately=True)
-        self.assertEquals(SubMock.stripe_subscription.trial_end, "now")
+        self.assertEqual(SubMock.stripe_subscription.trial_end, "now")
         self.assertTrue(SubMock.stripe_subscription.save.called)
         self.assertTrue(SyncMock.called)
 
@@ -1074,7 +1074,7 @@ class SubscriptionsTests(TestCase):
 
         subscriptions.update(SubMock, charge_immediately=True)
         # Trial end date hasn't changed
-        self.assertEquals(SubMock.stripe_subscription.trial_end, trial_end)
+        self.assertEqual(SubMock.stripe_subscription.trial_end, trial_end)
         self.assertTrue(SubMock.stripe_subscription.save.called)
         self.assertTrue(SyncMock.called)
 
@@ -1091,7 +1091,7 @@ class SubscriptionsTests(TestCase):
         subscriptions.create(self.customer, "the-plan", trial_days=3)
         self.assertTrue(SubscriptionCreateMock.called)
         _, kwargs = SubscriptionCreateMock.call_args
-        self.assertEquals(kwargs["trial_end"].date(), (datetime.datetime.utcnow() + datetime.timedelta(days=3)).date())
+        self.assertEqual(kwargs["trial_end"].date(), (datetime.datetime.utcnow() + datetime.timedelta(days=3)).date())
 
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     @patch("stripe.Subscription.create")
@@ -1099,7 +1099,7 @@ class SubscriptionsTests(TestCase):
         subscriptions.create(self.customer, "the-plan", token="token")
         self.assertTrue(SubscriptionCreateMock.called)
         _, kwargs = SubscriptionCreateMock.call_args
-        self.assertEquals(kwargs["source"], "token")
+        self.assertEqual(kwargs["source"], "token")
 
     @patch("stripe.Subscription.create")
     def test_subscription_create_with_connect(self, SubscriptionCreateMock):
@@ -1231,7 +1231,7 @@ class SyncsTests(TestCase):
         ]
         plans.sync_plans()
         self.assertTrue(Plan.objects.all().count(), 2)
-        self.assertEquals(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
+        self.assertEqual(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
 
     @patch("stripe.Plan.auto_paging_iter", create=True)
     def test_sync_plans_update(self, PlanAutoPagerMock):
@@ -1267,10 +1267,10 @@ class SyncsTests(TestCase):
         ]
         plans.sync_plans()
         self.assertTrue(Plan.objects.all().count(), 2)
-        self.assertEquals(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
+        self.assertEqual(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
         PlanAutoPagerMock.return_value[1].update({"amount": 499})
         plans.sync_plans()
-        self.assertEquals(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("4.99"))
+        self.assertEqual(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("4.99"))
 
     def test_sync_plan(self):
         """
@@ -1299,7 +1299,7 @@ class SyncsTests(TestCase):
         }
         plans.sync_plan(plan)
         self.assertTrue(Plan.objects.all().count(), 1)
-        self.assertEquals(Plan.objects.get(stripe_id="pro2").name, plan["name"])
+        self.assertEqual(Plan.objects.get(stripe_id="pro2").name, plan["name"])
 
     def test_sync_payment_source_from_stripe_data_card(self):
         source = {
@@ -1329,7 +1329,7 @@ class SyncsTests(TestCase):
             "fingerprint": "xyz"
         }
         sources.sync_payment_source_from_stripe_data(self.customer, source)
-        self.assertEquals(Card.objects.get(stripe_id=source["id"]).exp_year, 2018)
+        self.assertEqual(Card.objects.get(stripe_id=source["id"]).exp_year, 2018)
 
     def test_sync_payment_source_from_stripe_data_card_blank_cvc_check(self):
         source = {
@@ -1359,7 +1359,7 @@ class SyncsTests(TestCase):
             "fingerprint": "xyz"
         }
         sources.sync_payment_source_from_stripe_data(self.customer, source)
-        self.assertEquals(Card.objects.get(stripe_id=source["id"]).cvc_check, "")
+        self.assertEqual(Card.objects.get(stripe_id=source["id"]).cvc_check, "")
 
     def test_sync_payment_source_from_stripe_data_card_blank_country(self):
         source = {
@@ -1389,7 +1389,7 @@ class SyncsTests(TestCase):
             "fingerprint": "xyz"
         }
         sources.sync_payment_source_from_stripe_data(self.customer, source)
-        self.assertEquals(Card.objects.get(stripe_id=source["id"]).country, "")
+        self.assertEqual(Card.objects.get(stripe_id=source["id"]).country, "")
 
     def test_sync_payment_source_from_stripe_data_card_updated(self):
         source = {
@@ -1419,10 +1419,10 @@ class SyncsTests(TestCase):
             "fingerprint": "xyz"
         }
         sources.sync_payment_source_from_stripe_data(self.customer, source)
-        self.assertEquals(Card.objects.get(stripe_id=source["id"]).exp_year, 2018)
+        self.assertEqual(Card.objects.get(stripe_id=source["id"]).exp_year, 2018)
         source.update({"exp_year": 2022})
         sources.sync_payment_source_from_stripe_data(self.customer, source)
-        self.assertEquals(Card.objects.get(stripe_id=source["id"]).exp_year, 2022)
+        self.assertEqual(Card.objects.get(stripe_id=source["id"]).exp_year, 2022)
 
     def test_sync_payment_source_from_stripe_data_source_card(self):
         source = {
@@ -1485,7 +1485,7 @@ class SyncsTests(TestCase):
             "used_for_payment": False
         }
         sources.sync_payment_source_from_stripe_data(self.customer, source)
-        self.assertEquals(BitcoinReceiver.objects.get(stripe_id=source["id"]).bitcoin_amount, 1757908)
+        self.assertEqual(BitcoinReceiver.objects.get(stripe_id=source["id"]).bitcoin_amount, 1757908)
 
     def test_sync_payment_source_from_stripe_data_bitcoin_updated(self):
         source = {
@@ -1511,10 +1511,10 @@ class SyncsTests(TestCase):
             "used_for_payment": False
         }
         sources.sync_payment_source_from_stripe_data(self.customer, source)
-        self.assertEquals(BitcoinReceiver.objects.get(stripe_id=source["id"]).bitcoin_amount, 1757908)
+        self.assertEqual(BitcoinReceiver.objects.get(stripe_id=source["id"]).bitcoin_amount, 1757908)
         source.update({"bitcoin_amount": 1886800})
         sources.sync_payment_source_from_stripe_data(self.customer, source)
-        self.assertEquals(BitcoinReceiver.objects.get(stripe_id=source["id"]).bitcoin_amount, 1886800)
+        self.assertEqual(BitcoinReceiver.objects.get(stripe_id=source["id"]).bitcoin_amount, 1886800)
 
     def test_sync_subscription_from_stripe_data(self):
         Plan.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
@@ -1554,8 +1554,8 @@ class SyncsTests(TestCase):
             "trial_start": 1448499344
         }
         sub = subscriptions.sync_subscription_from_stripe_data(self.customer, subscription)
-        self.assertEquals(Subscription.objects.get(stripe_id=subscription["id"]), sub)
-        self.assertEquals(sub.status, "trialing")
+        self.assertEqual(Subscription.objects.get(stripe_id=subscription["id"]), sub)
+        self.assertEqual(sub.status, "trialing")
 
     def test_sync_subscription_from_stripe_data_updated(self):
         Plan.objects.create(stripe_id="pro2", interval="month", interval_count=1, amount=decimal.Decimal("19.99"))
@@ -1595,10 +1595,10 @@ class SyncsTests(TestCase):
             "trial_start": 1448499344
         }
         subscriptions.sync_subscription_from_stripe_data(self.customer, subscription)
-        self.assertEquals(Subscription.objects.get(stripe_id=subscription["id"]).status, "trialing")
+        self.assertEqual(Subscription.objects.get(stripe_id=subscription["id"]).status, "trialing")
         subscription.update({"status": "active"})
         subscriptions.sync_subscription_from_stripe_data(self.customer, subscription)
-        self.assertEquals(Subscription.objects.get(stripe_id=subscription["id"]).status, "active")
+        self.assertEqual(Subscription.objects.get(stripe_id=subscription["id"]).status, "active")
 
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     @patch("pinax.stripe.actions.sources.sync_payment_source_from_stripe_data")
@@ -1614,10 +1614,10 @@ class SyncsTests(TestCase):
         )
         customers.sync_customer(self.customer)
         customer = Customer.objects.get(user=self.user)
-        self.assertEquals(customer.account_balance, decimal.Decimal("19.99"))
-        self.assertEquals(customer.currency, "usd")
-        self.assertEquals(customer.delinquent, False)
-        self.assertEquals(customer.default_source, "")
+        self.assertEqual(customer.account_balance, decimal.Decimal("19.99"))
+        self.assertEqual(customer.currency, "usd")
+        self.assertEqual(customer.delinquent, False)
+        self.assertEqual(customer.default_source, "")
         self.assertTrue(SyncPaymentSourceMock.called)
         self.assertTrue(SyncSubscriptionMock.called)
 
@@ -1634,10 +1634,10 @@ class SyncsTests(TestCase):
         )
         customers.sync_customer(self.customer, cu=cu)
         customer = Customer.objects.get(user=self.user)
-        self.assertEquals(customer.account_balance, decimal.Decimal("19.99"))
-        self.assertEquals(customer.currency, "usd")
-        self.assertEquals(customer.delinquent, False)
-        self.assertEquals(customer.default_source, "")
+        self.assertEqual(customer.account_balance, decimal.Decimal("19.99"))
+        self.assertEqual(customer.currency, "usd")
+        self.assertEqual(customer.delinquent, False)
+        self.assertEqual(customer.default_source, "")
         self.assertTrue(SyncPaymentSourceMock.called)
         self.assertTrue(SyncSubscriptionMock.called)
 
@@ -1747,7 +1747,7 @@ class SyncsTests(TestCase):
         }
         charges.sync_charge_from_stripe_data(data)
         charge = Charge.objects.get(customer=self.customer, stripe_id=data["id"])
-        self.assertEquals(charge.amount, decimal.Decimal("2"))
+        self.assertEqual(charge.amount, decimal.Decimal("2"))
 
     def test_sync_charge_from_stripe_data_balance_transaction(self):
         data = {
@@ -1838,10 +1838,10 @@ class SyncsTests(TestCase):
         }
         charges.sync_charge_from_stripe_data(data)
         charge = Charge.objects.get(customer=self.customer, stripe_id=data["id"])
-        self.assertEquals(charge.amount, decimal.Decimal("2"))
-        self.assertEquals(charge.available, False)
-        self.assertEquals(charge.fee, decimal.Decimal("0.59"))
-        self.assertEquals(charge.currency, "usd")
+        self.assertEqual(charge.amount, decimal.Decimal("2"))
+        self.assertEqual(charge.available, False)
+        self.assertEqual(charge.fee, decimal.Decimal("0.59"))
+        self.assertEqual(charge.currency, "usd")
 
     def test_sync_charge_from_stripe_data_description(self):
         data = {
@@ -1910,8 +1910,8 @@ class SyncsTests(TestCase):
         }
         charges.sync_charge_from_stripe_data(data)
         charge = Charge.objects.get(customer=self.customer, stripe_id=data["id"])
-        self.assertEquals(charge.amount, decimal.Decimal("2"))
-        self.assertEquals(charge.description, "This was a charge for awesome.")
+        self.assertEqual(charge.amount, decimal.Decimal("2"))
+        self.assertEqual(charge.description, "This was a charge for awesome.")
 
     def test_sync_charge_from_stripe_data_amount_refunded(self):
         data = {
@@ -1980,8 +1980,8 @@ class SyncsTests(TestCase):
         }
         charges.sync_charge_from_stripe_data(data)
         charge = Charge.objects.get(customer=self.customer, stripe_id=data["id"])
-        self.assertEquals(charge.amount, decimal.Decimal("2"))
-        self.assertEquals(charge.amount_refunded, decimal.Decimal("100"))
+        self.assertEqual(charge.amount, decimal.Decimal("2"))
+        self.assertEqual(charge.amount_refunded, decimal.Decimal("100"))
 
     def test_sync_charge_from_stripe_data_refunded(self):
         data = {
@@ -2050,8 +2050,8 @@ class SyncsTests(TestCase):
         }
         charges.sync_charge_from_stripe_data(data)
         charge = Charge.objects.get(customer=self.customer, stripe_id=data["id"])
-        self.assertEquals(charge.amount, decimal.Decimal("2"))
-        self.assertEquals(charge.refunded, True)
+        self.assertEqual(charge.amount, decimal.Decimal("2"))
+        self.assertEqual(charge.refunded, True)
 
     def test_sync_charge_from_stripe_data_failed(self):
         data = {
@@ -2139,7 +2139,7 @@ class SyncsTests(TestCase):
             customer="cus_xxxxxxxxxxxxxxx"
         )
         value = subscriptions.retrieve(self.customer, "sub id")
-        self.assertEquals(value, RetrieveMock.return_value)
+        self.assertEqual(value, RetrieveMock.return_value)
 
     def test_retrieve_stripe_subscription_no_sub_id(self):
         value = subscriptions.retrieve(self.customer, None)
@@ -2269,7 +2269,7 @@ class SyncsTests(TestCase):
         }]
         invoices.sync_invoice_items(invoice, items)
         self.assertTrue(invoice.items.all().count(), 1)
-        self.assertEquals(invoice.items.all()[0].plan, plan)
+        self.assertEqual(invoice.items.all()[0].plan, plan)
 
     def test_sync_invoice_items_type_not_subscription(self):
         invoice = Invoice.objects.create(
@@ -2303,8 +2303,8 @@ class SyncsTests(TestCase):
         }]
         invoices.sync_invoice_items(invoice, items)
         self.assertTrue(invoice.items.all().count(), 1)
-        self.assertEquals(invoice.items.all()[0].description, "Something random")
-        self.assertEquals(invoice.items.all()[0].amount, decimal.Decimal("20"))
+        self.assertEqual(invoice.items.all()[0].description, "Something random")
+        self.assertEqual(invoice.items.all()[0].amount, decimal.Decimal("20"))
 
     @patch("pinax.stripe.actions.subscriptions.retrieve")
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
@@ -2493,12 +2493,12 @@ class SyncsTests(TestCase):
             "type": "subscription"
         }]
         invoices.sync_invoice_items(invoice, items)
-        self.assertEquals(invoice.items.count(), 2)
+        self.assertEqual(invoice.items.count(), 2)
 
         items[1].update({"description": "This is your second subscription"})
         invoices.sync_invoice_items(invoice, items)
-        self.assertEquals(invoice.items.count(), 2)
-        self.assertEquals(invoice.items.get(stripe_id="sub_7Q4BX0HMfqTpN9").description, "This is your second subscription")
+        self.assertEqual(invoice.items.count(), 2)
+        self.assertEqual(invoice.items.get(stripe_id="sub_7Q4BX0HMfqTpN9").description, "This is your second subscription")
 
 
 class InvoiceSyncsTests(TestCase):
@@ -2619,7 +2619,7 @@ class InvoiceSyncsTests(TestCase):
         SyncSubscriptionMock.return_value = self.subscription
         invoices.sync_invoice_from_stripe_data(self.invoice_data)
         self.assertTrue(SyncInvoiceItemsMock.called)
-        self.assertEquals(Invoice.objects.filter(customer=self.customer).count(), 1)
+        self.assertEqual(Invoice.objects.filter(customer=self.customer).count(), 1)
         self.assertTrue(ChargeFetchMock.called)
         self.assertTrue(SyncChargeMock.called)
         self.assertTrue(SendReceiptMock.called)
@@ -2646,7 +2646,7 @@ class InvoiceSyncsTests(TestCase):
         SyncSubscriptionMock.return_value = self.subscription
         invoices.sync_invoice_from_stripe_data(self.invoice_data, send_receipt=False)
         self.assertTrue(SyncInvoiceItemsMock.called)
-        self.assertEquals(Invoice.objects.filter(customer=self.customer).count(), 1)
+        self.assertEqual(Invoice.objects.filter(customer=self.customer).count(), 1)
         self.assertTrue(ChargeFetchMock.called)
         self.assertTrue(SyncChargeMock.called)
         self.assertFalse(SendReceiptMock.called)
@@ -2675,12 +2675,12 @@ class InvoiceSyncsTests(TestCase):
         SyncSubscriptionMock.return_value = self.subscription
         invoices.sync_invoice_from_stripe_data(self.invoice_data)
         self.assertTrue(SyncInvoiceItemsMock.called)
-        self.assertEquals(Invoice.objects.filter(customer=self.customer).count(), 1)
+        self.assertEqual(Invoice.objects.filter(customer=self.customer).count(), 1)
         self.assertTrue(ChargeFetchMock.called)
         args, kwargs = ChargeFetchMock.call_args
-        self.assertEquals(args, ("ch_XXXXXX",))
-        self.assertEquals(kwargs, {"stripe_account": "acct_X",
-                                   "expand": ["balance_transaction"]})
+        self.assertEqual(args, ("ch_XXXXXX",))
+        self.assertEqual(kwargs, {"stripe_account": "acct_X",
+                                  "expand": ["balance_transaction"]})
         self.assertTrue(SyncChargeMock.called)
         self.assertTrue(SendReceiptMock.called)
 
@@ -2692,7 +2692,7 @@ class InvoiceSyncsTests(TestCase):
         self.invoice_data["charge"] = None
         invoices.sync_invoice_from_stripe_data(self.invoice_data)
         self.assertTrue(SyncInvoiceItemsMock.called)
-        self.assertEquals(Invoice.objects.filter(customer=self.customer).count(), 1)
+        self.assertEqual(Invoice.objects.filter(customer=self.customer).count(), 1)
 
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     @patch("pinax.stripe.actions.invoices.sync_invoice_items")
@@ -2758,7 +2758,7 @@ class InvoiceSyncsTests(TestCase):
         }
         invoices.sync_invoice_from_stripe_data(data)
         self.assertTrue(SyncInvoiceItemsMock.called)
-        self.assertEquals(Invoice.objects.filter(customer=self.customer).count(), 1)
+        self.assertEqual(Invoice.objects.filter(customer=self.customer).count(), 1)
         self.assertIsNone(Invoice.objects.filter(customer=self.customer)[0].subscription)
 
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
@@ -2769,11 +2769,11 @@ class InvoiceSyncsTests(TestCase):
         data = self.invoice_data
         invoices.sync_invoice_from_stripe_data(data)
         self.assertTrue(SyncInvoiceItemsMock.called)
-        self.assertEquals(Invoice.objects.filter(customer=self.customer).count(), 1)
+        self.assertEqual(Invoice.objects.filter(customer=self.customer).count(), 1)
         data.update({"paid": True})
         invoices.sync_invoice_from_stripe_data(data)
-        self.assertEquals(Invoice.objects.filter(customer=self.customer).count(), 1)
-        self.assertEquals(Invoice.objects.filter(customer=self.customer)[0].paid, True)
+        self.assertEqual(Invoice.objects.filter(customer=self.customer).count(), 1)
+        self.assertEqual(Invoice.objects.filter(customer=self.customer)[0].paid, True)
 
 
 class TransfersTests(TestCase):
@@ -2824,18 +2824,18 @@ class TransfersTests(TestCase):
     def test_sync_transfer(self):
         transfers.sync_transfer(self.data, self.event)
         qs = Transfer.objects.filter(stripe_id=self.event.message["data"]["object"]["id"])
-        self.assertEquals(qs.count(), 1)
-        self.assertEquals(qs[0].event, self.event)
+        self.assertEqual(qs.count(), 1)
+        self.assertEqual(qs[0].event, self.event)
 
     def test_sync_transfer_update(self):
         transfers.sync_transfer(self.data, self.event)
         qs = Transfer.objects.filter(stripe_id=self.event.message["data"]["object"]["id"])
-        self.assertEquals(qs.count(), 1)
-        self.assertEquals(qs[0].event, self.event)
+        self.assertEqual(qs.count(), 1)
+        self.assertEqual(qs[0].event, self.event)
         self.event.validated_message["data"]["object"]["status"] = "paid"
         transfers.sync_transfer(self.event.message["data"]["object"], self.event)
         qs = Transfer.objects.filter(stripe_id=self.event.message["data"]["object"]["id"])
-        self.assertEquals(qs[0].status, "paid")
+        self.assertEqual(qs[0].status, "paid")
 
     def test_transfer_during(self):
         Transfer.objects.create(
@@ -2846,7 +2846,7 @@ class TransfersTests(TestCase):
             date=timezone.now().replace(year=2015, month=1)
         )
         qs = transfers.during(2015, 1)
-        self.assertEquals(qs.count(), 1)
+        self.assertEqual(qs.count(), 1)
 
     @patch("stripe.Transfer.retrieve")
     def test_transfer_update_status(self, RetrieveMock):
@@ -2859,7 +2859,7 @@ class TransfersTests(TestCase):
             date=timezone.now().replace(year=2015, month=1)
         )
         transfers.update_status(transfer)
-        self.assertEquals(transfer.status, "complete")
+        self.assertEqual(transfer.status, "complete")
 
     @patch("stripe.Transfer.create")
     def test_transfer_create(self, CreateMock):
@@ -2872,14 +2872,14 @@ class TransfersTests(TestCase):
         CreateMock.return_value = self.data
         transfers.create(decimal.Decimal("100"), "usd", None, None, transfer_group="foo")
         _, kwargs = CreateMock.call_args
-        self.assertEquals(kwargs["transfer_group"], "foo")
+        self.assertEqual(kwargs["transfer_group"], "foo")
 
     @patch("stripe.Transfer.create")
     def test_transfer_create_with_stripe_account(self, CreateMock):
         CreateMock.return_value = self.data
         transfers.create(decimal.Decimal("100"), "usd", None, None, stripe_account="foo")
         _, kwargs = CreateMock.call_args
-        self.assertEquals(kwargs["stripe_account"], "foo")
+        self.assertEqual(kwargs["stripe_account"], "foo")
 
 
 class AccountsSyncTestCase(TestCase):

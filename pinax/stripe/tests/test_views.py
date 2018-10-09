@@ -61,9 +61,9 @@ class InvoiceListViewTests(TestCase):
             reverse("pinax_stripe_invoice_list")
         )
         self.assertTrue("invoice_list" in response.context_data)
-        self.assertEquals(response.context_data["invoice_list"].count(), 2)
-        self.assertEquals(response.context_data["invoice_list"][0].total, 100)
-        self.assertEquals(response.context_data["invoice_list"][1].total, 50)
+        self.assertEqual(response.context_data["invoice_list"].count(), 2)
+        self.assertEqual(response.context_data["invoice_list"][0].total, 100)
+        self.assertEqual(response.context_data["invoice_list"][1].total, 50)
 
 
 class PaymentMethodListViewTests(TestCase):
@@ -98,8 +98,8 @@ class PaymentMethodListViewTests(TestCase):
             reverse("pinax_stripe_payment_method_list")
         )
         self.assertTrue("payment_method_list" in response.context_data)
-        self.assertEquals(response.context_data["payment_method_list"].count(), 1)
-        self.assertEquals(response.context_data["payment_method_list"][0].stripe_id, "card_001")
+        self.assertEqual(response.context_data["payment_method_list"].count(), 1)
+        self.assertEqual(response.context_data["payment_method_list"][0].stripe_id, "card_001")
 
 
 class PaymentMethodCreateViewTests(TestCase):
@@ -123,7 +123,7 @@ class PaymentMethodCreateViewTests(TestCase):
             reverse("pinax_stripe_payment_method_create"),
             {}
         )
-        self.assertEquals(response.status_code, 302)
+        self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("pinax_stripe_payment_method_list"))
 
     @patch("pinax.stripe.actions.sources.create_card")
@@ -134,7 +134,7 @@ class PaymentMethodCreateViewTests(TestCase):
             reverse("pinax_stripe_payment_method_create"),
             {}
         )
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue("errors" in response.context_data)
 
 
@@ -171,7 +171,7 @@ class PaymentMethodDeleteViewTests(TestCase):
             reverse("pinax_stripe_payment_method_delete", args=[self.card.pk]),
             {}
         )
-        self.assertEquals(response.status_code, 302)
+        self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("pinax_stripe_payment_method_list"))
 
     @patch("pinax.stripe.actions.sources.delete_card")
@@ -182,7 +182,7 @@ class PaymentMethodDeleteViewTests(TestCase):
             reverse("pinax_stripe_payment_method_delete", args=[self.card.pk]),
             {}
         )
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue("errors" in response.context_data)
 
 
@@ -222,7 +222,7 @@ class PaymentMethodUpdateViewTests(TestCase):
                 "expYear": 2018
             }
         )
-        self.assertEquals(response.status_code, 302)
+        self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("pinax_stripe_payment_method_list"))
 
     @patch("pinax.stripe.actions.sources.update_card")
@@ -235,8 +235,8 @@ class PaymentMethodUpdateViewTests(TestCase):
                 "expYear": 2014
             }
         )
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context_data["form"].is_valid(), False)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data["form"].is_valid(), False)
 
     @patch("pinax.stripe.actions.sources.update_card")
     def test_post_on_error(self, CreateMock):
@@ -249,7 +249,7 @@ class PaymentMethodUpdateViewTests(TestCase):
                 "expYear": 2018
             }
         )
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue("errors" in response.context_data)
 
 
@@ -288,8 +288,8 @@ class SubscriptionListViewTests(TestCase):
             reverse("pinax_stripe_subscription_list")
         )
         self.assertTrue("subscription_list" in response.context_data)
-        self.assertEquals(response.context_data["subscription_list"].count(), 1)
-        self.assertEquals(response.context_data["subscription_list"][0].stripe_id, "sub_001")
+        self.assertEqual(response.context_data["subscription_list"].count(), 1)
+        self.assertEqual(response.context_data["subscription_list"][0].stripe_id, "sub_001")
 
 
 class SubscriptionCreateViewTests(TestCase):
@@ -322,7 +322,7 @@ class SubscriptionCreateViewTests(TestCase):
                 "plan": self.plan.id
             }
         )
-        self.assertEquals(response.status_code, 302)
+        self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("pinax_stripe_subscription_list"))
 
     @patch("pinax.stripe.actions.customers.create")
@@ -335,7 +335,7 @@ class SubscriptionCreateViewTests(TestCase):
                 "plan": self.plan.id
             }
         )
-        self.assertEquals(response.status_code, 302)
+        self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("pinax_stripe_subscription_list"))
         self.assertTrue(CustomerCreateMock.called)
 
@@ -353,7 +353,7 @@ class SubscriptionCreateViewTests(TestCase):
                 "plan": self.plan.id
             }
         )
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue("errors" in response.context_data)
 
 
@@ -393,7 +393,7 @@ class SubscriptionDeleteViewTests(TestCase):
             reverse("pinax_stripe_subscription_delete", args=[self.subscription.pk]),
             {}
         )
-        self.assertEquals(response.status_code, 302)
+        self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("pinax_stripe_subscription_list"))
 
     @patch("pinax.stripe.actions.subscriptions.cancel")
@@ -404,7 +404,7 @@ class SubscriptionDeleteViewTests(TestCase):
             reverse("pinax_stripe_subscription_delete", args=[self.subscription.pk]),
             {}
         )
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue("errors" in response.context_data)
 
 
@@ -442,7 +442,7 @@ class SubscriptionUpdateViewTests(TestCase):
         response = self.client.get(
             reverse("pinax_stripe_subscription_update", args=[self.subscription.pk])
         )
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue("form" in response.context_data)
         self.assertTrue(response.context_data["form"].initial["plan"], self.subscription.plan)
 
@@ -455,7 +455,7 @@ class SubscriptionUpdateViewTests(TestCase):
                 "plan": self.subscription.plan.id
             }
         )
-        self.assertEquals(response.status_code, 302)
+        self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("pinax_stripe_subscription_list"))
 
     @patch("pinax.stripe.actions.subscriptions.update")
@@ -467,7 +467,7 @@ class SubscriptionUpdateViewTests(TestCase):
                 "plan": "not a real plan"
             }
         )
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(len(response.context_data["form"].errors) > 0)
 
     @patch("pinax.stripe.actions.subscriptions.update")
@@ -480,5 +480,5 @@ class SubscriptionUpdateViewTests(TestCase):
                 "plan": self.subscription.plan.id
             }
         )
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue("errors" in response.context_data)

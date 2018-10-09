@@ -78,31 +78,31 @@ class CustomerManagerTest(TestCase):
         )
 
     def test_started_during_no_records(self):
-        self.assertEquals(
+        self.assertEqual(
             Customer.objects.started_during(2013, 4).count(),
             0
         )
 
     def test_started_during_has_records(self):
-        self.assertEquals(
+        self.assertEqual(
             Customer.objects.started_during(2013, 1).count(),
             12
         )
 
     def test_canceled_during(self):
-        self.assertEquals(
+        self.assertEqual(
             Customer.objects.canceled_during(2013, 4).count(),
             1
         )
 
     def test_canceled_all(self):
-        self.assertEquals(
+        self.assertEqual(
             Customer.objects.canceled().count(),
             1
         )
 
     def test_active_all(self):
-        self.assertEquals(
+        self.assertEqual(
             Customer.objects.active().count(),
             11
         )
@@ -110,26 +110,26 @@ class CustomerManagerTest(TestCase):
     def test_started_plan_summary(self):
         for plan in Customer.objects.started_plan_summary_for(2013, 1):
             if plan["subscription__plan"] == self.plan:
-                self.assertEquals(plan["count"], 11)
+                self.assertEqual(plan["count"], 11)
             if plan["subscription__plan"] == self.plan2:
-                self.assertEquals(plan["count"], 1)
+                self.assertEqual(plan["count"], 1)
 
     def test_active_plan_summary(self):
         for plan in Customer.objects.active_plan_summary():
             if plan["subscription__plan"] == self.plan:
-                self.assertEquals(plan["count"], 10)
+                self.assertEqual(plan["count"], 10)
             if plan["subscription__plan"] == self.plan2:
-                self.assertEquals(plan["count"], 1)
+                self.assertEqual(plan["count"], 1)
 
     def test_canceled_plan_summary(self):
         for plan in Customer.objects.canceled_plan_summary_for(2013, 1):
             if plan["subscription__plan"] == self.plan:
-                self.assertEquals(plan["count"], 1)
+                self.assertEqual(plan["count"], 1)
             if plan["subscription__plan"] == self.plan2:
-                self.assertEquals(plan["count"], 0)
+                self.assertEqual(plan["count"], 0)
 
     def test_churn(self):
-        self.assertEquals(
+        self.assertEqual(
             Customer.objects.churn(),
             decimal.Decimal("1") / decimal.Decimal("11")
         )

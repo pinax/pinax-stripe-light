@@ -43,14 +43,14 @@ class ModelTests(TestCase):
     def test_plan_str_and_repr(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
         self.assertTrue(p.name in _str(p))
-        self.assertEquals(repr(p), "Plan(pk=None, name={p.name!r}, amount=Decimal('5'), currency={p.currency!r}, interval={p.interval!r}, interval_count=1, trial_period_days=None, stripe_id={p.stripe_id!r})".format(p=p))
+        self.assertEqual(repr(p), "Plan(pk=None, name={p.name!r}, amount=Decimal('5'), currency={p.currency!r}, interval={p.interval!r}, interval_count=1, trial_period_days=None, stripe_id={p.stripe_id!r})".format(p=p))
 
     def test_plan_repr_unicode(self):
         p = Plan(amount=decimal.Decimal("5"), name=u"öre", interval="monthly", interval_count=1, stripe_id=u"öre")
         if PY2:
-            self.assertEquals(repr(p), "Plan(pk=None, name=u'\\xf6re', amount=Decimal('5'), currency=u'', interval=u'monthly', interval_count=1, trial_period_days=None, stripe_id=u'\\xf6re')")
+            self.assertEqual(repr(p), "Plan(pk=None, name=u'\\xf6re', amount=Decimal('5'), currency=u'', interval=u'monthly', interval_count=1, trial_period_days=None, stripe_id=u'\\xf6re')")
         else:
-            self.assertEquals(repr(p), "Plan(pk=None, name='öre', amount=Decimal('5'), currency='', interval='monthly', interval_count=1, trial_period_days=None, stripe_id='öre')")
+            self.assertEqual(repr(p), "Plan(pk=None, name='öre', amount=Decimal('5'), currency='', interval='monthly', interval_count=1, trial_period_days=None, stripe_id='öre')")
 
     def test_plan_str_usd(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", currency="usd", interval="monthly", interval_count=1)
@@ -78,7 +78,7 @@ class ModelTests(TestCase):
         Plan.objects.create(stripe_id="plan", amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
         account = Account.objects.create(stripe_id="acct_A")
         Plan.objects.create(stripe_id="plan", stripe_account=account, amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
-        self.assertEquals(Plan.objects.count(), 2)
+        self.assertEqual(Plan.objects.count(), 2)
 
     def test_event_processing_exception_str(self):
         e = EventProcessingException(data="hello", message="hi there", traceback="fake")
@@ -90,28 +90,28 @@ class ModelTests(TestCase):
         e = Event(kind="customer.deleted", webhook_message={}, created_at=created_at)
         self.assertTrue("customer.deleted" in str(e))
         if PY2:
-            self.assertEquals(repr(e), "Event(pk=None, kind=u'customer.deleted', customer=None, valid=None, created_at={!s}, stripe_id=u'')".format(
+            self.assertEqual(repr(e), "Event(pk=None, kind=u'customer.deleted', customer=None, valid=None, created_at={!s}, stripe_id=u'')".format(
                 created_at_iso))
         else:
-            self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer=None, valid=None, created_at={!s}, stripe_id='')".format(
+            self.assertEqual(repr(e), "Event(pk=None, kind='customer.deleted', customer=None, valid=None, created_at={!s}, stripe_id='')".format(
                 created_at_iso))
 
         e.stripe_id = "evt_X"
         e.customer = Customer()
         if PY2:
-            self.assertEquals(repr(e), "Event(pk=None, kind=u'customer.deleted', customer={!r}, valid=None, created_at={!s}, stripe_id=u'evt_X')".format(
+            self.assertEqual(repr(e), "Event(pk=None, kind=u'customer.deleted', customer={!r}, valid=None, created_at={!s}, stripe_id=u'evt_X')".format(
                 e.customer, created_at_iso))
         else:
-            self.assertEquals(repr(e), "Event(pk=None, kind='customer.deleted', customer={!r}, valid=None, created_at={!s}, stripe_id='evt_X')".format(
+            self.assertEqual(repr(e), "Event(pk=None, kind='customer.deleted', customer={!r}, valid=None, created_at={!s}, stripe_id='evt_X')".format(
                 e.customer, created_at_iso))
 
     def test_customer_str_and_repr(self):
         c = Customer()
-        self.assertEquals(str(c), "No User(s)")
+        self.assertEqual(str(c), "No User(s)")
         if PY2:
-            self.assertEquals(repr(c), "Customer(pk=None, stripe_id=u'')")
+            self.assertEqual(repr(c), "Customer(pk=None, stripe_id=u'')")
         else:
-            self.assertEquals(repr(c), "Customer(pk=None, stripe_id='')")
+            self.assertEqual(repr(c), "Customer(pk=None, stripe_id='')")
 
     def test_customer_with_user_str_and_repr(self):
         User = get_user_model()
@@ -143,86 +143,86 @@ class ModelTests(TestCase):
     def test_charge_repr(self):
         charge = Charge()
         if PY2:
-            self.assertEquals(repr(charge), "Charge(pk=None, customer=None, source=u'', amount=None, captured=None, paid=None, stripe_id=u'')")
+            self.assertEqual(repr(charge), "Charge(pk=None, customer=None, source=u'', amount=None, captured=None, paid=None, stripe_id=u'')")
         else:
-            self.assertEquals(repr(charge), "Charge(pk=None, customer=None, source='', amount=None, captured=None, paid=None, stripe_id='')")
+            self.assertEqual(repr(charge), "Charge(pk=None, customer=None, source='', amount=None, captured=None, paid=None, stripe_id='')")
 
     def test_charge_str(self):
         charge = Charge()
-        self.assertEquals(str(charge), "$0 (unpaid, uncaptured)")
+        self.assertEqual(str(charge), "$0 (unpaid, uncaptured)")
         charge.stripe_id = "ch_XXX"
         charge.captured = True
         charge.paid = True
         charge.amount = decimal.Decimal(5)
-        self.assertEquals(str(charge), "$5")
+        self.assertEqual(str(charge), "$5")
         charge.refunded = True
-        self.assertEquals(str(charge), "$5 (refunded)")
+        self.assertEqual(str(charge), "$5 (refunded)")
 
     def test_charge_total_amount(self):
         charge = Charge()
-        self.assertEquals(charge.total_amount, 0)
+        self.assertEqual(charge.total_amount, 0)
         charge.amount = decimal.Decimal(17)
-        self.assertEquals(charge.total_amount, 17)
+        self.assertEqual(charge.total_amount, 17)
         charge.amount_refunded = decimal.Decimal(15.5)
-        self.assertEquals(charge.total_amount, 1.5)
+        self.assertEqual(charge.total_amount, 1.5)
 
     def test_plan_display_invoiceitem(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
         p.save()
         i = InvoiceItem(plan=p)
-        self.assertEquals(i.plan_display(), "My Plan")
+        self.assertEqual(i.plan_display(), "My Plan")
 
     def test_coupon_percent(self):
         c = Coupon(percent_off=25, duration="repeating", duration_in_months=3)
-        self.assertEquals(str(c), "Coupon for 25% off, repeating")
+        self.assertEqual(str(c), "Coupon for 25% off, repeating")
 
     def test_coupon_absolute(self):
         c = Coupon(amount_off=decimal.Decimal(50.00), duration="once", currency="usd")
-        self.assertEquals(str(c), "Coupon for $50, once")
+        self.assertEqual(str(c), "Coupon for $50, once")
 
     def test_model_table_name(self):
-        self.assertEquals(Customer()._meta.db_table, "pinax_stripe_customer")
+        self.assertEqual(Customer()._meta.db_table, "pinax_stripe_customer")
 
     def test_event_message(self):
         event = Event(validated_message={"foo": 1})
-        self.assertEquals(event.validated_message, event.message)
+        self.assertEqual(event.validated_message, event.message)
 
     def test_invoice_status(self):
-        self.assertEquals(Invoice(paid=True).status, "Paid")
+        self.assertEqual(Invoice(paid=True).status, "Paid")
 
     def test_invoice_status_not_paid(self):
-        self.assertEquals(Invoice(paid=False).status, "Open")
+        self.assertEqual(Invoice(paid=False).status, "Open")
 
     def test_subscription_repr(self):
         s = Subscription()
         if PY2:
-            self.assertEquals(repr(s), "Subscription(pk=None, customer=None, plan=None, status=u'', stripe_id=u'')")
+            self.assertEqual(repr(s), "Subscription(pk=None, customer=None, plan=None, status=u'', stripe_id=u'')")
         else:
-            self.assertEquals(repr(s), "Subscription(pk=None, customer=None, plan=None, status='', stripe_id='')")
+            self.assertEqual(repr(s), "Subscription(pk=None, customer=None, plan=None, status='', stripe_id='')")
         s.customer = Customer()
         s.plan = Plan()
         s.status = "active"
         s.stripe_id = "sub_X"
         if PY2:
-            self.assertEquals(
+            self.assertEqual(
                 repr(s),
                 "Subscription(pk=None, customer={o.customer!r}, plan={o.plan!r}, status=u'active', stripe_id=u'sub_X')".format(o=s))
         else:
-            self.assertEquals(
+            self.assertEqual(
                 repr(s),
                 "Subscription(pk=None, customer={o.customer!r}, plan={o.plan!r}, status='active', stripe_id='sub_X')".format(o=s))
 
     def test_subscription_total_amount(self):
         sub = Subscription(plan=Plan(name="Pro Plan", amount=decimal.Decimal("100")), quantity=2)
-        self.assertEquals(sub.total_amount, decimal.Decimal("200"))
+        self.assertEqual(sub.total_amount, decimal.Decimal("200"))
 
     def test_subscription_plan_display(self):
         sub = Subscription(plan=Plan(name="Pro Plan"))
-        self.assertEquals(sub.plan_display(), "Pro Plan")
+        self.assertEqual(sub.plan_display(), "Pro Plan")
 
     def test_subscription_status_display(self):
         sub = Subscription(status="overly_active")
-        self.assertEquals(sub.status_display(), "Overly Active")
+        self.assertEqual(sub.status_display(), "Overly Active")
 
     def test_subscription_delete(self):
         plan = Plan.objects.create(stripe_id="pro2", amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
@@ -230,29 +230,29 @@ class ModelTests(TestCase):
         sub = Subscription.objects.create(customer=customer, status="trialing", start=timezone.now(), plan=plan, quantity=1, cancel_at_period_end=True, current_period_end=(timezone.now() - datetime.timedelta(days=2)))
         sub.delete()
         self.assertIsNone(sub.status)
-        self.assertEquals(sub.quantity, 0)
-        self.assertEquals(sub.amount, 0)
+        self.assertEqual(sub.quantity, 0)
+        self.assertEqual(sub.amount, 0)
 
     def test_account_str_and_repr(self):
         a = Account()
-        self.assertEquals(str(a), " - ")
+        self.assertEqual(str(a), " - ")
         if PY2:
-            self.assertEquals(repr(a), "Account(pk=None, display_name=u'', type=None, authorized=True, stripe_id=u'')")
+            self.assertEqual(repr(a), "Account(pk=None, display_name=u'', type=None, authorized=True, stripe_id=u'')")
         else:
-            self.assertEquals(repr(a), "Account(pk=None, display_name='', type=None, authorized=True, stripe_id='')")
+            self.assertEqual(repr(a), "Account(pk=None, display_name='', type=None, authorized=True, stripe_id='')")
         a.stripe_id = "acct_X"
-        self.assertEquals(str(a), " - acct_X")
+        self.assertEqual(str(a), " - acct_X")
         if PY2:
-            self.assertEquals(repr(a), "Account(pk=None, display_name=u'', type=None, authorized=True, stripe_id=u'acct_X')")
+            self.assertEqual(repr(a), "Account(pk=None, display_name=u'', type=None, authorized=True, stripe_id=u'acct_X')")
         else:
-            self.assertEquals(repr(a), "Account(pk=None, display_name='', type=None, authorized=True, stripe_id='acct_X')")
+            self.assertEqual(repr(a), "Account(pk=None, display_name='', type=None, authorized=True, stripe_id='acct_X')")
         a.display_name = "Display name"
         a.authorized = False
-        self.assertEquals(str(a), "Display name - acct_X")
+        self.assertEqual(str(a), "Display name - acct_X")
         if PY2:
-            self.assertEquals(repr(a), "Account(pk=None, display_name=u'Display name', type=None, authorized=False, stripe_id=u'acct_X')")
+            self.assertEqual(repr(a), "Account(pk=None, display_name=u'Display name', type=None, authorized=False, stripe_id=u'acct_X')")
         else:
-            self.assertEquals(repr(a), "Account(pk=None, display_name='Display name', type=None, authorized=False, stripe_id='acct_X')")
+            self.assertEqual(repr(a), "Account(pk=None, display_name='Display name', type=None, authorized=False, stripe_id='acct_X')")
 
     @patch("stripe.Subscription.retrieve")
     def test_subscription_stripe_subscription_with_connnect(self, RetrieveMock):
@@ -276,18 +276,18 @@ class ModelTests(TestCase):
     def test_user_account_repr(self):
         User = get_user_model()
         ua = UserAccount(user=User(), account=Account(), customer=Customer())
-        self.assertEquals(
+        self.assertEqual(
             repr(ua),
             "UserAccount(pk=None, user=<User: >, account={o.account!r}, customer={o.customer!r})".format(
                 o=ua))
 
     def test_card_repr(self):
         card = Card(exp_month=1, exp_year=2000)
-        self.assertEquals(repr(card), "Card(pk=None, customer=None)")
+        self.assertEqual(repr(card), "Card(pk=None, customer=None)")
 
         card.customer = Customer.objects.create()
         card.save()
-        self.assertEquals(repr(card), "Card(pk={c.pk}, customer={c.customer!r})".format(c=card))
+        self.assertEqual(repr(card), "Card(pk={c.pk}, customer={c.customer!r})".format(c=card))
 
     def test_blank_with_null(self):
         import inspect

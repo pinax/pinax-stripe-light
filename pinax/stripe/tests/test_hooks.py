@@ -24,11 +24,11 @@ class HooksTestCase(TestCase):
 
     def test_adjust_subscription_quantity(self):
         new_qty = self.hookset.adjust_subscription_quantity(customer=None, plan=None, quantity=3)
-        self.assertEquals(new_qty, 3)
+        self.assertEqual(new_qty, 3)
 
     def test_adjust_subscription_quantity_none(self):
         new_qty = self.hookset.adjust_subscription_quantity(customer=None, plan=None, quantity=None)
-        self.assertEquals(new_qty, 1)
+        self.assertEqual(new_qty, 1)
 
     def test_trial_period(self):
         period = self.hookset.trial_period(self.user, "some plan")

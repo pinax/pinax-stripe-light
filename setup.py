@@ -99,7 +99,5 @@ setup(
     extras_require={
         "testing": tests_require,
     },
-    test_suite="runtests.runtests",
-    tests_require=tests_require,
     zip_safe=False,
 )

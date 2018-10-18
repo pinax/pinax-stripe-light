@@ -30,7 +30,7 @@ class CommandTests(TestCase):
         )
         management.call_command("init_customers")
         customer = Customer.objects.get(user=self.user)
-        self.assertEquals(customer.stripe_id, "cus_XXXXX")
+        self.assertEqual(customer.stripe_id, "cus_XXXXX")
 
     @patch("stripe.Plan.auto_paging_iter", create=True)
     def test_plans_create(self, PlanAutoPagerMock):
@@ -46,9 +46,9 @@ class CommandTests(TestCase):
             "metadata": {}
         }]
         management.call_command("sync_plans")
-        self.assertEquals(Plan.objects.count(), 1)
-        self.assertEquals(Plan.objects.all()[0].stripe_id, "entry-monthly")
-        self.assertEquals(Plan.objects.all()[0].amount, decimal.Decimal("9.54"))
+        self.assertEqual(Plan.objects.count(), 1)
+        self.assertEqual(Plan.objects.all()[0].stripe_id, "entry-monthly")
+        self.assertEqual(Plan.objects.all()[0].amount, decimal.Decimal("9.54"))
 
     @patch("stripe.Coupon.auto_paging_iter", create=True)
     def test_coupons_create(self, CouponAutoPagerMock):
@@ -70,9 +70,9 @@ class CommandTests(TestCase):
             "valid": True
         }]
         management.call_command("sync_coupons")
-        self.assertEquals(Coupon.objects.count(), 1)
-        self.assertEquals(Coupon.objects.all()[0].stripe_id, "test-coupon")
-        self.assertEquals(Coupon.objects.all()[0].percent_off, 25)
+        self.assertEqual(Coupon.objects.count(), 1)
+        self.assertEqual(Coupon.objects.all()[0].stripe_id, "test-coupon")
+        self.assertEqual(Coupon.objects.all()[0].percent_off, 25)
 
     @patch("stripe.Customer.retrieve")
     @patch("pinax.stripe.actions.customers.sync_customer")

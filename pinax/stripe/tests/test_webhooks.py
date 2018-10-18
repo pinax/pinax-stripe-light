@@ -121,7 +121,7 @@ class WebhookTests(TestCase):
             six.u(msg),
             content_type="application/json"
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         self.assertTrue(Event.objects.filter(kind="transfer.created").exists())
 
     @patch("stripe.Event.retrieve")
@@ -138,13 +138,13 @@ class WebhookTests(TestCase):
             six.u(msg),
             content_type="application/json"
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         self.assertTrue(Event.objects.filter(kind="transfer.created").exists())
         self.assertEqual(
             Event.objects.filter(kind="transfer.created").first().stripe_account,
             account
         )
-        self.assertEquals(TransferMock.call_args_list, [
+        self.assertEqual(TransferMock.call_args_list, [
             [("ach_XXXXXXXXXXXX",), {"stripe_account": "acc_XXX"}],
         ])
 
@@ -157,7 +157,7 @@ class WebhookTests(TestCase):
             six.u(msg),
             content_type="application/json"
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         dupe_event_exception = EventProcessingException.objects.get()
         self.assertEqual(dupe_event_exception.message, "Duplicate event record")
         self.assertEqual(str(dupe_event_exception.data), '{"id": 123}')
@@ -226,8 +226,8 @@ class ChargeWebhookTest(TestCase):
         ChargeCapturedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
         _, kwargs = RetrieveMock.call_args
-        self.assertEquals(kwargs["expand"], ["balance_transaction"])
-        self.assertEquals(kwargs["stripe_account"], None)
+        self.assertEqual(kwargs["expand"], ["balance_transaction"])
+        self.assertEqual(kwargs["stripe_account"], None)
 
     @patch("stripe.Charge.retrieve")
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
@@ -238,8 +238,8 @@ class ChargeWebhookTest(TestCase):
         ChargeCapturedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
         _, kwargs = RetrieveMock.call_args
-        self.assertEquals(kwargs["expand"], ["balance_transaction"])
-        self.assertEquals(kwargs["stripe_account"], "acc_A")
+        self.assertEqual(kwargs["expand"], ["balance_transaction"])
+        self.assertEqual(kwargs["stripe_account"], "acc_A")
 
 
 class CustomerDeletedWebhookTest(TestCase):
@@ -263,7 +263,7 @@ class CustomerUpdatedWebhookTest(TestCase):
     def test_process_webhook_without_customer(self, SyncMock):
         event = Event.objects.create(kind=CustomerUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
         CustomerUpdatedWebhook(event).process_webhook()
-        self.assertEquals(SyncMock.call_count, 0)
+        self.assertEqual(SyncMock.call_count, 0)
 
     @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook_without_customer_with_data(self, SyncMock):
@@ -271,7 +271,7 @@ class CustomerUpdatedWebhookTest(TestCase):
         obj = object()
         event.validated_message = dict(data=dict(object=obj))
         CustomerUpdatedWebhook(event).process_webhook()
-        self.assertEquals(SyncMock.call_count, 0)
+        self.assertEqual(SyncMock.call_count, 0)
 
     @patch("pinax.stripe.actions.customers.sync_customer")
     def test_process_webhook_with_customer_with_data(self, SyncMock):
@@ -280,7 +280,7 @@ class CustomerUpdatedWebhookTest(TestCase):
         obj = object()
         event.validated_message = dict(data=dict(object=obj))
         CustomerUpdatedWebhook(event).process_webhook()
-        self.assertEquals(SyncMock.call_count, 1)
+        self.assertEqual(SyncMock.call_count, 1)
         self.assertIs(SyncMock.call_args[0][0], customer)
         self.assertIs(SyncMock.call_args[0][1], obj)
 
@@ -320,7 +320,7 @@ class PlanCreatedWebhookTest(TestCase):
             valid=True
         )
         registry.get(event.kind)(event).process()
-        self.assertEquals(Plan.objects.all().count(), 1)
+        self.assertEqual(Plan.objects.all().count(), 1)
 
 
 class PlanUpdatedWebhookTest(TestCase):
@@ -346,7 +346,7 @@ class PlanUpdatedWebhookTest(TestCase):
         )
         registry.get(event.kind)(event).process()
         plan = Plan.objects.get(stripe_id="gold1")
-        self.assertEquals(plan.name, PLAN_CREATED_TEST_DATA["data"]["object"]["name"])
+        self.assertEqual(plan.name, PLAN_CREATED_TEST_DATA["data"]["object"]["name"])
 
 
 class CustomerSubscriptionCreatedWebhookTest(TestCase):
@@ -428,8 +428,8 @@ class TestTransferWebhooks(TestCase):
         )
         registry.get(event.kind)(event).process()
         transfer = Transfer.objects.get(stripe_id="tr_XXXXXXXXXXXX")
-        self.assertEquals(transfer.amount, decimal.Decimal("4.55"))
-        self.assertEquals(transfer.status, "paid")
+        self.assertEqual(transfer.amount, decimal.Decimal("4.55"))
+        self.assertEqual(transfer.status, "paid")
 
     @patch("stripe.Event.retrieve")
     @patch("stripe.Transfer.retrieve")
@@ -447,8 +447,8 @@ class TestTransferWebhooks(TestCase):
         )
         registry.get(event.kind)(event).process()
         transfer = Transfer.objects.get(stripe_id="tr_adlkj2l3kj23")
-        self.assertEquals(transfer.amount, decimal.Decimal("9.41"))
-        self.assertEquals(transfer.status, "pending")
+        self.assertEqual(transfer.amount, decimal.Decimal("9.41"))
+        self.assertEqual(transfer.status, "pending")
 
     @patch("stripe.Event.retrieve")
     @patch("stripe.Transfer.retrieve")
@@ -553,7 +553,7 @@ class TestTransferWebhooks(TestCase):
         )
         registry.get(paid_event.kind)(paid_event).process()
         transfer = Transfer.objects.get(stripe_id="tr_XXXXXXXXXXXX")
-        self.assertEquals(transfer.status, "paid")
+        self.assertEqual(transfer.status, "paid")
 
 
 class AccountWebhookTest(TestCase):

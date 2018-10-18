@@ -55,6 +55,8 @@ recurring subscriptions managed by Stripe.
 
 tests_require = [
     "mock",
+    "pytest",
+    "pytest-django",
 ]
 
 setup(
@@ -95,9 +97,7 @@ setup(
         "django-ipware==2.1.0"
     ],
     extras_require={
-        "pytest": ["pytest", "pytest-django"] + tests_require,
+        "testing": tests_require,
     },
-    test_suite="runtests.runtests",
-    tests_require=tests_require,
     zip_safe=False,
 )

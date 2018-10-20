@@ -7,20 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 import stripe
 from ipware.ip import get_ip, get_real_ip
 
-from .actions import accounts
 from .conf import settings
-from .models import Plan
-
-
-class PaymentMethodForm(forms.Form):
-
-    expMonth = forms.IntegerField(min_value=1, max_value=12)
-    expYear = forms.IntegerField(min_value=2015, max_value=9999)
-
-
-class PlanForm(forms.Form):
-    plan = forms.ModelChoiceField(queryset=Plan.objects.all())
-
 
 """
 The Connect forms here are designed to get users through the multi-stage
@@ -306,6 +293,10 @@ class InitialCustomAccountForm(DynamicManagedAccountForm):
     def get_user_agent(self):
         return self.request.META.get("HTTP_USER_AGENT")
 
+    def account_create(self, user, **kwargs):
+        stripe_account = stripe.Account.create(**kwargs)
+        return stripe_account
+
     def save(self):
         """
         Create a custom account, handling Stripe errors.
@@ -317,7 +308,7 @@ class InitialCustomAccountForm(DynamicManagedAccountForm):
         """
         data = self.cleaned_data
         try:
-            return accounts.create(
+            return self.account_create(
                 self.request.user,
                 country=data["address_country"],
                 type="custom",
@@ -392,6 +383,10 @@ class AdditionalCustomAccountForm(DynamicManagedAccountForm):
     dob = forms.DateField()
 
     def __init__(self, *args, **kwargs):
+        """
+        Assumes you are instantiating with an instance of a model that represents
+        a local cache of a Stripe Account with a `stripe_id` property.
+        """
         self.account = kwargs.pop("account")
         kwargs.update(
             {
@@ -405,11 +400,34 @@ class AdditionalCustomAccountForm(DynamicManagedAccountForm):
         self.fields["last_name"].initial = self.account.legal_entity_last_name
         self.fields["dob"].initial = self.account.legal_entity_dob
 
+    def account_update(self, data):
+        stripe_account = stripe.Account.retrieve(id=self.account.stripe_id)
+        if data.get("dob"):
+            stripe_account.legal_entity.dob = data["dob"]
+
+        if data.get("first_name"):
+            stripe_account.legal_entity.first_name = data["first_name"]
+
+        if data.get("last_name"):
+            stripe_account.legal_entity.last_name = data["last_name"]
+
+        if data.get("personal_id_number"):
+            stripe_account.legal_entity.personal_id_number = data["personal_id_number"]
+
+        if data.get("document"):
+            response = stripe.FileUpload.create(
+                purpose="identity_document",
+                file=data["document"],
+                stripe_account=stripe_account.id
+            )
+            stripe_account.legal_entity.verification.document = response["id"]
+        stripe_account.save()
+        return stripe_account
+
     def save(self):
         data = self.cleaned_data
         try:
-            return accounts.update(
-                self.account,
+            return self.account_update(
                 {
                     "dob": {
                         "day": data["dob"].day,

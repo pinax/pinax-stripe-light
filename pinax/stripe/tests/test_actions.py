@@ -1293,13 +1293,11 @@ class SyncsTests(TestCase):
             "interval_count": 1,
             "livemode": False,
             "metadata": {},
-            "name": "Gold Plan",
             "statement_descriptor": "ALTMAN",
             "trial_period_days": 3
         }
         plans.sync_plan(plan)
         self.assertTrue(Plan.objects.all().count(), 1)
-        self.assertEqual(Plan.objects.get(stripe_id="pro2").name, plan["name"])
 
     def test_sync_payment_source_from_stripe_data_card(self):
         source = {

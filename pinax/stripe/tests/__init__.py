@@ -145,7 +145,6 @@ PLAN_CREATED_TEST_DATA = {
             "object": "plan",
             "currency": "usd",
             "created": 1498573686,
-            "name": "Pro Plan",
             "metadata": {}
         }
     },

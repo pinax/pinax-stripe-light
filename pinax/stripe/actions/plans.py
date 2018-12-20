@@ -23,10 +23,10 @@ def sync_plan(plan, event=None):
 
     defaults = {
         "amount": utils.convert_amount_for_db(plan["amount"], plan["currency"]),
-        "currency": plan["currency"] or "",
+        "currency": plan.get("currency", ""),
         "interval": plan["interval"],
         "interval_count": plan["interval_count"],
-        "statement_descriptor": plan["statement_descriptor"] or "",
+        "statement_descriptor": plan.get("statement_descriptor", ""),
         "trial_period_days": plan["trial_period_days"],
         "metadata": plan["metadata"]
     }

@@ -1,6 +1,7 @@
 import decimal
 
 import stripe
+from django.core.exceptions import MultipleObjectsReturned
 from django.utils.encoding import smart_str
 
 from . import charges, subscriptions
@@ -99,6 +100,7 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
     date = utils.convert_tstamp(stripe_invoice, "date")
     sub_id = stripe_invoice.get("subscription")
     stripe_account_id = c.stripe_account_stripe_id
+    invoice_stripe_id = stripe_invoice.get("stripe_id")
 
     if stripe_invoice.get("charge"):
         charge = charges.sync_charge(stripe_invoice["charge"], stripe_account=stripe_account_id)
@@ -135,10 +137,16 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         subscription=subscription,
         receipt_number=stripe_invoice["receipt_number"] or "",
     )
-    invoice, created = models.Invoice.objects.get_or_create(
-        stripe_id=stripe_invoice["id"],
-        defaults=defaults
-    )
+
+    try:
+        invoice, created = models.Invoice.objects.get_or_create(
+            stripe_id=invoice_stripe_id,
+            defaults=defaults
+        )
+    except MultipleObjectsReturned:
+        invoice = models.Invoice.objects.filter(stripe_id=invoice_stripe_id).first()
+        created = False
+
     if charge is not None:
         charge.invoice = invoice
         charge.save()

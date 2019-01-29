@@ -27,7 +27,8 @@ def sync_plan(plan, event=None):
         "interval_count",
         "statement_descriptor",
         "trial_period_days",
-        "metadata"
+        "metadata",
+        "active"
     ] if x in plan and plan[x]}
 
     defaults["amount"] = utils.convert_amount_for_db(plan["amount"], plan["currency"])

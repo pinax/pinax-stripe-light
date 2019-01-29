@@ -84,6 +84,7 @@ class Plan(UniquePerAccountStripeObject):
     statement_descriptor = models.TextField(blank=True)
     trial_period_days = models.IntegerField(null=True, blank=True)
     metadata = JSONField(null=True, blank=True)
+    active = models.BooleanField(default=True)
 
     def __str__(self):
         return "{} ({}{})".format(self.name, CURRENCY_SYMBOLS.get(self.currency, ""), self.amount)

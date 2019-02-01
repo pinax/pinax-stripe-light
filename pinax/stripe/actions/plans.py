@@ -42,9 +42,11 @@ def sync_plan(plan, event=None):
 
     if plan["tiers"]:
         obj.tiers.all().delete()    # delete all tiers, since they don't have ids in Stripe
-        obj.tiers.set([models.Tier(
-            plan=obj,
-            amount=utils.convert_amount_for_db(tier["amount"], plan["currency"]),
-            flat_amount=utils.convert_amount_for_db(tier["flat_amount"], plan["currency"]),
-            up_to=tier["up_to"]
-        ) for tier in plan["tiers"]], bulk=False)
+        for tier in plan["tiers"]:
+            tier_obj = models.Tier.objects.create(
+                plan=obj,
+                amount=utils.convert_amount_for_db(tier["amount"], plan["currency"]),
+                flat_amount=utils.convert_amount_for_db(tier["flat_amount"], plan["currency"]),
+                up_to=tier["up_to"]
+            )
+            obj.tiers.add(tier_obj)

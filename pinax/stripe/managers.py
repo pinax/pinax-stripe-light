@@ -95,7 +95,7 @@ class TieredPricingManager(models.Manager):
         all_tiers = self.all_tiers(plan)
 
         if mode == self.TIERS_MODE_VOLUME:
-            applicable_tiers = filter(lambda t: quantity <= t.up_to, all_tiers)
+            applicable_tiers = list(filter(lambda t: not t.up_to or quantity <= t.up_to, all_tiers))
             tier = applicable_tiers[0] if applicable_tiers else all_tiers[-1]
             cost = tier.calculate_cost(quantity)
         elif mode == self.TIERS_MODE_GRADUATED:

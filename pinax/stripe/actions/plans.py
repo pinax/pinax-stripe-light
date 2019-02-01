@@ -41,7 +41,7 @@ def sync_plan(plan, event=None):
     utils.update_with_defaults(obj, defaults, created)
 
     if plan["tiers"]:
-        obj.tiers.all().delete()
+        obj.tiers.all().delete()    # delete all tiers, since they don't have ids in Stripe
         obj.tiers.set([models.Tier(
             plan=obj,
             amount=utils.convert_amount_for_db(tier["amount"], plan["currency"]),

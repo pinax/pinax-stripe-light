@@ -1234,10 +1234,40 @@ class SyncsTests(TestCase):
                 "tiers_mode": None,
                 "tiers": None
             },
+            {
+                "id": "tiered1",
+                "object": "plan",
+                "amount": None,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {},
+                "name": "The Simple Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3,
+                "billing_scheme": "tiered",
+                "tiers_mode": 'test',
+                "tiers": [
+                    {
+                      "amount": None,
+                      "flat_amount": 14900,
+                      "up_to": 100
+                    },
+                    {
+                      "amount": 100,
+                      "flat_amount": None,
+                      "up_to": None
+                    }
+                ],
+            },
         ]
         plans.sync_plans()
-        self.assertTrue(Plan.objects.all().count(), 2)
+        self.assertEqual(Plan.objects.all().count(), len(PlanAutoPagerMock.return_value))
         self.assertEqual(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
+        self.assertTrue(Plan.objects.filter(stripe_id="tiered1").exists())
+        self.assertEqual(Plan.objects.get(stripe_id="tiered1").tiers.count(), 2)
 
     @patch("stripe.Plan.auto_paging_iter", create=True)
     def test_sync_plans_update(self, PlanAutoPagerMock):
@@ -1276,13 +1306,42 @@ class SyncsTests(TestCase):
                 "tiers_mode": None,
                 "tiers": None
             },
+            {
+                "id": "tiered1",
+                "object": "plan",
+                "amount": None,
+                "created": 1448121054,
+                "currency": "usd",
+                "interval": "month",
+                "interval_count": 1,
+                "livemode": False,
+                "metadata": {},
+                "name": "The Simple Plan",
+                "statement_descriptor": "ALTMAN",
+                "trial_period_days": 3,
+                "billing_scheme": "tiered",
+                "tiers_mode": 'test',
+                "tiers": [
+                    {
+                        "amount": None,
+                        "flat_amount": 14900,
+                        "up_to": 100
+                    },
+                    {
+                        "amount": 100,
+                        "flat_amount": None,
+                        "up_to": None
+                    }
+                ],
+            },
         ]
         plans.sync_plans()
-        self.assertTrue(Plan.objects.all().count(), 2)
+        self.assertEqual(Plan.objects.all().count(), len(PlanAutoPagerMock.return_value))
         self.assertEqual(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("9.99"))
         PlanAutoPagerMock.return_value[1].update({"amount": 499})
         plans.sync_plans()
         self.assertEqual(Plan.objects.get(stripe_id="simple1").amount, decimal.Decimal("4.99"))
+        self.assertEqual(Plan.objects.get(stripe_id="tiered1").tiers.count(), 2)
 
     def test_sync_plan(self):
         """

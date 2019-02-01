@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
-from ..models import Charge, Customer, Plan, Subscription
+from ..models import Charge, Customer, Plan, Subscription, Tier
 
 
 class CustomerManagerTest(TestCase):
@@ -193,3 +193,41 @@ class ChargeManagerTests(TestCase):
         totals = Charge.objects.paid_totals_for(2013, 12)
         self.assertEqual(totals["total_amount"], None)
         self.assertEqual(totals["total_refunded"], None)
+
+
+class TieredPricingManagerTests(TestCase):
+    def setUp(self):
+        self.plan = Plan.objects.create(
+            stripe_id="plan", amount=0, interval="monthly", interval_count=1, billing_scheme=Plan.BILLING_SCHEME_TIERED
+        )
+        Tier.objects.create(plan=self.plan, up_to=5, amount=5, flat_amount=10)
+        Tier.objects.create(plan=self.plan, up_to=10, amount=4, flat_amount=20)
+        Tier.objects.create(plan=self.plan, up_to=15, amount=3, flat_amount=30)
+        Tier.objects.create(plan=self.plan, up_to=20, amount=2, flat_amount=40)
+        Tier.objects.create(plan=self.plan, up_to=None, amount=1, flat_amount=50)
+
+    def test_calculate_final_cost_with_volume_tiers_mode(self):
+        test_cases = [
+            (1, 5),
+            (5, 25),
+            (6, 24),
+            (20, 40),
+            (25, 25),
+        ]
+        self.plan.tiers.all().update(flat_amount=0)
+        for quantity, expected in test_cases:
+            cost = Tier.pricing.calculate_final_cost(self.plan, quantity, Tier.pricing.TIERS_MODE_VOLUME)
+            self.assertEqual(cost, expected)
+
+    def test_calculate_final_cost_with_graduated_tiers_mode(self):
+        test_cases = [
+            (1, 5),
+            (5, 25),
+            (6, 29),
+            (20, 70),
+            (25, 75),
+        ]
+        self.plan.tiers.all().update(flat_amount=0)
+        for quantity, expected in test_cases:
+            cost = Tier.pricing.calculate_final_cost(self.plan, quantity, Tier.pricing.TIERS_MODE_GRADUATED)
+            self.assertEqual(cost, expected)

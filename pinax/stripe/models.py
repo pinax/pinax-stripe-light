@@ -671,9 +671,9 @@ class BankAccount(StripeObject):
 class Tier(models.Model):
 
     plan = models.ForeignKey(Plan, related_name="tiers", on_delete=models.CASCADE)
-    amount = models.IntegerField()
-    flat_amount = models.IntegerField()
-    up_to = models.IntegerField(blank=True, null=True)
+    amount = models.DecimalField()
+    flat_amount = models.DecimalField()
+    up_to = models.DecimalField(blank=True, null=True)
 
     objects = models.Manager()
     pricing = TieredPricingManager()

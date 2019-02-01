@@ -1212,7 +1212,10 @@ class SyncsTests(TestCase):
                 "metadata": {},
                 "name": "The Pro Plan",
                 "statement_descriptor": "ALTMAN",
-                "trial_period_days": 3
+                "trial_period_days": 3,
+                "billing_scheme": "per_unit",
+                "tiers_mode": None,
+                "tiers": None
             },
             {
                 "id": "simple1",
@@ -1226,7 +1229,10 @@ class SyncsTests(TestCase):
                 "metadata": {},
                 "name": "The Simple Plan",
                 "statement_descriptor": "ALTMAN",
-                "trial_period_days": 3
+                "trial_period_days": 3,
+                "billing_scheme": "per_unit",
+                "tiers_mode": None,
+                "tiers": None
             },
         ]
         plans.sync_plans()
@@ -1248,7 +1254,10 @@ class SyncsTests(TestCase):
                 "metadata": {},
                 "name": "The Pro Plan",
                 "statement_descriptor": "ALTMAN",
-                "trial_period_days": 3
+                "trial_period_days": 3,
+                "billing_scheme": "per_unit",
+                "tiers_mode": None,
+                "tiers": None
             },
             {
                 "id": "simple1",
@@ -1262,7 +1271,10 @@ class SyncsTests(TestCase):
                 "metadata": {},
                 "name": "The Simple Plan",
                 "statement_descriptor": "ALTMAN",
-                "trial_period_days": 3
+                "trial_period_days": 3,
+                "billing_scheme": "per_unit",
+                "tiers_mode": None,
+                "tiers": None
             },
         ]
         plans.sync_plans()
@@ -1295,7 +1307,10 @@ class SyncsTests(TestCase):
             "metadata": {},
             "name": "Gold Plan",
             "statement_descriptor": "ALTMAN",
-            "trial_period_days": 3
+            "trial_period_days": 3,
+            "billing_scheme": "per_unit",
+            "tiers_mode": None,
+            "tiers": None
         }
         plans.sync_plan(plan)
         self.assertTrue(Plan.objects.all().count(), 1)

@@ -146,7 +146,10 @@ PLAN_CREATED_TEST_DATA = {
             "currency": "usd",
             "created": 1498573686,
             "name": "Pro Plan",
-            "metadata": {}
+            "metadata": {},
+            "billing_scheme": "per_unit",
+            "tiers_mode": None,
+            "tiers": None
         }
     },
     "type": "plan.updated",

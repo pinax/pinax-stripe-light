@@ -43,7 +43,10 @@ class CommandTests(TestCase):
             "statement_descriptor": None,
             "trial_period_days": None,
             "name": "Pro",
-            "metadata": {}
+            "metadata": {},
+            "billing_scheme": "per_unit",
+            "tiers_mode": None,
+            "tiers": None
         }]
         management.call_command("sync_plans")
         self.assertEqual(Plan.objects.count(), 1)

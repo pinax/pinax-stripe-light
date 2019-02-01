@@ -71,3 +71,37 @@ class ChargeManager(models.Manager):
             total_amount=models.Sum("amount"),
             total_refunded=models.Sum("amount_refunded")
         )
+
+
+class TieredPricingManager(models.Manager):
+
+    TIERS_MODE_VOLUME = "volume"
+    TIERS_MODE_GRADUATED = "graduated"
+    TIERS_MODES = (TIERS_MODE_VOLUME, TIERS_MODE_GRADUATED)
+
+    def closed_tiers(self, plan):
+        return self.filter(plan=plan, up_to__isnull=False).order_by("up_to")
+
+    def open_tiers(self, plan):
+        return self.filter(plan=plan, up_to__isnull=True)
+
+    def all_tiers(self, plan):
+        return list(self.closed_tiers(plan)) + list(self.open_tiers(plan))
+
+    def calculate_final_cost(self, plan, quantity, mode):
+        if mode not in self.TIERS_MODES:
+            raise Exception("Received wrong type of mode ({})".format(mode))
+
+        all_tiers = self.all_tiers(plan)
+        applicable_tiers = filter(lambda t: quantity <= t.up_to, all_tiers)
+        if mode == self.TIERS_MODE_VOLUME:
+            tiers = applicable_tiers[:-1] if len(applicable_tiers) else all_tiers[:-1]
+        elif mode == self.TIERS_MODE_GRADUATED:
+            tiers = applicable_tiers if len(applicable_tiers) else all_tiers
+        else:
+            tiers = []
+
+        # Accumulate cost for each tier
+        return reduce(
+            lambda ax, t: (ax[0] + t.calculate_cost(ax[1]), ax[1] - t.up_to if t.up_to else 0), tiers, (0, quantity)
+        )[0]

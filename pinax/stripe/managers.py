@@ -93,15 +93,23 @@ class TieredPricingManager(models.Manager):
             raise Exception("Received wrong type of mode ({})".format(mode))
 
         all_tiers = self.all_tiers(plan)
-        applicable_tiers = filter(lambda t: quantity <= t.up_to, all_tiers)
-        if mode == self.TIERS_MODE_VOLUME:
-            tiers = applicable_tiers[:-1] if len(applicable_tiers) else all_tiers[:-1]
-        elif mode == self.TIERS_MODE_GRADUATED:
-            tiers = applicable_tiers if len(applicable_tiers) else all_tiers
-        else:
-            tiers = []
 
-        # Accumulate cost for each tier
-        return reduce(
-            lambda ax, t: (ax[0] + t.calculate_cost(ax[1]), ax[1] - t.up_to if t.up_to else 0), tiers, (0, quantity)
-        )[0]
+        if mode == self.TIERS_MODE_VOLUME:
+            applicable_tiers = filter(lambda t: quantity <= t.up_to, all_tiers)
+            tier = applicable_tiers[0] if applicable_tiers else all_tiers[-1]
+            cost = tier.calculate_cost(quantity)
+        elif mode == self.TIERS_MODE_GRADUATED:
+            quantity_billed = 0
+            cost = 0
+            idx = 0
+            while quantity > 0:
+                tier = all_tiers[idx]
+                quantity_to_bill = min(quantity, tier.up_to - quantity_billed) if tier.up_to else quantity
+                cost += tier.calculate_cost(quantity_to_bill)
+                quantity -= quantity_to_bill
+                quantity_billed += quantity_to_bill
+                idx += 1
+        else:
+            cost = 0
+
+        return cost

@@ -28,7 +28,7 @@ from ..models import (
     Subscription,
     Tier,
     Transfer,
-    UserAccount,
+    UserAccount
 )
 
 try:

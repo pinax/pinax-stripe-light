@@ -1248,17 +1248,17 @@ class SyncsTests(TestCase):
                 "statement_descriptor": "ALTMAN",
                 "trial_period_days": 3,
                 "billing_scheme": "tiered",
-                "tiers_mode": 'test',
+                "tiers_mode": "test",
                 "tiers": [
                     {
-                      "amount": None,
-                      "flat_amount": 14900,
-                      "up_to": 100
+                        "amount": None,
+                        "flat_amount": 14900,
+                        "up_to": 100
                     },
                     {
-                      "amount": 100,
-                      "flat_amount": None,
-                      "up_to": None
+                        "amount": 100,
+                        "flat_amount": None,
+                        "up_to": None
                     }
                 ],
             },
@@ -1320,7 +1320,7 @@ class SyncsTests(TestCase):
                 "statement_descriptor": "ALTMAN",
                 "trial_period_days": 3,
                 "billing_scheme": "tiered",
-                "tiers_mode": 'test',
+                "tiers_mode": "test",
                 "tiers": [
                     {
                         "amount": None,

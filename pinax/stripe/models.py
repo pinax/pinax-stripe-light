@@ -673,7 +673,7 @@ class Tier(models.Model):
     plan = models.ForeignKey(Plan, related_name="tiers", on_delete=models.CASCADE)
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     flat_amount = models.DecimalField(decimal_places=2, max_digits=9)
-    up_to = models.DecimalField(blank=True, null=True)
+    up_to = models.IntegerField(blank=True, null=True)
 
     objects = models.Manager()
     pricing = TieredPricingManager()

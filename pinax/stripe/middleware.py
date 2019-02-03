@@ -1,6 +1,9 @@
 import django
 from django.shortcuts import redirect
 
+from .actions import customers, subscriptions
+from .conf import settings
+
 try:
     from django.urls import resolve
 except ImportError:
@@ -10,10 +13,6 @@ try:
     from django.utils.deprecation import MiddlewareMixin as MixinorObject
 except ImportError:
     MixinorObject = object
-
-
-from .actions import customers, subscriptions
-from .conf import settings
 
 
 class ActiveSubscriptionMiddleware(MixinorObject):

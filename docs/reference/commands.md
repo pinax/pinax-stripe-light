@@ -2,12 +2,12 @@
 
 #### pinax.stripe.management.commands.init_customers
 
-Create `pinax.stripe.models.Customer` objects for existing users that don't 
+Create `pinax.stripe.models.Customer` objects for existing users that do not
 have one.
 
 #### pinax.stripe.management.commands.sync_customers
 
-Syncronizes customer data from the Stripe API
+Synchronizes customer data from the Stripe API.
 
 Utilizes the following actions:
 
@@ -17,6 +17,6 @@ Utilizes the following actions:
 
 #### pinax.stripe.management.commands.sync_plans
 
-Make sure your Stripe account has the plans
+Make sure your Stripe account has the plans.
 
 Utilizes `pinax.stripe.actions.plans.sync_plans`.

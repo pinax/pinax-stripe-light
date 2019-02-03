@@ -3,11 +3,22 @@ import json
 from django.dispatch import Signal
 
 import stripe
-
 from six import with_metaclass
 
-from .actions import charges, customers, exceptions, invoices, plans, transfers, sources, subscriptions
+from . import models
+from .actions import (
+    accounts,
+    charges,
+    customers,
+    exceptions,
+    invoices,
+    plans,
+    sources,
+    subscriptions,
+    transfers
+)
 from .conf import settings
+from .utils import obfuscate_secret_key
 
 
 class WebhookRegistry(object):
@@ -60,22 +71,45 @@ class Registerable(type):
 
 class Webhook(with_metaclass(Registerable, object)):
 
+    name = None
+
     def __init__(self, event):
         if event.kind != self.name:
             raise Exception("The Webhook handler ({}) received the wrong type of Event ({})".format(self.name, event.kind))
         self.event = event
+        self.stripe_account = None
 
     def validate(self):
-        evt = stripe.Event.retrieve(self.event.stripe_id)
+        """
+        Validate incoming events.
+
+        We fetch the event data to ensure it is legit.
+        For Connect accounts we must fetch the event using the `stripe_account`
+        parameter.
+        """
+        self.stripe_account = models.Account.objects.filter(
+            stripe_id=self.event.webhook_message.get("account")).first()
+        self.event.stripe_account = self.stripe_account
+        evt = stripe.Event.retrieve(
+            self.event.stripe_id,
+            stripe_account=getattr(self.stripe_account, "stripe_id", None)
+        )
         self.event.validated_message = json.loads(
             json.dumps(
                 evt.to_dict(),
                 sort_keys=True,
-                cls=stripe.StripeObjectEncoder
             )
         )
-        self.event.valid = self.event.webhook_message["data"] == self.event.validated_message["data"]
+        self.event.valid = self.is_event_valid(self.event.webhook_message["data"], self.event.validated_message["data"])
         self.event.save()
+
+    @staticmethod
+    def is_event_valid(webhook_message_data, validated_message_data):
+        """
+        Notice "data" may contain a "previous_attributes" section
+        """
+        return "object" in webhook_message_data and "object" in validated_message_data and \
+               webhook_message_data["object"] == validated_message_data["object"]
 
     def send_signal(self):
         signal = registry.get_signal(self.name)
@@ -83,23 +117,38 @@ class Webhook(with_metaclass(Registerable, object)):
             return signal.send(sender=self.__class__, event=self.event)
 
     def process(self):
-        self.validate()
-        if not self.event.valid or self.event.processed:
+        if self.event.processed:
             return
+        self.validate()
+        if not self.event.valid:
+            return
+
         try:
             customers.link_customer(self.event)
             self.process_webhook()
             self.send_signal()
             self.event.processed = True
             self.event.save()
-        except stripe.StripeError as e:
-            exceptions.log_exception(data=e.http_body, exception=e, event=self.event)
+        except Exception as e:
+            data = None
+            if isinstance(e, stripe.error.StripeError):
+                data = e.http_body
+            exceptions.log_exception(data=data, exception=e, event=self.event)
+            raise e
 
     def process_webhook(self):
         return
 
 
-class AccountUpdatedWebhook(Webhook):
+class AccountWebhook(Webhook):
+
+    def process_webhook(self):
+        accounts.sync_account_from_stripe_data(
+            stripe.Account.retrieve(self.event.message["data"]["object"]["id"])
+        )
+
+
+class AccountUpdatedWebhook(AccountWebhook):
     name = "account.updated"
     description = "Occurs whenever an account status or property has changed."
 
@@ -107,6 +156,32 @@ class AccountUpdatedWebhook(Webhook):
 class AccountApplicationDeauthorizeWebhook(Webhook):
     name = "account.application.deauthorized"
     description = "Occurs whenever a user deauthorizes an application. Sent to the related application only."
+
+    def validate(self):
+        """
+        Specialized validation of incoming events.
+
+        When this event is for a connected account we should not be able to
+        fetch the event anymore (since we have been disconnected).
+        But there might be multiple connections (e.g. for Dev/Prod).
+
+        Therefore we try to retrieve the event, and handle a
+        PermissionError exception to be expected (since we cannot access the
+        account anymore).
+        """
+        try:
+            super(AccountApplicationDeauthorizeWebhook, self).validate()
+        except stripe.error.PermissionError as exc:
+            if self.stripe_account:
+                stripe_account_id = self.stripe_account.stripe_id
+                if not(stripe_account_id in str(exc) and obfuscate_secret_key(settings.PINAX_STRIPE_SECRET_KEY) in str(exc)):
+                    raise exc
+            self.event.valid = True
+            self.event.validated_message = self.event.webhook_message
+
+    def process_webhook(self):
+        if self.stripe_account is not None:
+            accounts.deauthorize(self.stripe_account)
 
 
 class AccountExternalAccountCreatedWebhook(Webhook):
@@ -167,8 +242,9 @@ class BitcoinReceiverTransactionCreatedWebhook(Webhook):
 class ChargeWebhook(Webhook):
 
     def process_webhook(self):
-        charges.sync_charge_from_stripe_data(
-            stripe.Charge.retrieve(self.event.message["data"]["object"]["id"])
+        charges.sync_charge(
+            self.event.message["data"]["object"]["id"],
+            stripe_account=self.event.stripe_account_stripe_id,
         )
 
 
@@ -255,7 +331,8 @@ class CustomerDeletedWebhook(Webhook):
     description = "Occurs whenever a customer is deleted."
 
     def process_webhook(self):
-        customers.purge_local(self.event.customer)
+        if self.event.customer:
+            customers.purge_local(self.event.customer)
 
 
 class CustomerUpdatedWebhook(Webhook):
@@ -263,12 +340,9 @@ class CustomerUpdatedWebhook(Webhook):
     description = "Occurs whenever any property of a customer changes."
 
     def process_webhook(self):
-        cu = None
-        try:
+        if self.event.customer:
             cu = self.event.message["data"]["object"]
-        except (KeyError, TypeError):
-            pass
-        customers.sync_customer(self.event.customer, cu)
+            customers.sync_customer(self.event.customer, cu)
 
 
 class CustomerDiscountCreatedWebhook(Webhook):
@@ -319,11 +393,11 @@ class CustomerSubscriptionWebhook(Webhook):
         if self.event.validated_message:
             subscriptions.sync_subscription_from_stripe_data(
                 self.event.customer,
-                self.event.validated_message["data"]["object"]
+                self.event.validated_message["data"]["object"],
             )
 
         if self.event.customer:
-            customers.sync_customer(self.event.customer, self.event.customer.stripe_customer)
+            customers.sync_customer(self.event.customer)
 
 
 class CustomerSubscriptionCreatedWebhook(CustomerSubscriptionWebhook):
@@ -410,6 +484,11 @@ class OrderUpdatedWebhook(Webhook):
     description = "Occurs whenever an order is updated."
 
 
+class PaymentCreatedWebhook(Webhook):
+    name = "payment.created"
+    description = "A payment has been received by a Connect account via Transfer from the platform account."
+
+
 class PlanWebhook(Webhook):
 
     def process_webhook(self):
@@ -469,7 +548,13 @@ class SKUUpdatedWebhook(Webhook):
 class TransferWebhook(Webhook):
 
     def process_webhook(self):
-        transfers.sync_transfer(self.event.message["data"]["object"], self.event)
+        transfers.sync_transfer(
+            stripe.Transfer.retrieve(
+                self.event.message["data"]["object"]["id"],
+                stripe_account=self.event.stripe_account_stripe_id,
+            ),
+            self.event
+        )
 
 
 class TransferCreatedWebhook(TransferWebhook):

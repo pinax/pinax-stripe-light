@@ -5,8 +5,8 @@
 [![](https://img.shields.io/pypi/v/pinax-stripe.svg)](https://pypi.python.org/pypi/pinax-stripe/)
 [![](https://img.shields.io/badge/license-MIT-blue.svg)](https://pypi.python.org/pypi/pinax-stripe/)
 
-[![](https://img.shields.io/travis/pinax/pinax-stripe.svg)](https://travis-ci.org/pinax/pinax-stripe)
 [![Codecov](https://img.shields.io/codecov/c/github/pinax/pinax-stripe.svg)](https://codecov.io/gh/pinax/pinax-stripe)
+[![CircleCI](https://circleci.com/gh/pinax/pinax-stripe.svg?style=svg)](https://circleci.com/gh/pinax/pinax-stripe)
 ![](https://img.shields.io/github/contributors/pinax/pinax-stripe.svg)
 ![](https://img.shields.io/github/issues-pr/pinax/pinax-stripe.svg)
 ![](https://img.shields.io/github/issues-pr-closed/pinax/pinax-stripe.svg)
@@ -18,7 +18,7 @@ avoid namespace collisions and to have more consistency with Pinax.
 
 ## Pinax
 
-Pinax is an open-source platform built on the Django Web Framework. It is an ecosystem of reusable Django apps, themes, and starter project templates.
+Pinax is an open-source platform built on the Django Web Framework. It is an ecosystem of reusable Django apps and starter project templates.
 This collection can be found at http://pinaxproject.com.
 
 This app was developed as part of the Pinax ecosystem but is just a Django app and can be used independently of other Pinax apps.
@@ -53,21 +53,20 @@ Then:
 ```
 $ CFLAGS="-I$(xcrun --show-sdk-path)/usr/include -I$(brew --prefix openssl)/include" \
 LDFLAGS="-L$(brew --prefix openssl)/lib" \
-pyenv install 2.7.10 3.2.6 3.3.6 3.4.3 3.5.0
+pyenv install 2.7.14 3.4.7 3.5.4 3.6.3
 
-$ pyenv virtualenv 2.7.10 test-2.7.10
-$ pyenv virtualenv 3.2.6 test-3.2.6
-$ pyenv virtualenv 3.3.6 test-3.3.6
-$ pyenv virtualenv 3.4.3 test-3.4.3
-$ pyenv virtualenv 3.5.0 test-3.5.0
-$ pyenv global 2.7.10 test-2.7.10 test-3.2.6 test-3.2.6 test-3.3.6 test-3.4.3 test-3.5.0
+$ pyenv virtualenv 2.7.14
+$ pyenv virtualenv 3.4.7
+$ pyenv virtualenv 3.5.4
+$ pyenv virtualenv 3.6.3
+$ pyenv global 2.7.14 3.4.7 3.5.4 3.6.3
 
 $ pip install detox
 ```
 
 To run test suite:
 
-Make sure you are not inside a `virtualenv` and then:
+Make sure you are NOT inside a `virtualenv` and then:
 
 ```
 $ detox

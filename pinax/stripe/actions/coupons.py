@@ -1,18 +1,13 @@
 import stripe
 
-from .. import utils
-from .. import models
+from .. import models, utils
 
 
 def sync_coupons():
     """
-    Syncronizes all coupons from the Stripe API
+    Synchronizes all coupons from the Stripe API
     """
-    try:
-        coupons = stripe.Coupon.auto_paging_iter()
-    except AttributeError:
-        coupons = iter(stripe.Coupon.all().data)
-
+    coupons = stripe.Coupon.auto_paging_iter()
     for coupon in coupons:
         defaults = dict(
             amount_off=(

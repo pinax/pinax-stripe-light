@@ -1,4 +1,6 @@
 .DS_Store
+Pipfile
+Pipfile.lock
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -45,3 +47,6 @@ coverage.xml
 
 # MkDocs
 site/
+
+# IDEs
+.idea/

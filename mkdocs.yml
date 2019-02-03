@@ -6,6 +6,7 @@ pages:
     - Settings & Configuration: user-guide/settings.md
     - Software as a Service: user-guide/saas.md
     - eCommerce: user-guide/ecommerce.md
+    - Stripe Connect: user-guide/connect.md
     - Upgrading from DSP: user-guide/upgrading.md
 - Reference:
     - Actions: reference/actions.md

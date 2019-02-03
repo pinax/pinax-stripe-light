@@ -4,17 +4,23 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.utils.encoding import smart_str
-from django.views.generic import TemplateView, DetailView, View, FormView, ListView
-from django.views.generic.edit import FormMixin
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import (
+    DetailView,
+    FormView,
+    ListView,
+    TemplateView,
+    View
+)
+from django.views.generic.edit import FormMixin
 
 import stripe
 
-from .actions import events, exceptions, customers, subscriptions, sources
+from .actions import customers, events, exceptions, sources, subscriptions
 from .conf import settings
-from .forms import PlanForm, PaymentMethodForm
-from .mixins import LoginRequiredMixin, CustomerMixin, PaymentsContextMixin
-from .models import Invoice, Card, Subscription
+from .forms import PaymentMethodForm, PlanForm
+from .mixins import CustomerMixin, LoginRequiredMixin, PaymentsContextMixin
+from .models import Card, Event, Invoice, Subscription
 
 
 class InvoiceListView(LoginRequiredMixin, CustomerMixin, ListView):
@@ -46,7 +52,7 @@ class PaymentMethodCreateView(LoginRequiredMixin, CustomerMixin, PaymentsContext
         try:
             self.create_card(request.POST.get("stripeToken"))
             return redirect("pinax_stripe_payment_method_list")
-        except stripe.CardError as e:
+        except stripe.error.CardError as e:
             return self.render_to_response(self.get_context_data(errors=smart_str(e)))
 
 
@@ -62,7 +68,7 @@ class PaymentMethodDeleteView(LoginRequiredMixin, CustomerMixin, DetailView):
         try:
             self.delete_card(self.object.stripe_id)
             return redirect("pinax_stripe_payment_method_list")
-        except stripe.CardError as e:
+        except stripe.error.CardError as e:
             return self.render_to_response(self.get_context_data(errors=smart_str(e)))
 
 
@@ -78,7 +84,7 @@ class PaymentMethodUpdateView(LoginRequiredMixin, CustomerMixin, PaymentsContext
         try:
             self.update_card(form.cleaned_data["expMonth"], form.cleaned_data["expYear"])
             return redirect("pinax_stripe_payment_method_list")
-        except stripe.CardError as e:
+        except stripe.error.CardError as e:
             return self.render_to_response(self.get_context_data(errors=smart_str(e)))
 
     def post(self, request, *args, **kwargs):
@@ -119,7 +125,7 @@ class SubscriptionCreateView(LoginRequiredMixin, PaymentsContextMixin, CustomerM
         try:
             self.subscribe(self.customer, plan=form.cleaned_data["plan"], token=self.request.POST.get("stripeToken"))
             return redirect("pinax_stripe_subscription_list")
-        except stripe.StripeError as e:
+        except stripe.error.StripeError as e:
             return self.render_to_response(self.get_context_data(form=form, errors=smart_str(e)))
 
 
@@ -135,7 +141,7 @@ class SubscriptionDeleteView(LoginRequiredMixin, CustomerMixin, DetailView):
         try:
             self.cancel()
             return redirect("pinax_stripe_subscription_list")
-        except stripe.StripeError as e:
+        except stripe.error.StripeError as e:
             return self.render_to_response(self.get_context_data(errors=smart_str(e)))
 
 
@@ -171,7 +177,7 @@ class SubscriptionUpdateView(LoginRequiredMixin, CustomerMixin, FormMixin, Detai
         try:
             self.update_subscription(form.cleaned_data["plan"])
             return redirect("pinax_stripe_subscription_list")
-        except stripe.StripeError as e:
+        except stripe.error.StripeError as e:
             return self.render_to_response(self.get_context_data(form=form, errors=smart_str(e)))
 
     def post(self, request, *args, **kwargs):
@@ -189,19 +195,18 @@ class Webhook(View):
     def dispatch(self, *args, **kwargs):
         return super(Webhook, self).dispatch(*args, **kwargs)
 
-    def extract_json(self):
-        data = json.loads(smart_str(self.request.body))
-        return data
-
     def post(self, request, *args, **kwargs):
-        data = self.extract_json()
-        if events.dupe_event_exists(data["id"]):
-            exceptions.log_exception(data, "Duplicate event record")
+        body = smart_str(self.request.body)
+        data = json.loads(body)
+        event = Event.objects.filter(stripe_id=data["id"]).first()
+        if event:
+            exceptions.log_exception(body, "Duplicate event record", event=event)
         else:
             events.add_event(
                 stripe_id=data["id"],
                 kind=data["type"],
                 livemode=data["livemode"],
+                api_version=data["api_version"],
                 message=data
             )
         return HttpResponse()

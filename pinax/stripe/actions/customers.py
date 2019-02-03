@@ -1,15 +1,15 @@
+import logging
+
 from django.utils import timezone
 from django.utils.encoding import smart_str
 
 import stripe
 
-from . import invoices
-from . import sources
-from . import subscriptions
+from . import invoices, sources, subscriptions
+from .. import hooks, models, utils
 from ..conf import settings
-from .. import hooks
-from .. import models
-from .. import utils
+
+logger = logging.getLogger(__name__)
 
 
 def can_charge(customer):
@@ -26,23 +26,17 @@ def can_charge(customer):
     return False
 
 
-def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
-    """
-    Creates a Stripe customer.
+def _create_without_account(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
+    cus = models.Customer.objects.filter(user=user).first()
+    if cus is not None:
+        try:
+            stripe.Customer.retrieve(cus.stripe_id)
+            return cus
+        except stripe.error.InvalidRequestError:
+            pass
 
-    If a customer already exists, the existing customer will be returned.
-
-    Args:
-        user: a user object
-        card: optionally, the token for a new card
-        plan: a plan to subscribe the user to
-        charge_immediately: whether or not the user should be immediately
-                            charged for the subscription
-        quantity: the quantity (multiplier) of the subscription
-
-    Returns:
-        the pinax.stripe.models.Customer object that was created
-    """
+    # At this point we maybe have a local Customer but no stripe customer
+    # let's create one and make the binding
     trial_end = hooks.hookset.trial_period(user, plan)
     stripe_customer = stripe.Customer.create(
         email=user.email,
@@ -57,30 +51,90 @@ def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_imme
             "stripe_id": stripe_customer["id"]
         }
     )
-    if created:
-        sync_customer(cus, stripe_customer)
-        if plan and charge_immediately:
-            invoices.create_and_pay(cus)
-    else:
-        # remove this extra customer as it is not needed
-        stripe.Customer.retrieve(stripe_customer["id"]).delete()
+    if not created:
+        cus.stripe_id = stripe_customer["id"]  # sync_customer will call cus.save()
+    sync_customer(cus, stripe_customer)
+    if plan and charge_immediately:
+        invoices.create_and_pay(cus)
     return cus
 
 
-def get_customer_for_user(user):
+def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None):
+    cus = user.customers.filter(user_account__account=stripe_account).first()
+    if cus is not None:
+        try:
+            stripe.Customer.retrieve(cus.stripe_id, stripe_account=stripe_account.stripe_id)
+            return cus
+        except stripe.error.InvalidRequestError:
+            pass
+
+    # At this point we maybe have a local Customer but no stripe customer
+    # let's create one and make the binding
+    trial_end = hooks.hookset.trial_period(user, plan)
+    stripe_customer = stripe.Customer.create(
+        email=user.email,
+        source=card,
+        plan=plan,
+        quantity=quantity,
+        trial_end=trial_end,
+        stripe_account=stripe_account.stripe_id,
+    )
+
+    if cus is None:
+        cus = models.Customer.objects.create(stripe_id=stripe_customer["id"], stripe_account=stripe_account)
+        models.UserAccount.objects.create(user=user, account=stripe_account, customer=cus)
+    else:
+        logger.debug("Update local customer %s with new remote customer %s for user %s, and account %s",
+                     cus.stripe_id, stripe_customer["id"], user, stripe_account)
+        cus.stripe_id = stripe_customer["id"]  # sync_customer() will call cus.save()
+    sync_customer(cus, stripe_customer)
+    if plan and charge_immediately:
+        invoices.create_and_pay(cus)
+    return cus
+
+
+def create(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_PLAN, charge_immediately=True, quantity=None, stripe_account=None):
+    """
+    Creates a Stripe customer.
+
+    If a customer already exists, the existing customer will be returned.
+
+    Args:
+        user: a user object
+        card: optionally, the token for a new card
+        plan: a plan to subscribe the user to
+        charge_immediately: whether or not the user should be immediately
+                            charged for the subscription
+        quantity: the quantity (multiplier) of the subscription
+        stripe_account: An account object. If given, the Customer and User relation will be established for you through the UserAccount model.
+        Because a single User might have several Customers, one per Account.
+
+    Returns:
+        the pinax.stripe.models.Customer object that was created
+    """
+    if stripe_account is None:
+        return _create_without_account(user, card=card, plan=plan, charge_immediately=charge_immediately, quantity=quantity)
+    return _create_with_account(user, stripe_account, card=card, plan=plan, charge_immediately=charge_immediately, quantity=quantity)
+
+
+def get_customer_for_user(user, stripe_account=None):
     """
     Get a customer object for a given user
 
     Args:
-        user: a user object
+         user: a user object
+         stripe_account: An Account object
 
     Returns:
         a pinax.stripe.models.Customer object
     """
-    return next(iter(models.Customer.objects.filter(user=user)), None)
+    if stripe_account is None:
+        return models.Customer.objects.filter(user=user).first()
+    return user.customers.filter(user_account__account=stripe_account).first()
 
 
 def purge_local(customer):
+    customer.user_accounts.all().delete()
     customer.user = None
     customer.date_purged = timezone.now()
     customer.save()
@@ -96,7 +150,7 @@ def purge(customer):
     """
     try:
         customer.stripe_customer.delete()
-    except stripe.InvalidRequestError as e:
+    except stripe.error.InvalidRequestError as e:
         if "no such customer:" not in smart_str(e).lower():
             # The exception was thrown because the customer was already
             # deleted on the stripe side, ignore the exception
@@ -117,16 +171,22 @@ def link_customer(event):
         "customer.updated",
         "customer.deleted"
     ]
+    event_data_object = event.message["data"]["object"]
     if event.kind in customer_crud_events:
-        cus_id = event.message["data"]["object"]["id"]
+        cus_id = event_data_object["id"]
     else:
-        cus_id = event.message["data"]["object"].get("customer", None)
+        cus_id = event_data_object.get("customer", None)
 
     if cus_id is not None:
-        customer = next(iter(models.Customer.objects.filter(stripe_id=cus_id)), None)
-        if customer is not None:
-            event.customer = customer
-            event.save()
+        customer, created = models.Customer.objects.get_or_create(
+            stripe_id=cus_id,
+            stripe_account=event.stripe_account,
+        )
+        if event.kind in customer_crud_events:
+            sync_customer(customer, event_data_object)
+
+        event.customer = customer
+        event.save()
 
 
 def set_default_source(customer, source):

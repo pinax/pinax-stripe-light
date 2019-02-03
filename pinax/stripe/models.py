@@ -392,7 +392,7 @@ class Subscription(StripeAccountFromCustomerMixin, StripeObject):
 
     @property
     def total_amount(self):
-        return self.plan.amount * self.quantity
+        return self.plan.calculate_total_amount(self.quantity)
 
     def plan_display(self):
         return self.plan.name

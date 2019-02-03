@@ -231,3 +231,26 @@ class TieredPricingManagerTests(TestCase):
         for quantity, expected in test_cases:
             cost = Tier.pricing.calculate_final_cost(self.plan, quantity, Tier.pricing.TIERS_MODE_GRADUATED)
             self.assertEqual(cost, expected)
+
+    def test_calculate_final_cost_with_volume_tiers_and_flat_fees(self):
+        test_cases = [
+            (12, 66)
+        ]
+        for quantity, expected in test_cases:
+            cost = Tier.pricing.calculate_final_cost(self.plan, quantity, Tier.pricing.TIERS_MODE_VOLUME)
+            self.assertEqual(cost, expected)
+
+    def test_calculate_final_cost_with_graduated_tiers_and_flat_fees(self):
+        test_cases = [
+            (12, 111)
+        ]
+        for quantity, expected in test_cases:
+            cost = Tier.pricing.calculate_final_cost(self.plan, quantity, Tier.pricing.TIERS_MODE_GRADUATED)
+            self.assertEqual(cost, expected)
+
+    def test_calculate_final_cost_with_invalid_tier(self):
+        try:
+            Tier.pricing.calculate_final_cost(self.plan, 1, "invalid")
+            self.fail("Excepted an exception from calculate_total_amount")
+        except:
+            pass

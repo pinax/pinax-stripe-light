@@ -87,6 +87,16 @@ class ModelTests(TestCase):
         p.calculate_total_amount(quantity)
         TierPricingMock.calculate_final_cost.assert_called_with(p, quantity, p.tiers_mode)
 
+    @patch("pinax.stripe.models.Tier.pricing")
+    def test_plan_calculate_total_amount_raises_exception_for_invalid_billing_scheme(self, TierPricingMock):
+        quantity = 10
+        p = Plan(amount=0, stripe_id="plan", billing_scheme="unknown")
+        try:
+            p.calculate_total_amount(quantity)
+            self.fail("Excepted an exception from calculate_total_amount")
+        except:
+            pass
+
     def test_plan_per_account(self):
         Plan.objects.create(stripe_id="plan", amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
         account = Account.objects.create(stripe_id="acct_A")

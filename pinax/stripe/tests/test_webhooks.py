@@ -28,11 +28,15 @@ from ..webhooks import (
     AccountExternalAccountCreatedWebhook,
     AccountUpdatedWebhook,
     ChargeCapturedWebhook,
+    ChargeDisputeClosedWebhook,
+    ChargeDisputeCreatedWebhook,
+    ChargeDisputeFundsReinstatedWebhook,
+    ChargeDisputeFundsWithdrawnWebhook,
+    ChargeDisputeUpdatedWebhook,
     CustomerDeletedWebhook,
     CustomerSourceCreatedWebhook,
     CustomerSourceDeletedWebhook,
     CustomerSubscriptionCreatedWebhook,
-    ChargeDisputeCreatedWebhook,
     CustomerUpdatedWebhook,
     InvoiceCreatedWebhook,
     Webhook,
@@ -258,6 +262,18 @@ class CustomerDeletedWebhookTest(TestCase):
         self.assertIsNone(customer.user)
 
 
+
+class ChargeDisputeClosedWebhookTest(TestCase):
+
+    @patch("stripe.Charge.retrieve")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    def test_process_webhook(self, SyncMock, RetrieveMock):
+        event = Event.objects.create(kind=ChargeDisputeClosedWebhook.name, webhook_message={}, valid=True, processed=False)
+        event.validated_message = dict(data=dict(object=dict(charge=1)))
+        ChargeDisputeClosedWebhook(event).process_webhook()
+        self.assertTrue(SyncMock.called)
+
+
 class ChargeDisputeCreatedWebhookTest(TestCase):
 
     @patch("stripe.Charge.retrieve")
@@ -266,6 +282,39 @@ class ChargeDisputeCreatedWebhookTest(TestCase):
         event = Event.objects.create(kind=ChargeDisputeCreatedWebhook.name, webhook_message={}, valid=True, processed=False)
         event.validated_message = dict(data=dict(object=dict(charge=1)))
         ChargeDisputeCreatedWebhook(event).process_webhook()
+        self.assertTrue(SyncMock.called)
+
+
+class ChargeDisputeFundsReinstatedWebhookTest(TestCase):
+
+    @patch("stripe.Charge.retrieve")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    def test_process_webhook(self, SyncMock, RetrieveMock):
+        event = Event.objects.create(kind=ChargeDisputeFundsReinstatedWebhook.name, webhook_message={}, valid=True, processed=False)
+        event.validated_message = dict(data=dict(object=dict(charge=1)))
+        ChargeDisputeFundsReinstatedWebhook(event).process_webhook()
+        self.assertTrue(SyncMock.called)
+
+
+class ChargeDisputeFundsWithdrawnWebhookTest(TestCase):
+
+    @patch("stripe.Charge.retrieve")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    def test_process_webhook(self, SyncMock, RetrieveMock):
+        event = Event.objects.create(kind=ChargeDisputeFundsWithdrawnWebhook.name, webhook_message={}, valid=True, processed=False)
+        event.validated_message = dict(data=dict(object=dict(charge=1)))
+        ChargeDisputeFundsWithdrawnWebhook(event).process_webhook()
+        self.assertTrue(SyncMock.called)
+
+
+class ChargeDisputeUpdatedWebhookTest(TestCase):
+
+    @patch("stripe.Charge.retrieve")
+    @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
+    def test_process_webhook(self, SyncMock, RetrieveMock):
+        event = Event.objects.create(kind=ChargeDisputeUpdatedWebhook.name, webhook_message={}, valid=True, processed=False)
+        event.validated_message = dict(data=dict(object=dict(charge=1)))
+        ChargeDisputeUpdatedWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
 
 

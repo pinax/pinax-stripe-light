@@ -131,7 +131,7 @@ def sync_invoices_for_customer(customer):
     Args:
         customer: the customer for whom to synchronize all invoices
     """
-    for invoice in customer.stripe_customer.invoices().data:
+    for invoice in stripe.Invoice.auto_paging_iter(customer=customer.stripe_id):
         sync_invoice_from_stripe_data(invoice, send_receipt=False)
 
 

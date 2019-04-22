@@ -8,7 +8,7 @@ class PinaxStripeAppConf(AppConf):
 
     PUBLIC_KEY = None
     SECRET_KEY = None
-    API_VERSION = "2015-10-16"
+    API_VERSION = "2019-03-14"
 
     class Meta:
         prefix = "pinax_stripe"

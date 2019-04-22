@@ -28,7 +28,6 @@ class Event(StripeObject):
     validated_message = JSONField(null=True, blank=True)
     valid = models.NullBooleanField(null=True, blank=True)
     processed = models.BooleanField(default=False)
-    request = models.CharField(max_length=100, blank=True)
     pending_webhooks = models.PositiveIntegerField(default=0)
     api_version = models.CharField(max_length=100, blank=True)
 

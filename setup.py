@@ -65,7 +65,7 @@ setup(
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
-    version="5.0.0",
+    version="5.1.0",
     license="MIT",
     url=URL,
     packages=find_packages(),

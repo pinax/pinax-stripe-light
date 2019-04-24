@@ -1667,18 +1667,16 @@ class SyncsTests(TestCase):
         self.assertTrue(PurgeLocalMock.called)
 
     @patch("pinax.stripe.actions.invoices.sync_invoice_from_stripe_data")
-    @patch("stripe.Invoice.list")
-    @patch("stripe.Customer.retrieve")
-    def test_sync_invoices_for_customer(self, RetreiveMock, InvoicesMock, SyncMock):
-        RetreiveMock().invoices().data = [Mock()]
-        InvoicesMock().data = [Mock()]
+    @patch("stripe.Invoice.auto_paging_iter")
+    def test_sync_invoices_for_customer(self, RetreiveMock, SyncMock):
+        RetreiveMock.return_value = [Mock()]
         invoices.sync_invoices_for_customer(self.customer)
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.charges.sync_charge_from_stripe_data")
-    @patch("stripe.Customer.retrieve")
+    @patch("stripe.Charge.auto_paging_iter")
     def test_sync_charges_for_customer(self, RetreiveMock, SyncMock):
-        RetreiveMock().charges().data = [Mock()]
+        RetreiveMock.return_value = [Mock()]
         charges.sync_charges_for_customer(self.customer)
         self.assertTrue(SyncMock.called)
 

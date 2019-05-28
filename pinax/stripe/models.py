@@ -119,7 +119,7 @@ class Coupon(StripeObject):
     livemode = models.BooleanField(default=False)
     max_redemptions = models.PositiveIntegerField(null=True, blank=True)
     metadata = JSONField(null=True, blank=True)
-    percent_off = models.PositiveIntegerField(null=True, blank=True)
+    percent_off = models.DecimalField(decimal_places=2, max_digits=9, null=True, blank=True)
     redeem_by = models.DateTimeField(null=True, blank=True)
     times_redeemed = models.PositiveIntegerField(null=True, blank=True)
     valid = models.BooleanField(default=False)

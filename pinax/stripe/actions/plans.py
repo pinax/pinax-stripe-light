@@ -21,16 +21,16 @@ def sync_plan(plan, event=None):
         event: the event associated with the plan
     """
 
-    defaults = {
-        "amount": utils.convert_amount_for_db(plan["amount"], plan["currency"]),
-        "currency": plan["currency"] or "",
-        "interval": plan["interval"],
-        "interval_count": plan["interval_count"],
-        "name": plan["name"],
-        "statement_descriptor": plan["statement_descriptor"] or "",
-        "trial_period_days": plan["trial_period_days"],
-        "metadata": plan["metadata"]
-    }
+    defaults = {x: plan[x] for x in [
+        "currency",
+        "interval",
+        "interval_count",
+        "statement_descriptor",
+        "trial_period_days",
+        "metadata",
+        "active"
+    ] if x in plan and plan[x]}
+    defaults["amount"] = utils.convert_amount_for_db(plan["amount"], plan["currency"])
 
     obj, created = models.Plan.objects.get_or_create(
         stripe_id=plan["id"],

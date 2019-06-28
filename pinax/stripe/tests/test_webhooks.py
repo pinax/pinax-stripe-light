@@ -346,7 +346,7 @@ class PlanUpdatedWebhookTest(TestCase):
         )
         registry.get(event.kind)(event).process()
         plan = Plan.objects.get(stripe_id="gold1")
-        self.assertEqual(plan.name, PLAN_CREATED_TEST_DATA["data"]["object"]["name"])
+        self.assertEqual(plan.stripe_id, PLAN_CREATED_TEST_DATA["data"]["object"]["id"])
 
 
 class CustomerSubscriptionCreatedWebhookTest(TestCase):

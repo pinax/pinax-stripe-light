@@ -6,7 +6,7 @@ import decimal
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from django.utils.encoding import python_2_unicode_compatible
+from django.utils.six import python_2_unicode_compatible, text_type
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
@@ -87,7 +87,7 @@ class Plan(UniquePerAccountStripeObject):
     active = models.BooleanField(default=True)
 
     def __str__(self):
-        return "{} ({}{})".format(self.name, CURRENCY_SYMBOLS.get(self.currency, ""), self.amount)
+        return "{} {} ({}{})".format(self.stripe_id, self.name, CURRENCY_SYMBOLS.get(self.currency, ""), self.amount)
 
     def __repr__(self):
         return "Plan(pk={!r}, name={!r}, amount={!r}, currency={!r}, interval={!r}, interval_count={!r}, trial_period_days={!r}, stripe_id={!r})".format(
@@ -281,11 +281,11 @@ class Customer(AccountRelatedStripeObject):
 
     def __str__(self):
         if self.user:
-            return str(self.user)
+            return text_type('{}').format(self.user)
         elif self.id:
             users = self.users.all()
             if users:
-                return ", ".join(str(user) for user in users)
+                return text_type(", ".join(str(user) for user in users))
         if self.stripe_id:
             return "No User(s) ({})".format(self.stripe_id)
         return "No User(s)"
@@ -356,6 +356,7 @@ class BitcoinReceiver(StripeObject):
     used_for_payment = models.BooleanField(default=False)
 
 
+@python_2_unicode_compatible
 class Subscription(StripeAccountFromCustomerMixin, StripeObject):
 
     STATUS_CURRENT = ["trialing", "active"]
@@ -407,6 +408,9 @@ class Subscription(StripeAccountFromCustomerMixin, StripeObject):
             self.status,
             self.stripe_id,
         )
+
+    def __str__(self):
+        return text_type('Subscription {} for customer {}').format(self.stripe_id, self.customer)
 
 
 class Invoice(StripeAccountFromCustomerMixin, StripeObject):

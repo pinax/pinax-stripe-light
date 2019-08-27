@@ -50,3 +50,5 @@ site/
 
 # IDEs
 .idea/
+
+*venv

@@ -20,5 +20,5 @@ then this code example above will execute the `handle_payment_succeeded` functio
 everytime the `invoice.payment_succeeded` event is sent by Stripe and processed by your
 webhook endpoint.
 
-The `event` object is a processed and verified [Event model instance](https://github.com/pinax/pinax-stripe/blob/master/pinax/stripe/models.py#L55)
+The `event` object is a processed and verified [Event model instance](https://github.com/pinax/pinax-stripe/blob/master/pinax/stripe/models.py#L149)
 which gives you access to all the raw data of the event.

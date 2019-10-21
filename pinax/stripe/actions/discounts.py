@@ -14,11 +14,14 @@ def sync_discounts_from_stripe_data(stripe_discount, customer=None):
     stripe_coupon = stripe_discount.get('coupon')
     coupon = sync_coupon_from_stripe_data(stripe_coupon)
 
-    obj, _ = models.Discount.objects.get_or_create(customer=customer, coupon=coupon)
+    defaults = {
+        'coupon': coupon,
+        'start': utils.convert_tstamp(stripe_discount["start"]),
+        'end': utils.convert_tstamp(stripe_discount["end"])
+    }
 
-    obj.start = utils.convert_tstamp(stripe_discount["start"])
-    obj.end = utils.convert_tstamp(stripe_discount["end"])
-    obj.save()
+    obj, created = models.Discount.objects.get_or_create(customer=customer, defaults=defaults)
+    utils.update_with_defaults(obj, defaults, created)
 
     return obj
 

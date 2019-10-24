@@ -101,11 +101,11 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
     sub_id = stripe_invoice.get("subscription")
     stripe_account_id = c.stripe_account_stripe_id
     invoice_stripe_id = stripe_invoice.get("id")
+    charge_id = stripe_invoice.get("charge")
 
-    if stripe_invoice.get("charge"):
-        charge = charges.sync_charge(stripe_invoice["charge"], stripe_account=stripe_account_id)
-        if send_receipt:
-            hooks.hookset.send_receipt(charge)
+    if charge_id:
+        charge = charges.sync_charge(charge_id, stripe_account=stripe_account_id)
+        if send_receipt: hooks.hookset.send_receipt(charge)
     else:
         charge = None
 

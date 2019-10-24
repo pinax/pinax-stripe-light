@@ -175,9 +175,12 @@ def sync_charge_from_stripe_data(data):
     Returns:
         a pinax.stripe.models.Charge object
     """
+    source = data.get('source', {})
+    source_id = source.get('id') if source is not None else str(data.get('payment_method', ''))
+
     obj, _ = models.Charge.objects.get_or_create(stripe_id=data["id"])
     obj.customer = models.Customer.objects.filter(stripe_id=data["customer"]).first()
-    obj.source = data["source"]["id"]
+    obj.source = source_id
     obj.currency = data["currency"]
     obj.invoice = models.Invoice.objects.filter(stripe_id=data["invoice"]).first()
     obj.amount = utils.convert_amount_for_db(data["amount"], obj.currency)

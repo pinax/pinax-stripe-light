@@ -8,15 +8,8 @@ import six
 import stripe
 from mock import patch
 
-from ..models import (
-    Event,
-    EventProcessingException,
-)
-from ..webhooks import (
-    Webhook,
-    registry,
-    AccountExternalAccountCreatedWebhook
-)
+from ..models import Event, EventProcessingException
+from ..webhooks import AccountExternalAccountCreatedWebhook, Webhook, registry
 
 try:
     from django.urls import reverse
@@ -183,4 +176,3 @@ class WebhookTests(TestCase):
         # note: we choose an event type for which we do no processing
         event = Event.objects.create(kind="account.external_account.created", webhook_message={}, valid=True, processed=False)
         self.assertIsNone(AccountExternalAccountCreatedWebhook(event).process())
-

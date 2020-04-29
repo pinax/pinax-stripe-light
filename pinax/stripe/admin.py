@@ -2,10 +2,7 @@ from django.contrib import admin
 from django.utils.encoding import force_text
 from django.utils.translation import ugettext as _
 
-from .models import (
-    Event,
-    EventProcessingException
-)
+from .models import Event, EventProcessingException
 
 
 class ModelAdmin(admin.ModelAdmin):

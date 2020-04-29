@@ -1,6 +1,5 @@
 from setuptools import find_packages, setup
 
-
 NAME = "pinax-stripe"
 DESCRIPTION = "a payments Django app for Stripe"
 AUTHOR = "Pinax Team"
@@ -91,7 +90,7 @@ setup(
         "django-appconf>=1.0.1",
         "jsonfield>=1.0.3",
         "stripe>=2.0",
-        "django>=1.8,<3",
+        "django>=2.2",
         "pytz",
         "six",
         "django-ipware==2.1.0"

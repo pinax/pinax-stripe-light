@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.utils import timezone
-from django.utils.encoding import python_2_unicode_compatible
 
 from jsonfield.fields import JSONField
 
@@ -17,7 +16,6 @@ class StripeObject(models.Model):
         abstract = True
 
 
-@python_2_unicode_compatible
 class Event(StripeObject):
 
     kind = models.CharField(max_length=250)
@@ -49,7 +47,6 @@ class Event(StripeObject):
         )
 
 
-@python_2_unicode_compatible
 class EventProcessingException(models.Model):
 
     event = models.ForeignKey("Event", null=True, blank=True, on_delete=models.CASCADE)

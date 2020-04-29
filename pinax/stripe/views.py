@@ -1,6 +1,5 @@
 import json
 
-from django.conf import settings
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.utils.encoding import smart_str

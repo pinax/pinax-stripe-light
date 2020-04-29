@@ -32,101 +32,65 @@ jobs:
   lint:
     <<: *common
     docker:
-      - image: circleci/python:3.6.1
+      - image: circleci/python:3.8
         environment:
           - TOXENV=checkqa,check_migrated
           - UPLOAD_COVERAGE=0
-  py27dj18:
-    <<: *common
-    docker:
-      - image: circleci/python:2.7
-        environment:
-          TOXENV=py27-dj18-coverage
-  py27dj110:
-    <<: *common
-    docker:
-      - image: circleci/python:2.7
-        environment:
-          TOXENV=py27-dj110-coverage
-  py27dj111:
-    <<: *common
-    docker:
-      - image: circleci/python:2.7
-        environment:
-          TOXENV=py27-dj111-coverage
-  py34dj18:
-    <<: *common
-    docker:
-      - image: circleci/python:3.4
-        environment:
-          TOXENV=py34-dj18-coverage
-  py34dj110:
-    <<: *common
-    docker:
-      - image: circleci/python:3.4
-        environment:
-          TOXENV=py34-dj110-coverage
-  py34dj111:
-    <<: *common
-    docker:
-      - image: circleci/python:3.4
-        environment:
-          TOXENV=py34-dj111-coverage
-  py34dj20:
-    <<: *common
-    docker:
-      - image: circleci/python:3.4
-        environment:
-          TOXENV=py34-dj20-coverage
-  py35dj18:
+  py35dj22:
     <<: *common
     docker:
       - image: circleci/python:3.5
         environment:
-          TOXENV=py35-dj18-coverage
-  py35dj110:
-    <<: *common
-    docker:
-      - image: circleci/python:3.5
-        environment:
-          TOXENV=py35-dj110-coverage
-  py35dj111:
-    <<: *common
-    docker:
-      - image: circleci/python:3.5
-        environment:
-          TOXENV=py35-dj111-coverage
-  py35dj20:
-    <<: *common
-    docker:
-      - image: circleci/python:3.5
-        environment:
-          TOXENV=py35-dj20-coverage
-  py36dj111:
+          TOXENV=py35-dj22-coverage
+  py36dj22:
     <<: *common
     docker:
       - image: circleci/python:3.6
         environment:
-          TOXENV=py36-dj111-coverage
-  py36dj20:
+          TOXENV=py36-dj22-coverage
+  py36dj3:
     <<: *common
     docker:
       - image: circleci/python:3.6
         environment:
-          TOXENV=py36-dj20-coverage
-  py36dj20psql:
+          TOXENV=py36-dj22-coverage
+  py37dj22:
     <<: *common
     docker:
-      - image: circleci/python:3.6
+      - image: circleci/python:3.7
         environment:
-          - TOXENV=py36-dj20-postgres-coverage
+          TOXENV=py37-dj22-coverage
+  py37dj3:
+    <<: *common
+    docker:
+      - image: circleci/python:3.7
+        environment:
+          TOXENV=py37-dj3-coverage
+  py38dj22:
+    <<: *common
+    docker:
+      - image: circleci/python:3.8
+        environment:
+          TOXENV=py38-dj22-coverage
+  py38dj3:
+    <<: *common
+    docker:
+      - image: circleci/python:3.8
+        environment:
+          TOXENV=py38-dj3-coverage
+  py38dj3psql:
+    <<: *common
+    docker:
+      - image: circleci/python:3.8
+        environment:
+          - TOXENV=py38-dj3-postgres-coverage
           - PINAX_STRIPE_DATABASE_HOST=127.0.0.1
           - PINAX_STRIPE_DATABASE_USER=postgres
           - PINAX_STRIPE_DATABASE_NAME=circle_test
-      - image: circleci/postgres:9.6-alpine
+      - image: circleci/postgres:11.7
   release:
     docker:
-      - image: circleci/python:3.6
+      - image: circleci/python:3.8
     steps:
       - checkout
       - run:
@@ -155,59 +119,35 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - py27dj18:
+      - py35dj22:
           filters:
             tags:
               only: /.*/
-      - py27dj110:
+      - py36dj22:
           filters:
             tags:
               only: /.*/
-      - py27dj111:
+      - py36dj3:
           filters:
             tags:
               only: /.*/
-      - py34dj18:
+      - py37dj22:
           filters:
             tags:
               only: /.*/
-      - py34dj110:
+      - py37dj3:
           filters:
             tags:
               only: /.*/
-      - py34dj111:
+      - py38dj22:
           filters:
             tags:
               only: /.*/
-      - py34dj20:
+      - py38dj3:
           filters:
             tags:
               only: /.*/
-      - py35dj18:
-          filters:
-            tags:
-              only: /.*/
-      - py35dj110:
-          filters:
-            tags:
-              only: /.*/
-      - py35dj111:
-          filters:
-            tags:
-              only: /.*/
-      - py35dj20:
-          filters:
-            tags:
-              only: /.*/
-      - py36dj111:
-          filters:
-            tags:
-              only: /.*/
-      - py36dj20:
-          filters:
-            tags:
-              only: /.*/
-      - py36dj20psql:
+      - py38dj3psql:
           filters:
             tags:
               only: /.*/
@@ -215,20 +155,14 @@ workflows:
           context: org-global
           requires:
             - lint
-            - py27dj18
-            - py27dj110
-            - py27dj111
-            - py34dj18
-            - py34dj110
-            - py34dj111
-            - py34dj20
-            - py35dj18
-            - py35dj110
-            - py35dj111
-            - py35dj20
-            - py36dj111
-            - py36dj20
-            - py36dj20psql
+            - py35dj22
+            - py36dj3
+            - py36dj22
+            - py37dj3
+            - py37dj22
+            - py38dj3
+            - py38dj22
+            - py38dj3psql
           filters:
             tags:
               only: /[0-9]+(\.[0-9]+)*/

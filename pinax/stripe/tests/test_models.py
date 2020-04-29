@@ -2,21 +2,11 @@
 from __future__ import unicode_literals
 
 import datetime
-import decimal
 import sys
 
-from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
-from django.db import models
 from django.test import TestCase
-from django.utils import timezone
 
-from mock import call, patch
-
-from ..models import (
-    Event,
-    EventProcessingException
-)
+from ..models import Event, EventProcessingException
 
 try:
     _str = unicode

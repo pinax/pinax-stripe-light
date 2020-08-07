@@ -262,7 +262,6 @@ class CustomerDeletedWebhookTest(TestCase):
         self.assertIsNone(customer.user)
 
 
-
 class ChargeDisputeClosedWebhookTest(TestCase):
 
     @patch("stripe.Charge.retrieve")

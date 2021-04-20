@@ -31,8 +31,9 @@ ZERO_DECIMAL_CURRENCIES = [
 
 
 def convert_amount_for_db(amount, currency="usd"):
-    if currency is None:  # @@@ not sure if this is right; find out what we should do when API returns null for currency
-        currency = "usd"
+    # @@@ not sure if this is right; find out what we should do when API returns null for currency
+    if currency is None: currency = "usd"
+    if amount is None: amount = 0
     return (amount / decimal.Decimal("100")) if currency.lower() not in ZERO_DECIMAL_CURRENCIES else decimal.Decimal(amount)
 
 

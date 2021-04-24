@@ -98,7 +98,7 @@ Here is an example of these rules applied:
     from django.db import models
     from django.urls import reverse
     from django.utils import timezone
-    from django.utils.translation import ugettext_lazy as _
+    from django.utils.translation import gettext_lazy as _
 
     # third set of imports are external apps (if applicable)
     from tagging.fields import TagField

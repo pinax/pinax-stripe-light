@@ -233,7 +233,8 @@ class SubscriptionAdmin(admin.ModelAdmin):
     model = Order
 
     raw_id_fields = [
-        "customer"
+        "customer",
+        "pause_collection"
     ]
 
     readonly_fields = [
@@ -250,6 +251,14 @@ class SubscriptionAdmin(admin.ModelAdmin):
         "start",
         "ended_at",
         "status"
+    ]
+
+    list_filter = [
+        "status",
+        "pause_collection__behavior",
+        "start",
+        "ended_at",
+        "plan"
     ]
 
     search_fields = [

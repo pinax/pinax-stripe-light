@@ -347,6 +347,20 @@ class BitcoinReceiver(StripeObject):
     uncaptured_funds = models.BooleanField(default=False)
     used_for_payment = models.BooleanField(default=False)
 
+class PauseCollection(models.Model):
+
+    KEEP_AS_DRAFT = 'keep_as_draft'
+    MARK_UNCOLLECTIBLE = 'mark_uncollectible'
+    VOID = 'void'
+
+    BEHAVIORS = [
+        (KEEP_AS_DRAFT, KEEP_AS_DRAFT),
+        (MARK_UNCOLLECTIBLE, MARK_UNCOLLECTIBLE),
+        (VOID, VOID)
+    ]
+
+    behavior = models.CharField(max_length=20, choices=BEHAVIORS, default=None, null=True, blank=True)
+    resumes_at = models.DateTimeField(null=True, blank=True)
 
 class Subscription(StripeAccountFromCustomerMixin, StripeObject):
 
@@ -365,6 +379,7 @@ class Subscription(StripeAccountFromCustomerMixin, StripeObject):
     status = models.CharField(max_length=25)  # trialing, active, past_due, canceled, or unpaid
     trial_end = models.DateTimeField(null=True, blank=True)
     trial_start = models.DateTimeField(null=True, blank=True)
+    pause_collection = models.ForeignKey(PauseCollection, default=None, null=True, blank=True)
 
     @property
     def stripe_subscription(self):

@@ -199,6 +199,26 @@ def sync_subscription_from_stripe_data(customer, subscription):
         stripe_id=subscription["id"],
         defaults=defaults
     )
+
+    pause_collection_instance = None
+    pause_collection = subscription["pause_collection"]
+    if pause_collection:
+        pc_defaults = {
+            "behavior": pause_collection.get('behavior'),
+            "resumes_at": utils.convert_tstamp(pause_collection.get('resumes_at'))
+        }
+        if sub.pause_collection:
+            pause_collection_instance = utils.update_with_defaults(sub.pause_collection, pc_defaults, False)
+        else:
+            pause_collection_instance = models.PauseCollection.objects.create(**pc_defaults)
+    else:
+        try:
+            sub.pause_collection.delete()
+        except AttributeError:
+            pass
+
+    defaults['pause_collection'] = pause_collection_instance
+
     sub = utils.update_with_defaults(sub, defaults, created)
     sub = sync_subscription_items(sub) or sub
     return sub

@@ -17,7 +17,7 @@ jobs:
         django: [2.2.*, 3.2.*]
 
     steps:
-      - uses: pinax/testing@v3
+      - uses: pinax/testing@v4
         with:
           python: ${{ matrix.python }}
           django: ${{ matrix.django }}

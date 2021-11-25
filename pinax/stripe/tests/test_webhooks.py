@@ -1,9 +1,9 @@
 import json
 
 from django.dispatch import Signal
-from django.urls import reverse
 from django.test import TestCase
 from django.test.client import Client
+from django.urls import reverse
 
 import stripe
 from mock import patch

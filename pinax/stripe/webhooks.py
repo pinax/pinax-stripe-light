@@ -5,14 +5,13 @@ import traceback
 from django.dispatch import Signal
 
 import stripe
-from six import with_metaclass
 
 from . import models
 from .conf import settings
 from .utils import obfuscate_secret_key
 
 
-class WebhookRegistry(object):
+class WebhookRegistry:
 
     def __init__(self):
         self._registry = {}
@@ -60,7 +59,7 @@ class Registerable(type):
         return newclass
 
 
-class Webhook(with_metaclass(Registerable, object)):
+class Webhook(metaclass=Registerable):
 
     name = None
 

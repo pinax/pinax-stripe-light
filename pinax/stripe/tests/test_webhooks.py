@@ -1,20 +1,15 @@
 import json
 
 from django.dispatch import Signal
+from django.urls import reverse
 from django.test import TestCase
 from django.test.client import Client
 
-import six
 import stripe
 from mock import patch
 
 from ..models import Event, EventProcessingException
 from ..webhooks import AccountExternalAccountCreatedWebhook, Webhook, registry
-
-try:
-    from django.urls import reverse
-except ImportError:
-    from django.core.urlresolvers import reverse
 
 
 class WebhookRegistryTest(TestCase):
@@ -91,7 +86,7 @@ class WebhookTests(TestCase):
         msg = json.dumps(self.event_data)
         resp = Client().post(
             reverse("pinax_stripe_webhook"),
-            six.u(msg),
+            msg,
             content_type="application/json"
         )
         self.assertEqual(resp.status_code, 200)
@@ -105,7 +100,7 @@ class WebhookTests(TestCase):
         msg = json.dumps(connect_event_data)
         resp = Client().post(
             reverse("pinax_stripe_webhook"),
-            six.u(msg),
+            msg,
             content_type="application/json"
         )
         self.assertEqual(resp.status_code, 200)
@@ -121,7 +116,7 @@ class WebhookTests(TestCase):
         msg = json.dumps(data)
         resp = Client().post(
             reverse("pinax_stripe_webhook"),
-            six.u(msg),
+            msg,
             content_type="application/json"
         )
         self.assertEqual(resp.status_code, 200)

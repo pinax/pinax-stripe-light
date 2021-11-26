@@ -1,5 +1,6 @@
 import decimal
 import json
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.dispatch import Signal
@@ -7,7 +8,6 @@ from django.test import TestCase
 from django.test.client import Client
 
 import stripe
-from mock import patch
 
 from ..models import (
     Account,

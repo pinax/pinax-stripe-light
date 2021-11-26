@@ -2,13 +2,13 @@ import datetime
 import decimal
 import json
 import time
+from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
 import stripe
-from mock import Mock, patch
 
 from ..actions import (
     accounts,

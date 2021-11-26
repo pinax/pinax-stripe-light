@@ -1,9 +1,9 @@
+from unittest.mock import Mock
+
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-
-from mock import Mock
 
 from ..conf import settings
 from ..middleware import ActiveSubscriptionMiddleware

@@ -1,10 +1,10 @@
 import decimal
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core import management
 from django.test import TestCase
 
-from mock import patch
 from stripe.error import InvalidRequestError
 
 from ..models import Coupon, Customer, Plan

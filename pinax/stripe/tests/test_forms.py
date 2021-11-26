@@ -2,6 +2,7 @@ import datetime
 import json
 from base64 import b64decode
 from copy import copy
+from unittest.mock import patch
 
 from django import forms
 from django.contrib.auth import get_user_model
@@ -11,7 +12,6 @@ from django.test.client import RequestFactory
 from django.test.utils import override_settings
 from django.utils import timezone
 
-from mock import patch
 from stripe.error import InvalidRequestError
 
 from ..forms import (

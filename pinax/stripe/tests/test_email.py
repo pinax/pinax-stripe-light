@@ -1,10 +1,9 @@
 import decimal
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import TestCase
-
-from mock import patch
 
 from ..actions import charges
 from ..models import Customer

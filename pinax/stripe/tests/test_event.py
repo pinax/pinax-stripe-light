@@ -68,9 +68,9 @@ class TestEventMethods(TestCase):
         )
         self.assertIsNone(self.customer.account_balance)
         customers.link_customer(event)
-        self.assertEquals(event.customer, self.customer)
+        self.assertEqual(event.customer, self.customer)
         self.customer.refresh_from_db()
-        self.assertEquals(self.customer.account_balance, 0)
+        self.assertEqual(self.customer.account_balance, 0)
 
     def test_link_customer_customer_updated(self):
         msg = {
@@ -132,7 +132,7 @@ class TestEventMethods(TestCase):
             validated_message=msg
         )
         customers.link_customer(event)
-        self.assertEquals(event.customer, self.customer)
+        self.assertEqual(event.customer, self.customer)
 
     def test_link_customer_customer_deleted(self):
         msg = {
@@ -173,7 +173,7 @@ class TestEventMethods(TestCase):
             validated_message=msg
         )
         customers.link_customer(event)
-        self.assertEquals(event.customer, self.customer)
+        self.assertEqual(event.customer, self.customer)
 
     @patch("stripe.Event.retrieve")
     @patch("stripe.Customer.retrieve")
@@ -219,8 +219,8 @@ class TestEventMethods(TestCase):
             valid=True
         )
         registry.get(event.kind)(event).process()
-        self.assertEquals(event.customer, self.customer)
-        self.assertEquals(event.customer.user, None)
+        self.assertEqual(event.customer, self.customer)
+        self.assertEqual(event.customer.user, None)
 
     @staticmethod
     def send_signal(customer, kind):

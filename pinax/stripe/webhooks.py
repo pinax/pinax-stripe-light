@@ -98,7 +98,6 @@ class Webhook(with_metaclass(Registerable, object)):
             json.dumps(
                 evt.to_dict(),
                 sort_keys=True,
-                cls=stripe.StripeObjectEncoder
             )
         )
         self.event.valid = self.is_event_valid(self.event.webhook_message["data"], self.event.validated_message["data"])
@@ -132,7 +131,7 @@ class Webhook(with_metaclass(Registerable, object)):
             self.event.save()
         except Exception as e:
             data = None
-            if isinstance(e, stripe.StripeError):
+            if isinstance(e, stripe.error.StripeError):
                 data = e.http_body
             exceptions.log_exception(data=data, exception=e, event=self.event)
             raise e
@@ -241,10 +240,15 @@ class BitcoinReceiverTransactionCreatedWebhook(Webhook):
 
 
 class ChargeWebhook(Webhook):
-
     def process_webhook(self):
+        message = self.event.message
+        if message["data"]["object"].get("object", "charge") == "charge":
+            stripe_id = message["data"]["object"]["id"]
+        else:
+            stripe_id = message["data"]["object"]["charge"]
+
         charges.sync_charge(
-            self.event.message["data"]["object"]["id"],
+            stripe_id,
             stripe_account=self.event.stripe_account_stripe_id,
         )
 

@@ -160,7 +160,7 @@ def sync_charges_for_customer(customer):
     Args:
         customer: a pinax.stripe.models.Customer object
     """
-    for charge in customer.stripe_customer.charges().data:
+    for charge in stripe.Charge.auto_paging_iter(customer=customer.stripe_id):
         sync_charge_from_stripe_data(charge)
 
 
@@ -183,7 +183,12 @@ def sync_charge_from_stripe_data(data):
     """
     obj, _ = models.Charge.objects.get_or_create(stripe_id=data["id"])
     obj.customer = models.Customer.objects.filter(stripe_id=data["customer"]).first()
-    obj.source = data["source"]["id"]
+    # obj.source = data["source"]["id"]
+    # Charges made by Checkout Session don't have Source
+    if data.get('source'):
+        obj.source = data["source"]["id"]
+    else:
+        obj.source = ''
     obj.currency = data["currency"]
     obj.invoice = models.Invoice.objects.filter(stripe_id=data["invoice"]).first()
     obj.amount = utils.convert_amount_for_db(data["amount"], obj.currency)

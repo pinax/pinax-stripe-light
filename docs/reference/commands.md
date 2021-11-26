@@ -20,3 +20,7 @@ Utilizes the following actions:
 Make sure your Stripe account has the plans.
 
 Utilizes `pinax.stripe.actions.plans.sync_plans`.
+
+#### pinax.stripe.management.commands.sync_coupons
+
+Creates `pinax.stripe.models.Coupon` objects for existing coupons in Stripe account.

@@ -9,7 +9,7 @@ class FakeViewForUrl:
 
 
 urlpatterns += [
-    path("the/app/$", FakeViewForUrl, name="the_app"),
-    path("accounts/signup/$", FakeViewForUrl, name="signup"),
-    path("password/reset/confirm/<str:token>/$", FakeViewForUrl, name="password_reset"),
+    path("the/app/", FakeViewForUrl, name="the_app"),
+    path("accounts/signup/", FakeViewForUrl, name="signup"),
+    path("password/reset/confirm/<str:token>/", FakeViewForUrl, name="password_reset"),
 ]

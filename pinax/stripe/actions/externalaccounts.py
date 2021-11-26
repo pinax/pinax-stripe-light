@@ -87,7 +87,7 @@ def delete_bank_account(account, bank_account):
     try:
         r = account.external_accounts.retrieve(bank_account.stripe_id).delete()
 
-        if r['deleted']:  # if Stripe returns that deleted is True
+        if r["deleted"]:  # if Stripe returns that deleted is True
             # delete the account
             bank_account.delete()
             return True

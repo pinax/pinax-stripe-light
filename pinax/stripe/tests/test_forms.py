@@ -170,12 +170,10 @@ class InitialCustomAccountFormTestCase(TestCase):
         )
 
     @override_settings(DEBUG=True)
-    @patch("ipware.ip.get_real_ip")
-    @patch("ipware.ip.get_ip")
-    def test_extract_ipaddress(self, ip_mock, ip_real_mock):
+    @patch("pinax.stripe.forms.get_client_ip")
+    def test_extract_ipaddress(self, ip_mock):
         # force hit of get_ip when get_real_ip returns None
-        ip_real_mock.return_value = None
-        ip_mock.return_value = "192.168.0.1"
+        ip_mock.return_value = ("192.168.0.1", None)
         ip = extract_ipaddress(self.request)
         self.assertEqual(ip, "192.168.0.1")
 

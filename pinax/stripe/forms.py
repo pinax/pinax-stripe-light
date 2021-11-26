@@ -5,7 +5,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 import stripe
-from ipware.ip import get_ip, get_real_ip
+from ipware import get_client_ip
 
 from .actions import accounts
 from .conf import settings
@@ -254,10 +254,8 @@ class DynamicManagedAccountForm(forms.Form):
 
 def extract_ipaddress(request):
     """Extract IP address from request."""
-    ipaddress = get_real_ip(request)
-    if not ipaddress and settings.DEBUG:  # pragma: no cover
-        ipaddress = get_ip(request)
-    return ipaddress
+    client_ip, _ = get_client_ip(request)
+    return client_ip
 
 
 class InitialCustomAccountForm(DynamicManagedAccountForm):

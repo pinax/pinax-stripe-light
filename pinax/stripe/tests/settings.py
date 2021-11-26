@@ -58,3 +58,4 @@ TEMPLATES = [{
     },
 }]
 SECRET_KEY = "pinax-stripe-secret-key"
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"

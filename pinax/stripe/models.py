@@ -1,8 +1,6 @@
 from django.db import models
 from django.utils import timezone
 
-from jsonfield.fields import JSONField
-
 
 class StripeObject(models.Model):
 
@@ -19,8 +17,8 @@ class Event(StripeObject):
     livemode = models.BooleanField(default=False)
     customer_id = models.CharField(max_length=200, blank=True)
     account_id = models.CharField(max_length=200, blank=True)
-    webhook_message = JSONField()
-    validated_message = JSONField(null=True, blank=True)
+    webhook_message = models.JSONField()
+    validated_message = models.JSONField(null=True, blank=True)
     valid = models.BooleanField(null=True, blank=True)
     processed = models.BooleanField(default=False)
     pending_webhooks = models.PositiveIntegerField(default=0)

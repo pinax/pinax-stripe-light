@@ -26,7 +26,6 @@ DEFAULT_SETTINGS = dict(
         "django.contrib.contenttypes",
         "django.contrib.sessions",
         "django.contrib.sites",
-        "jsonfield",
         "pinax.stripe",
     ],
     SITE_ID=1,

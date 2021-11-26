@@ -112,7 +112,7 @@ class WebhookTests(TestCase):
 
     def test_webhook_duplicate_event(self):
         data = {"id": 123}
-        Event.objects.create(stripe_id=123, livemode=True)
+        Event.objects.create(stripe_id=123, livemode=True, webhook_message={})
         msg = json.dumps(data)
         resp = Client().post(
             reverse("pinax_stripe_webhook"),

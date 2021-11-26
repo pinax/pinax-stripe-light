@@ -160,7 +160,7 @@ def sync_charges_for_customer(customer):
     Args:
         customer: a pinax.stripe.models.Customer object
     """
-    for charge in customer.stripe_customer.charges().data:
+    for charge in stripe.Charge.auto_paging_iter(customer=customer.stripe_id):
         sync_charge_from_stripe_data(charge)
 
 

@@ -1,6 +1,5 @@
 from django.shortcuts import redirect
 from django.urls import resolve
-from django.http import HttpResponse
 
 from .actions import customers, subscriptions
 from .conf import settings

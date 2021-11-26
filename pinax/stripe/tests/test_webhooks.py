@@ -6,7 +6,6 @@ from django.dispatch import Signal
 from django.test import TestCase
 from django.test.client import Client
 
-import six
 import stripe
 from mock import patch
 
@@ -119,7 +118,7 @@ class WebhookTests(TestCase):
         msg = json.dumps(self.event_data)
         resp = Client().post(
             reverse("pinax_stripe_webhook"),
-            six.u(msg),
+            msg,
             content_type="application/json"
         )
         self.assertEqual(resp.status_code, 200)
@@ -136,7 +135,7 @@ class WebhookTests(TestCase):
         msg = json.dumps(connect_event_data)
         resp = Client().post(
             reverse("pinax_stripe_webhook"),
-            six.u(msg),
+            msg,
             content_type="application/json"
         )
         self.assertEqual(resp.status_code, 200)
@@ -155,7 +154,7 @@ class WebhookTests(TestCase):
         msg = json.dumps(data)
         resp = Client().post(
             reverse("pinax_stripe_webhook"),
-            six.u(msg),
+            msg,
             content_type="application/json"
         )
         self.assertEqual(resp.status_code, 200)

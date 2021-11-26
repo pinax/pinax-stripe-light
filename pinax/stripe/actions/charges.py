@@ -4,7 +4,6 @@ from django.conf import settings
 from django.db.models import Q
 
 import stripe
-from six import string_types
 
 from .. import hooks, models, utils
 
@@ -204,7 +203,7 @@ def sync_charge_from_stripe_data(data):
     if data["refunded"]:
         obj.amount_refunded = obj.amount
     balance_transaction = data.get("balance_transaction")
-    if balance_transaction and not isinstance(balance_transaction, string_types):
+    if balance_transaction and not isinstance(balance_transaction, str):
         obj.available = balance_transaction["status"] == "available"
         obj.available_on = utils.convert_tstamp(
             balance_transaction, "available_on"

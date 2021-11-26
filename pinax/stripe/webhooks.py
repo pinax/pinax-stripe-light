@@ -3,7 +3,6 @@ import json
 from django.dispatch import Signal
 
 import stripe
-from six import with_metaclass
 
 from . import models
 from .actions import (
@@ -69,7 +68,7 @@ class Registerable(type):
         return newclass
 
 
-class Webhook(with_metaclass(Registerable, object)):
+class Webhook(metaclass=Registerable):
 
     name = None
 

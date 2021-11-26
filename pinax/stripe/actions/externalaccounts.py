@@ -1,3 +1,5 @@
+import stripe
+
 from .. import models
 
 
@@ -62,3 +64,35 @@ def sync_bank_account_from_stripe_data(data):
         setattr(obj, a, data.get(a))
     obj.save()
     return obj
+
+
+def delete_bank_account(account, bank_account):
+    """
+    Deletes an external bank account from Stripe and Updates DB
+
+    Important: The user must have another bank account with default_for_currency set to True
+
+    Args:
+        account: stripe.models.Account object to delete the bank_account from
+        bank_account: stripe.models.BankAccount object
+
+    Returns:
+        True if Bank Account was deleted
+    """
+
+    # Get Stripe Account
+    account = stripe.Account.retrieve(account.stripe_id)
+
+    # Retrieve the associated Bank Account and Delete it
+    try:
+        r = account.external_accounts.retrieve(bank_account.stripe_id).delete()
+
+        if r['deleted']:  # if Stripe returns that deleted is True
+            # delete the account
+            bank_account.delete()
+            return True
+
+    except stripe.error.InvalidRequestError as E:
+        print(E)
+
+    return False

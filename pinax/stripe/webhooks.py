@@ -29,7 +29,7 @@ class WebhookRegistry(object):
     def register(self, webhook):
         self._registry[webhook.name] = {
             "webhook": webhook,
-            "signal": Signal(providing_args=["event"])
+            "signal": Signal()
         }
 
     def keys(self):

@@ -261,9 +261,9 @@ class ChargeWebhookTest(TestCase):
         ChargeDisputeFundsWithdrawnWebhook(event).process_webhook()
         self.assertTrue(SyncMock.called)
         args, kwargs = RetrieveMock.call_args
-        self.assertEquals(args, ("ch_XXX",))
-        self.assertEquals(kwargs["expand"], ["balance_transaction"])
-        self.assertEquals(kwargs["stripe_account"], "acc_A")
+        self.assertEqual(args, ("ch_XXX",))
+        self.assertEqual(kwargs["expand"], ["balance_transaction"])
+        self.assertEqual(kwargs["stripe_account"], "acc_A")
 
 
 class CustomerDeletedWebhookTest(TestCase):

@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from mock import Mock
@@ -7,11 +8,6 @@ from mock import Mock
 from ..conf import settings
 from ..middleware import ActiveSubscriptionMiddleware
 from ..models import Customer, Plan, Subscription
-
-try:
-    from django.urls import reverse
-except ImportError:
-    from django.core.urlresolvers import reverse
 
 
 class DummySession(dict):
@@ -27,7 +23,8 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
     urls = "pinax.stripe.tests.urls"
 
     def setUp(self):
-        self.middleware = ActiveSubscriptionMiddleware()
+        self.get_response_mock = Mock()
+        self.middleware = ActiveSubscriptionMiddleware(self.get_response_mock)
         self.request = Mock()
         self.request.META = {}
         self.request.session = DummySession()
@@ -49,7 +46,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
 
     def test_authed_user_with_no_customer_redirects_on_non_exempt_url(self):
         self.request.path = "/the/app/"
-        response = self.middleware.process_request(self.request)
+        response = self.middleware(self.request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
             response.headers["location"],
@@ -58,24 +55,24 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
 
     def test_authed_user_with_no_customer_passes_with_exempt_url(self):
         self.request.path = "/accounts/signup/"
-        response = self.middleware.process_request(self.request)
-        self.assertIsNone(response)
+        self.middleware(self.request)
+        self.assertTrue(self.get_response_mock.called)
 
     def test_authed_user_with_no_customer_passes_with_exempt_url_containing_pattern(self):
         self.request.path = "/password/reset/confirm/test-token/"
-        response = self.middleware.process_request(self.request)
-        self.assertIsNone(response)
+        self.middleware(self.request)
+        self.assertTrue(self.get_response_mock.called)
 
     def test_authed_user_with_no_active_subscription_passes_with_exempt_url(self):
         Customer.objects.create(stripe_id="cus_1", user=self.request.user)
         self.request.path = "/accounts/signup/"
-        response = self.middleware.process_request(self.request)
-        self.assertIsNone(response)
+        self.middleware(self.request)
+        self.assertTrue(self.get_response_mock.called)
 
     def test_authed_user_with_no_active_subscription_redirects_on_non_exempt_url(self):
         Customer.objects.create(stripe_id="cus_1", user=self.request.user)
         self.request.path = "/the/app/"
-        response = self.middleware.process_request(self.request)
+        response = self.middleware(self.request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
             response.headers["location"],
@@ -103,17 +100,17 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
             cancel_at_period_end=False
         )
         self.request.path = "/the/app/"
-        response = self.middleware.process_request(self.request)
-        self.assertIsNone(response)
+        self.middleware(self.request)
+        self.assertTrue(self.get_response_mock.called)
 
     def test_unauthed_user_passes(self):
         logout(self.request)
         self.request.path = "/the/app/"
-        response = self.middleware.process_request(self.request)
-        self.assertIsNone(response)
+        self.middleware(self.request)
+        self.assertTrue(self.get_response_mock.called)
 
     def test_staff_user_passes(self):
         self.request.user.is_staff = True
         self.request.path = "/the/app/"
-        response = self.middleware.process_request(self.request)
-        self.assertIsNone(response)
+        self.middleware(self.request)
+        self.assertTrue(self.get_response_mock.called)

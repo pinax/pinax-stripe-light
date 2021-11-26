@@ -1081,9 +1081,9 @@ class SubscriptionsTests(TestCase):
         subscriptions.create(self.customer, "the-plan", trial_days=3)
         self.assertTrue(SubscriptionCreateMock.called)
         _, kwargs = SubscriptionCreateMock.call_args
-        self.assertEquals(kwargs["trial_end"].date(),
+        self.assertEqual(kwargs["trial_end"].date(),
                           (timezone.now() + datetime.timedelta(days=3)).date())
-        self.assertEquals(kwargs["trial_end"].tzname(),
+        self.assertEqual(kwargs["trial_end"].tzname(),
                           (timezone.now() + datetime.timedelta(days=3)).tzname())
 
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")

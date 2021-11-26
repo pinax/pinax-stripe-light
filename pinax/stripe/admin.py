@@ -2,8 +2,7 @@ from django.contrib import admin
 from django.contrib.admin.views.main import ChangeList
 from django.contrib.auth import get_user_model
 from django.db.models import Count
-from django.utils.encoding import force_text
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from .models import (
     Account,
@@ -146,7 +145,7 @@ class ModelAdmin(admin.ModelAdmin):
         opts = self.model._meta
 
         extra_context = extra_context or {}
-        extra_context["title"] = _("View %s" % force_text(opts.verbose_name))
+        extra_context["title"] = _(f"View {opts.verbose_name}")
         return super(ModelAdmin, self).change_view(
             request, object_id, form_url, extra_context=extra_context,
         )

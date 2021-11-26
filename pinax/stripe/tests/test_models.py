@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import datetime
 import decimal
-import sys
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -30,35 +26,25 @@ from ..models import (
     UserAccount
 )
 
-try:
-    _str = unicode
-except NameError:
-    _str = str
-
-PY2 = sys.version_info[0] == 2
-
 
 class ModelTests(TestCase):
 
     def test_plan_str_and_repr(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", interval="monthly", interval_count=1)
-        self.assertTrue(p.name in _str(p))
+        self.assertTrue(p.name in str(p))
         self.assertEqual(repr(p), "Plan(pk=None, name={p.name!r}, amount=Decimal('5'), currency={p.currency!r}, interval={p.interval!r}, interval_count=1, trial_period_days=None, stripe_id={p.stripe_id!r})".format(p=p))
 
     def test_plan_repr_unicode(self):
         p = Plan(amount=decimal.Decimal("5"), name=u"öre", interval="monthly", interval_count=1, stripe_id=u"öre")
-        if PY2:
-            self.assertEqual(repr(p), "Plan(pk=None, name=u'\\xf6re', amount=Decimal('5'), currency=u'', interval=u'monthly', interval_count=1, trial_period_days=None, stripe_id=u'\\xf6re')")
-        else:
-            self.assertEqual(repr(p), "Plan(pk=None, name='öre', amount=Decimal('5'), currency='', interval='monthly', interval_count=1, trial_period_days=None, stripe_id='öre')")
+        self.assertEqual(repr(p), "Plan(pk=None, name='öre', amount=Decimal('5'), currency='', interval='monthly', interval_count=1, trial_period_days=None, stripe_id='öre')")
 
     def test_plan_str_usd(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", currency="usd", interval="monthly", interval_count=1)
-        self.assertTrue(u"\u0024" in _str(p))
+        self.assertTrue(u"\u0024" in str(p))
 
     def test_plan_str_jpy(self):
         p = Plan(amount=decimal.Decimal("5"), name="My Plan", currency="jpy", interval="monthly", interval_count=1)
-        self.assertTrue(u"\u00a5" in _str(p))
+        self.assertTrue(u"\u00a5" in str(p))
 
     @patch("stripe.Plan.retrieve")
     def test_plan_stripe_plan(self, RetrieveMock):
@@ -89,38 +75,22 @@ class ModelTests(TestCase):
         created_at_iso = created_at.replace(microsecond=0).isoformat()
         e = Event(kind="customer.deleted", webhook_message={}, created_at=created_at)
         self.assertTrue("customer.deleted" in str(e))
-        if PY2:
-            self.assertEqual(repr(e), "Event(pk=None, kind=u'customer.deleted', customer=None, valid=None, created_at={!s}, stripe_id=u'')".format(
-                created_at_iso))
-        else:
-            self.assertEqual(repr(e), "Event(pk=None, kind='customer.deleted', customer=None, valid=None, created_at={!s}, stripe_id='')".format(
-                created_at_iso))
+        self.assertEqual(repr(e), "Event(pk=None, kind='customer.deleted', customer=None, valid=None, created_at={!s}, stripe_id='')".format(created_at_iso))
 
         e.stripe_id = "evt_X"
         e.customer = Customer()
-        if PY2:
-            self.assertEqual(repr(e), "Event(pk=None, kind=u'customer.deleted', customer={!r}, valid=None, created_at={!s}, stripe_id=u'evt_X')".format(
-                e.customer, created_at_iso))
-        else:
-            self.assertEqual(repr(e), "Event(pk=None, kind='customer.deleted', customer={!r}, valid=None, created_at={!s}, stripe_id='evt_X')".format(
-                e.customer, created_at_iso))
+        self.assertEqual(repr(e), "Event(pk=None, kind='customer.deleted', customer={!r}, valid=None, created_at={!s}, stripe_id='evt_X')".format(e.customer, created_at_iso))
 
     def test_customer_str_and_repr(self):
         c = Customer()
         self.assertEqual(str(c), "No User(s)")
-        if PY2:
-            self.assertEqual(repr(c), "Customer(pk=None, stripe_id=u'')")
-        else:
-            self.assertEqual(repr(c), "Customer(pk=None, stripe_id='')")
+        self.assertEqual(repr(c), "Customer(pk=None, stripe_id='')")
 
     def test_customer_with_user_str_and_repr(self):
         User = get_user_model()
         c = Customer(user=User())
         self.assertEqual(str(c), "")
-        if PY2:
-            self.assertEqual(repr(c), "Customer(pk=None, user=<User: >, stripe_id=u'')")
-        else:
-            self.assertEqual(repr(c), "Customer(pk=None, user=<User: >, stripe_id='')")
+        self.assertEqual(repr(c), "Customer(pk=None, user=<User: >, stripe_id='')")
 
     def test_customer_saved_without_users_str(self):
         c = Customer.objects.create()
@@ -135,17 +105,11 @@ class ModelTests(TestCase):
         customer = Customer.objects.create(stripe_id="cus_A", stripe_account=account)
         UserAccount.objects.create(customer=customer, user=user, account=account)
         self.assertEqual(str(customer), "")
-        if PY2:
-            self.assertEqual(repr(customer), "Customer(pk={c.pk}, users=<User: >, stripe_id=u'cus_A')".format(c=customer))
-        else:
-            self.assertEqual(repr(customer), "Customer(pk={c.pk}, users=<User: >, stripe_id='cus_A')".format(c=customer))
+        self.assertEqual(repr(customer), "Customer(pk={c.pk}, users=<User: >, stripe_id='cus_A')".format(c=customer))
 
     def test_charge_repr(self):
         charge = Charge()
-        if PY2:
-            self.assertEqual(repr(charge), "Charge(pk=None, customer=None, source=u'', amount=None, captured=None, paid=None, stripe_id=u'')")
-        else:
-            self.assertEqual(repr(charge), "Charge(pk=None, customer=None, source='', amount=None, captured=None, paid=None, stripe_id='')")
+        self.assertEqual(repr(charge), "Charge(pk=None, customer=None, source='', amount=None, captured=None, paid=None, stripe_id='')")
 
     def test_charge_str(self):
         charge = Charge()
@@ -195,22 +159,14 @@ class ModelTests(TestCase):
 
     def test_subscription_repr(self):
         s = Subscription()
-        if PY2:
-            self.assertEqual(repr(s), "Subscription(pk=None, customer=None, plan=None, status=u'', stripe_id=u'')")
-        else:
-            self.assertEqual(repr(s), "Subscription(pk=None, customer=None, plan=None, status='', stripe_id='')")
+        self.assertEqual(repr(s), "Subscription(pk=None, customer=None, plan=None, status='', stripe_id='')")
         s.customer = Customer()
         s.plan = Plan()
         s.status = "active"
         s.stripe_id = "sub_X"
-        if PY2:
-            self.assertEqual(
-                repr(s),
-                "Subscription(pk=None, customer={o.customer!r}, plan={o.plan!r}, status=u'active', stripe_id=u'sub_X')".format(o=s))
-        else:
-            self.assertEqual(
-                repr(s),
-                "Subscription(pk=None, customer={o.customer!r}, plan={o.plan!r}, status='active', stripe_id='sub_X')".format(o=s))
+        self.assertEqual(
+            repr(s),
+            "Subscription(pk=None, customer={o.customer!r}, plan={o.plan!r}, status='active', stripe_id='sub_X')".format(o=s))
 
     def test_subscription_total_amount(self):
         sub = Subscription(plan=Plan(name="Pro Plan", amount=decimal.Decimal("100")), quantity=2)
@@ -236,23 +192,14 @@ class ModelTests(TestCase):
     def test_account_str_and_repr(self):
         a = Account()
         self.assertEqual(str(a), " - ")
-        if PY2:
-            self.assertEqual(repr(a), "Account(pk=None, display_name=u'', type=None, authorized=True, stripe_id=u'')")
-        else:
-            self.assertEqual(repr(a), "Account(pk=None, display_name='', type=None, authorized=True, stripe_id='')")
+        self.assertEqual(repr(a), "Account(pk=None, display_name='', type=None, authorized=True, stripe_id='')")
         a.stripe_id = "acct_X"
         self.assertEqual(str(a), " - acct_X")
-        if PY2:
-            self.assertEqual(repr(a), "Account(pk=None, display_name=u'', type=None, authorized=True, stripe_id=u'acct_X')")
-        else:
-            self.assertEqual(repr(a), "Account(pk=None, display_name='', type=None, authorized=True, stripe_id='acct_X')")
+        self.assertEqual(repr(a), "Account(pk=None, display_name='', type=None, authorized=True, stripe_id='acct_X')")
         a.display_name = "Display name"
         a.authorized = False
         self.assertEqual(str(a), "Display name - acct_X")
-        if PY2:
-            self.assertEqual(repr(a), "Account(pk=None, display_name=u'Display name', type=None, authorized=False, stripe_id=u'acct_X')")
-        else:
-            self.assertEqual(repr(a), "Account(pk=None, display_name='Display name', type=None, authorized=False, stripe_id='acct_X')")
+        self.assertEqual(repr(a), "Account(pk=None, display_name='Display name', type=None, authorized=False, stripe_id='acct_X')")
 
     @patch("stripe.Subscription.retrieve")
     def test_subscription_stripe_subscription_with_connnect(self, RetrieveMock):

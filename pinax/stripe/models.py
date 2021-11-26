@@ -14,7 +14,7 @@ import stripe
 from jsonfield.fields import JSONField
 
 from .conf import settings
-from .managers import ChargeManager, CustomerManager
+from .managers import ChargeManager, CustomerManager, TieredPricingManager
 from .utils import CURRENCY_SYMBOLS
 
 
@@ -76,6 +76,9 @@ class StripeAccountFromCustomerMixin(object):
 
 @python_2_unicode_compatible
 class Plan(UniquePerAccountStripeObject):
+    BILLING_SCHEME_PER_UNIT = "per_unit"
+    BILLING_SCHEME_TIERED = "tiered"
+
     amount = models.DecimalField(decimal_places=2, max_digits=9)
     currency = models.CharField(max_length=15, blank=False)
     interval = models.CharField(max_length=15)
@@ -84,6 +87,8 @@ class Plan(UniquePerAccountStripeObject):
     statement_descriptor = models.TextField(blank=True)
     trial_period_days = models.IntegerField(null=True, blank=True)
     metadata = JSONField(null=True, blank=True)
+    billing_scheme = models.CharField(max_length=15, default=BILLING_SCHEME_PER_UNIT)
+    tiers_mode = models.CharField(max_length=15, null=True, blank=True)
 
     def __str__(self):
         return "{} ({}{})".format(self.name, CURRENCY_SYMBOLS.get(self.currency, ""), self.amount)
@@ -106,6 +111,14 @@ class Plan(UniquePerAccountStripeObject):
             self.stripe_id,
             stripe_account=self.stripe_account_stripe_id,
         )
+
+    def calculate_total_amount(self, quantity):
+        if self.billing_scheme == self.BILLING_SCHEME_PER_UNIT:
+            return self.amount * quantity
+        elif self.billing_scheme == self.BILLING_SCHEME_TIERED:
+            return Tier.pricing.calculate_final_cost(self, quantity, self.tiers_mode)
+        else:
+            raise Exception("The Plan ({}) received the wrong type of billing_scheme ({})".format(self.name, self.billing_scheme))
 
 
 @python_2_unicode_compatible
@@ -379,7 +392,7 @@ class Subscription(StripeAccountFromCustomerMixin, StripeObject):
 
     @property
     def total_amount(self):
-        return self.plan.amount * self.quantity
+        return self.plan.calculate_total_amount(self.quantity)
 
     def plan_display(self):
         return self.plan.name
@@ -653,3 +666,17 @@ class BankAccount(StripeObject):
         return self.account.stripe_account.external_accounts.retrieve(
             self.stripe_id
         )
+
+
+class Tier(models.Model):
+
+    plan = models.ForeignKey(Plan, related_name="tiers", on_delete=models.CASCADE)
+    amount = models.DecimalField(decimal_places=2, max_digits=9)
+    flat_amount = models.DecimalField(decimal_places=2, max_digits=9)
+    up_to = models.IntegerField(blank=True, null=True)
+
+    objects = models.Manager()
+    pricing = TieredPricingManager()
+
+    def calculate_cost(self, quantity):
+        return (self.amount * quantity) + self.flat_amount

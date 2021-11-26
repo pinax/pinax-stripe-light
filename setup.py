@@ -55,7 +55,7 @@ recurring subscriptions managed by Stripe.
 
 tests_require = [
     "mock",
-    "pytest",
+    "pytest!=4.2.0,>=3.6",
     "pytest-django",
 ]
 

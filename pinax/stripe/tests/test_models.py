@@ -26,6 +26,7 @@ from ..models import (
     InvoiceItem,
     Plan,
     Subscription,
+    Tier,
     Transfer,
     UserAccount
 )
@@ -73,6 +74,28 @@ class ModelTests(TestCase):
         self.assertEqual(c.stripe_plan, RetrieveMock.return_value)
         self.assertTrue(RetrieveMock.call_args_list, [
             call("plan", stripe_account="acct_A")])
+
+    def test_plan_calculate_total_amount_per_unit_billing_scheme(self):
+        quantity = 10
+        p = Plan(amount=decimal.Decimal("5"), stripe_id="plan", billing_scheme=Plan.BILLING_SCHEME_PER_UNIT)
+        self.assertEqual(p.calculate_total_amount(quantity), decimal.Decimal("50"))
+
+    @patch("pinax.stripe.models.Tier.pricing")
+    def test_plan_calculate_total_amount_tiered_billing_scheme(self, TierPricingMock):
+        quantity = 10
+        p = Plan(amount=0, stripe_id="plan", billing_scheme=Plan.BILLING_SCHEME_TIERED)
+        p.calculate_total_amount(quantity)
+        TierPricingMock.calculate_final_cost.assert_called_with(p, quantity, p.tiers_mode)
+
+    @patch("pinax.stripe.models.Tier.pricing")
+    def test_plan_calculate_total_amount_raises_exception_for_invalid_billing_scheme(self, TierPricingMock):
+        quantity = 10
+        p = Plan(amount=0, stripe_id="plan", billing_scheme="unknown")
+        try:
+            p.calculate_total_amount(quantity)
+            self.fail("Excepted an exception from calculate_total_amount")
+        except:
+            pass
 
     def test_plan_per_account(self):
         Plan.objects.create(stripe_id="plan", amount=decimal.Decimal("100"), interval="monthly", interval_count=1)
@@ -301,6 +324,12 @@ class ModelTests(TestCase):
             for f in klass._meta.fields:
                 if f.null:
                     self.assertTrue(f.blank, msg="%s.%s should be blank=True" % (klass.__name__, f.name))
+
+    def test_tier_calculate_cost(self):
+        quantity = 12
+        p = Plan.objects.create(stripe_id="plan", amount=0, interval="monthly", interval_count=1)
+        t = Tier(plan=p, amount=4, flat_amount=20)
+        self.assertEqual(t.calculate_cost(quantity), 68)
 
 
 class StripeObjectTests(TestCase):

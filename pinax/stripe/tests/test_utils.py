@@ -59,6 +59,11 @@ class ConvertAmountForDBTests(TestCase):
         actual = convert_amount_for_db(999, currency=None)
         self.assertEqual(expected, actual)
 
+    def test_convert_amount_for_db_none_amount(self):
+        expected = decimal.Decimal("0.00")
+        actual = convert_amount_for_db(None)
+        self.assertEquals(expected, actual)
+
 
 class ConvertAmountForApiTests(TestCase):
 

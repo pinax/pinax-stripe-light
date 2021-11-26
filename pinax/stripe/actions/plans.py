@@ -29,7 +29,9 @@ def sync_plan(plan, event=None):
         "name": plan["name"],
         "statement_descriptor": plan["statement_descriptor"] or "",
         "trial_period_days": plan["trial_period_days"],
-        "metadata": plan["metadata"]
+        "metadata": plan["metadata"],
+        "billing_scheme": plan["billing_scheme"],
+        "tiers_mode": plan["tiers_mode"]
     }
 
     obj, created = models.Plan.objects.get_or_create(
@@ -37,3 +39,14 @@ def sync_plan(plan, event=None):
         defaults=defaults
     )
     utils.update_with_defaults(obj, defaults, created)
+
+    if plan["tiers"]:
+        obj.tiers.all().delete()    # delete all tiers, since they don't have ids in Stripe
+        for tier in plan["tiers"]:
+            tier_obj = models.Tier.objects.create(
+                plan=obj,
+                amount=utils.convert_amount_for_db(tier["amount"], plan["currency"]),
+                flat_amount=utils.convert_amount_for_db(tier["flat_amount"], plan["currency"]),
+                up_to=tier["up_to"]
+            )
+            obj.tiers.add(tier_obj)

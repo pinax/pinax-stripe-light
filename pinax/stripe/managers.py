@@ -71,3 +71,43 @@ class ChargeManager(models.Manager):
             total_amount=models.Sum("amount"),
             total_refunded=models.Sum("amount_refunded")
         )
+
+
+class TieredPricingManager(models.Manager):
+
+    TIERS_MODE_VOLUME = "volume"
+    TIERS_MODE_GRADUATED = "graduated"
+    TIERS_MODES = (TIERS_MODE_VOLUME, TIERS_MODE_GRADUATED)
+
+    def closed_tiers(self, plan):
+        return self.filter(plan=plan, up_to__isnull=False).order_by("up_to")
+
+    def open_tiers(self, plan):
+        return self.filter(plan=plan, up_to__isnull=True)
+
+    def all_tiers(self, plan):
+        return list(self.closed_tiers(plan)) + list(self.open_tiers(plan))
+
+    def calculate_final_cost(self, plan, quantity, mode):
+        if mode not in self.TIERS_MODES:
+            raise Exception("Received wrong type of mode ({})".format(mode))
+
+        all_tiers = self.all_tiers(plan)
+        cost = 0
+        if mode == self.TIERS_MODE_VOLUME:
+            applicable_tiers = list(filter(lambda t: not t.up_to or quantity <= t.up_to, all_tiers))
+            tier = applicable_tiers[0] if applicable_tiers else all_tiers[-1]
+            cost = tier.calculate_cost(quantity)
+
+        if mode == self.TIERS_MODE_GRADUATED:
+            quantity_billed = 0
+            idx = 0
+            while quantity > 0:
+                tier = all_tiers[idx]
+                quantity_to_bill = min(quantity, tier.up_to - quantity_billed) if tier.up_to else quantity
+                cost += tier.calculate_cost(quantity_to_bill)
+                quantity -= quantity_to_bill
+                quantity_billed += quantity_to_bill
+                idx += 1
+
+        return cost

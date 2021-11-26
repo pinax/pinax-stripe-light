@@ -27,3 +27,8 @@ class ModelTests(TestCase):
             repr(e),
             f"Event(pk=None, kind='customer.deleted', customer='{e.customer_id}', valid=None, created_at={created_at_iso}, stripe_id='evt_X')"
         )
+
+    def test_validated_message(self):
+        created_at = datetime.datetime.utcnow()
+        e = Event(kind="customer.deleted", webhook_message={}, validated_message={"foo": "bar"}, created_at=created_at)
+        self.assertEqual(e.message, e.validated_message)

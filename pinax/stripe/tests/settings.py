@@ -10,9 +10,16 @@ DATABASES = {
     }
 }
 ROOT_URLCONF = "pinax.stripe.tests.urls"
+MIDDLEWARE = [
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware"
+]
 INSTALLED_APPS = [
+    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
     "pinax.stripe",
 ]
 SITE_ID = 1

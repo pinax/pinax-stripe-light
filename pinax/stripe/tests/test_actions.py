@@ -833,18 +833,10 @@ class SourcesTests(TestCase):
         self.assertEqual(SourceMock.exp_year, "My Visa")
         self.assertTrue(SyncMock.called)
 
-    @skipIf(django.VERSION < (1, 9), "Only for django 1.9+")
-    def test_delete_card_dj19(self):
-        CustomerMock = Mock()
-        result = sources.delete_card(CustomerMock, source="card_token")
-        self.assertEqual(result, (0, {"pinax_stripe.Card": 0}))
-        self.assertTrue(CustomerMock.stripe_customer.sources.retrieve().delete.called)
-
-    @skipIf(django.VERSION >= (1, 9), "Only for django before 1.9")
     def test_delete_card(self):
         CustomerMock = Mock()
         result = sources.delete_card(CustomerMock, source="card_token")
-        self.assertTrue(result is None)
+        self.assertEqual(result, (0, {}))
         self.assertTrue(CustomerMock.stripe_customer.sources.retrieve().delete.called)
 
     def test_delete_card_object(self):

@@ -194,7 +194,7 @@ class DynamicManagedAccountForm(forms.Form):
 
     def clean_document(self):
         document = self.cleaned_data.get("document")
-        if document._size > settings.PINAX_STRIPE_DOCUMENT_MAX_SIZE_KB:
+        if document.size > settings.PINAX_STRIPE_DOCUMENT_MAX_SIZE_KB:
             raise forms.ValidationError(
                 _("Document image is too large (> %(maxsize)s MB)") % {
                     "maxsize": round(

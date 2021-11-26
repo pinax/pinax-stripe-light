@@ -52,7 +52,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         response = self.middleware.process_request(self.request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
-            response._headers["location"][1],
+            response.headers["location"],
             reverse(settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT)
         )
 
@@ -78,7 +78,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         response = self.middleware.process_request(self.request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
-            response._headers["location"][1],
+            response.headers["location"],
             reverse(settings.PINAX_STRIPE_SUBSCRIPTION_REQUIRED_REDIRECT)
         )
 

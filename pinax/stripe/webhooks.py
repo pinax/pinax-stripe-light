@@ -240,10 +240,15 @@ class BitcoinReceiverTransactionCreatedWebhook(Webhook):
 
 
 class ChargeWebhook(Webhook):
-
     def process_webhook(self):
+        message = self.event.message
+        if message["data"]["object"].get("object", "charge") == "charge":
+            stripe_id = message["data"]["object"]["id"]
+        else:
+            stripe_id = message["data"]["object"]["charge"]
+
         charges.sync_charge(
-            self.event.message["data"]["object"]["id"],
+            stripe_id,
             stripe_account=self.event.stripe_account_stripe_id,
         )
 

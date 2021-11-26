@@ -48,7 +48,7 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
 
     subscription_params = {}
     if trial_days:
-        subscription_params["trial_end"] = datetime.datetime.utcnow() + datetime.timedelta(days=trial_days)
+        subscription_params["trial_end"] = timezone.now() + datetime.timedelta(days=trial_days)
     if token:
         subscription_params["source"] = token
 

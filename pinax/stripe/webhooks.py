@@ -25,11 +25,8 @@ class WebhookRegistry:
     def keys(self):
         return self._registry.keys()
 
-    def get(self, name, default=None):
-        try:
-            return self[name]["webhook"]
-        except KeyError:
-            return default
+    def get(self, name):
+        return self[name]["webhook"]
 
     def get_signal(self, name, default=None):
         try:
@@ -159,10 +156,10 @@ class AccountApplicationDeauthorizeWebhook(Webhook):
         account anymore).
         """
         try:
-            super(AccountApplicationDeauthorizeWebhook, self).validate()
+            super().validate()
         except stripe.error.PermissionError as exc:
             if self.stripe_account:
-                if not(self.stripe_account in str(exc) and obfuscate_secret_key(settings.PINAX_STRIPE_SECRET_KEY) in str(exc)):
+                if self.stripe_account not in str(exc) and obfuscate_secret_key(settings.PINAX_STRIPE_SECRET_KEY) not in str(exc):
                     raise exc
             self.event.valid = True
             self.event.validated_message = self.event.webhook_message

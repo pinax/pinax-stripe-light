@@ -2,9 +2,9 @@ import decimal
 
 import stripe
 
-from . import charges, subscriptions
 from .. import hooks, models, utils
 from ..conf import settings
+from . import charges, subscriptions
 
 
 def create(customer):

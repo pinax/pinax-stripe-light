@@ -5,9 +5,9 @@ from django.utils.encoding import smart_str
 
 import stripe
 
-from . import invoices, sources, subscriptions
 from .. import hooks, models, utils
 from ..conf import settings
+from . import invoices, sources, subscriptions
 
 logger = logging.getLogger(__name__)
 

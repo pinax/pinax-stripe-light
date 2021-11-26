@@ -291,6 +291,7 @@ class ModelTests(TestCase):
 
     def test_blank_with_null(self):
         import inspect
+
         import pinax.stripe.models
 
         clsmembers = inspect.getmembers(pinax.stripe.models, inspect.isclass)

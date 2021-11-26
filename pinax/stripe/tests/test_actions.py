@@ -2,9 +2,7 @@ import datetime
 import decimal
 import json
 import time
-from unittest import skipIf
 
-import django
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone

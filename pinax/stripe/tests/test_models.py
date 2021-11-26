@@ -71,7 +71,7 @@ class ModelTests(TestCase):
         self.assertTrue("Event=" in str(e))
 
     def test_event_str_and_repr(self):
-        created_at = datetime.datetime.utcnow()
+        created_at = timezone.now()
         created_at_iso = created_at.replace(microsecond=0).isoformat()
         e = Event(kind="customer.deleted", webhook_message={}, created_at=created_at)
         self.assertTrue("customer.deleted" in str(e))

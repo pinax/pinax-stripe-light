@@ -150,6 +150,10 @@ class WebhookTests(TestCase):
         with self.assertRaises(Exception):
             WH(event)
 
+    def test_registry_unregister(self):
+        registry.unregister("account.updated")
+        self.assertFalse("account.updated" in registry._registry)
+
     @patch("django.dispatch.Signal.send")
     def test_send_signal(self, SignalSendMock):
         event = Event(kind="account.application.deauthorized")

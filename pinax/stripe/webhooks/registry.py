@@ -12,6 +12,9 @@ class WebhookRegistry:
             "signal": Signal()
         }
 
+    def unregister(self, name):
+        del self._registry[name]
+
     def keys(self):
         return self._registry.keys()
 

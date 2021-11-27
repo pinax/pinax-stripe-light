@@ -10,11 +10,16 @@ import stripe
 
 from ..models import Event, EventProcessingException
 from ..webhooks import (
+    AccountUpdatedWebhook,
     AccountApplicationDeauthorizeWebhook,
     AccountExternalAccountCreatedWebhook,
     Webhook,
     registry
 )
+
+
+class NewAccountUpdatedWebhook(AccountUpdatedWebhook):
+    pass
 
 
 class WebhookRegistryTest(TestCase):
@@ -25,6 +30,10 @@ class WebhookRegistryTest(TestCase):
 
     def test_get_signal_keyerror(self):
         self.assertIsNone(registry.get_signal("not a webhook"))
+
+    def test_inherited_hook(self):
+        webhook = registry.get("account.updated")
+        self.assertIs(webhook, NewAccountUpdatedWebhook)
 
 
 class WebhookTests(TestCase):

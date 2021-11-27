@@ -3,6 +3,8 @@ from django.conf import settings  # noqa
 import stripe
 from appconf import AppConf
 
+from pinax.stripe import __version__
+
 
 class PinaxStripeAppConf(AppConf):
 
@@ -21,3 +23,11 @@ class PinaxStripeAppConf(AppConf):
     def configure_secret_key(self, value):
         stripe.api_key = value
         return value
+
+    def configure(self):
+        stripe.set_app_info(
+            name="Pinax Stripe Light",
+            version=__version__,
+            url="https://github.com/pinax/pinax-stripe-light"
+        )
+        return super().configure()

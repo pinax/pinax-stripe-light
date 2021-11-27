@@ -1,6 +1,5 @@
 import requests
 
-
 URL = "https://stripe.com/docs/api/curl/sections?all_sections=1&version=2020-08-27&cacheControlVersion=4"
 response = requests.get(URL)
 

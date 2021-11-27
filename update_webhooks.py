@@ -1,11 +1,12 @@
 import requests
 
 
-URL = "https://stripe.com/docs/api/curl/sections?all_sections=1&version=2019-02-19&cacheControlVersion=4"
+URL = "https://stripe.com/docs/api/curl/sections?all_sections=1&version=2020-08-27&cacheControlVersion=4"
 response = requests.get(URL)
 
 data = response.json()
 
+version = data["event_types"]["data"]["version"]
 event_types = data["event_types"]["data"]["event_types"]
 
 class_template = """class {class_name}Webhook(Webhook):
@@ -15,11 +16,13 @@ class_template = """class {class_name}Webhook(Webhook):
 
 """
 
-header = """from .base import Webhook
+header = f"""# Stripe API Version: {version}
+from .base import Webhook
 
 
 """
 
+print(f"Creating {len(event_types)} classes...")
 with open("pinax/stripe/webhooks/generated.py", "wb") as fp:
     fp.write(header.encode("utf-8"))
     for index, event_type in enumerate(event_types):

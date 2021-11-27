@@ -1,3 +1,4 @@
+# Stripe API Version: 2020-08-27
 from .base import Webhook
 
 

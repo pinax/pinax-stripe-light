@@ -30,4 +30,4 @@ class PinaxStripeAppConf(AppConf):
             version=__version__,
             url="https://github.com/pinax/pinax-stripe-light"
         )
-        return super().configure()
+        return self.configured_data

@@ -17,26 +17,19 @@ class Event(StripeObject):
     livemode = models.BooleanField(default=False)
     customer_id = models.CharField(max_length=200, blank=True)
     account_id = models.CharField(max_length=200, blank=True)
-    webhook_message = models.JSONField()
-    validated_message = models.JSONField(null=True, blank=True)
-    valid = models.BooleanField(null=True, blank=True)
+    message = models.JSONField()
     processed = models.BooleanField(default=False)
     pending_webhooks = models.PositiveIntegerField(default=0)
     api_version = models.CharField(max_length=100, blank=True)
-
-    @property
-    def message(self):
-        return self.validated_message
 
     def __str__(self):
         return "{} - {}".format(self.kind, self.stripe_id)
 
     def __repr__(self):
-        return "Event(pk={!r}, kind={!r}, customer={!r}, valid={!r}, created_at={!s}, stripe_id={!r})".format(
+        return "Event(pk={!r}, kind={!r}, customer={!r}, created_at={!s}, stripe_id={!r})".format(
             self.pk,
             self.kind,
             self.customer_id,
-            self.valid,
             self.created_at.replace(microsecond=0).isoformat(),
             self.stripe_id,
         )

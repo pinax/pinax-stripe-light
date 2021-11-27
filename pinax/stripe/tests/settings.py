@@ -25,6 +25,7 @@ INSTALLED_APPS = [
 SITE_ID = 1
 PINAX_STRIPE_PUBLIC_KEY = ""
 PINAX_STRIPE_SECRET_KEY = "sk_test_01234567890123456789abcd"
+PINAX_STRIPE_ENDPOINT_SECRET = "foo"
 TEMPLATES = [{
     "BACKEND": "django.template.backends.django.DjangoTemplates",
 }]

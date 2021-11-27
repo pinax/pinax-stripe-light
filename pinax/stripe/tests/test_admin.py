@@ -33,7 +33,7 @@ class TestEventProcessingExceptionAdmin(TestCase):
             is_staff=True,
             is_superuser=True
         )
-        event = Event.objects.create(kind="foo", webhook_message={}, stripe_id="foo")
+        event = Event.objects.create(kind="foo", message={}, stripe_id="foo")
         error = EventProcessingException.objects.create(event=event, data={}, message="foo")
         instance = EventProcessingExceptionAdmin(EventProcessingException, admin.site)
         response = instance.change_view(request, str(error.pk))
@@ -72,7 +72,7 @@ class TestEventAdmin(TestCase):
             is_staff=True,
             is_superuser=True
         )
-        event = Event.objects.create(kind="foo", webhook_message={}, stripe_id="foo")
+        event = Event.objects.create(kind="foo", message={}, stripe_id="foo")
         instance = EventAdmin(Event, admin.site)
         response = instance.change_view(request, str(event.pk))
         self.assertEqual(

@@ -46,7 +46,6 @@ class EventAdmin(ModelAdmin):
         "stripe_id",
         "kind",
         "livemode",
-        "valid",
         "processed",
         "created_at",
         "account_id",
@@ -55,13 +54,12 @@ class EventAdmin(ModelAdmin):
     list_filter = [
         "kind",
         "created_at",
-        "valid",
         "processed"
     ]
     search_fields = [
         "stripe_id",
         "customer_id",
-        "validated_message",
+        "message",
         "account_id",
     ]
 

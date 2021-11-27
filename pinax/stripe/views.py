@@ -1,10 +1,10 @@
-import json
-
+from django.conf import settings
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
-from django.utils.encoding import smart_str
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
+
+import stripe
 
 from .models import Event
 from .webhooks import registry
@@ -19,7 +19,7 @@ class Webhook(View):
             stripe_id=data["id"],
             kind=kind,
             livemode=data["livemode"],
-            webhook_message=data,
+            message=data,
             api_version=data["api_version"],
             pending_webhooks=data["pending_webhooks"]
         )
@@ -33,7 +33,16 @@ class Webhook(View):
         return super().dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        data = json.loads(smart_str(self.request.body))
-        if not Event.objects.filter(stripe_id=data["id"]).exists():
-            self.add_event(data)
+        signature = self.request.META["HTTP_STRIPE_SIGNATURE"]
+        payload = self.request.body
+        event = None
+        try:
+            event = stripe.Webhook.construct_event(payload, signature, settings.PINAX_STRIPE_ENDPOINT_SECRET)
+        except ValueError:
+            return HttpResponse(status=400)
+        except stripe.error.SignatureVerificationError:
+            return HttpResponse(status=400)
+
+        if not Event.objects.filter(stripe_id=event.id).exists():
+            self.add_event(event.to_dict_recursive())
         return HttpResponse()

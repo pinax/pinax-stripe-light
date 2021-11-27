@@ -1,4 +1,3 @@
-import json
 import sys
 import traceback
 
@@ -26,36 +25,6 @@ class Webhook(metaclass=Registerable):
         self.event = event
         self.stripe_account = None
 
-    def validate(self):
-        """
-        Validate incoming events.
-
-        We fetch the event data to ensure it is legit.
-        For Connect accounts we must fetch the event using the `stripe_account`
-        parameter.
-        """
-        self.stripe_account = self.event.webhook_message.get("account", None)
-        evt = stripe.Event.retrieve(
-            self.event.stripe_id,
-            stripe_account=self.stripe_account
-        )
-        self.event.validated_message = json.loads(
-            json.dumps(
-                evt.to_dict(),
-                sort_keys=True,
-            )
-        )
-        self.event.valid = self.is_event_valid(self.event.webhook_message["data"], self.event.validated_message["data"])
-        self.event.save()
-
-    @staticmethod
-    def is_event_valid(webhook_message_data, validated_message_data):
-        """
-        Notice "data" may contain a "previous_attributes" section
-        """
-        return "object" in webhook_message_data and "object" in validated_message_data and \
-               webhook_message_data["object"] == validated_message_data["object"]
-
     def send_signal(self):
         signal = registry.get_signal(self.name)
         if signal:
@@ -73,9 +42,6 @@ class Webhook(metaclass=Registerable):
 
     def process(self):
         if self.event.processed:
-            return
-        self.validate()
-        if not self.event.valid:
             return
 
         try:

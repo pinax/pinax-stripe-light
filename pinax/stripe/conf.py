@@ -10,11 +10,12 @@ class PinaxStripeAppConf(AppConf):
 
     PUBLIC_KEY = None
     SECRET_KEY = None
-    API_VERSION = "2019-03-14"
+    API_VERSION = "2020-08-27"
+    ENDPOINT_SECRET = None
 
     class Meta:
         prefix = "pinax_stripe"
-        required = ["PUBLIC_KEY", "SECRET_KEY", "API_VERSION"]
+        required = ["PUBLIC_KEY", "SECRET_KEY", "API_VERSION", "ENDPOINT_SECRET"]
 
     def configure_api_version(self, value):
         stripe.api_version = value

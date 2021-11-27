@@ -16,7 +16,7 @@ class TestEventProcessingExceptionAdmin(TestCase):
         self.assertFalse(instance.has_add_permission(None))
 
     def test_no_change_permission(self):
-        request = self.factory.post('/admin/')
+        request = self.factory.post("/admin/")
         instance = EventProcessingExceptionAdmin(EventProcessingException, admin.site)
         self.assertFalse(instance.has_change_permission(request))
 
@@ -54,7 +54,7 @@ class TestEventAdmin(TestCase):
 
     def test_no_change_permission(self):
         factory = RequestFactory()
-        request = factory.post('/admin/')
+        request = factory.post("/admin/")
         instance = EventAdmin(Event, admin.site)
         self.assertFalse(instance.has_change_permission(request))
 

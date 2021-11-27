@@ -12,7 +12,7 @@ from ..models import Event, EventProcessingException
 from ..webhooks import (
     AccountExternalAccountCreatedWebhook,
     AccountUpdatedWebhook,
-    CustomAccountApplicationDeauthorizeWebhook,
+    CustomAccountApplicationDeauthorizedWebhook,
     Webhook,
     registry
 )
@@ -207,12 +207,12 @@ class WebhookTests(TestCase):
         data = {"data": {"object": {"id": "evt_001"}},
                 "account": "acct_bb"}
         event = Event.objects.create(
-            kind=CustomAccountApplicationDeauthorizeWebhook.name,
+            kind=CustomAccountApplicationDeauthorizedWebhook.name,
             webhook_message=data,
         )
         RetrieveMock.side_effect = stripe.error.PermissionError(
             "The provided key 'sk_test_********************abcd' does not have access to account 'acct_aa' (or that account does not exist). Application access may have been revoked.")
-        CustomAccountApplicationDeauthorizeWebhook(event).process()
+        CustomAccountApplicationDeauthorizedWebhook(event).process()
         self.assertTrue(event.valid)
         self.assertTrue(event.processed)
 
@@ -221,25 +221,25 @@ class WebhookTests(TestCase):
         data = {"data": {"object": {"id": "evt_001"}},
                 "account": "acct_bb"}
         event = Event.objects.create(
-            kind=CustomAccountApplicationDeauthorizeWebhook.name,
+            kind=CustomAccountApplicationDeauthorizedWebhook.name,
             webhook_message=data,
         )
         RetrieveMock.side_effect = stripe.error.PermissionError(
             "The provided key 'sk_test_********************ABCD' does not have access to account 'acc_aa' (or that account does not exist). Application access may have been revoked.")
         with self.assertRaises(stripe.error.PermissionError):
-            CustomAccountApplicationDeauthorizeWebhook(event).process()
+            CustomAccountApplicationDeauthorizedWebhook(event).process()
 
     @patch("stripe.Event.retrieve")
     def test_process_deauthorize_with_delete_account(self, RetrieveMock):
         data = {"data": {"object": {"id": "evt_002"}},
                 "account": "acct_bb"}
         event = Event.objects.create(
-            kind=CustomAccountApplicationDeauthorizeWebhook.name,
+            kind=CustomAccountApplicationDeauthorizedWebhook.name,
             webhook_message=data,
         )
         RetrieveMock.side_effect = stripe.error.PermissionError(
             "The provided key 'sk_test_********************abcd' does not have access to account 'acct_bb' (or that account does not exist). Application access may have been revoked.")
-        CustomAccountApplicationDeauthorizeWebhook(event).process()
+        CustomAccountApplicationDeauthorizedWebhook(event).process()
         self.assertTrue(event.valid)
         self.assertTrue(event.processed)
 
@@ -247,11 +247,11 @@ class WebhookTests(TestCase):
     def test_process_deauthorize_without_account(self, RetrieveMock):
         data = {"data": {"object": {"id": "evt_001"}}}
         event = Event.objects.create(
-            kind=CustomAccountApplicationDeauthorizeWebhook.name,
+            kind=CustomAccountApplicationDeauthorizedWebhook.name,
             webhook_message=data,
         )
         RetrieveMock.return_value.to_dict.return_value = data
-        CustomAccountApplicationDeauthorizeWebhook(event).process()
+        CustomAccountApplicationDeauthorizedWebhook(event).process()
         self.assertTrue(event.valid)
         self.assertTrue(event.processed)
 
@@ -259,11 +259,11 @@ class WebhookTests(TestCase):
     def test_process_deauthorize_without_account_exception(self, RetrieveMock):
         data = {"data": {"object": {"id": "evt_001"}}}
         event = Event.objects.create(
-            kind=CustomAccountApplicationDeauthorizeWebhook.name,
+            kind=CustomAccountApplicationDeauthorizedWebhook.name,
             webhook_message=data,
         )
         RetrieveMock.side_effect = stripe.error.PermissionError()
         RetrieveMock.return_value.to_dict.return_value = data
-        CustomAccountApplicationDeauthorizeWebhook(event).process()
+        CustomAccountApplicationDeauthorizedWebhook(event).process()
         self.assertTrue(event.valid)
         self.assertTrue(event.processed)

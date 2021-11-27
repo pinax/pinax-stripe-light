@@ -2,10 +2,10 @@ import stripe
 
 from ..conf import settings
 from ..utils import obfuscate_secret_key
-from .generated import AccountApplicationDeauthorizeWebhook
+from .generated import AccountApplicationDeauthorizedWebhook
 
 
-class CustomAccountApplicationDeauthorizeWebhook(AccountApplicationDeauthorizeWebhook):
+class CustomAccountApplicationDeauthorizedWebhook(AccountApplicationDeauthorizedWebhook):
 
     def validate(self):
         """

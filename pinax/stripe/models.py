@@ -364,6 +364,7 @@ class Subscription(StripeAccountFromCustomerMixin, StripeObject):
     status = models.CharField(max_length=25)  # trialing, active, past_due, canceled, or unpaid
     trial_end = models.DateTimeField(null=True, blank=True)
     trial_start = models.DateTimeField(null=True, blank=True)
+    metadata = JSONField(null=True, blank=True)
 
     @property
     def stripe_subscription(self):

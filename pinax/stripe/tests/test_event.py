@@ -295,6 +295,7 @@ class TestEventMethods(TestCase):
                     "ended_at": 1380317537,
                     "trial_start": None,
                     "trial_end": None,
+                    "metadata": None,
                     "canceled_at": 1380317537,
                     "quantity": 1,
                     "application_fee_percent": None

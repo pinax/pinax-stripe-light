@@ -25,7 +25,7 @@ def cancel(subscription, at_period_end=True):
     return sync_subscription_from_stripe_data(subscription.customer, sub)
 
 
-def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=None, tax_percent=None):
+def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=None, tax_percent=None, metadata=None):
     """
     Creates a subscription for the given customer
 
@@ -58,6 +58,7 @@ def create(customer, plan, quantity=None, trial_days=None, token=None, coupon=No
     subscription_params["quantity"] = quantity
     subscription_params["coupon"] = coupon
     subscription_params["tax_percent"] = tax_percent
+    subscription_params["metadata"] = metadata
     resp = stripe.Subscription.create(**subscription_params)
 
     return sync_subscription_from_stripe_data(customer, resp)
@@ -160,7 +161,8 @@ def sync_subscription_from_stripe_data(customer, subscription):
         start=utils.convert_tstamp(subscription["start"]),
         status=subscription["status"],
         trial_start=utils.convert_tstamp(subscription["trial_start"]) if subscription["trial_start"] else None,
-        trial_end=utils.convert_tstamp(subscription["trial_end"]) if subscription["trial_end"] else None
+        trial_end=utils.convert_tstamp(subscription["trial_end"]) if subscription["trial_end"] else None,
+        metadata=subscription["metadata"]
     )
     sub, created = models.Subscription.objects.get_or_create(
         stripe_id=subscription["id"],
@@ -170,7 +172,7 @@ def sync_subscription_from_stripe_data(customer, subscription):
     return sub
 
 
-def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, charge_immediately=False):
+def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, charge_immediately=False, metadata=None):
     """
     Updates a subscription
 
@@ -194,6 +196,8 @@ def update(subscription, plan=None, quantity=None, prorate=True, coupon=None, ch
     if charge_immediately:
         if stripe_subscription.trial_end is not None and utils.convert_tstamp(stripe_subscription.trial_end) > timezone.now():
             stripe_subscription.trial_end = "now"
+    if metadata:
+        stripe_subscription.metadata = metadata
     sub = stripe_subscription.save()
     customer = models.Customer.objects.get(pk=subscription.customer.pk)
     return sync_subscription_from_stripe_data(customer, sub)

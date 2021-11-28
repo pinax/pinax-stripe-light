@@ -1056,6 +1056,15 @@ class SubscriptionsTests(TestCase):
         self.assertTrue(SyncMock.called)
 
     @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
+    def test_update_plan_metadata(self, SyncMock):
+        SubMock = Mock()
+        SubMock.customer = self.customer
+        subscriptions.update(SubMock, metadata={"test_value": "test_value"})
+        self.assertEquals(SubMock.stripe_subscription.metadata, {"test_value": "test_value"})
+        self.assertTrue(SubMock.stripe_subscription.save.called)
+        self.assertTrue(SyncMock.called)
+
+    @patch("pinax.stripe.actions.subscriptions.sync_subscription_from_stripe_data")
     def test_update_plan_charge_now_old_trial(self, SyncMock):
         trial_end = time.time() - 1000000.0
         SubMock = Mock()
@@ -1114,6 +1123,7 @@ class SubscriptionsTests(TestCase):
             "status": "active",
             "trial_start": None,
             "trial_end": None,
+            "metadata": None,
             "plan": {
                 "id": self.plan.stripe_id,
             }}
@@ -1121,6 +1131,7 @@ class SubscriptionsTests(TestCase):
         SubscriptionCreateMock.assert_called_once_with(
             coupon=None,
             customer=self.connected_customer.stripe_id,
+            metadata=None,
             plan="the-plan",
             quantity=4,
             stripe_account="acct_xx",
@@ -1145,6 +1156,7 @@ class SubscriptionsTests(TestCase):
             "status": "active",
             "trial_start": None,
             "trial_end": None,
+            "metadata": None,
             "plan": {
                 "id": self.plan.stripe_id,
             }}

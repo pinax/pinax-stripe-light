@@ -11,7 +11,6 @@ jobs:
   check-migrations:
     name: Check Migrations
     runs-on: ubuntu-latest
-    shell: bash
     steps:
       - uses: actions/checkout@v2
 

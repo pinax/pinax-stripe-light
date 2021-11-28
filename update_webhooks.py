@@ -39,5 +39,5 @@ with open("pinax/stripe/webhooks/generated.py", "wb") as fp:
 
         fp.write(code.encode("utf-8"))
 
-        print(f"{name} added...")
+        print(f"* `{class_name}Webhook` - `{name}` - {description}")
     fp.close()

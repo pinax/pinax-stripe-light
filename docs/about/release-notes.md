@@ -1,5 +1,14 @@
 # Release Notes
 
+## 5.0.0 - 2021-11-27 - pinax-stripe-light
+
+* Renamed package to `pinax-stripe-light`
+* Dropped most models and all actions, retaining only templatetags and the webhook integration pieces
+* Added a script to generate webhook handlers
+* Added webhook verification using signature header
+* Updated packaging and CI
+
+
 ## 4.4.0 - 2018-08-04
 
 * Pin `python-stripe` to `>2.0` after the merge of [PR 574](https://github.com/pinax/pinax-stripe/pull/574) which fixed compatibility. [PR 581](https://github.com/pinax/pinax-stripe/pull/581)

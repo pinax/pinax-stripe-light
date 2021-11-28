@@ -17,3 +17,13 @@ After nearly 200 commits, 13 merged pull requests, and 45 closed issues,
 `pinax-stripe` was to publish on **December 5, 2015**. Though it's a rename,
 we are kept the same semantic versioning from `django-stripe-payments` making
 this release the `3.0.0` release.
+
+On **November 27, 2021**, after years of use in many different sites, it was decided
+to narrow the scope of the package to the parts that actually were getting used.
+The package adopted a new name, `pinax-stripe-light` in case someone wants to pick
+up the maintainence on the original larger vision for the project.
+
+Back in **2013** it was [hard forked](https://github.com/dj-stripe/dj-stripe/commit/6fe7b7970f8282e2f5606468f5ac5bc5e226458f) [without attribution](https://github.com/dj-stripe/dj-stripe/commit/6fe7b7970f8282e2f5606468f5ac5bc5e226458f#diff-c693279643b8cd5d248172d9c22cb7cf4ed163a3c98c8a3f69c2717edd3eacb7) (violating the license of this
+project) producing dj-stripe.  Despite this violation, we recommend considering this
+package if you need a fuller package to integrate with Stripe.  It has commercial
+support and is well-maintained at the time of writing this.

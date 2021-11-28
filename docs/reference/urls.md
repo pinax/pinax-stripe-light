@@ -2,9 +2,9 @@
 
 Default URLs are provided for basic management of subscriptions, payment methods and payment history.
 
-```
+```python
 # urls.py
-url(r"^payments/", include("payments.urls")),
+url(r"^payments/", include("pinax.stripe.urls")),
 ```
 
 You many want to customize urls or override them according to the needs of your application.

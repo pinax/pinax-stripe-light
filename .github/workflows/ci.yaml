@@ -8,6 +8,21 @@ jobs:
     steps:
       - uses: pinax/linting@v2
 
+  check-migrations:
+    name: Check Migrations
+    runs-on: ubuntu-latest
+    shell: bash
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.9
+
+      - run: pip install .
+      - run: ./check-migrations.sh
+
   test:
     name: Testing
     runs-on: ubuntu-latest

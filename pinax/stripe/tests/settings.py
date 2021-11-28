@@ -12,7 +12,8 @@ DATABASES = {
 ROOT_URLCONF = "pinax.stripe.tests.urls"
 MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware"
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
 ]
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -28,6 +29,13 @@ PINAX_STRIPE_SECRET_KEY = "sk_test_01234567890123456789abcd"
 PINAX_STRIPE_ENDPOINT_SECRET = "foo"
 TEMPLATES = [{
     "BACKEND": "django.template.backends.django.DjangoTemplates",
+    "OPTIONS": {
+        "context_processors": [
+            "django.contrib.auth.context_processors.auth",
+            "django.contrib.messages.context_processors.messages",
+            "django.template.context_processors.request",
+        ]
+    }
 }]
 SECRET_KEY = "pinax-stripe-secret-key"
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"

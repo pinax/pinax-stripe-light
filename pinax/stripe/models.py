@@ -350,7 +350,6 @@ class BitcoinReceiver(StripeObject):
 class Subscription(StripeAccountFromCustomerMixin, StripeObject):
 
     STATUS_CURRENT = ["trialing", "active"]
-
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     application_fee_percent = models.DecimalField(decimal_places=2, max_digits=3, default=None, null=True, blank=True)
     cancel_at_period_end = models.BooleanField(default=False)
@@ -364,6 +363,16 @@ class Subscription(StripeAccountFromCustomerMixin, StripeObject):
     status = models.CharField(max_length=25)  # trialing, active, past_due, canceled, or unpaid
     trial_end = models.DateTimeField(null=True, blank=True)
     trial_start = models.DateTimeField(null=True, blank=True)
+
+    BILLING_CHARGE_AUTOMATICALLY = "charge_automatically"
+    BILLING_SEND_INVOICE = "send_invoice"
+    BILLING_CHOICES = (
+        (BILLING_CHARGE_AUTOMATICALLY, "Charge automatically"),
+        (BILLING_SEND_INVOICE, "Send invoice"),
+    )
+    billing = models.CharField(max_length=32, choices=BILLING_CHOICES, default=BILLING_CHARGE_AUTOMATICALLY)
+
+    days_until_due = models.IntegerField(default=None, blank=True, null=True)
 
     @property
     def stripe_subscription(self):
@@ -411,6 +420,7 @@ class Invoice(StripeAccountFromCustomerMixin, StripeObject):
     statement_descriptor = models.TextField(blank=True)
     currency = models.CharField(max_length=10, default="usd")
     closed = models.BooleanField(default=False)
+    forgiven = models.BooleanField(default=False)
     description = models.TextField(blank=True)
     paid = models.BooleanField(default=False)
     receipt_number = models.TextField(blank=True)
@@ -422,6 +432,17 @@ class Invoice(StripeAccountFromCustomerMixin, StripeObject):
     total = models.DecimalField(decimal_places=2, max_digits=9)
     date = models.DateTimeField()
     webhooks_delivered_at = models.DateTimeField(null=True, blank=True)
+
+    BILLING_CHARGE_AUTOMATICALLY = "charge_automatically"
+    BILLING_SEND_INVOICE = "send_invoice"
+    BILLING_CHOICES = (
+        (BILLING_CHARGE_AUTOMATICALLY, "Charge automatically"),
+        (BILLING_SEND_INVOICE, "Send invoice"),
+    )
+    billing = models.CharField(max_length=32, choices=BILLING_CHOICES, default=BILLING_CHARGE_AUTOMATICALLY)
+
+    due_date = models.DateTimeField(null=True, blank=True)
+    metadata = JSONField(null=True)
 
     @property
     def status(self):

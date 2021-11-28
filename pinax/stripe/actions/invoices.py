@@ -63,6 +63,110 @@ def pay(invoice, send_receipt=True):
     return False
 
 
+def mark_paid(invoice):
+    """
+    Sometimes customers may want to pay with payment methods outside of Stripe, such as check.
+    In these situations, Stripe still allows you to keep track of the payment status of your invoices.
+    Once you receive an invoice payment from a customer outside of Stripe, you can manually
+    mark their invoices as paid.
+
+    Args:
+        invoice: the invoice object to close
+    """
+    if not invoice.paid:
+        stripe_invoice = invoice.stripe_invoice
+        stripe_invoice.paid = True
+        sync_invoice_from_stripe_data(stripe_invoice.save())
+
+
+def forgive(invoice):
+    """
+    Forgiving an invoice instructs us to update the subscription status as if the invoice were
+    successfully paid. Once an invoice has been forgiven, it cannot be unforgiven or reopened.
+
+    Args:
+        invoice: the invoice object to close
+    """
+    if not invoice.paid:
+        stripe_invoice = invoice.stripe_invoice
+        stripe_invoice.forgiven = True
+        sync_invoice_from_stripe_data(stripe_invoice.save())
+
+
+def close(invoice):
+    """
+    Cause an invoice to be closed; This prevents Stripe from automatically charging your customer for the invoice amount.
+
+    Args:
+        invoice: the invoice object to close
+    """
+    if not invoice.closed:
+        stripe_invoice = invoice.stripe_invoice
+        stripe_invoice.closed = True
+        sync_invoice_from_stripe_data(stripe_invoice.save())
+
+
+def reopen(invoice):
+    """
+    (re)-open a closed invoice (which is hold for review)
+
+    Args:
+        invoice: the invoice object to open
+    """
+    if invoice.closed:
+        stripe_invoice = invoice.stripe_invoice
+        stripe_invoice.closed = False
+        sync_invoice_from_stripe_data(stripe_invoice.save())
+
+
+def create_invoice_item(customer, invoice, subscription, amount, currency, description, metadata=None):
+    """
+    :param customer: The pinax-stripe Customer
+    :param invoice:
+    :param subscription:
+    :param amount:
+    :param currency:
+    :param description:
+    :param metadata: Any optional metadata that is attached to the invoice item
+    :return:
+    """
+    stripe_invoice_item = stripe.InvoiceItem.create(
+        customer=customer.stripe_id,
+        amount=utils.convert_amount_for_api(amount, currency),
+        currency=currency,
+        description=description,
+        invoice=invoice.stripe_id,
+        discountable=True,
+        metadata=metadata,
+        subscription=subscription.stripe_id,
+    )
+
+    period_end = utils.convert_tstamp(stripe_invoice_item["period"], "end")
+    period_start = utils.convert_tstamp(stripe_invoice_item["period"], "start")
+
+    # We can safely take the plan from the subscription here because we are creating a new invoice item for this new invoice that is applicable
+    # to the current subscription/current plan.
+    plan = subscription.plan
+
+    defaults = dict(
+        amount=utils.convert_amount_for_db(stripe_invoice_item["amount"], stripe_invoice_item["currency"]),
+        currency=stripe_invoice_item["currency"],
+        proration=stripe_invoice_item["proration"],
+        description=description,
+        line_type=stripe_invoice_item["object"],
+        plan=plan,
+        period_start=period_start,
+        period_end=period_end,
+        quantity=stripe_invoice_item.get("quantity"),
+        subscription=subscription,
+    )
+    inv_item, inv_item_created = invoice.items.get_or_create(
+        stripe_id=stripe_invoice_item["id"],
+        defaults=defaults
+    )
+    return utils.update_with_defaults(inv_item, defaults, inv_item_created)
+
+
 def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_STRIPE_SEND_EMAIL_RECEIPTS):
     """
     Synchronizes a local invoice with data from the Stripe API
@@ -97,6 +201,7 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         attempt_count=stripe_invoice["attempt_count"],
         amount_due=utils.convert_amount_for_db(stripe_invoice["amount_due"], stripe_invoice["currency"]),
         closed=stripe_invoice["closed"],
+        forgiven=stripe_invoice["forgiven"],
         paid=stripe_invoice["paid"],
         period_end=period_end,
         period_start=period_start,
@@ -109,7 +214,13 @@ def sync_invoice_from_stripe_data(stripe_invoice, send_receipt=settings.PINAX_ST
         charge=charge,
         subscription=subscription,
         receipt_number=stripe_invoice["receipt_number"] or "",
+        metadata=stripe_invoice["metadata"]
     )
+    if "billing" in stripe_invoice:
+        defaults.update({
+            "billing": stripe_invoice["billing"],
+            "due_date": utils.convert_tstamp(stripe_invoice, "due_date") if stripe_invoice.get("due_date", None) is not None else None
+        })
     invoice, created = models.Invoice.objects.get_or_create(
         stripe_id=stripe_invoice["id"],
         defaults=defaults
@@ -133,6 +244,13 @@ def sync_invoices_for_customer(customer):
     """
     for invoice in stripe.Invoice.auto_paging_iter(customer=customer.stripe_id):
         sync_invoice_from_stripe_data(invoice, send_receipt=False)
+
+
+def sync_invoice(invoice):
+    """
+    Syncronizes a specific invoice
+    """
+    sync_invoice_from_stripe_data(invoice.stripe_invoice, send_receipt=False)
 
 
 def sync_invoice_items(invoice, items):

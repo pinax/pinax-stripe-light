@@ -425,6 +425,14 @@ class InvoiceWebhook(Webhook):
         )
 
 
+class InvoiceUpcomingWebhook(Webhook):
+    """
+    Notice on invoice.upcoming, the invoice has not been created yet, and therefor we cannot sync it (the payload does not have an id) and so it does not inherit from InvoiceWebhook
+    """
+    name = "invoice.upcoming"
+    description = "Occurs X number of days before a subscription is scheduled to create an invoice that is charged automatically, where X is determined by your subscriptions settings."
+
+
 class InvoiceCreatedWebhook(InvoiceWebhook):
     name = "invoice.created"
     description = "Occurs whenever a new invoice is created. If you are using webhooks, Stripe will wait one hour after they have all succeeded to attempt to pay the invoice; the only exception here is on the first invoice, which gets created and paid immediately when you subscribe a customer to a plan. If your webhooks do not all respond successfully, Stripe will continue retrying the webhooks every hour and will not attempt to pay the invoice. After 3 days, Stripe will attempt to pay the invoice regardless of whether or not your webhooks have succeeded. See how to respond to a webhook."

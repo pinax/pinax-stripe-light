@@ -3,9 +3,7 @@ import os
 import sys
 
 import django
-
 from django.conf import settings
-
 
 DEFAULT_SETTINGS = dict(
     DEBUG=True,
@@ -28,7 +26,6 @@ DEFAULT_SETTINGS = dict(
         "django.contrib.contenttypes",
         "django.contrib.sessions",
         "django.contrib.sites",
-        "jsonfield",
         "pinax.stripe",
     ],
     SITE_ID=1,

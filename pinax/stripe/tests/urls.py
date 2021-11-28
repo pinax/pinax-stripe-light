@@ -1,18 +1,17 @@
-from django.conf.urls import url
 from django.contrib import admin
+from django.urls import path
 
 from ..urls import urlpatterns
 
 
-class FakeViewForUrl(object):
+class FakeViewForUrl:
     def __call__(self):
         raise Exception("Should not get called.")
 
 
 urlpatterns += [
-    url(r"^admin/", admin.site.urls),
-    url(r"^the/app/$", FakeViewForUrl, name="the_app"),
-    url(r"^accounts/signup/$", FakeViewForUrl, name="signup"),
-    url(r"^password/reset/confirm/(?P<token>.+)/$", FakeViewForUrl,
-        name="password_reset"),
+    path("admin/", admin.site.urls),
+    path("the/app/", FakeViewForUrl, name="the_app"),
+    path("accounts/signup/", FakeViewForUrl, name="signup"),
+    path("password/reset/confirm/<str:token>/", FakeViewForUrl, name="password_reset"),
 ]

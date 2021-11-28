@@ -7,7 +7,8 @@ from django.utils import timezone
 from ..utils import (
     convert_amount_for_api,
     convert_amount_for_db,
-    convert_tstamp
+    convert_tstamp,
+    obfuscate_secret_key
 )
 
 
@@ -76,3 +77,9 @@ class ConvertAmountForApiTests(TestCase):
         expected = 999
         actual = convert_amount_for_api(decimal.Decimal("9.99"), currency=None)
         self.assertEqual(expected, actual)
+
+
+class OtherUtilTests(TestCase):
+    def test_obfuscate_secret_key(self):
+        val = obfuscate_secret_key("foobar")
+        self.assertEqual(val, "********************obar")

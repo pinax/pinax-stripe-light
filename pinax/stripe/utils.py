@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import datetime
 import decimal
 
@@ -40,14 +38,6 @@ def convert_amount_for_api(amount, currency="usd"):
     if currency is None:
         currency = "usd"
     return int(amount * 100) if currency.lower() not in ZERO_DECIMAL_CURRENCIES else int(amount)
-
-
-def update_with_defaults(obj, defaults, created):
-    if not created:
-        for key in defaults:
-            setattr(obj, key, defaults[key])
-        obj.save()
-    return obj
 
 
 CURRENCY_SYMBOLS = {

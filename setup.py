@@ -89,7 +89,7 @@ setup(
         "django-appconf>=1.0.1",
         "jsonfield>=1.0.3",
         "stripe>=2.0",
-        "django>=1.8,<=2.2.24",
+        "django>=1.8,<2.3",
         "pytz",
         "six",
         "django-ipware==2.1.0"

@@ -9,7 +9,7 @@ from .. import hooks, models, utils
 from ..conf import settings
 
 
-def create(customer):
+def create(customer, **params):
     """
     Creates a Stripe invoice
 
@@ -25,7 +25,7 @@ def create(customer):
         not have to wait on the webhook to be received and processed for the
         data to be available locally.
     """
-    return stripe.Invoice.create(customer=customer.stripe_id)
+    return stripe.Invoice.create(customer=customer.stripe_id, **params)
 
 
 def retrieve(invoice_id):

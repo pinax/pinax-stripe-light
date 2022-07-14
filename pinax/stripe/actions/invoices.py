@@ -233,3 +233,17 @@ def sync_invoice_items(invoice, items):
             defaults=defaults
         )
         utils.update_with_defaults(inv_item, defaults, inv_item_created)
+
+
+def delete_drafted_invoice(invoice_id):
+
+    # monkey patch
+    class Invoice(stripe.Invoice, stripe.api_resources.abstract.DeletableAPIResource):
+        pass
+
+    try:
+        invoice = Invoice.retrieve(invoice_id)
+        invoice.delete()
+    except stripe.InvalidRequestError as e:
+        if smart_str(e).find("No such invoice") == -1:
+            raise e

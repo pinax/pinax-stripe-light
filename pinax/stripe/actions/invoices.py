@@ -247,3 +247,22 @@ def delete_drafted_invoice(invoice_id):
     except stripe.InvalidRequestError as e:
         if smart_str(e).find("No such invoice") == -1:
             raise e
+
+
+def void_invoice(invoice_id):
+
+    # monkey patch
+    class Invoice(stripe.Invoice):
+
+        def void_invoice(self, idempotency_key=None, **params):
+            url = self.instance_url() + '/void'
+            headers = stripe.util.populate_headers(idempotency_key)
+            self.refresh_from(self.request("post", url, params, headers))
+            return self
+
+    try:
+        invoice = Invoice(invoice_id)
+        invoice.void_invoice()
+    except stripe.InvalidRequestError as e:
+        if smart_str(e).find("No such invoice") == -1:
+            raise e

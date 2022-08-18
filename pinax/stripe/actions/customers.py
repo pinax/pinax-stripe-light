@@ -39,6 +39,7 @@ def _create_without_account(user, card=None, plan=settings.PINAX_STRIPE_DEFAULT_
     trial_end = hooks.hookset.trial_period(user, plan)
     stripe_customer = stripe.Customer.create(
         email=user.email,
+        name=user.get_full_name(),
         source=card,
         plan=plan,
         coupon=coupon,
@@ -73,6 +74,7 @@ def _create_with_account(user, stripe_account, card=None, plan=settings.PINAX_ST
     trial_end = hooks.hookset.trial_period(user, plan)
     stripe_customer = stripe.Customer.create(
         email=user.email,
+        name=user.get_full_name(),
         source=card,
         plan=plan,
         coupon=coupon,
